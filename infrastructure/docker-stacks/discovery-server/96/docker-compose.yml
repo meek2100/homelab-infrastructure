@@ -157,41 +157,91 @@ services:
       retries: 3
       start_period: 30s
 
-  firefox:
-    image: lscr.io/linuxserver/firefox:latest
-    container_name: firefox
+  helium:
+    image: lscr.io/linuxserver/helium:latest
+    container_name: helium
+    mem_limit: 768m             # <-- Hard limit perfectly optimized for Proxmox ballooning
+    security_opt:
+      - seccomp:unconfined
     network_mode: "service:gluetun"
-    #security_opt:
-      #- seccomp:unconfined #optional
     environment:
       - PUID=${PUID}
       - PGID=${GUID}
       - TZ=${TZ}
-      #- FIREFOX_CLI=https://www.linuxserver.io/ #optional
+      - HELIUM_CLI=https://duckduckgo.com --disable-gpu --no-sandbox
     volumes:
-      - ${BASE_PATH}/firefox/config:/config
-      #- ${BASE_PATH}/firefox/downloads:/downloads
-      - ${NFS_MOUNT_POINT}/share/firefox-downloads:/downloads:rw
+      - ${BASE_PATH}/helium/config:/config
+      - ${NFS_MOUNT_POINT}/share/helium-downloads:/downloads:rw
       - ${NFS_MOUNT_POINT}:/mnt/media:rw
-    shm_size: "256mb"
-    #ports:
-      #- 3000:3000
-      #- 3001:3001
+    shm_size: "384mb"            # <-- Required to prevent browser tab crashes
     restart: unless-stopped
     depends_on:
       gluetun:
         condition: service_healthy
-    # 3. Tell Autoheal to watch Firefox, and give Firefox a way to know if its network died
     labels:
       - autoheal=true
       - vpn-dependent=true
-#    healthcheck:
-#      # Verifies VPN routing via standard web traffic, bypassing root ping restrictions
-#      test: ["CMD-SHELL", "curl -fIsS https://10.0.0.242 || exit 1"]
-#      interval: 15s
-#      timeout: 10s
-#      retries: 3
-#      start_period: 30s
+
+#  chromium:
+#    image: lscr.io/linuxserver/chromium:latest
+#    container_name: chromium
+#    mem_limit: 768mb
+#    network_mode: "service:gluetun"
+#    security_opt:
+#      - seccomp:unconfined       # Necessary for Chromium sandbox inside Docker
+#    environment:
+#      - PUID=${PUID}
+#      - PGID=${GUID}
+#      - TZ=${TZ}
+#    volumes:
+#      - ${BASE_PATH}/chromium/config:/config
+#      - ${NFS_MOUNT_POINT}/share/chromium-downloads:/downloads:rw
+#      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+#    shm_size: "1gb"
+#    restart: unless-stopped
+#    depends_on:
+#      gluetun:
+#        condition: service_healthy
+#    labels:
+#      - autoheal=true
+#      - vpn-dependent=true
+
+#  firefox:
+#    image: lscr.io/linuxserver/firefox:latest
+#    mem_limit: 1024m
+#    container_name: firefox
+#    network_mode: "service:gluetun"
+#    #security_opt:
+#      #- seccomp:unconfined #optional
+#    environment:
+#      - PUID=${PUID}
+#      - PGID=${GUID}
+#      - TZ=${TZ}
+#      #- FIREFOX_CLI=https://www.linuxserver.io/ #optional
+#    volumes:
+#      - ${BASE_PATH}/firefox/config:/config
+#      #- ${BASE_PATH}/firefox/downloads:/downloads
+#      - ${NFS_MOUNT_POINT}/share/firefox-downloads:/downloads:rw
+#      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+#    shm_size: "512mb"
+#    #ports:
+#      #- 3000:3000
+#      #- 3001:3001
+#    restart: unless-stopped
+#    depends_on:
+#      gluetun:
+#        condition: service_healthy
+#    # 3. Tell Autoheal to watch Firefox, and give Firefox a way to know if its network died
+#    labels:
+#      - autoheal=true
+#      - vpn-dependent=true
+##    healthcheck:
+##      # Verifies VPN routing via standard web traffic, bypassing root ping restrictions
+##      test: ["CMD-SHELL", "curl -fIsS https://10.0.0.242 || exit 1"]
+##      interval: 15s
+##      timeout: 10s
+##      retries: 3
+##      start_period: 30s
 
   audiobookbay-automated-dev:
     image: ghcr.io/meek2100/audiobookbay-automated:crows_nest1

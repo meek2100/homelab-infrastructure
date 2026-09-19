@@ -9,7 +9,7 @@ services:
       # Change Language:
       # (Supports: en, ua, ru, tr, no, pl, fr, de, ca, es, ko, vi, nl, is, pt, chs, cht, it, th, hi)
       - LANG=en
-      # â ï¸ Required:
+      # ⚠️ Required:
       # Change this to your host's public address
       - WG_HOST=vpn.theurer.dev
       - PASSWORD_HASH=${PASS_HASH}

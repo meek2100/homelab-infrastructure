@@ -1,4 +1,4 @@
-sservices:
+services:
   mcbd-connect:
     container_name: mcbd-connect
     image: strausmann/minecraft-bedrock-connect:latest
@@ -98,22 +98,6 @@ sservices:
       - TZ=${TZ}
       - EULA=true
 #      - SERVER_NAME="Emme and Friends"
-#      - CONTENT_LOG_FILE_ENABLED=true
-    volumes:
-      - ${BASE_PATH}/mcbd-friend-server/data:/data
-    networks:
-      - mcbd-network
-
-  mcbd-car-server:
-    container_name: mcbd-car-server
-    image: itzg/minecraft-bedrock-server:latest
-    restart: no
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TZ}
-      - EULA=true
-#      - SERVER_NAME="Cars and Friends"
 #      - CONTENT_LOG_FILE_ENABLED=true
     volumes:
       - ${BASE_PATH}/mcbd-friend-server/data:/data

@@ -1,4 +1,6 @@
 {
   "node": "pve2",
-  "vmid": "100"
+  "vmid": 100,
+  "version": "v22",
+  "remote_path": "/var/lib/docker/volumes/portainer_data/_data/compose/51/v22/docker-compose.yml"
 }

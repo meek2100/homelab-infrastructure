@@ -8,7 +8,7 @@ services:
       - PGID=${GUID}
       - TZ=${TZ}
       - VERSION=docker
-      - HOSTNAME=âPlexServerâ
+      - HOSTNAME=”PlexServer”
 #      - PLEX_CLAIM=claim-EQ5n_5uvUSC5rCtuMdMv
     volumes:
       - ${BASE_PATH}/plex/config:/config
@@ -38,7 +38,7 @@ services:
 #      - PGID=${GUID}
 #      - TZ=${TZ}
 #      - VERSION=docker
-#      - HOSTNAME=âPlexServerâ
+#      - HOSTNAME=”PlexServer”
 #    volumes:
 #      - ${BASE_PATH}/plex/config:/config
 #      - ${NFS_MOUNT_POINT}:/mnt/media:rw

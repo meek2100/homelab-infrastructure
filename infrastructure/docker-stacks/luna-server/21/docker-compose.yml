@@ -2,19 +2,23 @@ services:
   homeassistant:
     image: lscr.io/linuxserver/homeassistant:latest
     container_name: homeassistant
-    restart: unless-stopped
+    network_mode: host
     environment:
       - PUID=${PUID}
       - PGID=${GUID}
       - TZ=${TZ}
     volumes:
       - ${BASE_PATH}/homeassistant/config:/config
-    networks:
-      vlan40_network: 
-        ipv4_address: 192.168.40.30
-        mac_address: 02:F5:58:97:8E:74
+#    ports:
+#      - "8123:8123"
+    restart: unless-stopped
+      
+#    networks:
+#      vlan40_network: 
+#        ipv4_address: 192.168.40.30
+#        mac_address: 02:F5:58:97:8E:74
 
 
-networks:
-  vlan40_network:  # This network is for tagged traffic that should be on vlan40, it is created by my custom systemd script.
-    external: true
+#networks:
+#  vlan40_network:  # This network is for tagged traffic that should be on vlan40, it is created by my custom systemd script.
+#    external: true

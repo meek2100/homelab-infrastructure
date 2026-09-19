@@ -9,7 +9,7 @@ services:
       # Change Language:
       # (Supports: en, ua, ru, tr, no, pl, fr, de, ca, es, ko, vi, nl, is, pt, chs, cht, it, th, hi)
       - LANG=en
-      # â ï¸ Required:
+      # ⚠️ Required:
       # Change this to your host's public address
       - WG_HOST=vpn.theurer.dev
       - PASSWORD_HASH=${PASS_HASH}
@@ -21,9 +21,9 @@ services:
       - WG_PORT=51820
       # - WG_CONFIG_PORT=92820
       - WG_DEFAULT_ADDRESS=10.8.0.x
-      - WG_DEFAULT_DNS=192.168.1.185, 192.168.1.186
+      - WG_DEFAULT_DNS=192.168.40.185, 192.168.40.186
       - WG_MTU=1420
-      - WG_ALLOWED_IPS=192.168.1.0/24, 192.168.10.0/24, 192.168.20.0/24, 192.168.30.0/24, 192.168.40.0/24, 192.168.50.0/24, 192.168.60.0/24, 192.168.70.0/24, 192.168.80.0/24, 192.168.90.0/24, 192.168.100.0/24, 10.25.25.0/24
+      - WG_ALLOWED_IPS=192.168.1.0/24, 192.168.10.0/24, 192.168.20.0/24, 192.168.30.0/24, 192.168.40.0/24, 10.25.25.0/24
       # - WG_PERSISTENT_KEEPALIVE=25
       # - WG_PRE_UP=echo "Pre Up" > /etc/wireguard/pre-up.txt
       # - WG_POST_UP=echo "Post Up" > /etc/wireguard/post-up.txt

@@ -17,15 +17,18 @@ services:
       - /dev/net/tun:/dev/net/tun
     environment:
       #- DNS_SERVERS=192.168.1.185,192.168.1.186
-      - VPN_MODE=standard
-      - PROXY_MODE=socks5,socks4,socks4a,http,https,ss
+      #- VPN_MODE=standard
+      #- PROXY_MODE=socks5,socks4,socks4a,http,https,ss
+      - VPN_MODE=proxy
+      - PROXY_MODE=socks5
       - VPN_PORTAL=lehvpn.snapone.com
-      - SPLIT_TUNNEL=false
-      - ALLOWED_SUBNETS=192.168.1.0/24,192.168.10.0/24,192.168.20.0/24,192.168.30.0/24,192.168.40.0/24,192.168.50.0/24,192.168.60.0/24,192.168.70.0/24,192.168.80.0/24,192.168.90.0/24,192.168.100.0/24,10.25.25.0/24,10.20.20.0/24
-      - LOCAL_SUBNETS=192.168.1.0/24,192.168.10.0/24,192.168.20.0/24,192.168.30.0/24,192.168.40.0/24,192.168.50.0/24,192.168.60.0/24,192.168.70.0/24,192.168.80.0/24,192.168.90.0/24,192.168.100.0/24,10.25.25.0/24,10.20.20.0/24
+      - SPLIT_TUNNEL=true
+      - ALLOWED_SUBNETS=192.168.1.0/24,192.168.10.0/24,192.168.20.0/24,192.168.30.0/24,192.168.40.0/24,10.25.25.0/24,10.20.20.0/24,100.64.0.0/10,100.100.100.100/32,100.115.92.0/23
+      - LOCAL_SUBNETS=192.168.1.0/24,192.168.10.0/24,192.168.20.0/24,192.168.30.0/24,192.168.40.0/24,10.25.25.0/24,10.20.20.0/24,100.64.0.0/10,100.100.100.100/32,100.115.92.0/23
       - LOCAL_DOMAINS=secure.theurer.dev
+      - VPN_DOMAINS=wirepathsystems.local,snapav.com,control4.com,nxc.local,resideo.com,adiglobal.com,adi-dist.net,ds.resideo.com,control4.dev,workbench.control4.dev
       - LOG_LEVEL=debug
-      #- LOCAL_DNS=192.168.1.185,192.168.1.186
+      - LOCAL_DNS=192.168.40.185,192.168.40.186
       
       ### Example values for testing ###
       #- VPN_PORTAL=uwmadison.vpn.wisc.edu
@@ -40,7 +43,7 @@ services:
       #- ${NFS_MOUNT_POINT}/globalprotect-vpn/html/:/var/www/html2/:rw
     networks:
       gp_network:
-        ipv4_address: 192.168.1.155
+        ipv4_address: 192.168.40.155
         mac_address: 02:F5:58:97:8E:88
     restart: unless-stopped
 
@@ -51,5 +54,5 @@ networks:
       parent: ens18
     ipam:
       config:
-        - subnet: 192.168.1.0/24
-          gateway: 192.168.1.1
+        - subnet: 192.168.40.0/24
+          gateway: 192.168.40.1

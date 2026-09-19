@@ -25,6 +25,8 @@ master-age-key.txt
 
 # Local agent working directories, scratchpads, and MCP configs
 .agents/
+.live-staging/
+
 
 # Unencrypted sensitive drift and credential files
 **/cloudflare.ini

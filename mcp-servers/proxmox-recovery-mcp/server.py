@@ -121,5 +121,23 @@ def restore_apt_packages(node: str = None, vmid: str = None, dry_run: bool = Fal
     if dry_run: args.append("--dry-run")
     return run_script("restore-apt-packages.py", args)
 
+@mcp.tool()
+def sync_fleet(node: str = None, vmid: int = None, apply: bool = False, diff_only: bool = True) -> str:
+    """Discovers and synchronizes live Proxmox host configs, VM configs, and Portainer stacks."""
+    args = []
+    if node: args.extend(["--node", node])
+    if vmid: args.extend(["--vmid", str(vmid)])
+    if apply:
+        args.append("--apply")
+    elif diff_only:
+        args.append("--diff-only")
+    return run_script("sync-live-fleet.py", args)
+
+@mcp.tool()
+def generate_stack_index() -> str:
+    """Regenerates infrastructure/docker-stacks/STACK-INDEX.md catalog."""
+    return run_script("generate-stack-index.py")
+
 if __name__ == "__main__":
     mcp.run()
+

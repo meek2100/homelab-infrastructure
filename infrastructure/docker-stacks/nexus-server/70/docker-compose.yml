@@ -1,0 +1,14 @@
+services:
+  openspeedtest:
+    image: openspeedtest/latest
+    container_name: openspeedtest
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    ports:
+      - "8082:3000" # Maps host port 4000 to internal container port 80
+    tmpfs:
+      - /var/log/letsencrypt

@@ -5,15 +5,18 @@ services:
     cap_add:
       - NET_ADMIN
     security_opt:
-      - seccomp:unconfined #optional
+      - seccomp:unconfined
     network_mode: host
     environment:
       - PUID=${PUID}
       - PGID=${GUID}
       - TZ=${TZ}
+      - DISABLE_IPV6=true
+      - AUTOCAPTURE=true # SET TO 'true' FOR Headless Capture | SET TO 'false' FOR Pure GUI Mode (Reference /home/meek2100/docker/wireshark/GUI_MANUAL_CAPTURE.md for instructions on manual setup.)
     volumes:
       - ${BASE_PATH}/wireshark/config:/config
-    ports:
-      - 3000:3000 #optional
-      - 3001:3001 #optional
+      - ${BASE_PATH}/wireshark/custom-services.d:/custom-services.d
+      - ${NFS_MOUNT_POINT}/wireshark-captures:/nas-storage
+    tmpfs:
+      - /captures:rw,size=150M,mode=1777
     restart: unless-stopped

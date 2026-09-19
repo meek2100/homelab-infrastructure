@@ -2,14 +2,16 @@ services:
   hbbs:
     image: rustdesk/rustdesk-server:latest
     container_name: rustdesk-hbbs
-    command: hbbs -r 192.168.1.185:21117
+    command: hbbs -r 192.168.40.185:21117
     environment:
       - TZ=${TZ}
-    ports:
-      - "21115:21115"
-      - "21116:21116"
-      - "21116:21116/udp"
-      - "21118:21118"
+      - IPV4_ONLY=1
+    network_mode: host
+#    ports:
+#      - "21115:21115"
+#      - "21116:21116"
+#      - "21116:21116/udp"
+#      - "21118:21118"
     volumes:
       - ${BASE_PATH}/rustdesk/data:/root
     restart: unless-stopped
@@ -18,11 +20,13 @@ services:
     image: rustdesk/rustdesk-server:latest
     container_name: rustdesk-hbbr
     command: hbbr
-    ports:
-      - "21117:21117"
-      - "21119:21119"
+    network_mode: host
+#    ports:
+#      - "21117:21117"
+#      - "21119:21119"
     environment:
       - TZ=${TZ}
+      - IPV4_ONLY=1
     volumes:
       - ${BASE_PATH}/rustdesk/data:/root
     restart: unless-stopped

@@ -1,4 +1,6 @@
 {
   "node": "pve3",
-  "vmid": "100"
+  "vmid": 100,
+  "version": "v3",
+  "remote_path": "/var/lib/docker/volumes/portainer_data/_data/compose/45/v3/docker-compose.yml"
 }

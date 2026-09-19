@@ -2,6 +2,9 @@ services:
   watchtower:
     container_name: watchtower
     image: nickfedor/watchtower
+    dns:
+      - 192.168.40.186
+      - 192.168.40.185
     restart: unless-stopped
     environment:
       - TZ=America/Los_Angeles

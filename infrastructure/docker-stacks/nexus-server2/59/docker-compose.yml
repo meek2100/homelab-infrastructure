@@ -50,6 +50,9 @@ services:
   adguardhome-certbot:
     image: certbot/dns-cloudflare
     container_name: adguardhome-certbot
+    dns:
+      - 192.168.40.186
+      - 192.168.40.185
     restart: unless-stopped
     volumes:
       - ${BASE_PATH}/adguardhome/certs:/etc/letsencrypt
