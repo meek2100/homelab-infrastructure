@@ -1,0 +1,12 @@
+[Install]
+WantedBy=multi-user.target
+
+[Mount]
+Options=defaults
+Type=ext4
+What=/dev/disk/by-uuid/e33f9873-233c-40ce-9a90-ff097ef37276
+Where=/mnt/pve/backup
+
+[Unit]
+Description=Mount storage 'backup' under /mnt/pve
+

@@ -1,0 +1,21 @@
+services:
+  global-protect:
+    image: liebesleid1/global-protect:latest
+    container_name: snapone_global-protect
+    restart: unless-stopped
+    network_mode: bridge
+    ports:
+      - "41166:41166"
+    environment:
+        OPENCONNECT_URL: lehvpn.snapone.com
+        OPENCONNECT_USER: dtheurer
+        OPENCONNECT_PASSWORD: Eek2meek!1234
+        OPENCONNECT_GATEWAY:    
+    logging:
+        driver: "json-file"
+        options:
+            max-size: "1m"
+    volumes:
+         - data:/config/config.json:ro
+volumes:
+  data:

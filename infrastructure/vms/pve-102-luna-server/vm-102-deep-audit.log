@@ -1,0 +1,290 @@
+============================================================
+🔍 Deep VM Audit: VM 102 (vm-102) on Host 192.168.1.250
+============================================================
+
+------------------------------------------------------------
+📌 VM OS Release & Hostname
+------------------------------------------------------------
+luna-server
+PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
+NAME="Debian GNU/Linux"
+VERSION_ID="12"
+VERSION="12 (bookworm)"
+VERSION_CODENAME=bookworm
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+
+
+------------------------------------------------------------
+📌 VM Network Interfaces & IPs
+------------------------------------------------------------
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+ens18            UP             192.168.1.249/24 fd28:317b:5158:687e:be24:11ff:feb7:cfa3/64 fe80::be24:11ff:feb7:cfa3/64 
+ens18.40@ens18   UP             fe80::be24:11ff:feb7:cfa3/64 
+host-shim@ens18  UP             192.168.1.183/32 fd28:317b:5158:687e:42:acff:fe11:0/64 fe80::42:acff:fe11:0/64 
+br-eb2e05bce652  UP             172.18.0.1/16 fe80::c42c:e5ff:fe73:8ab1/64 
+br-f5632c6879ab  DOWN           172.21.0.1/16 
+br-176e8f43917f  UP             172.25.0.1/16 fe80::a0ea:bdff:fe3c:6b12/64 
+br-24d9c14041c2  UP             172.19.0.1/16 fe80::647f:d7ff:fec4:36a3/64 
+docker0          UP             172.17.0.1/16 fe80::4820:20ff:fe8a:30b8/64 
+br-b8e04a2d7a06  DOWN           172.26.0.1/16 
+br-ba9df36c0fee  UP             172.24.0.1/16 fe80::d012:30ff:fe08:26da/64 
+br-1678e23d4ada  UP             172.20.0.1/16 fe80::e0f8:caff:fe84:d8f6/64 
+br-19a4d8e1d69f  UP             172.23.0.1/16 fe80::d471:77ff:fe73:ffa6/64 
+br-a69769cc1503  DOWN           172.22.0.1/16 
+veth93cbe35@if2  UP             fe80::c:61ff:fed1:2136/64 
+veth280c1f4@if2  UP             fe80::5c81:2eff:fe63:b2e/64 
+veth2ed942f@if2  UP             fe80::a869:d1ff:fed1:74d0/64 
+veth239e712@if2  UP             fe80::f8ba:44ff:feec:ed9f/64 
+vethafb8100@if2  UP             fe80::1c9e:5aff:fe9a:1bba/64 
+vethb65db69@if2  UP             fe80::307e:b9ff:fe03:5559/64 
+veth66337eb@if2  UP             fe80::58d3:d2ff:febf:edcd/64 
+vethc17999b@if2  UP             fe80::7866:19ff:fe7d:b5a7/64 
+
+
+------------------------------------------------------------
+📌 VM Routing Table
+------------------------------------------------------------
+default via 192.168.1.1 dev ens18 
+172.17.0.0/16 dev docker0 proto kernel scope link src 172.17.0.1 
+172.18.0.0/16 dev br-eb2e05bce652 proto kernel scope link src 172.18.0.1 
+172.19.0.0/16 dev br-24d9c14041c2 proto kernel scope link src 172.19.0.1 
+172.20.0.0/16 dev br-1678e23d4ada proto kernel scope link src 172.20.0.1 
+172.21.0.0/16 dev br-f5632c6879ab proto kernel scope link src 172.21.0.1 linkdown 
+172.22.0.0/16 dev br-a69769cc1503 proto kernel scope link src 172.22.0.1 linkdown 
+172.23.0.0/16 dev br-19a4d8e1d69f proto kernel scope link src 172.23.0.1 
+172.24.0.0/16 dev br-ba9df36c0fee proto kernel scope link src 172.24.0.1 
+172.25.0.0/16 dev br-176e8f43917f proto kernel scope link src 172.25.0.1 
+172.26.0.0/16 dev br-b8e04a2d7a06 proto kernel scope link src 172.26.0.1 linkdown 
+192.168.1.0/24 dev ens18 proto kernel scope link src 192.168.1.249 
+192.168.1.185 dev host-shim scope link 
+
+
+------------------------------------------------------------
+📌 VM Mounts & /etc/fstab
+------------------------------------------------------------
+# /etc/fstab: static file system information.
+#
+# Use 'blkid' to print the universally unique identifier for a
+# device; this may be used with UUID= as a more robust way to name devices
+# that works even if disks are added and removed. See fstab(5).
+#
+# systemd generates mount units based on this file, see systemd.mount(5).
+# Please run 'systemctl daemon-reload' after making changes here.
+#
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+# / was on /dev/sda1 during installation
+UUID=a30085c6-16a4-4740-8d5b-e3edf235cdf0 /               ext4    errors=remount-ro 0       1
+# swap was on /dev/sda5 during installation
+UUID=342820f6-43dc-4243-b041-3afe7cad6244 none            swap    sw              0       0
+/dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
+
+
+# NFS Share for Media
+192.168.40.248:/media /mnt/media nfs nfsvers=4.2,defaults 0 0
+
+# SMB Share for Media
+# //192.168.40.248/media /mnt/media cifs credentials=/root/.smbcredentials,uid=1000,gid=1000 0 0
+--- Mounts ---
+/dev/sda1 on / type ext4 (rw,relatime,errors=remount-ro)
+192.168.40.248:/media on /mnt/media type nfs4 (rw,relatime,vers=4.2,rsize=1048576,wsize=1048576,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,clientaddr=192.168.1.249,local_lock=none,addr=192.168.40.248)
+overlay on /var/lib/docker/overlay2/00cdf3b2f968171208542919942a14cd9d86ef7a0389d6cbfdb9dee3238db840/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/KEZJNSYOIDQG436HTSDH6LQEYC:/var/lib/docker/overlay2/l/IVQWF5FGXKHASUYM367H57LM5P:/var/lib/docker/overlay2/l/BTOFZLCICMPUZ6DJ2ZMG2RDVVY:/var/lib/docker/overlay2/l/CCEMDYCNTUV7SQB4D57LVBMI4E:/var/lib/docker/overlay2/l/4U72BXDPEMM3H6PCCXA2CADJP3:/var/lib/docker/overlay2/l/DXQGXDJHYQUHATXWGI7DY4U26N,upperdir=/var/lib/docker/overlay2/00cdf3b2f968171208542919942a14cd9d86ef7a0389d6cbfdb9dee3238db840/diff,workdir=/var/lib/docker/overlay2/00cdf3b2f968171208542919942a14cd9d86ef7a0389d6cbfdb9dee3238db840/work)
+overlay on /var/lib/docker/overlay2/59cfcafa88e46991676def4b06b0c479f6c7ec33b126af433bfddb140b02c35d/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/GYONVPOMSR2XKCF6REV2TPASPE:/var/lib/docker/overlay2/l/IVQWF5FGXKHASUYM367H57LM5P:/var/lib/docker/overlay2/l/BTOFZLCICMPUZ6DJ2ZMG2RDVVY:/var/lib/docker/overlay2/l/CCEMDYCNTUV7SQB4D57LVBMI4E:/var/lib/docker/overlay2/l/4U72BXDPEMM3H6PCCXA2CADJP3:/var/lib/docker/overlay2/l/DXQGXDJHYQUHATXWGI7DY4U26N,upperdir=/var/lib/docker/overlay2/59cfcafa88e46991676def4b06b0c479f6c7ec33b126af433bfddb140b02c35d/diff,workdir=/var/lib/docker/overlay2/59cfcafa88e46991676def4b06b0c479f6c7ec33b126af433bfddb140b02c35d/work)
+overlay on /var/lib/docker/overlay2/548723c8f0c130bb059dfc3e75f334b024c49263e16ea10dc5cd87c18d4f0c01/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/7NCJY6OLMRAQE25TE463EALYV5:/var/lib/docker/overlay2/l/6VMGERSWSCX5XBCVESNUKODT55:/var/lib/docker/overlay2/l/LFRZKDQ572MTTWUOQJQTGTXCM3:/var/lib/docker/overlay2/l/EFSYPKAVZF7SFDCATRQCCT46V6:/var/lib/docker/overlay2/l/JWZTBJNH3KCAY5FAAZOXZADC2B:/var/lib/docker/overlay2/l/BTVHLKE5BHRB2S5KFO3N7MPGHB:/var/lib/docker/overlay2/l/VA4VNWUUP2HK7IHNAPHCW6R5PW:/var/lib/docker/overlay2/l/N4GDE5Z3KV4EEE7P57W7KKGISH,upperdir=/var/lib/docker/overlay2/548723c8f0c130bb059dfc3e75f334b024c49263e16ea10dc5cd87c18d4f0c01/diff,workdir=/var/lib/docker/overlay2/548723c8f0c130bb059dfc3e75f334b024c49263e16ea10dc5cd87c18d4f0c01/work)
+overlay on /var/lib/docker/overlay2/a05a98758bdb8d85b872b4637be8627760fc5fa459c6384fdeda108a244bda71/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/OTY7JR23ONEXPNP5QNBVFQJ5Q7:/var/lib/docker/overlay2/l/D6TGE57DX4WZIRXN2YN6NZA4BR:/var/lib/docker/overlay2/l/I3QTW7U3DCYKZ52PRYQYE747CZ:/var/lib/docker/overlay2/l/TSQRGTRYUQ6TLTMUZJLNNQTFNA:/var/lib/docker/overlay2/l/4HGOJKF4F5U7DUHLVVDYCIE3N6:/var/lib/docker/overlay2/l/AAT477SBQBMETA4SOOKS7DCHCU:/var/lib/docker/overlay2/l/SZ2LQHPLBLTQZDLBFZTDMVM2SR:/var/lib/docker/overlay2/l/XSNFFAK4H4QYNWLE3CTMMZZADL:/var/lib/docker/overlay2/l/43MTYLKX2D5OI6YDTU4QKWV3GU:/var/lib/docker/overlay2/l/HD5F6RZD7MXPBF226UJ5MSDQCJ:/var/lib/docker/overlay2/l/DARACAFCZQYMJBGJMEBBLFCZAM:/var/lib/docker/overlay2/l/N23THOP63EJA7B6X3T4SLBA53A:/var/lib/docker/overlay2/l/3L2GIZLCLPRYEQY22R3HMB46L4,upperdir=/var/lib/docker/overlay2/a05a98758bdb8d85b872b4637be8627760fc5fa459c6384fdeda108a244bda71/diff,workdir=/var/lib/docker/overlay2/a05a98758bdb8d85b872b4637be8627760fc5fa459c6384fdeda108a244bda71/work)
+overlay on /var/lib/docker/overlay2/7e9f0a681464f85522b050f4b292f28c464c8534fddd982258f09ad4b6807d1f/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/A55H2NFAWBYKCLUKL5DKGBLQZI:/var/lib/docker/overlay2/l/42WVV4PDXGWDI5RIUX6ECRRT5G:/var/lib/docker/overlay2/l/IJLS64PZYUAVZSMURQXUBNDBMT:/var/lib/docker/overlay2/l/AQCVGVFHWRN4ZKOCPQCOOWBZ5Z:/var/lib/docker/overlay2/l/IXLQC4EKMFIPRUAGFRVM4JJVY5:/var/lib/docker/overlay2/l/46WIU3UH2YFQGYIDL5QUG54POP:/var/lib/docker/overlay2/l/2AQMCPH3MEDUATJMZ3LJYJ565X:/var/lib/docker/overlay2/l/5AHM3EWJ7YMPRVIHVWCHQ6QRYE:/var/lib/docker/overlay2/l/3SK3W2RW6ATQ3AOJPWJKLUCAUM:/var/lib/docker/overlay2/l/ROP6N66U2U3RJB2EMWU4EJXLJC:/var/lib/docker/overlay2/l/TRNYTU4S2IB3A75FMR6OUOOZE4,upperdir=/var/lib/docker/overlay2/7e9f0a681464f85522b050f4b292f28c464c8534fddd982258f09ad4b6807d1f/diff,workdir=/var/lib/docker/overlay2/7e9f0a681464f85522b050f4b292f28c464c8534fddd982258f09ad4b6807d1f/work)
+overlay on /var/lib/docker/overlay2/5bc957f570c4132703aa1161e7658c609c2a58d165322b1517f1b4cfcda7f410/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/TL7WDEK5DRIAYEEKOFKSMQGTCF:/var/lib/docker/overlay2/l/AVPULLKYMAZJ53WCAXL5CDTU3Q:/var/lib/docker/overlay2/l/ITNZRGMGR5F4BGWVQ2HKUC67UZ:/var/lib/docker/overlay2/l/6UG2726HCECIZJ7W2ZNZHBT75D,upperdir=/var/lib/docker/overlay2/5bc957f570c4132703aa1161e7658c609c2a58d165322b1517f1b4cfcda7f410/diff,workdir=/var/lib/docker/overlay2/5bc957f570c4132703aa1161e7658c609c2a58d165322b1517f1b4cfcda7f410/work)
+overlay on /var/lib/docker/overlay2/2c230d4823ae5a9297888284e2a73bd7944e2bb8936b60f7acb73125095a7719/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/WKT4OQZ4AYXNJDQC5CZRCABY3U:/var/lib/docker/overlay2/l/BLNFUWL2VGLW5ERHUUUYQSUWU6:/var/lib/docker/overlay2/l/MWFRFEUPMERUDVLMQP5ZB6UC3H:/var/lib/docker/overlay2/l/W7SUWZSUCM5RRBVGJ24FVQGRHW,upperdir=/var/lib/docker/overlay2/2c230d4823ae5a9297888284e2a73bd7944e2bb8936b60f7acb73125095a7719/diff,workdir=/var/lib/docker/overlay2/2c230d4823ae5a9297888284e2a73bd7944e2bb8936b60f7acb73125095a7719/work)
+overlay on /var/lib/docker/overlay2/fd41e0334b8a1978ca2b4a56b8d665238023b423089b9cf8312d9c8c0c373808/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/UXK5OORU67YDIMQOR2TYBH4EFZ:/var/lib/docker/overlay2/l/GSN6YZLFX5NMCZRWRHMA7XPFF3:/var/lib/docker/overlay2/l/5GUKFRVEYMROS7VACUMVNGWBNZ:/var/lib/docker/overlay2/l/NZO6D3R356EGPDVH6WHEJDTX3O:/var/lib/docker/overlay2/l/UVHQJIB455SM6M6T32OI33HLBG:/var/lib/docker/overlay2/l/4IZDXIGVPVB6FJHMJJIOLI74HE:/var/lib/docker/overlay2/l/DPMAJGLOMNVZMML5AZRRCTCF5W:/var/lib/docker/overlay2/l/HNNQOHQRGV2YTOOAFAP322W3X6:/var/lib/docker/overlay2/l/KSUUXEQXHLPOZ33TVEKFDJ5ST7:/var/lib/docker/overlay2/l/QXNFGBSGBWE6OBDPAJRFYYTH7P:/var/lib/docker/overlay2/l/WRH57VH6INRFYSA3CMG522EDTB,upperdir=/var/lib/docker/overlay2/fd41e0334b8a1978ca2b4a56b8d665238023b423089b9cf8312d9c8c0c373808/diff,workdir=/var/lib/docker/overlay2/fd41e0334b8a1978ca2b4a56b8d665238023b423089b9cf8312d9c8c0c373808/work)
+overlay on /var/lib/docker/overlay2/1b4221efa7c282e341badbd17ae93588e21f6550b9e00f21a49a68c6a98198bf/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/6UIMS3YRHQXCW7LPPF5HDS63ZX:/var/lib/docker/overlay2/l/Z5UDCV7QTP5XN7GUOQ3Z2MITNR:/var/lib/docker/overlay2/l/XQRTX5ZDO5YQ6HEX7FT7OQT5KP:/var/lib/docker/overlay2/l/IFDBXE2HWTGJDA32D4S264MLNH:/var/lib/docker/overlay2/l/IJ6J4OSH2CE2OGZX7I53MWLHAR:/var/lib/docker/overlay2/l/ZJOV47VJGVUS3DVIGAKR3TMEF6:/var/lib/docker/overlay2/l/PCQ6UDFMZTU7IFGE5TKAE34NW6:/var/lib/docker/overlay2/l/MO3WNIMVB6CRGSYYN6PRH5YRT2:/var/lib/docker/overlay2/l/R4OM6B4XW7V6E4DXZP4NAZUSU4:/var/lib/docker/overlay2/l/IC4ZZQZGSSJ7O7AO52X3BEQOKS,upperdir=/var/lib/docker/overlay2/1b4221efa7c282e341badbd17ae93588e21f6550b9e00f21a49a68c6a98198bf/diff,workdir=/var/lib/docker/overlay2/1b4221efa7c282e341badbd17ae93588e21f6550b9e00f21a49a68c6a98198bf/work)
+overlay on /var/lib/docker/overlay2/fcac5de9abdbec7c156775fafbcfc35bd7ca72c9fb47264b2d8e30d0d7869d78/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/Y7AMTJVM7DWW3TSMVADUHJOB46:/var/lib/docker/overlay2/l/RNFBO5AD2J2M26H7IZAV7KXPZL:/var/lib/docker/overlay2/l/ZJ7K4O6A5SGA2OKZH3PUKSL6X6:/var/lib/docker/overlay2/l/MVQGSSNZ5FH6JBCA3F2G3GUX77:/var/lib/docker/overlay2/l/BLREU4JJ6K5QZCLRRIHAWP5XGV:/var/lib/docker/overlay2/l/22FQM3U42FL6MW7DO2ESWRKWLR:/var/lib/docker/overlay2/l/PMMRSJP74P6IWUAOLFVB6VYZAE:/var/lib/docker/overlay2/l/AVRQEHUERACUNWSHEGGFZTYGHK:/var/lib/docker/overlay2/l/O3X72W4LO5KOYUGR7ZSTKFCIIR:/var/lib/docker/overlay2/l/HIRWCTFG7UI65IAWKNFYCSEU2Y:/var/lib/docker/overlay2/l/YT57E2G2IQBMPVP2NADQLJUJSN,upperdir=/var/lib/docker/overlay2/fcac5de9abdbec7c156775fafbcfc35bd7ca72c9fb47264b2d8e30d0d7869d78/diff,workdir=/var/lib/docker/overlay2/fcac5de9abdbec7c156775fafbcfc35bd7ca72c9fb47264b2d8e30d0d7869d78/work)
+
+
+------------------------------------------------------------
+📌 VM Active Systemd Services
+------------------------------------------------------------
+  UNIT                      LOAD   ACTIVE SUB     DESCRIPTION
+  containerd.service        loaded active running containerd container runtime
+  cron.service              loaded active running Regular background program processing daemon
+  dbus.service              loaded active running D-Bus System Message Bus
+  docker.service            loaded active running Docker Application Container Engine
+  getty@tty1.service        loaded active running Getty on tty1
+  qemu-guest-agent.service  loaded active running QEMU Guest Agent
+  rpcbind.service           loaded active running RPC bind portmap service
+  ssh.service               loaded active running OpenBSD Secure Shell server
+  systemd-journald.service  loaded active running Journal Service
+  systemd-logind.service    loaded active running User Login Management
+  systemd-timesyncd.service loaded active running Network Time Synchronization
+  systemd-udevd.service     loaded active running Rule-based Manager for Device Events and Files
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+12 loaded units listed.
+
+
+------------------------------------------------------------
+📌 VM Crontabs & Schedules
+------------------------------------------------------------
+# /etc/crontab: system-wide crontab
+# Unlike any other crontab you don't have to run the `crontab'
+# command to install the new version when you edit this file
+# and files in /etc/cron.d. These files also have username fields,
+# that none of the other crontabs do.
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# Example of job definition:
+# .---------------- minute (0 - 59)
+# |  .------------- hour (0 - 23)
+# |  |  .---------- day of month (1 - 31)
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+# |  |  |  |  |
+# *  *  *  *  * user-name command to be executed
+17 *	* * *	root	cd / && run-parts --report /etc/cron.hourly
+25 6	* * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.daily; }
+47 6	* * 7	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.weekly; }
+52 6	1 * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.monthly; }
+#
+30 3 * * 0 root test -e /run/systemd/system || SERVICE_MODE=1 /usr/lib/x86_64-linux-gnu/e2fsprogs/e2scrub_all_cron
+10 3 * * * root test -e /run/systemd/system || SERVICE_MODE=1 /sbin/e2scrub_all -A -r
+
+
+------------------------------------------------------------
+📌 Docker Version & Info
+------------------------------------------------------------
+Client: Docker Engine - Community
+ Version:           29.6.1
+ API version:       1.55
+ Go version:        go1.26.4
+ Git commit:        8900f1d
+ Built:             Fri Jun 26 11:41:04 2026
+ OS/Arch:           linux/amd64
+ Context:           default
+
+Server: Docker Engine - Community
+ Engine:
+  Version:          29.6.1
+  API version:      1.55 (minimum version 1.40)
+  Go version:       go1.26.4
+  Git commit:       8ec5ab3
+  Built:            Fri Jun 26 11:41:04 2026
+  OS/Arch:          linux/amd64
+  Experimental:     false
+ containerd:
+  Version:          v2.2.6
+  GitCommit:        11ce9d5f3c68c941867e82890e93e815c1304f1b
+ runc:
+  Version:          1.3.6
+  GitCommit:        v1.3.6-0-g491b69ba
+ docker-init:
+  Version:          0.19.0
+  GitCommit:        de40ad0
+ Containers: 10
+ Images: 10
+ Server Version: 29.6.1
+ Storage Driver: overlay2
+
+
+------------------------------------------------------------
+📌 All Containers (Active & Inactive)
+------------------------------------------------------------
+CONTAINER ID   NAMES                  STATUS                PORTS                                                                                                                                                                                            IMAGE
+1b61829996e6   homeassistant          Up 35 hours                                                                                                                                                                                                            lscr.io/linuxserver/homeassistant:latest
+8e6a4ef6aaf3   homebridge             Up 35 hours                                                                                                                                                                                                            homebridge/homebridge:latest
+0782438904c8   syncthing              Up 35 hours           0.0.0.0:8384->8384/tcp, 0.0.0.0:21027->21027/udp, [::]:8384->8384/tcp, [::]:21027->21027/udp, 0.0.0.0:22000->22000/tcp, [::]:22000->22000/tcp, 0.0.0.0:22000->22000/udp, [::]:22000->22000/udp   lscr.io/linuxserver/syncthing:latest
+5dac5a730b13   watchtower             Up 2 days (healthy)   8080/tcp                                                                                                                                                                                         nickfedor/watchtower:latest
+ffde2b7195b3   git-dietpi             Up 4 days                                                                                                                                                                                                              alpine/git:latest
+89d994aeb7c2   portainer              Up 5 days             0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp, 0.0.0.0:9443->9443/tcp, [::]:9443->9443/tcp, 9000/tcp                                                                                               portainer/portainer-ee:latest
+3a2efa5a7ded   gitwatch-obsidian      Up 5 days                                                                                                                                                                                                              ghcr.io/gitwatch/gitwatch:latest
+aefa8a9a87db   gitwatch-orca-slicer   Up 5 days                                                                                                                                                                                                              ghcr.io/gitwatch/gitwatch:latest
+d29cca665309   spoolman2slicer        Up 5 days                                                                                                                                                                                                              spoolman-spoolman2slicer
+7ac45bdc5bb5   spoolman               Up 5 days (healthy)   0.0.0.0:7912->8000/tcp, [::]:7912->8000/tcp                                                                                                                                                      ghcr.io/meek2100/spoolman:test
+
+
+------------------------------------------------------------
+📌 Docker Networks
+------------------------------------------------------------
+NETWORK ID     NAME                                         DRIVER    SCOPE
+93b42140868a   bridge                                       bridge    local
+19a4d8e1d69f   git-dietpi_default                           bridge    local
+ba9df36c0fee   gitwatch-obsidian_default                    bridge    local
+24d9c14041c2   gitwatch-orca-slicer_default                 bridge    local
+143c71b48697   host                                         host      local
+22b79fa3d6ce   none                                         null      local
+f5632c6879ab   portainer-update-1770915776-latest_default   bridge    local
+a69769cc1503   portainer-update-1772063522-latest_default   bridge    local
+b8e04a2d7a06   prometheus_default                           bridge    local
+176e8f43917f   spoolman_default                             bridge    local
+1678e23d4ada   syncthing_default                            bridge    local
+1058bfc6ba61   vlan40_network                               macvlan   local
+eb2e05bce652   watchtower_default                           bridge    local
+
+
+------------------------------------------------------------
+📌 Docker Volumes & Mount Paths
+------------------------------------------------------------
+DRIVER    VOLUME NAME
+local     07fadf1c74b3b92d34b3ea6eeced4393b54dd6839dfb9368fd28a5530d5f3445
+local     14c3e52003e2a9df94d377fd0b75ac2532a6aafc22846bcb361b9ff47ed22460
+local     44b85822cc4e07d4bd19da9bc9d661ad0d40a629695715377e14b86edb942bf0
+local     66bb1264a4dd1dd8011f02c496e303d9562426acdb1742eb8294b335b2b09a06
+local     96c2ba49b673b4476073deb9c180b4e431f6986d0d034078692239a7bce3553a
+local     2851cfee8bcca183aec11374bcf5820c8f4ee331136aa492153026ad7a00a447
+local     5304ca72eedfb23944375715505c9df2fd70099d77bd15b01dd3792e0b9bb6d8
+local     48387dd8342cee669319216c30e1404b840b7a03cd9fb7960b7f0addec0d8bdb
+local     287699ed471f00babb0482e9045b3948d10aee1bdadbb3a6974e893ddd119b6f
+local     b3be37c6bb9e5e6d159f2028f414badf78115e19bb3640f86ab6f4d0a2270202
+local     bea33af1bf3fa394bef7edf38b596670986328cc70e1bceee7baa568b398a45b
+local     d2ba7b59fe0429bfa089f4bc5c4c9bd006c1d10c29c2e3afbed1e38c22d0104c
+local     f4924c45846c0ed9c1825e2f0b6553a4dfe758c9d1937d732ecb268779bf415f
+local     portainer_data
+
+
+------------------------------------------------------------
+📌 Portainer Stacks & Compose Directories
+------------------------------------------------------------
+/data/:
+total 12
+drwxr-xr-x  3 root root 4096 Jan 26  2026 .
+drwxr-xr-x 21 root root 4096 Jul 13 10:32 ..
+drwxr-xr-x  3 root root 4096 Jan 26  2026 compose
+
+/data/compose/:
+total 12
+drwxr-xr-x 3 root root 4096 Jan 26  2026 .
+drwxr-xr-x 3 root root 4096 Jan 26  2026 ..
+drwxr-xr-x 3 root root 4096 Jan 26  2026 87
+
+
+------------------------------------------------------------
+📌 AdGuard Home Config Header
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 Nginx Proxy Manager Proxy Hosts
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 Home Assistant / Homebridge Mounts
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+============================================================
+✅ Deep VM Audit Complete for VM 102 (vm-102)
+============================================================

@@ -1,0 +1,78 @@
+services:
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes:
+      - ${BASE_PATH}/pia/pia-shared:/pia-shared
+    environment:
+      - VPN_SERVICE_PROVIDER=private internet access
+      - OPENVPN_USER=${PIA_USER}
+      - OPENVPN_PASSWORD=${PIA_PASS}
+      - SERVER_REGIONS=Netherlands
+      - PORT_FORWARD_ONLY=true
+      - VPN_PORT_FORWARDING=on
+      - OPENVPN_MSSFIX=1220
+      - VPN_PORT_FORWARDING_STATUS_FILE=/pia-shared/port.dat
+    ports:
+      #- 9898:9898/tcp # HTTP proxy
+      #- 8388:8388/tcp # Shadowsocks
+      #- 8388:8388/udp # Shadowsocks
+      - 9091:9091
+      - 51413:51413
+      - 51413:51413/udp
+    networks:
+       - vpn-network
+
+  transmission:
+    image: lscr.io/linuxserver/transmission:latest
+    container_name: transmission
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      #- TRANSMISSION_WEB_HOME= #optional
+      - USER=${TRAN_USER}
+      - PASS=${TRAN_PASS}
+      #- WHITELIST= #optional
+      #- PEERPORT= #optional
+      #- HOST_WHITELIST= #optional
+    volumes:
+      - ${BASE_PATH}/transmission/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    #ports:
+      #- 9091:9091
+      #- 51413:51413
+      #- 51413:51413/udp
+    restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy
+
+  transmission-porthelper:
+    image: scotte/transmission-porthelper:latest
+    container_name: transmission-porthelper
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      - USER=${TRAN_USER}
+      - PASS=${TRAN_PASS}
+    volumes:
+      - ${BASE_PATH}/pia/pia-shared:/pia-shared
+    depends_on:
+      - transmission
+
+networks:
+  vpn-network:
+  
+#volumes:
+#  nfs-media:
+#    driver_opts:
+#      type: "nfs"
+#      o: "addr=10.25.25.248,nolock,soft,nfsvers=4"
+#      device: ":/media"

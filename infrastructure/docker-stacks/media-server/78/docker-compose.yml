@@ -1,0 +1,16 @@
+services:
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    container_name: audiobookshelf
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/audiobookshelf/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    ports:
+      - "13378:80"
+    restart: unless-stopped
+#    networks:
+#      - media-network

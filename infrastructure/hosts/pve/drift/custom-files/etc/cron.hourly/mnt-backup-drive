@@ -1,0 +1,40 @@
+#!/bin/sh
+
+# Log file
+log_file="/etc/cron.hourly/backup-drive.log"
+
+# Log function (POSIX-compliant date formatting)
+log_message() {
+  timestamp=$(date "+%Y-%m-%d %H:%M:%S")  # Use + for formatting
+  printf "%s: %s\n" "$timestamp" "$@" >> "$log_file"
+}
+
+# Directory and mount point
+directory="/mnt/pve/backup2"
+DRIVE_ID="41d79ae9-1b08-4340-bd07-fa29fb713f6a"
+MOUNT_POINT="/mnt/pve/backup2"
+
+# Check and create directory
+if [ ! -d "$directory" ]; then
+  if ! mkdir -p "$directory"; then
+    log_message "Error creating directory '$directory'. Exiting."
+    exit 1
+  fi
+fi
+
+# Check if already mounted
+if findmnt -n -M "$MOUNT_POINT" >/dev/null 2>&1; then
+  log_message "$MOUNT_POINT is already mounted."
+else
+  log_message "$MOUNT_POINT is unmounted, attempting to mount now..."
+  if mount UUID="$DRIVE_ID" "$MOUNT_POINT"; then
+    log_message "$MOUNT_POINT was mounted successfully."
+  else
+    mount_output=$(mount 2>&1)
+    log_message "Failed to mount $MOUNT_POINT. See details below:"
+    log_message "$mount_output"
+    exit 1
+  fi
+fi
+
+exit 0

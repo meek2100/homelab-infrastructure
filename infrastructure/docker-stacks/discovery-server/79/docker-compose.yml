@@ -1,0 +1,19 @@
+services:
+  tor-browser:
+    image: kasmweb/tor-browser:1.16.0
+    container_name: tor-broswer
+#    network_mode: "service:gluetun"
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      - VNC_PW=password
+    volumes:
+      - ${BASE_PATH}/tor-browser/config:/config
+    ports:
+      - 6901:6901
+    shm_size: "512m"
+    restart: unless-stopped
+#    depends_on:
+#      gluetun:
+#        condition: service_healthy

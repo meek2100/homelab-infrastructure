@@ -1,0 +1,33 @@
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+# Primary physical interface (no IP, manual mode)
+auto ens18
+iface ens18 inet manual
+
+# Bridge interface configuration (dumb bridge, no VLAN filtering)
+auto br0
+iface br0 inet static
+    address 192.168.1.150
+    netmask 255.255.255.0
+    gateway 192.168.1.1
+    bridge_ports ens18
+    bridge_stp on
+    bridge_vlan_aware no
+
+# VXLAN Interface - Will be managed by systemd
+#auto vxlan150
+#iface vxlan150 inet manual
+#    type vxlan
+#    vxlan-id 150
+#    vxlan-local-dev ens18
+#    vxlan-remoteip 192.168.1.225
+#    vxlan-port 4789
+#    post-up ip link set $IFACE up
+#    pre-up modprobe vxlan

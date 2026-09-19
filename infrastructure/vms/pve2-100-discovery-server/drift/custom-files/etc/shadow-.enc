@@ -1,0 +1,20 @@
+{
+	"data": "ENC[AES256_GCM,data:7RoSBTJ95yADy64O7yPiw5pZU3vZVYioWENCvpTXoCPYbGMpy70VITcut92xXAMQrg2mApPhHzkdIt1u1Mau4Ko4figgRhS8ae4btwTSahEYj8TlLh5JB4O15JBYcYQX1Dd+HAmYPvQ80bTT00Z+G0Z+0SabqAwYirBt72fQo1CC2Yp1t8YG/EoHkLPRmDhdBs8nAwvfiQy6MtZkp54vdD+DPyW9fdkCC/ps/Jg6Zwlu7jdCUL5BJeYaCoJiMuLZapHg3FCg9t7BAXmHN39czIUzu805vNSNqWTpQHkUk959D1e4xC2G1JTdDOL4GyRv0OfIUgGyDDepz3QmclSPH7PqT6s87nhdjxBAPUq9loFkwwmfDCmWkScQhjG64Qz9iOIJZWlLSYVyjJt//26vasW/VQBjJFHxt6KWLYXLZCdIm3edC1TqvHCiDBVztIarxbyosXqQmAUjjZ3eeMZ+UjNGDBYwM2nuNHNonNWgSUuWn+V8mIaxHZ+drtV66TajRLCP9Rhl3sPCfhFXlsVnanLONWq4ybPOYWvx4LBhwxuQfEzntK+BK6nLX4Cz3efP0UJrK4a3kerS9uLQBOSlOP4q6D9a5CvnopfZiVaTUsrjQG6sgDF1Dme/XlGQU4Wc74YrLpMNdo7Eo/H7z39G7N807itH1++n7/AdQg0ru1bpGQSXZwZi6/EoZ9rg1Yg7ca3oHmXCzr1dorlXPJ7A2IhuqRwYCY2UbRHIvvenfs2H/yd20hx00OSW8pi95XAir/yKfn6nJ26UT4UIEVil7oLL4nXRmTc9IDGrbiH03vWDJRphZ9W6gVqrrSd4ZL3Beeg3Ee2b71BEpXIdoGVqOGuXUnKVQgUmevO7iIyMkeImgNbmUY27P/d+2dkWViVfPw6Es9xAzBE6XMHgzbtjEGltAs5v791jPYo8Xum9iFzJPrdVLK2Cbc+joisGMqJjpR39QqXogA6bK+BnS+5G0R7h9XEiWVjjxqcggfpak0Oi3wozHbFAuUpkvvDkS4bOT0oK6QK15aJwQbSbRmwmJYreoeed94B9iOMTTV52QqQeol+Z0r26bY5tP51OzG2A0+vsHZx/y0r7A8DCd8Qs81PWfBd8MxChFmKwhfxcUOOStBqjCzLtNCAdoNFJqweoTWXvey2wbCPVcmDRGfFSCJ2QnyWr0oIgT/YwTPMZozeB/25cx+yOXOZ6tNe310LPh9LpUl0lIfAJ6ZOa+tptqknpJY+4zqd7jbqd81ScAaS4AJNyod5Mh39R94kxYHIttd/gJPrOMQlPQNrygjh1HhDdDQU18zOEKdcT3ow=,iv:kH58bnuaLl0U5VZRihJPNgmayMXmVRkCdRP70QREzcA=,tag:mJzQ6miB8lFnDi0OCepJqA==,type:str]",
+	"sops": {
+		"kms": null,
+		"gcp_kms": null,
+		"azure_kv": null,
+		"hc_vault": null,
+		"age": [
+			{
+				"recipient": "age1yqmzhsl58talkkax7g6xwj9xs68rqm2efxa5z0zg2u566m3dzeusj96x5f",
+				"enc": "-----BEGIN AGE ENCRYPTED FILE-----\nYWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBXZ3BCb0JBNDhyelA3bGo4\nYi9mcGYxS0k4QzU0eElxRUNwMGd1a1BrS0RzCnc4NHBSUzhNQVc5R2pzckdaZDhj\nOEpOSVc0aiswM0hCT0NzSkZWb3dmWTQKLS0tIDl4VWJoOFZTS0pkMkhyTHluK2ZR\nZ0l5a3F5TWc4VVdmejcwcGdUcFcwZFEK6Wcke7MuF2eRtlBdL+5F7hN0DHAdmZxw\n+BVCZD/MAXjA7mygbj9ps5mZTyWjsLM5w/iExZl4THWEXn6sjEnlaQ==\n-----END AGE ENCRYPTED FILE-----\n"
+			}
+		],
+		"lastmodified": "2026-09-19T18:06:59Z",
+		"mac": "ENC[AES256_GCM,data:NhOhaRoHK+JyYfztszPtzcZOia10GuhCMnevnQ4g7BCxL9zmquaVud1hLfoLzm7M2hDDjvFd2CS3CH0Wq+nvkt/dVgpx4t1bfjEphjDI//Vrd7w5uHmLNCRoFeaafuTJo4+jU8joq0oN/McXvcEORpguOPI/MqB0uTO5+EnWPYg=,iv:wdIKZamETlivk0xblME6eDFR0uVZHNVxhnYNkaXuPqw=,tag:7arwKSDiDh4G2S6etm07Vg==,type:str]",
+		"pgp": null,
+		"unencrypted_suffix": "_unencrypted",
+		"version": "3.8.1"
+	}
+}

@@ -1,0 +1,4 @@
+# Ceph Squid no-subscription repository provided by proxmox.com,
+# NOT recommended for production use
+# deb http://download.proxmox.com/debian/ceph-reef trixie no-subscription
+

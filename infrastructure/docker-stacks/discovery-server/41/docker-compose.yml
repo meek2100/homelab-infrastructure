@@ -1,0 +1,133 @@
+services:
+  docker-wireguard-pia:
+    image: ghcr.io/thrnz/docker-wireguard-pia:latest
+    container_name: docker-wireguard-pia
+    volumes:
+      #Auth token is stored here
+      - ${BASE_PATH}/pia/config:/pia
+      #If enabled, the forwarded port is dumped to /pia-shared/port.dat for potential use in other containers
+      - ${BASE_PATH}/pia/config/pia-shared:/pia-shared
+    cap_add:
+      - NET_ADMIN
+      #SYS_MODULE might not be needed with a 5.6+ kernel?
+      #- SYS_MODULE
+      #If the kernel module isn't available, mounting the tun device may be necessary for userspace implementations
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      #- DEBUG=1
+      #- FIREWALL=0
+      #The following env vars are required:
+      - LOC=swiss
+      - USER=${PIA_USERNAME}
+      - PASS=${PIA_PASSWORD}
+      #The rest are optional:
+      - LOCAL_NETWORK=10.25.25.0/24
+      #- KEEPALIVE=25
+      #- VPNDNS=8.8.8.8,8.8.4.4
+      - PORT_FORWARDING=1
+    ports:
+#      - 9898:9898/tcp # HTTP proxy
+#      - 8388:8388/tcp # Shadowsocks
+#      - 8388:8388/udp # Shadowsocks
+#      - 3000:3000 # Firefox
+#      - 3001:3001 # Firefox VNC
+      - 5900:5900 # Firefox2
+
+      # Not sure what to do with these, but saw them here: https://github.com/thrnz/docker-wireguard-pia/issues/62
+      #- WG_USERSPACE=1
+      #- PORT_SCRIPT=${CONFIG_ROOT}/scripts/script.sh
+      
+    sysctls:
+      #The wg-quick script tries to set this when setting up routing, however this requires running the container
+      #with the --privileged flag set. Setting it here instead if needed means the container can be run with lower
+      #privileges. This only needs setting if strict reverse path filtering (rp_filter=1) is used.
+      - net.ipv4.conf.all.src_valid_mark=1
+      #May as well disable ipv6. Should be blocked anyway.
+      - net.ipv6.conf.default.disable_ipv6=1
+      - net.ipv6.conf.all.disable_ipv6=1
+      - net.ipv6.conf.lo.disable_ipv6=1
+      #The container has no recovery logic. Use a healthcheck to catch disconnects.
+      #This can also be used to ensure the vpn is up before starting other containers
+      #using the vpn connection
+    healthcheck:
+      test: ping -c 1 www.google.com || exit 1
+      interval: 300s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+      start_interval: 3s
+
+      #Example of another service sharing the VPN
+      #If this service needs LAN access then LOCAL_NETWORK must be set appropriatley on the vpn container
+      #Forwared ports should also be set on the vpn container if needed rather than this one in
+      #order to access from the LAN
+      #It may be preferable to use a reverse proxy connected via the docker bridge network instead
+      #to keep the vpn isolated from the LAN
+  #other-service:
+    #image: some-other-image
+    #Other services can share the VPN using 'network_mode: "service:[service name]"'
+    #See https://docs.docker.com/engine/network/#container-networks and
+    #https://docs.docker.com/reference/compose-file/services/#network_mode
+    #network_mode: "service:vpn"
+    #The following can be used to ensure the vpn is up and functional before the dependant service is started
+    #depends_on:
+    #vpn:
+    #condition: service_healthy
+
+
+  #Other containers can access the forwarded port number via /pia-shared/port.dat
+  #Here's an example of a bare-bones 'helper' container that passes the forwarded port to Deluge
+  #See https://gist.github.com/thrnz/dcbaa0af66c70af8e302a1c7eb75484a
+  #deluge-port-helper:
+    #build: /path/to/deluge-port-helper
+    #volumes:
+      #- pia-shared:/pia-shared:ro
+      #- /path/to/deluge/conf:/deluge/conf
+    #network_mode: "service:vpn"
+    #depends_on:
+      #- vpn
+      #- other-service
+
+#volumes:
+  #pia:
+  #pia-shared:
+
+#  firefox:
+#    image: jlesage/firefox
+#    container_name: firefox
+#    environment:
+#      - PUID=1000
+#      - PGID=1000
+#      - TZ=America/Los_Angeles
+#      #- FF_PREF_HTTP_PROXY=network.proxy.http=\"localhost:8388"
+#      #- FF_PREF_HTTPS_PROXY=network.proxy.https=\"localhost:8388"
+#      - HTTP_PROXY=http://localhost:9898  Set the HTTP proxy to Gluetun
+#      - HTTPS_PROXY=https://localhost:9898  Set the HTTPS proxy to Gluetun
+#    network_mode: "service:docker-wireguard-pia"
+#    volumes:
+#      - ${BASE_PATH}/firefox/config:/config:rw
+#      - ${BASE_PATH}/firefox/downloads:/downloads:rw
+#    restart: unless-stopped
+
+#  browser:
+#    image: lscr.io/linuxserver/firefox:latest
+#    container_name: firefox
+#    environment:
+#      - PUID=1000
+#      - PGID=1000
+#      - TZ=America/Los_Angeles
+#      - HTTP_PROXY=http://localhost:9898  Set the HTTP proxy to Gluetun
+#      - HTTPS_PROXY=https://localhost:9898  Set the HTTPS proxy to Gluetun
+#    network_mode: "service:docker-wireguard-pia"
+#    shm_size: "1gb"
+#    volumes:
+#      - ${BASE_PATH}/firefox/config:/config:rw
+#      - ${BASE_PATH}/firefox/downloads:/downloads:rw
+#    restart: unless-stopped
+
+#volumes:
+  #firefox:

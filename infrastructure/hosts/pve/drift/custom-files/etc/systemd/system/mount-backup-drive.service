@@ -1,0 +1,24 @@
+# /etc/systemd/system/mount-backup-drive.service
+[Unit]
+Description=Mount and Monitor Backup Drive
+Documentation=man:mount(8)
+# Start after the necessary services
+After=local-fs.target
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c "/usr/local/bin/mount-backup-drive.sh start" # Added /bin/sh -c
+ExecStop=/bin/sh -c "/usr/local/bin/mount-backup-drive.sh stop"  # Added /bin/sh -c
+RemainAfterExit=yes
+Restart=on-failure
+RestartSec=5
+KillMode=mixed
+TimeoutStopSec=60s
+StandardOutput=file:/var/log/mount-backup-drive.log
+StandardError=file:/var/log/mount-backup-drive.log
+User=root
+
+[Install]
+WantedBy=multi-user.target

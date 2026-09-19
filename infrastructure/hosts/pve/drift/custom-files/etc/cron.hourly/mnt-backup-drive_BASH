@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# Set the log file
+log_file="/etc/cron.hourly/backup-drive.log"
+
+# Function to log messages
+log_message() {
+  printf "%s: %s\n" "$(date +%Y-%m-%d\ %H:%M:%S)" "$@" >> "$log_file"
+}
+
+# Specify the directory
+directory="/mnt/pve/backup"
+
+# Check if the directory EXISTS and is a directory
+if [ -e "$directory" ]; then
+  if [ ! -d "$directory" ]; then
+    log_message "Error: '$directory' exists but is not a directory. Exiting."
+    exit 1
+  else
+    log_message "Directory '$directory' already exists."
+  fi
+else
+  # Create the directory ONLY if it doesn't exist
+  if ! mkdir -p "$directory"; then
+    log_message "Error creating directory '$directory'. Exiting."
+    exit 1
+  else
+    log_message "Directory '$directory' created successfully."
+  fi
+fi
+
+
+# Drive and mount point
+DRIVE_ID="41d79ae9-1b08-4340-bd07-fa29fb713f6a"
+MOUNT_POINT="/mnt/pve/backup"
+
+# Check if mounted using findmnt
+if findmnt -n "$MOUNT_POINT" >/dev/null; then
+  log_message "$MOUNT_POINT is already mounted."
+else
+  log_message "$MOUNT_POINT is unmounted, attempting to mount now..."
+
+  if mount UUID="$DRIVE_ID" "$MOUNT_POINT"; then
+    log_message "$MOUNT_POINT was mounted successfully."
+  else
+    log_message "Failed to mount $MOUNT_POINT. Check device, UUID, permissions, and logs (e.g., dmesg)."
+    exit 1
+  fi
+fi
+
+exit 0

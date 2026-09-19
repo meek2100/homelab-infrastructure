@@ -1,0 +1,1002 @@
+{
+  "/etc/modules-load.d/openmediavault-watchdog.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_rsa_key": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/apt.conf.d/98openmediavault-unattended-upgrade-mail": {
+    "mode": "666",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/networks": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/preferences.d/openmediavault-kernel-backports.pref": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pam.d/common-account": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/sshd_config.distrib": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.ssh/authorized_keys": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/avahi/services/smb.service": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_ed25519_key": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nsswitch.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/cron.hourly/openmediavault-flushmailq": {
+    "mode": "750",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/rsyslog.d/openmediavault-remote.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/collectd/collectd.conf.d/df.conf": {
+    "mode": "666",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/samba/smbd-shares": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/openmediavault-webgui.d/security.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/tokenizer.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/recipient_canonical": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/systemd/system.conf.d/openmediavault-watchdog.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nfs.conf.d/99-openmediavault.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/inputrc": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/rsyslog.d/openmediavault-pamfaillock.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/collectd/collectd.conf.d/rrdcached.conf": {
+    "mode": "666",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/chrony/chrony.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ld.so.cache": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/machine-id": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/subgid": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/motd": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/dynamicmaps.cf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/phar.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_rsa_key.pub": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/monit/conf.d/openmediavault-rrdcached.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pam.d/common-session": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/transport.db": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/passwd-": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/fileinfo.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/console-setup/cached_setup_keyboard.sh": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/default/mdadm": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/iptables/openmediavault-firewall.sh": {
+    "mode": "750",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/subuid-": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/xsl.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/main.cf.proto": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/sender_canonical": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/cron.d/openmediavault-rsync": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/udev/rules.d/70-persistent-cd.rules": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/apt.conf.d/00trustcdrom": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/bcmath.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/sources.list.d/openmediavault-kernel-backports.list": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/hosts": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/python3/debian_config": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/monit/conf.d/openmediavault-phpfpm.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ca-certificates.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/lvm.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/gshadow": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "42"
+  },
+  "/etc/aliases": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/fpm/pool.d/openmediavault-webgui.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/security/opasswd": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/mbstring.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/netplan/20-openmediavault-ens18.yaml": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/monit/conf.d/openmediavault-engined.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/monit/conf.d/openmediavault-collectd.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/sshd_config": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.bashrc": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/master.cf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/initramfs-tools/modules": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/systemd/system/tmp.mount": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/shmop.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/kernel-img.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/listchanges.conf.d/98openmediavault-mail.conf": {
+    "mode": "666",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nfs.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/pdo.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/sysvsem.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/environment": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/salt/minion_id": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/simplexml.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/console-setup/cached_Lat15-Fixed16.psf.gz": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/hostname": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/sysvmsg.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/recipient_bcc.db": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/opcache.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/shells": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/xmlreader.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/dom.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/trusted.gpg.d/openmediavault.key.binary.asc": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/group": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pam.d/common-password": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ca-certificates.conf.dpkg-old": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/cgi/php.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/trusted.gpg.d/openmediavault.key.chroot.gpg": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/sites-available/openmediavault-webgui": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/default/cpufrequtils": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/cron.daily/openmediavault-samba-recycle": {
+    "mode": "750",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/default/halt": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/fpm/php.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pam.d/common-session-noninteractive": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/sysvshm.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/console-setup/cached_UTF-8_del.kmap.gz": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/monit/conf.d/openmediavault-nginx.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/sasl_passwd.db": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/collectd/collectd.conf.d/interface.conf": {
+    "mode": "666",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apticron/apticron.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/default/console-setup": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/apt.conf.d/98openmediavault-periodic-custom": {
+    "mode": "666",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/default/locale": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/sender_canonical.db": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/profile": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/avahi/services/website.service": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/collectd/collectd.conf.d/uptime.conf": {
+    "mode": "666",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/idmapd.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/netplan/10-openmediavault-default.yaml": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/default/grub": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/fstab.bak": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/main.cf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/iconv.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/network/interfaces.bak": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/group-": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/sbin.dhclient": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/sender_bcc": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.ssh/id_rsa": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/mdadm/mdadm.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/.resolv.conf.systemd-resolved.bak": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/shadow": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "42"
+  },
+  "/etc/collectd/collectd.conf.d/cpu.conf": {
+    "mode": "666",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/posix.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.bash_history": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/collectd/collectd.conf.d/memory.conf": {
+    "mode": "666",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.ssh/id_rsa.pub": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/mailname": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/default/loadcpufreq": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/avahi/services/nfs-media.service": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/fstab": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/apt.conf.d/00CDMountPoint": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/chrony/chrony.keys": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "110"
+  },
+  "/etc/postfix/recipient_bcc": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/shadow-": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "42"
+  },
+  "/etc/apt/sources.list~": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/adjtime": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/locale.gen": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/sources.list.d/openmediavault.list": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/timezone": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/master.cf.proto": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/collectd/collectd.conf.d/syslog.conf": {
+    "mode": "666",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/exports": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.lesshst": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/monit/conf.d/openmediavault-system.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/hosts.deny": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/sources.list.d/openmediavault-os-security.list": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/default/keyboard": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/recipient_canonical.db": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/subgid-": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/netplan/20-openmediavault-ens19.yaml": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssl/certs/ca-certificates.crt": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_ed25519_key.pub": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/avahi/services/ssh.service": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/default/nfs-kernel-server": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/aliases.db": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/sources.list": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/xmlwriter.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/gettext.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/collectd/collectd.conf.d/load.conf": {
+    "mode": "666",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/cron.daily/openmediavault-apticron": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/xml.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/openmediavault/config.xml": {
+    "mode": "660",
+    "uid": "0",
+    "gid": "995"
+  },
+  "/etc/cron.d/openmediavault-mkrrdgraph": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/calendar.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/hosts.allow": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/apt.conf.d/00recommends": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/readline.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/sysctl.d/99-openmediavault-mdadm.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.profile": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/smtp_header_checks": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/samba/smb.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/console-setup/cached_setup_font.sh": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/sockets.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/collectd/collectd.conf.d/unixsock.conf": {
+    "mode": "666",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/subuid": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/sasl_passwd": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/console-setup/cached_setup_terminal.sh": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/network/interfaces": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/ctype.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/gshadow-": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "42"
+  },
+  "/etc/php/8.2/mods-available/ffi.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/listchanges.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/cli/php.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/modules": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/initramfs-tools/conf.d/resume": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/exif.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/php/8.2/mods-available/ftp.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/monit/conf.d/openmediavault-filesystem.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/.pwd.lock": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_ecdsa_key": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.inputrc": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/apt.conf.d/20auto-upgrades": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/sender_bcc.db": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/usr.sbin.chronyd": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pam.d/common-auth": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/passwd": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_ecdsa_key.pub": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/transport": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/systemd/system/openmediavault-firewall.service": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  }
+}

@@ -1,0 +1,16 @@
+services:
+  weewx:
+    image: mitct02/weewx
+    container_name: weewx
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - data:/weewx
+    environment:
+      - TIMEZONE=America/Los_Angeles
+      - WEEWX_UID=weewx
+      - WEEWX_GID=dialout
+    # devices:
+    #  - "/dev/ttyUSB0:/dev/ttyUSB0"
+volumes:
+  data:

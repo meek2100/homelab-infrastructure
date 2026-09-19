@@ -1,0 +1,11 @@
+services:
+  watchtower:
+    container_name: watchtower
+    image: nickfedor/watchtower
+    restart: unless-stopped
+    environment:
+      - TZ=America/Los_Angeles
+      - WATCHTOWER_CLEANUP=true
+      #- WATCHTOWER_RUN_ONCE=true # If this is uncommented, then comment out "restart: unless-stopped"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

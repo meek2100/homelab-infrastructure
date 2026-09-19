@@ -1,0 +1,9 @@
+services:
+  webserver:
+    image: httpd:alpine # Uses a lightweight Apache image
+    container_name: t5-update-server
+    restart: always
+    ports:
+      - "8080:80" # Maps host port 8080 to container port 80
+    volumes:
+      - ${NFS_MOUNT_POINT}/t5-update-server/latest:/usr/local/apache2/htdocs/

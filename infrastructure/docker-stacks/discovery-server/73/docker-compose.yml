@@ -1,0 +1,384 @@
+services:
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/radarr/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    ports:
+      - "7878:7878"
+    restart: unless-stopped
+    networks:
+      - discovery-network
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/sonarr/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    ports:
+      - "8989:8989"
+    restart: unless-stopped
+    networks:
+      - discovery-network
+
+#  lidarr:
+#    image: lscr.io/linuxserver/lidarr:latest
+#    container_name: lidarr
+#    environment:
+#      - PUID=${PUID}
+#      - PGID=${GUID}
+#      - TZ=${TZ}
+#    volumes:
+#      - ${BASE_PATH}/lidarr/config:/config
+#      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+#    ports:
+#      - "8686:8686"
+#    restart: unless-stopped
+#    networks:
+#      - discovery-network
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/prowlarr/config:/config
+    ports:
+      - "9696:9696"
+    restart: unless-stopped
+    networks:
+      - discovery-network
+
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/bazarr/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    ports:
+      - "6767:6767"
+    restart: unless-stopped
+    networks:
+      - discovery-network
+
+#  readarr-ebook:
+#    image: lscr.io/linuxserver/readarr:develop
+#    container_name: readarr-ebook
+#    environment:
+#      - PUID=${PUID}
+#      - PGID=${GUID}
+#      - TZ=${TZ}
+#    volumes:
+#      - ${BASE_PATH}/readarr-ebook/config:/config
+#      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+#    ports:
+#      - "8787:8787"
+#    restart: unless-stopped
+#    networks:
+#      - discovery-network
+
+#  readarr-audiobook:
+#    image: lscr.io/linuxserver/readarr:develop
+#    container_name: readarr-audiobook
+#    environment:
+#      - PUID=${PUID}
+#      - PGID=${GUID}
+#      - TZ=${TZ}
+#    volumes:
+#      - ${BASE_PATH}/readarr-audiobook/config:/config
+#      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+#    ports:
+#      - "9797:9797"
+#    restart: unless-stopped
+#    networks:
+#      - discovery-network
+
+#  lazylibrarian:
+#    image: lscr.io/linuxserver/lazylibrarian:latest
+#    container_name: lazylibrarian
+#    environment:
+#      - PUID=${PUID}
+#      - PGID=${GUID}
+#      - TZ=${TZ}
+#      - DOCKER_MODS=linuxserver/mods:universal-calibre|linuxserver/mods:lazylibrarian-ffmpeg #optional
+#    volumes:
+#      - ${BASE_PATH}/lazylibrarian/config:/config
+#      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+#    ports:
+#      - 5299:5299
+#    extra_hosts:
+#      - "library.gift=193.218.118.42"
+#      - "download.library.gift=176.119.25.72"
+#    restart: unless-stopped
+#    networks:
+#      - discovery-network
+
+
+
+#  calibre-web-automated:
+#    image: crocodilestick/calibre-web-automated:latest
+#    container_name: calibre-web-automated
+#    environment:
+#      - PUID=${PUID}
+#      - PGID=${GUID}
+#      - TZ=${TZ}
+#      - DOCKER_MODS=linuxserver/mods:universal-calibre
+#    volumes:
+#      - ${BASE_PATH}/calibre-web-automated/config:/config
+#      - ${NFS_MOUNT_POINT}/content/ebooks:/calibre-library
+#      - ${NFS_MOUNT_POINT}/share/cwa-book-ingest:/cwa-book-ingest
+#      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+#      #- /path/to/your/gmail/credentials.json:/app/calibre-web/gmail.json #Optional
+#    ports:
+#      - 8083:8083 # Change the first number to change the port you want to access the Web UI, not the second
+#    restart: unless-stopped
+
+#  calibre:
+#    image: lscr.io/linuxserver/calibre:latest
+#    container_name: calibre
+##    security_opt:
+##      - seccomp:unconfined #optional
+#    environment:
+#      - PUID=${PUID}
+#      - PGID=${GUID}
+#      - TZ=${TZ}
+#      - CUSTOM_USER=meek2100
+#      - PASSWORD=Down4life!
+#      - CUSTOM_PORT=7070
+#      - CUSTOM_HTTPS_PORT=7171
+#      - TITLE=Calibre Library
+#      - CLI_ARGS= #optional
+#    volumes:
+#      - ${BASE_PATH}/calibre/config:/config
+#      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+#    ports:
+#      - "7070:7070"
+#      - "7171:7171"
+#      - "7071:7071"
+#    restart: unless-stopped
+#    networks:
+#      - discovery-network
+
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes:
+      - ${BASE_PATH}/pia/pia-shared:/pia-shared
+    environment:
+      - DOT=off
+#      - WIREGUARD_MTU=1280
+      - OPENVPN_TUN_MTU=1280
+      - OPENVPN_MSSFIX=1280
+      - VPN_SERVICE_PROVIDER=private internet access
+      - OPENVPN_USER=${PIA_USER}
+      - OPENVPN_PASSWORD=${PIA_PASS}
+      - SERVER_REGIONS=Netherlands
+      - SERVER_SELECTION_VPN_PORT_FORWARDING_ONLY=yes
+      - PORT_FORWARD_ONLY=true
+      - VPN_PORT_FORWARDING=on
+      - VPN_PORT_FORWARDING_STATUS_FILE=/pia-shared/port.dat
+    ports:
+#      - 8000:8000 # Built-in HTTP control server
+#      - 9898:9898/tcp # HTTP proxy
+#      - 8388:8388/tcp # Shadowsocks
+#      - 8388:8388/udp # Shadowsocks
+      - 8080:8080 # qBittorrent
+      - 8090:8090 # Sabnzbd
+      - 3000:3000 # Firefox HTTP
+      - 3001:3001 # Firefox HTTPS
+      - 8084:8084 # calibre-web-automated-book-downloader
+      - 5078:5078 # audiobookbay-downloader      
+      - 5079:5079 # audiobookbay-downloader (development)
+    restart: unless-stopped
+    extra_hosts:
+      - "library.gift=193.218.118.42"
+      - "download.library.gift=176.119.25.72"
+    networks:
+       - vpn-network
+
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:latest
+    container_name: sabnzbd
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    #port:
+      #- 8090:8090
+    volumes:
+      - ${BASE_PATH}/sabnzbd/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/qbittorrent/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy
+
+  qbittorrent-porthelper:
+    image: scotte/qbittorrent-porthelper:latest
+    container_name: qbittorrent-porthelper
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      - HOST=${QBIT_IP}
+      - USERNAME=${QBIT_USER}
+      - PASSWORD=${QBIT_PASS}
+    volumes:
+      - ${BASE_PATH}/pia/pia-shared:/piashared
+    restart: unless-stopped
+    networks:
+       - vpn-network
+    depends_on:
+      - qbittorrent
+
+  firefox:
+    image: lscr.io/linuxserver/firefox:latest
+    container_name: firefox
+    network_mode: "service:gluetun"
+    #security_opt:
+      #- seccomp:unconfined #optional
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      #- FIREFOX_CLI=https://www.linuxserver.io/ #optional
+    volumes:
+      - ${BASE_PATH}/firefox/config:/config
+      #- ${BASE_PATH}/firefox/downloads:/downloads
+      - ${NFS_MOUNT_POINT}/share/firefox-downloads:/downloads:rw
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    shm_size: "256mb"
+    #ports:
+      #- 3000:3000
+      #- 3001:3001
+    restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy
+
+
+  calibre-web-automated-book-downloader:
+    image: ghcr.io/calibrain/calibre-web-automated-book-downloader:latest
+    container_name: calibre-web-automated-book-downloader
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    #ports:
+      #- 8084:8084
+    restart: unless-stopped
+    volumes:
+      - ${BASE_PATH}/calibre-web-automated-book-downloader/config:/config
+      - ${NFS_MOUNT_POINT}/share/cwa-book-ingest:/cwa-book-ingest
+    depends_on:
+      gluetun:
+        condition: service_healthy
+
+
+  audiobookbay-downloader:
+    image: ghcr.io/meek2100/audiobookbay-automated:refactor_with_tests
+    container_name: audiobookbay-downloader-refactor_with_tests
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      - DOWNLOAD_CLIENT=qbittorrent
+      - DL_SCHEME=http
+      - DL_HOST=127.0.0.1
+      - DL_PORT=8080
+      - DL_USERNAME=meek2100
+      - DL_PASSWORD=Down4life!
+      - DL_CATEGORY=audiobooks
+      - SAVE_PATH_BASE=/mnt/media/content/audiobooks
+      - ABB_HOSTNAME=audiobookbay.lu #Default
+      - NAV_LINK_NAME=Open Audiobook Shelf #Optional
+      - NAV_LINK_URL=https://audiobookshelf.secure.theurer.dev/ #Optional
+      - SECRET_KEY=thisismykey
+      - LOG_LEVEL=DEBUG
+    # ports:
+     # - "5078:5078"
+    depends_on:
+      gluetun:
+        condition: service_healthy
+
+
+  audiobookbay-downloader-dev:
+    image: ghcr.io/jamesry96/audiobookbay-automated:latest
+    container_name: audiobookbay-downloader-dev
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      - DOWNLOAD_CLIENT=qbittorrent
+      - DL_SCHEME=http
+      - DL_HOST=127.0.0.1
+      - DL_PORT=8080
+      - DL_USERNAME=meek2100
+      - DL_PASSWORD=Down4life!
+      - DL_CATEGORY=audiobooks
+      - SAVE_PATH_BASE=/mnt/media/content/audiobooks
+      - ABB_HOSTNAME=audiobookbay.lu #Default
+      - NAV_LINK_NAME=Open Audiobook Shelf #Optional
+      - NAV_LINK_URL=https://audiobookshelf.secure.theurer.dev/ #Optional
+      - PAGE_LIMIT=2
+      - PORT=5079
+    # ports:
+     # - "5079:5079"
+    volumes:
+      - ${NFS_MOUNT_POINT}/docker-dev/audiobookbay-automated/app:/app
+    depends_on:
+      gluetun:
+        condition: service_healthy
+
+networks:
+  vpn-network:
+  discovery-network:
+  
+#volumes:
+#  ${NFS_MOUNT_POINT}:
+#    driver_opts:
+#      type: "nfs"
+#      o: "addr=10.25.25.248,nolock,soft,nfsvers=4"
+#      device: ":/media"

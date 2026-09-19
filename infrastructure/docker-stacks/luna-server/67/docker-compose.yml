@@ -1,0 +1,20 @@
+services:
+  site2pdf:
+    image: ghcr.io/meek2100/site2pdf:main
+    container_name: site2pdf
+    # Define environment variables directly
+    environment:
+      - MAIN_URL=https://theurer.dev
+      #- URL_PATTERN=https://snap-one.github.io/
+      # The OUTPUT_DIR within the container defaults to /app/out.
+      # This is usually not needed to be explicitly set here if your volume mount targets /app/out.
+      # - OUTPUT_DIR=/app/out
+    # Mount a volume to persist the output PDF files
+    # Replace './my-pdfs-output' with the actual path on your host machine (e.g., your NAS mount point)
+    volumes:
+      - ${BASE_PATH}/site2pdf/output:/app/out # This maps your host path to the container's default output directory
+    stdin_open: true # Keep stdin open even if not attached
+    tty: true # Allocate a pseudo-TTY
+    # The entrypoint is defined in the Dockerfile.
+    # You can override the command with specific URLs if preferred:
+    # command: "https://example.com" "https://example.com/sub"

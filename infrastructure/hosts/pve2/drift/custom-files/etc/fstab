@@ -1,0 +1,7 @@
+# <file system> <mount point> <type> <options> <dump> <pass>
+/dev/pve/root / ext4 errors=remount-ro 0 1
+UUID=7905-41ED /boot/efi vfat defaults 0 1
+UUID="f3204660-76d0-4ec4-a60a-467a6ba26a13" /mnt/pve/backup ext4 defaults 0 2
+UUID=5704d908-d8ac-4110-baae-3c03064a1f63 /mnt/pve/backup-sd ext4 defaults,nofail 0 2
+/dev/pve/swap none swap sw 0 0
+proc /proc proc defaults 0 0

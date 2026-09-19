@@ -1,0 +1,377 @@
+============================================================
+🔍 Starting Read-Only Audit for Node: root@192.168.1.245
+============================================================
+
+------------------------------------------------------------
+📌 System Model & Hostname
+------------------------------------------------------------
+ Static hostname: pve3
+       Icon name: computer-desktop
+         Chassis: desktop 🖥️
+      Machine ID: 6d0304e04d9548c6a88401d5f1a80455
+         Boot ID: 52760efda20648d7a5c8f180a3ebcdc7
+    Product UUID: d030d680-cd8a-11e4-be70-8cdcd43ea7d8
+Operating System: Debian GNU/Linux 13 (trixie)
+          Kernel: Linux 6.17.2-2-pve
+    Architecture: x86-64
+ Hardware Vendor: Hewlett-Packard
+  Hardware Model: HP EliteDesk 800 G1 DM
+ Hardware Serial: 2UA51329NF
+Firmware Version: L04 v02.33
+   Firmware Date: Wed 2019-04-17
+    Firmware Age: 7y 3month 3w
+HP EliteDesk 800 G1 DM
+
+------------------------------------------------------------
+📌 CPU Info
+------------------------------------------------------------
+Model name:                              Intel(R) Core(TM) i5-4590T CPU @ 2.00GHz
+Thread(s) per core:                      1
+Core(s) per socket:                      4
+Socket(s):                               1
+
+------------------------------------------------------------
+📌 RAM Allocation
+------------------------------------------------------------
+               total        used        free      shared  buff/cache   available
+Mem:            15Gi        12Gi       2.1Gi        56Mi       832Mi       2.5Gi
+Swap:          7.7Gi        12Ki       7.7Gi
+
+------------------------------------------------------------
+📌 Storage Disks & Controllers
+------------------------------------------------------------
+NAME                                 SIZE TYPE MODEL                  FSTYPE      MOUNTPOINT
+sda                                223.6G disk KINGSTON SV300S37A240G             
+├─sda1                              1007K part                                    
+├─sda2                                 1G part                        vfat        /boot/efi
+└─sda3                             222.6G part                        LVM2_member 
+  ├─pve-swap                         7.7G lvm                         swap        [SWAP]
+  ├─pve-root                        65.7G lvm                         ext4        /
+  ├─pve-data_tmeta                   1.3G lvm                                     
+  │ └─pve-data-tpool               130.5G lvm                                     
+  │   ├─pve-data                   130.5G lvm                                     
+  │   ├─pve-vm--100--disk--0          50G lvm                                     
+  │   └─pve-vm--101--disk--0           5G lvm                                     
+  └─pve-data_tdata                 130.5G lvm                                     
+    └─pve-data-tpool               130.5G lvm                                     
+      ├─pve-data                   130.5G lvm                                     
+      ├─pve-vm--100--disk--0          50G lvm                                     
+      └─pve-vm--101--disk--0           5G lvm                                     
+sdb                                931.5G disk WDC WD10SPCX-22HWST0   LVM2_member 
+├─shared--nas-shared--nas_tmeta      9.3G lvm                                     
+│ └─shared--nas-shared--nas-tpool  912.8G lvm                                     
+│   ├─shared--nas-shared--nas      912.8G lvm                                     
+│   └─shared--nas-vm--101--disk--0   500G lvm                                     
+└─shared--nas-shared--nas_tdata    912.8G lvm                                     
+  └─shared--nas-shared--nas-tpool  912.8G lvm                                     
+    ├─shared--nas-shared--nas      912.8G lvm                                     
+    └─shared--nas-vm--101--disk--0   500G lvm                                     
+sdc                                465.8G disk ST500LT012-9WS142                  
+└─sdc1                             465.8G part                        ext4        /mnt/pve/backup
+
+------------------------------------------------------------
+📌 PCI Graphics / GPUs
+------------------------------------------------------------
+00:00.0 Host bridge [0600]: Intel Corporation 4th Gen Core Processor DRAM Controller [8086:0c00] (rev 06)
+00:02.0 VGA compatible controller [0300]: Intel Corporation Xeon E3-1200 v3/4th Gen Core Processor Integrated Graphics Controller [8086:0412] (rev 06)
+00:03.0 Audio device [0403]: Intel Corporation Xeon E3-1200 v3/4th Gen Core Processor HD Audio Controller [8086:0c0c] (rev 06)
+00:14.0 USB controller [0c03]: Intel Corporation 8 Series/C220 Series Chipset Family USB xHCI [8086:8c31] (rev 04)
+00:16.0 Communication controller [0780]: Intel Corporation 8 Series/C220 Series Chipset Family MEI Controller #1 [8086:8c3a] (rev 04)
+00:16.3 Serial controller [0700]: Intel Corporation 8 Series/C220 Series Chipset Family KT Controller [8086:8c3d] (rev 04)
+00:19.0 Ethernet controller [0200]: Intel Corporation Ethernet Connection I217-LM [8086:153a] (rev 04)
+00:1a.0 USB controller [0c03]: Intel Corporation 8 Series/C220 Series Chipset Family USB EHCI #2 [8086:8c2d] (rev 04)
+00:1b.0 Audio device [0403]: Intel Corporation 8 Series/C220 Series Chipset High Definition Audio Controller [8086:8c20] (rev 04)
+00:1c.0 PCI bridge [0604]: Intel Corporation 8 Series/C220 Series Chipset Family PCI Express Root Port #1 [8086:8c10] (rev d4)
+00:1c.2 PCI bridge [0604]: Intel Corporation 8 Series/C220 Series Chipset Family PCI Express Root Port #3 [8086:8c14] (rev d4)
+00:1d.0 USB controller [0c03]: Intel Corporation 8 Series/C220 Series Chipset Family USB EHCI #1 [8086:8c26] (rev 04)
+00:1f.0 ISA bridge [0601]: Intel Corporation Q87 Express LPC Controller [8086:8c4e] (rev 04)
+00:1f.2 SATA controller [0106]: Intel Corporation 8 Series/C220 Series Chipset Family 6-port SATA Controller 1 [AHCI mode] [8086:8c02] (rev 04)
+00:1f.3 SMBus [0c05]: Intel Corporation 8 Series/C220 Series Chipset Family SMBus Controller [8086:8c22] (rev 04)
+06:00.0 Network controller [0280]: Intel Corporation Wireless 7260 [8086:08b1] (rev 6b)
+
+------------------------------------------------------------
+📌 GRUB Configuration (/etc/default/grub)
+------------------------------------------------------------
+# If you change this file or any /etc/default/grub.d/*.cfg file,
+# run 'update-grub' afterwards to update /boot/grub/grub.cfg.
+# For full documentation of the options in these files, see:
+#   info -f grub -n 'Simple configuration'
+
+GRUB_DEFAULT=0
+GRUB_TIMEOUT=5
+GRUB_DISTRIBUTOR=`( . /etc/os-release && echo ${NAME} )`
+GRUB_CMDLINE_LINUX_DEFAULT="quiet"
+GRUB_CMDLINE_LINUX=""
+
+# If your computer has multiple operating systems installed, then you
+# probably want to run os-prober. However, if your computer is a host
+# for guest OSes installed via LVM or raw disk devices, running
+# os-prober can cause damage to those guest OSes as it mounts
+# filesystems to look for things.
+#GRUB_DISABLE_OS_PROBER=false
+
+# Uncomment to enable BadRAM filtering, modify to suit your needs
+# This works with Linux (no patch required) and with any kernel that obtains
+# the memory map information from GRUB (GNU Mach, kernel of FreeBSD ...)
+#GRUB_BADRAM="0x01234567,0xfefefefe,0x89abcdef,0xefefefef"
+
+# Uncomment to disable graphical terminal
+#GRUB_TERMINAL=console
+
+# The resolution used on graphical terminal
+# note that you can use only modes which your graphic card supports via VBE/GOP/UGA
+# you can see them in real GRUB with the command `videoinfo'
+#GRUB_GFXMODE=640x480
+
+# Uncomment if you don't want GRUB to pass "root=UUID=xxx" parameter to Linux
+#GRUB_DISABLE_LINUX_UUID=true
+
+# Uncomment to disable generation of recovery mode menu entries
+#GRUB_DISABLE_RECOVERY="true"
+
+# Uncomment to get a beep at grub start
+#GRUB_INIT_TUNE="480 440 1"
+
+------------------------------------------------------------
+📌 Modprobe Blacklist & VFIO Configs
+------------------------------------------------------------
+# The microcode module attempts to apply a microcode update when
+# it autoloads.  This is not always safe, so we block it by default.
+blacklist microcode
+# This file contains a list of modules which are not supported by Proxmox VE 
+
+# nvidiafb see bugreport https://bugzilla.proxmox.com/show_bug.cgi?id=701
+blacklist nvidiafb
+options zfs zfs_arc_max=823132160
+
+------------------------------------------------------------
+📌 Kernel Version & Modules
+------------------------------------------------------------
+Linux pve3 6.17.2-2-pve #1 SMP PREEMPT_DYNAMIC PMX 6.17.2-2 (2025-11-26T12:33Z) x86_64 GNU/Linux
+kvm_intel             532480  7
+kvm                  1376256  4 kvm_intel
+irqbypass              16384  1 kvm
+
+------------------------------------------------------------
+📌 Systemd Logind Config
+------------------------------------------------------------
+#  This file is part of systemd.
+#
+#  systemd is free software; you can redistribute it and/or modify it under the
+#  terms of the GNU Lesser General Public License as published by the Free
+#  Software Foundation; either version 2.1 of the License, or (at your option)
+#  any later version.
+#
+# Entries in this file show the compile time defaults. Local configuration
+# should be created by either modifying this file (or a copy of it placed in
+# /etc/ if the original file is shipped in /usr/), or by creating "drop-ins" in
+# the /etc/systemd/logind.conf.d/ directory. The latter is generally
+# recommended. Defaults can be restored by simply deleting the main
+# configuration file and all drop-ins located in /etc/.
+#
+# Use 'systemd-analyze cat-config systemd/logind.conf' to display the full config.
+#
+# See logind.conf(5) for details.
+
+[Login]
+#NAutoVTs=6
+#ReserveVT=6
+#KillUserProcesses=no
+#KillOnlyUsers=
+#KillExcludeUsers=root
+#InhibitDelayMaxSec=5
+#UserStopDelaySec=10
+#SleepOperation=suspend-then-hibernate suspend
+#HandlePowerKey=poweroff
+#HandlePowerKeyLongPress=ignore
+#HandleRebootKey=reboot
+#HandleRebootKeyLongPress=poweroff
+#HandleSuspendKey=suspend
+#HandleSuspendKeyLongPress=hibernate
+#HandleHibernateKey=hibernate
+#HandleHibernateKeyLongPress=ignore
+#HandleLidSwitch=suspend
+#HandleLidSwitchExternalPower=suspend
+#HandleLidSwitchDocked=ignore
+#HandleSecureAttentionKey=secure-attention-key
+#PowerKeyIgnoreInhibited=no
+#SuspendKeyIgnoreInhibited=no
+#HibernateKeyIgnoreInhibited=no
+#LidSwitchIgnoreInhibited=yes
+#RebootKeyIgnoreInhibited=no
+#HoldoffTimeoutSec=30s
+#IdleAction=ignore
+#IdleActionSec=30min
+#RuntimeDirectorySize=10%
+#RuntimeDirectoryInodesMax=
+#RemoveIPC=yes
+#InhibitorsMax=8192
+#SessionsMax=8192
+#StopIdleSessionSec=infinity
+#DesignatedMaintenanceTime=
+
+------------------------------------------------------------
+📌 ACPI Event Configurations
+------------------------------------------------------------
+
+------------------------------------------------------------
+📌 IP Addresses & Interfaces
+------------------------------------------------------------
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+eno1             UP             
+enx00e04c60d782  UP             
+wlp6s0           DOWN           
+vmbr0            UP             192.168.1.245/24 fe80::8edc:d4ff:fe3e:a7d8/64 
+vmbr1            UP             10.25.25.245/24 fe80::2e0:4cff:fe60:d782/64 
+tap100i0         UNKNOWN        
+fwbr100i0        UP             
+fwpr100p0@fwln100i0 UP             
+fwln100i0@fwpr100p0 UP             
+tap101i0         UNKNOWN        
+fwbr101i0        UP             
+fwpr101p0@fwln101i0 UP             
+fwln101i0@fwpr101p0 UP             
+tap101i1         UNKNOWN        
+fwbr101i1        UP             
+fwpr101p1@fwln101i1 UP             
+fwln101i1@fwpr101p1 UP             
+
+------------------------------------------------------------
+📌 Routing Table
+------------------------------------------------------------
+default via 192.168.1.1 dev vmbr0 proto kernel onlink 
+10.25.25.0/24 dev vmbr1 proto kernel scope link src 10.25.25.245 
+192.168.1.0/24 dev vmbr0 proto kernel scope link src 192.168.1.245 
+
+------------------------------------------------------------
+📌 Active Network Ports
+------------------------------------------------------------
+Netid State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess                                                                                                                                           
+udp   UNCONN 0      0            0.0.0.0:111       0.0.0.0:*    users:(("rpcbind",pid=715,fd=5),("systemd",pid=1,fd=44))                                                                                         
+udp   UNCONN 0      0          127.0.0.1:323       0.0.0.0:*    users:(("chronyd",pid=918,fd=5))                                                                                                                 
+udp   UNCONN 0      0               [::]:111          [::]:*    users:(("rpcbind",pid=715,fd=7),("systemd",pid=1,fd=46))                                                                                         
+udp   UNCONN 0      0              [::1]:323          [::]:*    users:(("chronyd",pid=918,fd=6))                                                                                                                 
+tcp   LISTEN 0      128          0.0.0.0:22        0.0.0.0:*    users:(("sshd",pid=1025,fd=6))                                                                                                                   
+tcp   LISTEN 0      4096         0.0.0.0:111       0.0.0.0:*    users:(("rpcbind",pid=715,fd=4),("systemd",pid=1,fd=43))                                                                                         
+tcp   LISTEN 0      4096       127.0.0.1:85        0.0.0.0:*    users:(("pvedaemon worke",pid=1214,fd=6),("pvedaemon worke",pid=1213,fd=6),("pvedaemon worke",pid=1212,fd=6),("pvedaemon",pid=1211,fd=6))        
+tcp   LISTEN 0      100        127.0.0.1:25        0.0.0.0:*    users:(("master",pid=1156,fd=13))                                                                                                                
+tcp   LISTEN 0      4096               *:8006            *:*    users:(("pveproxy worker",pid=2044954,fd=6),("pveproxy worker",pid=2044953,fd=6),("pveproxy worker",pid=2044952,fd=6),("pveproxy",pid=1224,fd=6))
+tcp   LISTEN 0      128             [::]:22           [::]:*    users:(("sshd",pid=1025,fd=7))                                                                                                                   
+tcp   LISTEN 0      4096            [::]:111          [::]:*    users:(("rpcbind",pid=715,fd=6),("systemd",pid=1,fd=45))                                                                                         
+tcp   LISTEN 0      100            [::1]:25           [::]:*    users:(("master",pid=1156,fd=14))                                                                                                                
+tcp   LISTEN 0      4096               *:3128            *:*    users:(("spiceproxy work",pid=2044949,fd=6),("spiceproxy",pid=1234,fd=6))                                                                        
+
+------------------------------------------------------------
+📌 Proxmox Storage Config (/etc/pve/storage.cfg)
+------------------------------------------------------------
+dir: local
+	path /var/lib/vz
+	content backup,iso,vztmpl
+
+lvmthin: local-lvm
+	thinpool data
+	vgname pve
+	content rootdir,images
+
+lvmthin: shared-nas
+	thinpool shared-nas
+	vgname shared-nas
+	content rootdir,images
+	nodes pve3
+
+dir: backup
+	path /mnt/pve/backup
+	content images,iso,snippets,vztmpl,backup,rootdir
+	is_mountpoint 1
+	nodes pve3
+
+
+------------------------------------------------------------
+📌 Proxmox VM List
+------------------------------------------------------------
+      VMID NAME                 STATUS     MEM(MB)    BOOTDISK(GB) PID       
+       100 nexus-server2        running    4096              50.00 1269      
+       101 nas-server           running    10240              5.00 1478      
+
+------------------------------------------------------------
+📌 Proxmox LXC Container List
+------------------------------------------------------------
+
+------------------------------------------------------------
+📌 Proxmox VM Configurations
+------------------------------------------------------------
+agent: 1
+boot: order=scsi0;net0
+cores: 1
+cpu: x86-64-v2-AES
+memory: 4096
+meta: creation-qemu=9.2.0,ctime=1748913209
+name: nexus-server2
+net0: virtio=BC:24:11:BB:08:AD,bridge=vmbr0,firewall=1
+numa: 0
+onboot: 1
+ostype: l26
+scsi0: local-lvm:vm-100-disk-0,iothread=1,size=50G
+scsihw: virtio-scsi-single
+smbios1: uuid=c4228378-c9e7-4aa0-923d-cf28bc34e134
+sockets: 1
+startup: order=1,up=30,down=30
+vmgenid: 34d4a17a-a9b1-486f-986b-ed7a5423559e
+agent: 1
+boot: order=scsi0;net0
+cores: 2
+cpu: x86-64-v2-AES
+memory: 10240
+meta: creation-qemu=8.1.5,ctime=1715030060
+name: nas-server
+net0: virtio=BC:24:11:1A:56:46,bridge=vmbr0,firewall=1,tag=40
+net1: virtio=BC:24:11:BD:7A:26,bridge=vmbr1,firewall=1
+numa: 0
+onboot: 1
+ostype: l26
+scsi0: local-lvm:vm-101-disk-0,iothread=1,size=5G
+scsi1: shared-nas:vm-101-disk-0,iothread=1,size=500G
+scsihw: virtio-scsi-single
+smbios1: uuid=05341cd8-c6fc-47fd-bd8f-41ea6de87b32
+sockets: 1
+startup: order=2,up=30,down=30
+vmgenid: 488d4d24-ff40-4a7d-bb4a-810624b724c5
+
+------------------------------------------------------------
+📌 Proxmox LXC Configurations
+------------------------------------------------------------
+
+------------------------------------------------------------
+📌 Proxmox Cron & Backup Schedules
+------------------------------------------------------------
+# cluster wide vzdump cron schedule
+# Automatically generated file - do not edit
+
+PATH="/usr/sbin:/usr/bin:/sbin:/bin"
+
+# /etc/crontab: system-wide crontab
+# Unlike any other crontab you don't have to run the `crontab'
+# command to install the new version when you edit this file
+# and files in /etc/cron.d. These files also have username fields,
+# that none of the other crontabs do.
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Example of job definition:
+# .---------------- minute (0 - 59)
+# |  .------------- hour (0 - 23)
+# |  |  .---------- day of month (1 - 31)
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+# |  |  |  |  |
+# *  *  *  *  * user-name command to be executed
+17 *	* * *	root	cd / && run-parts --report /etc/cron.hourly
+25 6	* * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.daily; }
+47 6	* * 7	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.weekly; }
+52 6	1 * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.monthly; }
+#
+
+============================================================
+✅ Read-Only Audit Complete for 192.168.1.245
+============================================================

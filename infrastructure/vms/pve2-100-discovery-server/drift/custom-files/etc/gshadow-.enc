@@ -1,0 +1,20 @@
+{
+	"data": "ENC[AES256_GCM,data:CSuQ4fqLa3moNrH115l9O18oheHzqeqHtrJz2PRfIDOPb8iblTst+zG2m2VvFEq1VAkcUn9KJ8jGBQMCTqodbI3cQ4CCGd4iuhbnDKaNq2rtrPT0mYEzTeYZIA+pBn1uBJ4o1Jng4nCyx3p1/p2uKL+wqPrIlliIfbfN/K3bETnQuybkDPiYIshfNEaqYVb0BmjjJojfCioD4xTbOXc0uGiiwy3cvTq66872nEIKC+pqH7bvbj5scAQ2ZVruRNNYECMftbqGwPbCZkR+SquXH5QStknLLqf5OPWsAIcwvFX+rmLg2pO02ptIN2+hSU8nYvRP6TMTCP2zhUMgj1CDQTQyiIuULmA/Ur5QKLVLwDCKUpW3BLC6mqZiJsgZ+1pF6qWER7114ZEMqaEoxnvglL6AEQuHykP/RvqhjkskTxeF4FVldAmDIVLB10Dqz+fZAIdR8R3aWJQS2S62YsQAod0dOsPI/efvM48ue/BqFjtpqR8vRzwz16545wBhM/Bdpq4bMeiDEYvyUlu2AhHqNftn1IYrPG13WzvM3L5Yw0xcREq/yo9gXg87c5z9a0lx6c/sq0SkQbtAx1H/Y3S441/Jo6tk/W1Hw5FcAOKuQ2KQ1CkBCPfpLUlCN7EQgZnl0mz2Ny4zEQmfyMjmeuYyuh0sxCYCZlJI9x3fvTcqcBqRlXlPmVqkJbN6H+4OYtVPd883Lfw4gmPFXKrUPoWxfatHSywX7KK3gliKhVxIaq+XBXHc8pJR/PmqadS6HLEgJyqC5C1HeeNlOd4+l42WdAlix4NEyiV81I5ZUXqt/K+1PjmPWd/D/xWZ30HbW0+ghrg1btE2zEvS+PsJdj3FBLGptbU/B5kfxrSWQmbyxdh8cC4gJQyJQN38xISHK4CpsbP5ryM1HapKoIXyrHLZKvpXetHtJOKDoeY0,iv:BC6xhLJ8365MXjN+AGLBPx2MyOeQWbXWyUIqtVzGgx4=,tag:C+GRQRPp7Kc4X5LKnxasig==,type:str]",
+	"sops": {
+		"kms": null,
+		"gcp_kms": null,
+		"azure_kv": null,
+		"hc_vault": null,
+		"age": [
+			{
+				"recipient": "age1yqmzhsl58talkkax7g6xwj9xs68rqm2efxa5z0zg2u566m3dzeusj96x5f",
+				"enc": "-----BEGIN AGE ENCRYPTED FILE-----\nYWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBKbi9BM2hnWnc3MXNhWkhI\nZW1FNVhNOWR4WDRuOXBxc3J2VDlBQTFBUzNRCjVIazlSck9GS0hqNUgyTFpFZzZH\nZGlka0psVWZTTm4vMnlHL0VFdkxZQkkKLS0tIEN0Wk05UC82Sm4zQjJ5Nk1pdjlw\ncWNjL3RidTVwNmhuUldLN2haYjUvMlEK4FW8LQOPEp41jd8xzIOgXZV62UN00MS2\nhTfLjMYynIEqFwXm5jMbBlRx59zW20pQgr8LjhqmE1ROBrwq52PKaQ==\n-----END AGE ENCRYPTED FILE-----\n"
+			}
+		],
+		"lastmodified": "2026-09-19T18:06:59Z",
+		"mac": "ENC[AES256_GCM,data:yTFBTOkT2trZmUB+i1gHk7CJxpqY0Wyp2f9OjmKvMVm13jKDiwtLQqJMSjNRdwp/hZYG52fdzX2O9gyNxMigyrR5inNi5s1PJpxr438QZ87wv45SCFZajBUWJkJJQDzvqZUCtXxqm6Wk5iKZI/0MZY3wppzbTbVrWngvA9cXST8=,iv:Pz2Ld4q0nQhzykdEgQljUXYoUBskPWtGAf4UoEOMOiI=,tag:Ak7C3vmkR7UFEFntAI4aag==,type:str]",
+		"pgp": null,
+		"unencrypted_suffix": "_unencrypted",
+		"version": "3.8.1"
+	}
+}

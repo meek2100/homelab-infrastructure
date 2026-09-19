@@ -1,0 +1,176 @@
+============================================================
+🔍 Deep VM Audit: VM 107 (vxlan-server) on Host 192.168.1.250
+============================================================
+
+------------------------------------------------------------
+📌 VM OS Release & Hostname
+------------------------------------------------------------
+vxlan-server
+PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
+NAME="Debian GNU/Linux"
+VERSION_ID="12"
+VERSION="12 (bookworm)"
+VERSION_CODENAME=bookworm
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+
+
+------------------------------------------------------------
+📌 VM Network Interfaces & IPs
+------------------------------------------------------------
+lo               UNKNOWN        127.0.0.1/8 
+ens18            UP             
+br0              UP             192.168.1.150/24 
+vxlan150         UNKNOWN        
+
+
+------------------------------------------------------------
+📌 VM Routing Table
+------------------------------------------------------------
+default via 192.168.1.1 dev br0 onlink 
+192.168.1.0/24 dev br0 proto kernel scope link src 192.168.1.150 
+192.168.1.225 dev ens18 scope link 
+
+
+------------------------------------------------------------
+📌 VM Mounts & /etc/fstab
+------------------------------------------------------------
+# /etc/fstab: static file system information.
+#
+# Use 'blkid' to print the universally unique identifier for a
+# device; this may be used with UUID= as a more robust way to name devices
+# that works even if disks are added and removed. See fstab(5).
+#
+# systemd generates mount units based on this file, see systemd.mount(5).
+# Please run 'systemctl daemon-reload' after making changes here.
+#
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+# / was on /dev/sda1 during installation
+UUID=b48a6532-d5bc-457f-b68a-4997036830ff /               ext4    errors=remount-ro 0       1
+# swap was on /dev/sda5 during installation
+UUID=6c1aa8d8-3450-93cd-e9ddc32fc1a1 none            swap    sw              0       0
+/dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
+--- Mounts ---
+/dev/sda1 on / type ext4 (rw,relatime,errors=remount-ro)
+
+
+------------------------------------------------------------
+📌 VM Active Systemd Services
+------------------------------------------------------------
+  UNIT                      LOAD   ACTIVE SUB     DESCRIPTION
+  avahi-daemon.service      loaded active running Avahi mDNS/DNS-SD Stack
+  cron.service              loaded active running Regular background program processing daemon
+  dbus.service              loaded active running D-Bus System Message Bus
+  getty@tty1.service        loaded active running Getty on tty1
+  qemu-guest-agent.service  loaded active running QEMU Guest Agent
+  ssh.service               loaded active running OpenBSD Secure Shell server
+  systemd-journald.service  loaded active running Journal Service
+  systemd-logind.service    loaded active running User Login Management
+  systemd-timesyncd.service loaded active running Network Time Synchronization
+  systemd-udevd.service     loaded active running Rule-based Manager for Device Events and Files
+  vxlan-nm.service          loaded active running Manage VXLAN network interfaces in transparent mode on Debian
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+11 loaded units listed.
+
+
+------------------------------------------------------------
+📌 VM Crontabs & Schedules
+------------------------------------------------------------
+# /etc/crontab: system-wide crontab
+# Unlike any other crontab you don't have to run the `crontab'
+# command to install the new version when you edit this file
+# and files in /etc/cron.d. These files also have username fields,
+# that none of the other crontabs do.
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# Example of job definition:
+# .---------------- minute (0 - 59)
+# |  .------------- hour (0 - 23)
+# |  |  .---------- day of month (1 - 31)
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+# |  |  |  |  |
+# *  *  *  *  * user-name command to be executed
+17 *	* * *	root	cd / && run-parts --report /etc/cron.hourly
+25 6	* * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.daily; }
+47 6	* * 7	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.weekly; }
+52 6	1 * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.monthly; }
+#
+30 3 * * 0 root test -e /run/systemd/system || SERVICE_MODE=1 /usr/lib/x86_64-linux-gnu/e2fsprogs/e2scrub_all_cron
+10 3 * * * root test -e /run/systemd/system || SERVICE_MODE=1 /sbin/e2scrub_all -A -r
+
+
+------------------------------------------------------------
+📌 Docker Version & Info
+------------------------------------------------------------
+{
+  "exitcode": 1,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 All Containers (Active & Inactive)
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 Docker Networks
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 Docker Volumes & Mount Paths
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 Portainer Stacks & Compose Directories
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 AdGuard Home Config Header
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 Nginx Proxy Manager Proxy Hosts
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 Home Assistant / Homebridge Mounts
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+============================================================
+✅ Deep VM Audit Complete for VM 107 (vxlan-server)
+============================================================

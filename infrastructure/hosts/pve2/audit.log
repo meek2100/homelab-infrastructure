@@ -1,0 +1,340 @@
+============================================================
+🔍 Starting Read-Only Audit for Node: root@192.168.1.240
+============================================================
+
+------------------------------------------------------------
+📌 System Model & Hostname
+------------------------------------------------------------
+ Static hostname: pve2
+       Icon name: computer-desktop
+         Chassis: desktop 🖥️
+      Machine ID: 722d87ed557a40e3b9c8f0d3b0d7fbf2
+         Boot ID: 80d7a459c21447d199731ee79532f120
+    Product UUID: 03000200-0400-0500-0006-000700080009
+Operating System: Debian GNU/Linux 13 (trixie)
+          Kernel: Linux 6.17.2-2-pve
+    Architecture: x86-64
+ Hardware Vendor: AWOW Technology Co., Ltd.
+  Hardware Model: AK34Pro
+ Hardware Serial: Default string
+Firmware Version: 1.10
+   Firmware Date: Wed 2021-04-21
+    Firmware Age: 5y 3month 2w 3d
+AK34Pro
+
+------------------------------------------------------------
+📌 CPU Info
+------------------------------------------------------------
+Model name:                              Intel(R) Celeron(R) CPU J3455 @ 1.50GHz
+Thread(s) per core:                      1
+Core(s) per socket:                      4
+Socket(s):                               1
+
+------------------------------------------------------------
+📌 RAM Allocation
+------------------------------------------------------------
+               total        used        free      shared  buff/cache   available
+Mem:           5.6Gi       5.0Gi       374Mi        13Mi       576Mi       687Mi
+Swap:          5.6Gi       379Mi       5.3Gi
+
+------------------------------------------------------------
+📌 Storage Disks & Controllers
+------------------------------------------------------------
+NAME                           SIZE TYPE MODEL                FSTYPE      MOUNTPOINT
+sda                          119.2G disk FORESEE 128GB SSD                
+├─sda1                        1007K part                                  
+├─sda2                           1G part                      vfat        /boot/efi
+└─sda3                       118.2G part                      LVM2_member 
+  ├─pve-swap                   5.6G lvm                       swap        [SWAP]
+  ├─pve-root                  40.2G lvm                       ext4        /
+  ├─pve-data_tmeta               1G lvm                                   
+  │ └─pve-data-tpool          55.7G lvm                                   
+  │   ├─pve-data              55.7G lvm                                   
+  │   └─pve-vm--100--disk--0    50G lvm                                   
+  └─pve-data_tdata            55.7G lvm                                   
+    └─pve-data-tpool          55.7G lvm                                   
+      ├─pve-data              55.7G lvm                                   
+      └─pve-vm--100--disk--0    50G lvm                                   
+sdb                          931.5G disk WDC WD10SPZX-60Z10T0             
+└─sdb1                       931.5G part                      ext4        /mnt/pve/backup
+mmcblk1                      119.1G disk                                  
+└─mmcblk1p1                  119.1G part                      ext4        /mnt/pve/backup-sd
+
+------------------------------------------------------------
+📌 PCI Graphics / GPUs
+------------------------------------------------------------
+00:00.0 Host bridge [0600]: Intel Corporation Celeron N3350/Pentium N4200/Atom E3900 Series Host Bridge [8086:5af0] (rev 0b)
+00:00.1 Signal processing controller [1180]: Intel Corporation Device [8086:5a8c] (rev 0b)
+00:02.0 VGA compatible controller [0300]: Intel Corporation HD Graphics 500 [8086:5a85] (rev 0b)
+00:0e.0 Audio device [0403]: Intel Corporation Celeron N3350/Pentium N4200/Atom E3900 Series Audio Cluster [8086:5a98] (rev 0b)
+00:0f.0 Communication controller [0780]: Intel Corporation Celeron N3350/Pentium N4200/Atom E3900 Series Trusted Execution Engine [8086:5a9a] (rev 0b)
+00:12.0 SATA controller [0106]: Intel Corporation Celeron N3350/Pentium N4200/Atom E3900 Series SATA AHCI Controller [8086:5ae3] (rev 0b)
+00:13.0 PCI bridge [0604]: Intel Corporation Celeron N3350/Pentium N4200/Atom E3900 Series PCI Express Port A #1 [8086:5ad8] (rev fb)
+00:13.1 PCI bridge [0604]: Intel Corporation Celeron N3350/Pentium N4200/Atom E3900 Series PCI Express Port A #2 [8086:5ad9] (rev fb)
+00:13.2 PCI bridge [0604]: Intel Corporation Celeron N3350/Pentium N4200/Atom E3900 Series PCI Express Port A #3 [8086:5ada] (rev fb)
+00:15.0 USB controller [0c03]: Intel Corporation Celeron N3350/Pentium N4200/Atom E3900 Series USB xHCI [8086:5aa8] (rev 0b)
+00:1c.0 SD Host controller [0805]: Intel Corporation Celeron N3350/Pentium N4200/Atom E3900 Series eMMC Controller [8086:5acc] (rev 0b)
+00:1f.0 ISA bridge [0601]: Intel Corporation Celeron N3350/Pentium N4200/Atom E3900 Series Low Pin Count Interface [8086:5ae8] (rev 0b)
+00:1f.1 SMBus [0c05]: Intel Corporation Celeron N3350/Pentium N4200/Atom E3900 Series SMBus Controller [8086:5ad4] (rev 0b)
+03:00.0 Network controller [0280]: Intel Corporation Wireless 7265 [8086:095a] (rev 59)
+
+------------------------------------------------------------
+📌 GRUB Configuration (/etc/default/grub)
+------------------------------------------------------------
+# If you change this file or any /etc/default/grub.d/*.cfg file,
+# run 'update-grub' afterwards to update /boot/grub/grub.cfg.
+# For full documentation of the options in these files, see:
+#   info -f grub -n 'Simple configuration'
+
+GRUB_DEFAULT=0
+GRUB_TIMEOUT=5
+GRUB_DISTRIBUTOR=`( . /etc/os-release && echo ${NAME} )`
+GRUB_CMDLINE_LINUX_DEFAULT="quiet"
+GRUB_CMDLINE_LINUX=""
+
+# If your computer has multiple operating systems installed, then you
+# probably want to run os-prober. However, if your computer is a host
+# for guest OSes installed via LVM or raw disk devices, running
+# os-prober can cause damage to those guest OSes as it mounts
+# filesystems to look for things.
+#GRUB_DISABLE_OS_PROBER=false
+
+# Uncomment to enable BadRAM filtering, modify to suit your needs
+# This works with Linux (no patch required) and with any kernel that obtains
+# the memory map information from GRUB (GNU Mach, kernel of FreeBSD ...)
+#GRUB_BADRAM="0x01234567,0xfefefefe,0x89abcdef,0xefefefef"
+
+# Uncomment to disable graphical terminal
+#GRUB_TERMINAL=console
+
+# The resolution used on graphical terminal
+# note that you can use only modes which your graphic card supports via VBE/GOP/UGA
+# you can see them in real GRUB with the command `videoinfo'
+#GRUB_GFXMODE=640x480
+
+# Uncomment if you don't want GRUB to pass "root=UUID=xxx" parameter to Linux
+#GRUB_DISABLE_LINUX_UUID=true
+
+# Uncomment to disable generation of recovery mode menu entries
+#GRUB_DISABLE_RECOVERY="true"
+
+# Uncomment to get a beep at grub start
+#GRUB_INIT_TUNE="480 440 1"
+
+------------------------------------------------------------
+📌 Modprobe Blacklist & VFIO Configs
+------------------------------------------------------------
+# The microcode module attempts to apply a microcode update when
+# it autoloads.  This is not always safe, so we block it by default.
+blacklist microcode
+# This file contains a list of modules which are not supported by Proxmox VE 
+
+# nvidiafb see bugreport https://bugzilla.proxmox.com/show_bug.cgi?id=701
+blacklist nvidiafb
+
+------------------------------------------------------------
+📌 Kernel Version & Modules
+------------------------------------------------------------
+Linux pve2 6.17.2-2-pve #1 SMP PREEMPT_DYNAMIC PMX 6.17.2-2 (2025-11-26T12:33Z) x86_64 GNU/Linux
+kvm_intel             532480  4
+kvm                  1376256  3 kvm_intel
+irqbypass              16384  1 kvm
+
+------------------------------------------------------------
+📌 Systemd Logind Config
+------------------------------------------------------------
+#  This file is part of systemd.
+#
+#  systemd is free software; you can redistribute it and/or modify it under the
+#  terms of the GNU Lesser General Public License as published by the Free
+#  Software Foundation; either version 2.1 of the License, or (at your option)
+#  any later version.
+#
+# Entries in this file show the compile time defaults. Local configuration
+# should be created by either modifying this file (or a copy of it placed in
+# /etc/ if the original file is shipped in /usr/), or by creating "drop-ins" in
+# the /etc/systemd/logind.conf.d/ directory. The latter is generally
+# recommended. Defaults can be restored by simply deleting the main
+# configuration file and all drop-ins located in /etc/.
+#
+# Use 'systemd-analyze cat-config systemd/logind.conf' to display the full config.
+#
+# See logind.conf(5) for details.
+
+[Login]
+#NAutoVTs=6
+#ReserveVT=6
+#KillUserProcesses=no
+#KillOnlyUsers=
+#KillExcludeUsers=root
+#InhibitDelayMaxSec=5
+#UserStopDelaySec=10
+#SleepOperation=suspend-then-hibernate suspend
+#HandlePowerKey=poweroff
+#HandlePowerKeyLongPress=ignore
+#HandleRebootKey=reboot
+#HandleRebootKeyLongPress=poweroff
+#HandleSuspendKey=suspend
+#HandleSuspendKeyLongPress=hibernate
+#HandleHibernateKey=hibernate
+#HandleHibernateKeyLongPress=ignore
+#HandleLidSwitch=suspend
+#HandleLidSwitchExternalPower=suspend
+#HandleLidSwitchDocked=ignore
+#HandleSecureAttentionKey=secure-attention-key
+#PowerKeyIgnoreInhibited=no
+#SuspendKeyIgnoreInhibited=no
+#HibernateKeyIgnoreInhibited=no
+#LidSwitchIgnoreInhibited=yes
+#RebootKeyIgnoreInhibited=no
+#HoldoffTimeoutSec=30s
+#IdleAction=ignore
+#IdleActionSec=30min
+#RuntimeDirectorySize=10%
+#RuntimeDirectoryInodesMax=
+#RemoveIPC=yes
+#InhibitorsMax=8192
+#SessionsMax=8192
+#StopIdleSessionSec=infinity
+#DesignatedMaintenanceTime=
+
+------------------------------------------------------------
+📌 ACPI Event Configurations
+------------------------------------------------------------
+
+------------------------------------------------------------
+📌 IP Addresses & Interfaces
+------------------------------------------------------------
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+enp1s0           UP             
+enp2s0           UP             
+wlo1             DOWN           
+vmbr1            UP             10.25.25.240/24 fe80::3af7:cdff:fec1:67f1/64 
+vmbr0            UP             192.168.1.240/24 fe80::3af7:cdff:fec1:67e0/64 
+vmbr0.40@vmbr0   UP             192.168.40.240/24 fe80::3af7:cdff:fec1:67e0/64 
+vmbr0.50@vmbr0   UP             192.168.50.240/24 fe80::3af7:cdff:fec1:67e0/64 
+tap100i0         UNKNOWN        
+fwbr100i0        UP             
+fwpr100p0@fwln100i0 UP             
+fwln100i0@fwpr100p0 UP             
+
+------------------------------------------------------------
+📌 Routing Table
+------------------------------------------------------------
+default via 192.168.1.1 dev vmbr0 proto kernel onlink 
+10.25.25.0/24 dev vmbr1 proto kernel scope link src 10.25.25.240 
+192.168.1.0/24 dev vmbr0 proto kernel scope link src 192.168.1.240 
+192.168.40.0/24 dev vmbr0.40 proto kernel scope link src 192.168.40.240 
+192.168.50.0/24 dev vmbr0.50 proto kernel scope link src 192.168.50.240 
+
+------------------------------------------------------------
+📌 Active Network Ports
+------------------------------------------------------------
+Netid State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess                                                                                                                                           
+udp   UNCONN 0      0            0.0.0.0:111       0.0.0.0:*    users:(("rpcbind",pid=690,fd=5),("systemd",pid=1,fd=44))                                                                                         
+udp   UNCONN 0      0          127.0.0.1:323       0.0.0.0:*    users:(("chronyd",pid=859,fd=5))                                                                                                                 
+udp   UNCONN 0      0               [::]:111          [::]:*    users:(("rpcbind",pid=690,fd=7),("systemd",pid=1,fd=46))                                                                                         
+udp   UNCONN 0      0              [::1]:323          [::]:*    users:(("chronyd",pid=859,fd=6))                                                                                                                 
+tcp   LISTEN 0      128          0.0.0.0:22        0.0.0.0:*    users:(("sshd",pid=1005,fd=6))                                                                                                                   
+tcp   LISTEN 0      4096         0.0.0.0:111       0.0.0.0:*    users:(("rpcbind",pid=690,fd=4),("systemd",pid=1,fd=43))                                                                                         
+tcp   LISTEN 0      4096       127.0.0.1:85        0.0.0.0:*    users:(("pvedaemon worke",pid=1197,fd=6),("pvedaemon worke",pid=1196,fd=6),("pvedaemon worke",pid=1195,fd=6),("pvedaemon",pid=1194,fd=6))        
+tcp   LISTEN 0      100        127.0.0.1:25        0.0.0.0:*    users:(("master",pid=1138,fd=13))                                                                                                                
+tcp   LISTEN 0      128             [::]:22           [::]:*    users:(("sshd",pid=1005,fd=7))                                                                                                                   
+tcp   LISTEN 0      4096            [::]:111          [::]:*    users:(("rpcbind",pid=690,fd=6),("systemd",pid=1,fd=45))                                                                                         
+tcp   LISTEN 0      4096               *:8006            *:*    users:(("pveproxy worker",pid=2198298,fd=6),("pveproxy worker",pid=2198297,fd=6),("pveproxy worker",pid=2198296,fd=6),("pveproxy",pid=1209,fd=6))
+tcp   LISTEN 0      100            [::1]:25           [::]:*    users:(("master",pid=1138,fd=14))                                                                                                                
+tcp   LISTEN 0      4096               *:3128            *:*    users:(("spiceproxy work",pid=2198293,fd=6),("spiceproxy",pid=1219,fd=6))                                                                        
+
+------------------------------------------------------------
+📌 Proxmox Storage Config (/etc/pve/storage.cfg)
+------------------------------------------------------------
+dir: local
+	path /var/lib/vz
+	content backup,iso,vztmpl
+
+lvmthin: local-lvm
+	thinpool data
+	vgname pve
+	content rootdir,images
+
+dir: backup-sd
+	path /mnt/pve/backup-sd
+	content backup,snippets,iso,vztmpl,import
+	prune-backups keep-all=1
+	shared 0
+
+dir: backup
+	path /mnt/pve/backup
+	content vztmpl,snippets,iso,import,backup
+	shared 0
+
+
+------------------------------------------------------------
+📌 Proxmox VM List
+------------------------------------------------------------
+      VMID NAME                 STATUS     MEM(MB)    BOOTDISK(GB) PID       
+       100 discovery-server     running    4096              50.00 889070    
+
+------------------------------------------------------------
+📌 Proxmox LXC Container List
+------------------------------------------------------------
+
+------------------------------------------------------------
+📌 Proxmox VM Configurations
+------------------------------------------------------------
+agent: 1
+boot: order=scsi0;net0
+cores: 2
+cpu: x86-64-v2-AES
+memory: 4096
+meta: creation-qemu=8.1.5,ctime=1735005992
+name: discovery-server
+net0: virtio=BC:24:11:EF:2D:13,bridge=vmbr1,firewall=1
+numa: 0
+onboot: 1
+ostype: l26
+scsi0: local-lvm:vm-100-disk-0,iothread=1,size=50G
+scsihw: virtio-scsi-single
+smbios1: uuid=b15cf8cb-31f0-4bd4-abd3-d58d00e1005e
+sockets: 1
+startup: order=1,up=180,down=30
+vmgenid: 4e6f7141-d0c3-4f78-8ba0-eddfd43b3d78
+
+------------------------------------------------------------
+📌 Proxmox LXC Configurations
+------------------------------------------------------------
+
+------------------------------------------------------------
+📌 Proxmox Cron & Backup Schedules
+------------------------------------------------------------
+# cluster wide vzdump cron schedule
+# Automatically generated file - do not edit
+
+PATH="/usr/sbin:/usr/bin:/sbin:/bin"
+
+# /etc/crontab: system-wide crontab
+# Unlike any other crontab you don't have to run the `crontab'
+# command to install the new version when you edit this file
+# and files in /etc/cron.d. These files also have username fields,
+# that none of the other crontabs do.
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Example of job definition:
+# .---------------- minute (0 - 59)
+# |  .------------- hour (0 - 23)
+# |  |  .---------- day of month (1 - 31)
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+# |  |  |  |  |
+# *  *  *  *  * user-name command to be executed
+17 *	* * *	root	cd / && run-parts --report /etc/cron.hourly
+25 6	* * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.daily; }
+47 6	* * 7	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.weekly; }
+52 6	1 * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.monthly; }
+#
+
+============================================================
+✅ Read-Only Audit Complete for 192.168.1.240
+============================================================

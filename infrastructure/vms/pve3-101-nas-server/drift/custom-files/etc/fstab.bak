@@ -1,0 +1,20 @@
+# /etc/fstab: static file system information.
+#
+# Use 'blkid' to print the universally unique identifier for a
+# device; this may be used with UUID= as a more robust way to name devices
+# that works even if disks are added and removed. See fstab(5).
+#
+# systemd generates mount units based on this file, see systemd.mount(5).
+# Please run 'systemctl daemon-reload' after making changes here.
+#
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+# / was on /dev/sda1 during installation
+UUID=7bc9476d-c6e8-4da5-9ed9-0b5032732867 /               ext4    errors=remount-ro 0       1
+# swap was on /dev/sda5 during installation
+UUID=db751654-cf1d-4c47-9ca5-24061cf7402e none            swap    sw              0       0
+/dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
+# >>> [openmediavault]
+/dev/disk/by-uuid/48dc7932-00a4-4aa4-81e9-ea7dd62d1626		/srv/dev-disk-by-uuid-48dc7932-00a4-4aa4-81e9-ea7dd62d1626	ext4	defaults,nofail,user_xattr,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0,acl	0 2
+/srv/dev-disk-by-uuid-48dc7932-00a4-4aa4-81e9-ea7dd62d1626/plex/		/export/plex	none	bind,nofail	0 0
+/srv/dev-disk-by-uuid-48dc7932-00a4-4aa4-81e9-ea7dd62d1626/media/		/export/media	none	bind,nofail	0 0
+# <<< [openmediavault]

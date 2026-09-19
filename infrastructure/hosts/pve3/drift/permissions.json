@@ -1,0 +1,852 @@
+{
+  "/etc/network/.pve-interfaces.lock": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_rsa_key": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/networks": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00013-880332517.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pam.d/common-account": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.forward": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_ed25519_key": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/tunables/xdg-user-dirs.d/site.local": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nsswitch.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/sources.list.bak": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00008-1165305826.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00006-2005852510.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00025-576822133.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/usr.sbin.dhclient": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/modprobe.d/zfs.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/shared-nas_00000-800913120.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/sources.list.d/debian.sources": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/inputrc": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00017-1821175042.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/chrony/chrony.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ld.so.cache": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve3/qemu-server/100.conf": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/machine-id": {
+    "mode": "444",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/user.cfg": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/subgid": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/motd": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/sources.list.d/debian-unstable.list.bak": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/dynamicmaps.cf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/.updated": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_rsa_key.pub": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/usr.bin.swtpm": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve3/pve-ssl.key": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/pam.d/common-session": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/.clusterlog": {
+    "mode": "440",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/passwd-": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.ssh/config": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/console-setup/cached_setup_keyboard.sh": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/backup/shared-nas": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve3/ssh_known_hosts": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/subuid-": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/.members": {
+    "mode": "440",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/pve/pve-root-ca.pem": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/apt/sources.list.d/ceph-no-subscription.list.bak": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/python3/debian_config": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/hosts": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00020-1768523876.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00024-410141813.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ca-certificates.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/lvm.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/priv/pve-root-ca.key": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/gshadow": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "42"
+  },
+  "/etc/apparmor.d/tunables/home.d/ubuntu": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/aliases": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/security/opasswd": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/hostid": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/vzdump.cron": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/ssh/sshd_config": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/nvidia_modprobe": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/sources.list.d/pve-no-subscription.sources": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.bashrc": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/master.cf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/initramfs-tools/modules": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/priv/authorized_keys": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/resolv.conf.lock": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nfs.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00026-792894738.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/environment": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00012-369728228.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/console-setup/cached_Lat15-Fixed16.psf.gz": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/hostname": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00018-465685063.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/shells": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/group": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pam.d/common-password": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/perl/XML/SAX/ParserDetails.ini.ucf-dist": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00014-1992093206.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pam.d/common-session-noninteractive": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/lvm.conf.bak": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/storage.cfg": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/console-setup/cached_UTF-8_del.kmap.gz": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/.debug": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/pve/nodes/pve3/pve-ssl.pem": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/apparmor.d/local/pve-container-mounthotplug": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/locale.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/sources.list.d/pve-no-subscription.list.bak": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/default/console-setup": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/usr.bin.tcpdump": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/default/nfs-common.ucf-dist": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/profile": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/resolv.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/replication.cfg": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/lvm/archive/pve_00009-1841337498.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/idmapd.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/default/grub": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/main.cf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/group-": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00016-918505376.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/shared-nas_00004-442813572.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.ssh/id_rsa": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00011-1422567577.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/shadow": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "42"
+  },
+  "/etc/apt/sources.list.d/pve-enterprise.list.bak": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/priv/pve-root-ca.srl": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/root/.bash_history": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00015-540499493.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.ssh/id_rsa.pub": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00023-1161638967.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/fstab": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/chrony/chrony.keys": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "102"
+  },
+  "/etc/apt/apt.conf.d/76pveconf": {
+    "mode": "444",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00004-2107273976.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/shadow-": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "42"
+  },
+  "/etc/pve/nodes/pve3/qemu-server/101.conf": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/systemd/system/mnt-pve-backup.mount": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/sources.list.d/ceph.list.bak": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/locale.gen": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/shared-nas_00002-89364397.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/timezone": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/authkey.pub.old": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/network/interfaces.d/sdn": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/hosts.deny": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/priv/authkey.key": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/default/keyboard": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/iscsi/initiatorname.iscsi": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/subgid-": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssl/certs/ca-certificates.crt": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/pve-www.key": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/ssh/ssh_host_ed25519_key.pub": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00021-1651877171.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/aliases.db": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00005-1456434250.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/shared-nas_00003-293306979.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/sources.list.d/pve-enterprise.sources": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/backup/pve": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/hosts.allow": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/shared-nas_00001-1157278713.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/authkey.pub": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/pve/datacenter.cfg": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/lvm/archive/pve_00010-2113822987.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/issue": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.profile": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/apt.conf.d/76pveproxy": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve3/lrm_status": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/samba/smb.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/console-setup/cached_setup_font.sh": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/subuid": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/console-setup/cached_setup_terminal.sh": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00022-581348641.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/perl/XML/SAX/ParserDetails.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.rnd": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/network/interfaces": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/gshadow-": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "42"
+  },
+  "/etc/apparmor.d/local/lxc-containers": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/listchanges.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/modules": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/usr.bin.man": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/.version": {
+    "mode": "440",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/.pwd.lock": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00007-1498305960.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/.rrd": {
+    "mode": "440",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/pve/.vmlist": {
+    "mode": "440",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/ssh/ssh_host_ecdsa_key": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/shared-nas_00005-1300138627.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/usr.sbin.chronyd": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pam.d/common-auth": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/lsb_release": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/passwd": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_ecdsa_key.pub": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/usr.bin.lxc-start": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00019-505476550.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  }
+}

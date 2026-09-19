@@ -1,0 +1,18 @@
+services:
+  ngircd:
+    image: lscr.io/linuxserver/ngircd:latest
+    container_name: ngircd
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/ngircd/config:/config
+    ports:
+      - 6667:6667
+    restart: unless-stopped
+    networks:
+      - irc-network
+
+networks:
+  irc-network:

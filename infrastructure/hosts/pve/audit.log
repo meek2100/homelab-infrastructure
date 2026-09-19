@@ -1,0 +1,674 @@
+============================================================
+🔍 Starting Read-Only Audit for Node: root@192.168.1.250
+============================================================
+
+------------------------------------------------------------
+📌 System Model & Hostname
+------------------------------------------------------------
+ Static hostname: pve
+       Icon name: computer-laptop
+         Chassis: laptop 💻
+      Machine ID: f2bda09947e1452aa44e1415c611d1d6
+         Boot ID: 0c80b2df635449bb8f17f70726657719
+    Product UUID: 4c4c4544-0057-3010-804e-b3c04f535132
+Operating System: Debian GNU/Linux 13 (trixie)
+          Kernel: Linux 6.17.2-2-pve
+    Architecture: x86-64
+ Hardware Vendor: Dell Inc.
+  Hardware Model: Precision 5520
+ Hardware Serial: 3W0NSQ2
+Firmware Version: 1.40.0
+   Firmware Date: Tue 2024-09-03
+    Firmware Age: 1y 11month 3d
+Precision 5520
+
+------------------------------------------------------------
+📌 CPU Info
+------------------------------------------------------------
+Model name:                              Intel(R) Xeon(R) CPU E3-1505M v6 @ 3.00GHz
+Thread(s) per core:                      2
+Core(s) per socket:                      4
+Socket(s):                               1
+
+------------------------------------------------------------
+📌 RAM Allocation
+------------------------------------------------------------
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi        24Gi       1.3Gi        50Mi       6.4Gi       7.1Gi
+Swap:          8.0Gi          0B       8.0Gi
+
+------------------------------------------------------------
+📌 Storage Disks & Controllers
+------------------------------------------------------------
+NAME                           SIZE TYPE MODEL                            FSTYPE      MOUNTPOINT
+sda                          931.5G disk WDC WD10SPZX-21Z10T0                         
+└─sda1                       931.5G part                                  ext4        /mnt/pve/backup
+sdb                          931.5G disk WDC WD10SPCX-22HWST0                         
+└─sdb1                       931.5G part                                  ext4        /mnt/pve/backup2
+mmcblk0                       59.5G disk                                              
+└─mmcblk0p1                   59.5G part                                  ext4        /mnt/pve/backup-sd
+nvme0n1                      953.9G disk KXG50ZNV1T02 NVMe TOSHIBA 1024GB             
+├─nvme0n1p1                   1007K part                                              
+├─nvme0n1p2                      1G part                                  vfat        /boot/efi
+└─nvme0n1p3                  952.9G part                                  LVM2_member 
+  ├─pve-swap                     8G lvm                                   swap        [SWAP]
+  ├─pve-root                    96G lvm                                   ext4        /
+  ├─pve-data_tmeta             8.3G lvm                                               
+  │ └─pve-data-tpool         816.2G lvm                                               
+  │   ├─pve-data             816.2G lvm                                               
+  │   ├─pve-vm--100--disk--0    50G lvm                                               
+  │   ├─pve-vm--107--disk--0     8G lvm                                               
+  │   ├─pve-vm--102--disk--0    50G lvm                                               
+  │   ├─pve-vm--103--disk--0    50G lvm                                               
+  │   ├─pve-vm--109--disk--0    50G lvm                                               
+  │   ├─pve-vm--104--disk--0    40G lvm                                               
+  │   ├─pve-vm--105--disk--0    50G lvm                                               
+  │   ├─pve-vm--106--disk--0    50G lvm                                               
+  │   ├─pve-vm--108--disk--0    50G lvm                                               
+  │   ├─pve-vm--110--disk--0    50G lvm                                               
+  │   ├─pve-vm--111--disk--0    50G lvm                                               
+  │   ├─pve-vm--112--disk--0    50G lvm                                               
+  │   ├─pve-vm--113--disk--0    50G lvm                                               
+  │   ├─pve-vm--114--disk--0    50G lvm                                               
+  │   ├─pve-vm--200--disk--1    80G lvm                                               
+  │   ├─pve-vm--200--disk--0     4M lvm                                               
+  │   └─pve-vm--200--disk--2     4M lvm                                               
+  └─pve-data_tdata           816.2G lvm                                               
+    └─pve-data-tpool         816.2G lvm                                               
+      ├─pve-data             816.2G lvm                                               
+      ├─pve-vm--100--disk--0    50G lvm                                               
+      ├─pve-vm--107--disk--0     8G lvm                                               
+      ├─pve-vm--102--disk--0    50G lvm                                               
+      ├─pve-vm--103--disk--0    50G lvm                                               
+      ├─pve-vm--109--disk--0    50G lvm                                               
+      ├─pve-vm--104--disk--0    40G lvm                                               
+      ├─pve-vm--105--disk--0    50G lvm                                               
+      ├─pve-vm--106--disk--0    50G lvm                                               
+      ├─pve-vm--108--disk--0    50G lvm                                               
+      ├─pve-vm--110--disk--0    50G lvm                                               
+      ├─pve-vm--111--disk--0    50G lvm                                               
+      ├─pve-vm--112--disk--0    50G lvm                                               
+      ├─pve-vm--113--disk--0    50G lvm                                               
+      ├─pve-vm--114--disk--0    50G lvm                                               
+      ├─pve-vm--200--disk--1    80G lvm                                               
+      ├─pve-vm--200--disk--0     4M lvm                                               
+      └─pve-vm--200--disk--2     4M lvm                                               
+
+------------------------------------------------------------
+📌 PCI Graphics / GPUs
+------------------------------------------------------------
+00:00.0 Host bridge [0600]: Intel Corporation Xeon E3-1200 v6/7th Gen Core Processor Host Bridge/DRAM Registers [8086:5918] (rev 05)
+00:01.0 PCI bridge [0604]: Intel Corporation 6th-10th Gen Core Processor PCIe Controller (x16) [8086:1901] (rev 05)
+00:02.0 VGA compatible controller [0300]: Intel Corporation HD Graphics P630 [8086:591d] (rev 04)
+00:04.0 Signal processing controller [1180]: Intel Corporation Xeon E3-1200 v5/E3-1500 v5/6th Gen Core Processor Thermal Subsystem [8086:1903] (rev 05)
+00:14.0 USB controller [0c03]: Intel Corporation 100 Series/C230 Series Chipset Family USB 3.0 xHCI Controller [8086:a12f] (rev 31)
+00:14.2 Signal processing controller [1180]: Intel Corporation 100 Series/C230 Series Chipset Family Thermal Subsystem [8086:a131] (rev 31)
+00:15.0 Signal processing controller [1180]: Intel Corporation 100 Series/C230 Series Chipset Family Serial IO I2C Controller #0 [8086:a160] (rev 31)
+00:15.1 Signal processing controller [1180]: Intel Corporation 100 Series/C230 Series Chipset Family Serial IO I2C Controller #1 [8086:a161] (rev 31)
+00:16.0 Communication controller [0780]: Intel Corporation 100 Series/C230 Series Chipset Family MEI Controller #1 [8086:a13a] (rev 31)
+00:17.0 SATA controller [0106]: Intel Corporation Q170/Q150/B150/H170/H110/Z170/CM236 Chipset SATA Controller [AHCI Mode] [8086:a102] (rev 31)
+00:1c.0 PCI bridge [0604]: Intel Corporation 100 Series/C230 Series Chipset Family PCI Express Root Port #2 [8086:a111] (rev f1)
+00:1d.0 PCI bridge [0604]: Intel Corporation 100 Series/C230 Series Chipset Family PCI Express Root Port #9 [8086:a118] (rev f1)
+00:1d.4 PCI bridge [0604]: Intel Corporation 100 Series/C230 Series Chipset Family PCI Express Root Port #13 [8086:a11c] (rev f1)
+00:1d.6 PCI bridge [0604]: Intel Corporation 100 Series/C230 Series Chipset Family PCI Express Root Port #15 [8086:a11e] (rev f1)
+00:1f.0 ISA bridge [0601]: Intel Corporation CM238 Chipset LPC/eSPI Controller [8086:a154] (rev 31)
+00:1f.2 Memory controller [0580]: Intel Corporation 100 Series/C230 Series Chipset Family Power Management Controller [8086:a121] (rev 31)
+00:1f.4 SMBus [0c05]: Intel Corporation 100 Series/C230 Series Chipset Family SMBus [8086:a123] (rev 31)
+01:00.0 3D controller [0302]: NVIDIA Corporation GM107GLM [Quadro M1200 Mobile] [10de:13b6] (rev a2)
+05:00.0 PCI bridge [0604]: Intel Corporation DSL6340 Thunderbolt 3 Bridge [Alpine Ridge 2C 2015] [8086:1576]
+06:00.0 PCI bridge [0604]: Intel Corporation DSL6340 Thunderbolt 3 Bridge [Alpine Ridge 2C 2015] [8086:1576]
+06:01.0 PCI bridge [0604]: Intel Corporation DSL6340 Thunderbolt 3 Bridge [Alpine Ridge 2C 2015] [8086:1576]
+06:02.0 PCI bridge [0604]: Intel Corporation DSL6340 Thunderbolt 3 Bridge [Alpine Ridge 2C 2015] [8086:1576]
+3d:00.0 USB controller [0c03]: Intel Corporation DSL6340 USB 3.1 Controller [Alpine Ridge] [8086:15b5]
+
+------------------------------------------------------------
+📌 GRUB Configuration (/etc/default/grub)
+------------------------------------------------------------
+# If you change this file, run 'update-grub' afterwards to update
+# /boot/grub/grub.cfg.
+# For full documentation of the options in this file, see:
+#   info -f grub -n 'Simple configuration'
+
+GRUB_DEFAULT=0
+GRUB_TIMEOUT=5
+GRUB_DISTRIBUTOR=`lsb_release -i -s 2> /dev/null || echo Debian`
+GRUB_CMDLINE_LINUX_DEFAULT="consoleblank=60 pcie_aspm=off intel_iommu=on iommu=pt"
+GRUB_CMDLINE_LINUX=""
+
+#### Split the Intel GPU between VMs by adding "i915.enable_gvt=1" to /etc/default/grub on 
+#### GRUB_CMDLINE_LINUX_DEFAULT & uncommenting the Intel GVT modules in /etc/modules.
+
+
+# If your computer has multiple operating systems installed, then you
+# probably want to run os-prober. However, if your computer is a host
+# for guest OSes installed via LVM or raw disk devices, running
+# os-prober can cause damage to those guest OSes as it mounts
+# filesystems to look for things.
+#GRUB_DISABLE_OS_PROBER=false
+
+# Uncomment to enable BadRAM filtering, modify to suit your needs
+# This works with Linux (no patch required) and with any kernel that obtains
+# the memory map information from GRUB (GNU Mach, kernel of FreeBSD ...)
+#GRUB_BADRAM="0x01234567,0xfefefefe,0x89abcdef,0xefefefef"
+
+# Uncomment to disable graphical terminal
+#GRUB_TERMINAL=console
+
+# The resolution used on graphical terminal
+# note that you can use only modes which your graphic card supports via VBE
+# you can see them in real GRUB with the command `vbeinfo'
+#GRUB_GFXMODE=640x480
+
+# Uncomment if you don't want GRUB to pass "root=UUID=xxx" parameter to Linux
+#GRUB_DISABLE_LINUX_UUID=true
+
+# Uncomment to disable generation of recovery mode menu entries
+#GRUB_DISABLE_RECOVERY="true"
+
+# Uncomment to get a beep at grub start
+#GRUB_INIT_TUNE="480 440 1"
+
+------------------------------------------------------------
+📌 Modprobe Blacklist & VFIO Configs
+------------------------------------------------------------
+blacklist amdgpu
+blacklist radeon
+blacklist nouveau
+blacklist nvidia*
+blacklist i915
+# The microcode module attempts to apply a microcode update when
+# it autoloads.  This is not always safe, so we block it by default.
+blacklist microcode
+# This file contains a list of modules which are not supported by Proxmox VE 
+
+# nvidiafb see bugreport https://bugzilla.proxmox.com/show_bug.cgi?id=701
+blacklist nvidiafb
+
+------------------------------------------------------------
+📌 Kernel Version & Modules
+------------------------------------------------------------
+Linux pve 6.17.2-2-pve #1 SMP PREEMPT_DYNAMIC PMX 6.17.2-2 (2025-11-26T12:33Z) x86_64 GNU/Linux
+kvm_intel             532480  20
+kvm                  1376256  11 kvm_intel
+vfio_pci               20480  1
+vfio_pci_core          86016  1 vfio_pci
+irqbypass              16384  2 vfio_pci_core,kvm
+vfio_iommu_type1       49152  1
+vfio                   65536  8 vfio_pci_core,vfio_iommu_type1,vfio_pci
+iommufd               126976  1 vfio
+
+------------------------------------------------------------
+📌 Systemd Logind Config
+------------------------------------------------------------
+#  This file is part of systemd.
+#
+#  systemd is free software; you can redistribute it and/or modify it under the
+#  terms of the GNU Lesser General Public License as published by the Free
+#  Software Foundation; either version 2.1 of the License, or (at your option)
+#  any later version.
+#
+# Entries in this file show the compile time defaults. Local configuration
+# should be created by either modifying this file (or a copy of it placed in
+# /etc/ if the original file is shipped in /usr/), or by creating "drop-ins" in
+# the /etc/systemd/logind.conf.d/ directory. The latter is generally
+# recommended. Defaults can be restored by simply deleting the main
+# configuration file and all drop-ins located in /etc/.
+#
+# Use 'systemd-analyze cat-config systemd/logind.conf' to display the full config.
+#
+# See logind.conf(5) for details.
+
+[Login]
+#NAutoVTs=6
+#ReserveVT=6
+#KillUserProcesses=no
+#KillOnlyUsers=
+#KillExcludeUsers=root
+#InhibitDelayMaxSec=5
+#UserStopDelaySec=10
+#SleepOperation=suspend-then-hibernate suspend
+#HandlePowerKey=poweroff
+#HandlePowerKeyLongPress=ignore
+#HandleRebootKey=reboot
+#HandleRebootKeyLongPress=poweroff
+#HandleSuspendKey=suspend
+#HandleSuspendKeyLongPress=hibernate
+#HandleHibernateKey=hibernate
+#HandleHibernateKeyLongPress=ignore
+#HandleLidSwitch=suspend
+#HandleLidSwitchExternalPower=suspend
+#HandleLidSwitchDocked=ignore
+#HandleSecureAttentionKey=secure-attention-key
+#PowerKeyIgnoreInhibited=no
+#SuspendKeyIgnoreInhibited=no
+#HibernateKeyIgnoreInhibited=no
+#LidSwitchIgnoreInhibited=yes
+#RebootKeyIgnoreInhibited=no
+#HoldoffTimeoutSec=30s
+#IdleAction=ignore
+#IdleActionSec=30min
+#RuntimeDirectorySize=10%
+#RuntimeDirectoryInodesMax=
+#RemoveIPC=yes
+#InhibitorsMax=8192
+#SessionsMax=8192
+#StopIdleSessionSec=infinity
+#DesignatedMaintenanceTime=
+
+------------------------------------------------------------
+📌 ACPI Event Configurations
+------------------------------------------------------------
+
+------------------------------------------------------------
+📌 IP Addresses & Interfaces
+------------------------------------------------------------
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+lan0             UP             
+vmbr0            UP             192.168.1.250/24 fe80::e6b9:7aff:fe95:f6c7/64 
+vmbr1            DOWN           10.25.25.250/24 fe80::1ceb:4cff:fe1a:bc8a/64 
+tap102i0         UNKNOWN        
+fwbr102i0        UP             
+fwpr102p0@fwln102i0 UP             
+fwln102i0@fwpr102p0 UP             
+tap103i0         UNKNOWN        
+fwbr103i0        UP             
+fwpr103p0@fwln103i0 UP             
+fwln103i0@fwpr103p0 UP             
+tap107i0         UNKNOWN        
+tap109i0         UNKNOWN        
+fwbr109i0        UP             
+fwpr109p0@fwln109i0 UP             
+fwln109i0@fwpr109p0 UP             
+tap100i0         UNKNOWN        
+fwbr100i0        UP             
+fwpr100p0@fwln100i0 UP             
+fwln100i0@fwpr100p0 UP             
+
+------------------------------------------------------------
+📌 Routing Table
+------------------------------------------------------------
+default via 192.168.1.1 dev vmbr0 proto kernel onlink 
+10.25.25.0/24 dev vmbr1 proto kernel scope link src 10.25.25.250 linkdown 
+192.168.1.0/24 dev vmbr0 proto kernel scope link src 192.168.1.250 
+
+------------------------------------------------------------
+📌 Active Network Ports
+------------------------------------------------------------
+Netid State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess                                                                                                                                            
+udp   UNCONN 0      0            0.0.0.0:111       0.0.0.0:*    users:(("rpcbind",pid=836,fd=5),("systemd",pid=1,fd=166))                                                                                         
+udp   UNCONN 0      0          127.0.0.1:323       0.0.0.0:*    users:(("chronyd",pid=1032,fd=5))                                                                                                                 
+udp   UNCONN 0      0               [::]:111          [::]:*    users:(("rpcbind",pid=836,fd=7),("systemd",pid=1,fd=168))                                                                                         
+udp   UNCONN 0      0              [::1]:323          [::]:*    users:(("chronyd",pid=1032,fd=6))                                                                                                                 
+tcp   LISTEN 0      4096       127.0.0.1:85        0.0.0.0:*    users:(("pvedaemon worke",pid=2511029,fd=6),("pvedaemon worke",pid=2509768,fd=6),("pvedaemon worke",pid=1982275,fd=6),("pvedaemon",pid=1436,fd=6))
+tcp   LISTEN 0      100        127.0.0.1:25        0.0.0.0:*    users:(("master",pid=1278,fd=13))                                                                                                                 
+tcp   LISTEN 0      4096         0.0.0.0:111       0.0.0.0:*    users:(("rpcbind",pid=836,fd=4),("systemd",pid=1,fd=165))                                                                                         
+tcp   LISTEN 0      128          0.0.0.0:22        0.0.0.0:*    users:(("sshd",pid=1146,fd=6))                                                                                                                    
+tcp   LISTEN 0      100            [::1]:25           [::]:*    users:(("master",pid=1278,fd=14))                                                                                                                 
+tcp   LISTEN 0      4096            [::]:111          [::]:*    users:(("rpcbind",pid=836,fd=6),("systemd",pid=1,fd=167))                                                                                         
+tcp   LISTEN 0      128             [::]:22           [::]:*    users:(("sshd",pid=1146,fd=7))                                                                                                                    
+tcp   LISTEN 0      4096               *:3128            *:*    users:(("spiceproxy work",pid=2352091,fd=6),("spiceproxy",pid=1458,fd=6))                                                                         
+tcp   LISTEN 0      4096               *:8006            *:*    users:(("pveproxy worker",pid=2506087,fd=6),("pveproxy worker",pid=2505991,fd=6),("pveproxy worker",pid=2505373,fd=6),("pveproxy",pid=1449,fd=6)) 
+
+------------------------------------------------------------
+📌 Proxmox Storage Config (/etc/pve/storage.cfg)
+------------------------------------------------------------
+dir: local
+	path /var/lib/vz
+	content iso,vztmpl,backup
+
+lvmthin: local-lvm
+	thinpool data
+	vgname pve
+	content images,rootdir
+
+# lvmthin: shared-nas
+#	thinpool shared-nas
+#	vgname shared-nas
+#	content rootdir,images
+#	nodes pve
+
+dir: backup
+	path /mnt/pve/backup
+	content import,vztmpl,backup,snippets,iso
+	is_mountpoint 1
+	shared 0
+
+dir: backup2
+	path /mnt/pve/backup2
+	content vztmpl,backup,import,iso,snippets
+	shared 0
+
+dir: backup-sd
+	path /mnt/pve/backup-sd
+	content import,backup,vztmpl,iso,snippets
+	shared 0
+
+
+------------------------------------------------------------
+📌 Proxmox VM List
+------------------------------------------------------------
+      VMID NAME                 STATUS     MEM(MB)    BOOTDISK(GB) PID       
+       100 nexus-server         running    6144              50.00 1972429   
+       101 nas-server           stopped    6144               5.00 0         
+       102 luna-server          running    6144              50.00 984078    
+       103 media-server         running    8192              50.00 984489    
+       104 c4-updates           stopped    4096              40.00 0         
+       105 minecraft-server     stopped    4096              50.00 0         
+       106 minecraft-friend-server stopped    4096              50.00 0         
+       107 vxlan-server         running    2048               8.00 986010    
+       108 debian-docker-template-50gb stopped    4096              50.00 0         
+       109 minecraft-docker     running    4096              50.00 986473    
+       110 ubuntu-docker-template-50gb stopped    4096              50.00 0         
+       111 docker-dev           stopped    4096              50.00 0         
+       112 github-runner-nb     stopped    4096              50.00 0         
+       113 github-runner-btx    stopped    4096              50.00 0         
+       114 vulcan-server        stopped    4096              50.00 0         
+       200 Windows-11           stopped    16384             80.00 0         
+
+------------------------------------------------------------
+📌 Proxmox LXC Container List
+------------------------------------------------------------
+
+------------------------------------------------------------
+📌 Proxmox VM Configurations
+------------------------------------------------------------
+agent: 1
+boot: order=scsi0;net0
+cores: 2
+cpu: x86-64-v2-AES
+memory: 6144
+meta: creation-qemu=9.2.0,ctime=1748913209
+name: nexus-server
+net0: virtio=BC:24:11:97:EB:DB,bridge=vmbr0,firewall=1
+numa: 0
+onboot: 1
+ostype: l26
+scsi0: local-lvm:vm-100-disk-0,iothread=1,size=50G
+scsihw: virtio-scsi-single
+smbios1: uuid=2961fc2c-060e-4978-8349-11eebb2254f0
+sockets: 1
+startup: order=1,up=30,down=30
+vmgenid: 21d823d2-340f-494a-9b59-ff8a5188e5b2
+agent: 1
+boot: order=scsi0;net0
+cores: 2
+cpu: x86-64-v2-AES
+memory: 6144
+meta: creation-qemu=8.1.5,ctime=1715030060
+name: nas-server
+net0: virtio=BC:24:11:1A:56:46,bridge=vmbr0,firewall=1,tag=40
+net1: virtio=BC:24:11:BD:7A:26,bridge=vmbr1,firewall=1
+numa: 0
+ostype: l26
+scsi0: local-lvm:vm-101-disk-0,iothread=1,size=5G
+scsi1: shared-nas:vm-101-disk-0,iothread=1,size=500G
+scsihw: virtio-scsi-single
+smbios1: uuid=05341cd8-c6fc-47fd-bd8f-41ea6de87b32
+sockets: 1
+startup: order=2,up=30,down=30
+vmgenid: 2ef2f380-9cf8-401a-a8f4-b823fbda8a3b
+agent: 1
+boot: order=scsi0;net0
+cores: 2
+cpu: x86-64-v2-AES
+memory: 6144
+meta: creation-qemu=9.2.0,ctime=1748913209
+name: luna-server
+net0: virtio=BC:24:11:B7:CF:A3,bridge=vmbr0,firewall=1
+numa: 0
+onboot: 1
+ostype: l26
+scsi0: local-lvm:vm-102-disk-0,iothread=1,size=50G
+scsihw: virtio-scsi-single
+smbios1: uuid=ab77896d-617b-49c4-b0be-e11ba0e9b30c
+sockets: 1
+startup: order=3,up=30,down=30
+vmgenid: f1476602-2d8e-4494-81f1-c42acca753a0
+agent: 1
+boot: order=scsi0;net0
+cores: 2
+cpu: x86-64-v2-AES
+hostpci0: 0000:00:02
+memory: 8192
+meta: creation-qemu=8.1.5,ctime=1735005992
+name: media-server
+net0: virtio=BC:24:11:40:7F:72,bridge=vmbr0,firewall=1,tag=40
+numa: 0
+onboot: 1
+ostype: l26
+scsi0: local-lvm:vm-103-disk-0,iothread=1,size=50G
+scsihw: virtio-scsi-single
+smbios1: uuid=d7096248-0a72-4906-a079-aeb0af825375
+sockets: 1
+startup: order=4,up=30,down=30
+vmgenid: 4e401863-d1ae-4a8f-a82f-da183f47eb60
+agent: 1
+boot: order=scsi0;ide2;net0
+cores: 2
+cpu: x86-64-v2-AES
+ide2: backup-sd:iso/debian-13.3.0-amd64-DVD-1.iso,media=cdrom,size=3744M
+memory: 4096
+meta: creation-qemu=10.1.2,ctime=1769203941
+name: c4-updates
+net0: virtio=BC:24:11:62:55:04,bridge=vmbr0,firewall=1
+numa: 0
+ostype: l26
+scsi0: local-lvm:vm-104-disk-0,iothread=1,size=40G
+scsihw: virtio-scsi-single
+smbios1: uuid=891f3e87-0850-4621-9073-82da86f8582a
+sockets: 1
+vmgenid: 9e2f69cd-69cb-40a0-8147-04ef1ee8acbc
+agent: 1
+boot: order=scsi0;net0
+cores: 2
+cpu: x86-64-v2-AES
+memory: 4096
+meta: creation-qemu=8.1.5,ctime=1731268548
+name: minecraft-server
+net0: virtio=BC:24:11:E6:A3:AD,bridge=vmbr0,firewall=1,tag=40
+numa: 0
+ostype: l26
+scsi0: local-lvm:vm-105-disk-0,iothread=1,size=50G
+scsihw: virtio-scsi-single
+smbios1: uuid=5941deec-c3c3-4b57-a6e2-63523ec72262
+sockets: 1
+startup: order=4,up=30,down=30
+vmgenid: 6fdbc51c-0e2e-4b54-8fd2-9e29956d4f40
+agent: 1
+boot: order=scsi0;net0
+cores: 2
+cpu: x86-64-v2-AES
+memory: 4096
+meta: creation-qemu=8.1.5,ctime=1731268548
+name: minecraft-friend-server
+net0: virtio=BC:24:11:05:88:A1,bridge=vmbr0,firewall=1,tag=40
+numa: 0
+ostype: l26
+scsi0: local-lvm:vm-106-disk-0,iothread=1,size=50G
+scsihw: virtio-scsi-single
+smbios1: uuid=b0704627-b2b2-4303-a905-35b2e2f3921a
+sockets: 1
+startup: order=5,up=30,down=30
+vmgenid: 778af39d-d0fc-4c97-80ae-3cf96efb3041
+agent: 1
+boot: order=scsi0;net0
+cores: 1
+cpu: x86-64-v2-AES
+memory: 2048
+meta: creation-qemu=9.2.0,ctime=1747238764
+name: vxlan-server
+net0: virtio=BC:24:11:06:BC:2F,bridge=vmbr0
+numa: 0
+onboot: 1
+ostype: l26
+scsi0: local-lvm:vm-107-disk-0,iothread=1,size=8G
+scsihw: virtio-scsi-single
+smbios1: uuid=f626f104-5685-456d-9a82-cfee4045be3d
+sockets: 1
+startup: order=1,up=15,down=15
+vmgenid: f9839381-1967-438d-bfd2-737d413e766a
+agent: 1
+boot: order=scsi0;net0
+cores: 1
+cpu: x86-64-v2-AES
+memory: 4096
+meta: creation-qemu=9.2.0,ctime=1748913209
+name: debian-docker-template-50gb
+net0: virtio=BC:24:11:5B:43:43,bridge=vmbr0,firewall=1
+numa: 0
+ostype: l26
+scsi0: local-lvm:vm-108-disk-0,iothread=1,size=50G
+scsihw: virtio-scsi-single
+smbios1: uuid=2eaef871-114d-490e-8c4d-3c32a9169be6
+sockets: 1
+vmgenid: 5a0136b8-f858-42fc-b0d3-08076f311c88
+agent: 1
+boot: order=scsi0;net0
+cores: 2
+cpu: x86-64-v2-AES
+memory: 4096
+meta: creation-qemu=9.2.0,ctime=1748913209
+name: minecraft-docker
+net0: virtio=BC:24:11:17:C9:60,bridge=vmbr0,firewall=1
+numa: 0
+onboot: 1
+ostype: l26
+scsi0: local-lvm:vm-109-disk-0,iothread=1,size=50G
+scsihw: virtio-scsi-single
+smbios1: uuid=81489234-4a8c-4d9b-8053-8328bcdeda57
+sockets: 1
+vmgenid: 18ba6b08-0fe6-44ca-a561-bd86cee2bfec
+agent: 1
+boot: order=scsi0;net0
+cores: 1
+cpu: x86-64-v2-AES
+memory: 4096
+meta: creation-qemu=8.1.5,ctime=1735005992
+name: ubuntu-docker-template-50gb
+net0: virtio=BC:24:11:59:8D:F4,bridge=vmbr0,firewall=1
+numa: 0
+ostype: l26
+scsi0: local-lvm:vm-110-disk-0,iothread=1,size=50G
+scsihw: virtio-scsi-single
+smbios1: uuid=2e031ec5-bdd5-40ae-aa6e-9d791f3db39e
+sockets: 1
+vmgenid: e837ef0e-a75e-41cb-bb7c-c37f7e597bf2
+agent: 1
+boot: order=scsi0;net0
+cores: 2
+cpu: x86-64-v2-AES
+memory: 4096
+meta: creation-qemu=9.2.0,ctime=1748913209
+name: docker-dev
+net0: virtio=BC:24:11:17:B9:4F,bridge=vmbr0,firewall=1
+numa: 0
+ostype: l26
+scsi0: local-lvm:vm-111-disk-0,iothread=1,size=50G
+scsihw: virtio-scsi-single
+smbios1: uuid=b364b118-c438-48ea-a014-cb31ce7efcb9
+sockets: 1
+vmgenid: 1c17f37b-67ea-496a-9f5a-4f8beaca1dce
+agent: 1
+boot: order=scsi0;net0
+cores: 1
+cpu: x86-64-v2-AES
+memory: 4096
+meta: creation-qemu=8.1.5,ctime=1735005992
+name: github-runner-nb
+net0: virtio=BC:24:11:D0:13:6A,bridge=vmbr1,firewall=1
+numa: 0
+ostype: l26
+scsi0: local-lvm:vm-112-disk-0,iothread=1,size=50G
+scsihw: virtio-scsi-single
+smbios1: uuid=8c9a8574-6f60-452a-ad4f-ca7b5d80732e
+sockets: 1
+vmgenid: fe61d6ef-ca14-4923-a03f-3186b24669e9
+agent: 1
+boot: order=scsi0;net0
+cores: 1
+cpu: x86-64-v2-AES
+memory: 4096
+meta: creation-qemu=8.1.5,ctime=1735005992
+name: github-runner-btx
+net0: virtio=BC:24:11:B8:6C:BD,bridge=vmbr1,firewall=1
+numa: 0
+ostype: l26
+scsi0: local-lvm:vm-113-disk-0,iothread=1,size=50G
+scsihw: virtio-scsi-single
+smbios1: uuid=b29bab78-e2c6-4765-99a5-b3f2f810211f
+sockets: 1
+vmgenid: 47ab039a-3050-4169-a01c-3197d7076886
+agent: 1
+boot: order=scsi0;net0
+cores: 2
+cpu: x86-64-v2-AES
+memory: 4096
+meta: creation-qemu=9.2.0,ctime=1748913209
+name: vulcan-server
+net0: virtio=BC:24:11:97:EB:DB,bridge=vmbr0,firewall=1
+numa: 0
+ostype: l26
+scsi0: local-lvm:vm-114-disk-0,iothread=1,size=50G
+scsihw: virtio-scsi-single
+smbios1: uuid=6826de52-007c-4b4e-87a0-c0df4c9b22bb
+sockets: 1
+vmgenid: edc1b795-7487-4213-bfea-369f4dacbfa7
+agent: 1
+bios: ovmf
+boot: order=ide0;net0
+cores: 2
+cpu: x86-64-v2-AES
+efidisk0: local-lvm:vm-200-disk-0,efitype=4m,pre-enrolled-keys=1,size=4M
+ide0: local-lvm:vm-200-disk-1,size=80G
+machine: pc-q35-8.1
+memory: 16384
+meta: creation-qemu=8.1.5,ctime=1726765527
+name: Windows-11
+net0: e1000=BC:24:11:8A:AF:14,bridge=vmbr1,firewall=1
+numa: 0
+ostype: win11
+scsihw: virtio-scsi-single
+smbios1: uuid=54616262-a8e6-4ef1-9149-1d57f937373e
+sockets: 2
+startup: order=7,up=30,down=30
+tpmstate0: local-lvm:vm-200-disk-2,size=4M,version=v2.0
+vmgenid: 6b23ab0a-4b33-4dbf-aa0f-c4c75214077e
+
+------------------------------------------------------------
+📌 Proxmox LXC Configurations
+------------------------------------------------------------
+
+------------------------------------------------------------
+📌 Proxmox Cron & Backup Schedules
+------------------------------------------------------------
+# cluster wide vzdump cron schedule
+# Automatically generated file - do not edit
+
+PATH="/usr/sbin:/usr/bin:/sbin:/bin"
+
+# /etc/crontab: system-wide crontab
+# Unlike any other crontab you don't have to run the `crontab'
+# command to install the new version when you edit this file
+# and files in /etc/cron.d. These files also have username fields,
+# that none of the other crontabs do.
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Example of job definition:
+# .---------------- minute (0 - 59)
+# |  .------------- hour (0 - 23)
+# |  |  .---------- day of month (1 - 31)
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+# |  |  |  |  |
+# *  *  *  *  * user-name command to be executed
+17 *	* * *	root	cd / && run-parts --report /etc/cron.hourly
+25 6	* * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.daily; }
+47 6	* * 7	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.weekly; }
+52 6	1 * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.monthly; }
+#
+
+============================================================
+✅ Read-Only Audit Complete for 192.168.1.250
+============================================================

@@ -1,0 +1,1602 @@
+{
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/privkey3.pem": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/network/.pve-interfaces.lock": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/lvm.conf.bak~": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/networks": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.forward": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/tunables/xdg-user-dirs.d/site.local": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/chain4.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/chain5.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/priv/shadow.cfg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/pve/priv/acme/default": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/privkey5.pem": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/subgid": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/.updated": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pam.d/common-session": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/.updated-options-ssl-nginx-conf-digest.txt": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/bazarr.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/.clusterlog": {
+    "mode": "440",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/root/.ssh/config": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/qemu-server/113.conf": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/apt/sources.list.d/ceph-no-subscription.list.bak": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/readarr-ebooks.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/setup_gpu_passthrough.sh": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ca-certificates.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/pveproxy-ssl.pem": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/modprobe.d/blacklist.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/priv/pve-root-ca.key": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/systemd/system/snap-core24-1587.mount": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/tunables/home.d/ubuntu": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/renewal/secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/sshd_config": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/qemu-server/104.conf": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/lvm/archive/pve_00293-1366044276.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/initramfs-tools/modules": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/calibreweb.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.wget-hsts": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/systemd/network/10-persistent-net.link": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/audiobookshelf.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/group": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/jobs.cfg": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/pve/.debug": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/apparmor.d/local/pve-container-mounthotplug": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/systemd/system/snap-snapd-27406.mount": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/sources.list.d/pve-no-subscription.list.bak": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/profile": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/usr/local/community-scripts/headers/adguard": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/privkey8.pem": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/privkey6.pem": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/pve.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/issue.dpkg-dist": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/qemu-server/112.conf": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/nginx/conf.d/prowlarr.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/default/grub": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/live/README": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/chain3.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/main.cf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/pve2.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/qemu-server/101.conf": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/default/grub.ucf-dist": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/sources.list.d/pve-enterprise.list.bak": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/priv/notifications.cfg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/nginx/conf.d/overseerr.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/sources.list.d/ceph.list.bak": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/locale.gen": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/tmpfiles.d/tmp.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/qemu-server/107.conf": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/pve/priv/authkey.key": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/iscsi/initiatorname.iscsi": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/subgid-": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/fullchain7.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssl/certs/ca-certificates.crt": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/qemu-server/108.conf": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/chain4.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/aliases.db": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/ssl-dhparams.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/systemd/system/mount-backup-drive.service": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssl/certs/ssl-cert-snakeoil.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/chain7.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/filebrowser.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/samba/smb.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/shared-nas_00002-1579582927.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/console-setup/cached_setup_terminal.sh": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/config": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/apt/listchanges.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/cron.hourly/mnt-backup-drive_OLD": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/fullchain4.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pam.d/common-auth": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00285-1700375259.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/lsb_release": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/fullchain8.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_ecdsa_key.pub": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pam.d/common-account": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/usr/local/community-scripts/diagnostics": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/chain8.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/pve-ssl.key": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/lvm/archive/shared-nas_00004-1258286141.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/cert5.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/sources.list.bak": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/lvm.conf.dpkg-old": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/Proxmox-Enhanced-Configuration-Utility/README.md": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/media.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/default.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/sources.list.d/debian.sources": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/machine-id": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/firefox.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/systemd/system/nginx.service.d/override.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/passwd-": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/console-setup/cached_setup_keyboard.sh": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00286-1837361975.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/.members": {
+    "mode": "440",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/pve/pve-root-ca.pem": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/nginx/conf.d/pve-ext.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00291-516564662.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/storyteller.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/usr/local/bin/mount-backup-drive.sh": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00287-1632351245.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/hosts": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/accounts/acme-staging-v02.api.letsencrypt.org/directory/d6bf89cff21244df8c5ad13a2d02eb78/private_key.json": {
+    "mode": "400",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/qemu-server/200.conf": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/hostid": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/vzdump.cron": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/systemd/system/snap-snapd-27591.mount": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/nvidia_modprobe": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/fullchain6.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/qemu-server/102.conf": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/postfix/master.cf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/priv/authorized_keys": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/nginx/conf.d/home.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/radarr.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/shared-nas_00000-1461870119.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/hostname": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/ssh_known_hosts": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/pam.d/common-password": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/chain7.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/locale.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/systemd/network/20-persistent-net.link": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/mailcap": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/cron.hourly/mnt-backup-drive_BASH": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.python_history": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.ssh/id_rsa": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/usr/local/community-scripts/headers/alpine-adguard": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/priv/pve-root-ca.srl": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/root/.bash_history": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/live/secure.theurer.dev/README": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/cert3.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/chain6.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/cert6.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/luna.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/privkey7.pem": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/fullchain7.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/systemd/system/snap-core24-1643.mount": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/privkey4.pem": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/notifications.cfg": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/nginx/conf.d/lazylibrarian.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_ed25519_key.pub": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/cron.hourly/mnt-backup-drive_SH": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/sources.list.d/pve-enterprise.sources": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/hosts.allow": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/usr/local/bin/sysprep.sh": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/privkey7.pem": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/issue": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/apt.conf.d/76pveproxy": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/qemu-server/110.conf": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/console-setup/cached_setup_font.sh": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/chain3.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/qemu-server/100.conf": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/privkey5.pem": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/lxc-containers": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/modules": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/usr.bin.man": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/renewal/secure.theurer.dev-wild.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/.vmlist": {
+    "mode": "440",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/fullchain5.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/passwd": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/.updated-ssl-dhparams-pem-digest.txt": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/usr.bin.lxc-start": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/shared-nas_00003-545878185.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/cert4.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/cert8.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/chain5.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_ed25519_key": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/priv/acme/plugins.cfg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/pve/nodes/pve/pveproxy-ssl.key": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/fullchain4.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/usr.sbin.dhclient": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/qemu-server/109.conf": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/chrony/chrony.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ld.so.cache": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/user.cfg": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/motd": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/qemu-server/114.conf": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/fullchain3.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/privkey8.pem": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/lrm_status": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/root/generate_nginx_configs.sh": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/subuid-": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/python3/debian_config": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00289-1601097393.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/gshadow": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "42"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/fullchain3.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/accounts/acme-v02.api.letsencrypt.org/directory/446f02a2e6196c1c32097bc8733d1905/private_key.json": {
+    "mode": "400",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/sonarr.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00290-1957357219.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/qemu-server/111.conf": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/apt/sources.list.d/pve-no-subscription.sources": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/resolv.conf.lock": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nfs.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/kavita.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/console-setup/cached_Lat15-Fixed16.psf.gz": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/accounts/acme-v02.api.letsencrypt.org/directory/446f02a2e6196c1c32097bc8733d1905/regr.json": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/pve2-ext.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/storage.cfg": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/cron.hourly/mnt-backup-drive": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/console-setup/cached_UTF-8_del.kmap.gz": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/homeassistant.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/default/console-setup": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/calibre.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/resolv.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/guard2.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/replication.cfg": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/ssl/private/ssl-cert-snakeoil.key": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "109"
+  },
+  "/etc/idmapd.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/fullchain6.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/chain6.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/discovery.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.ssh/id_rsa.pub": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/chrony/chrony.keys": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "106"
+  },
+  "/etc/nginx/conf.d/qbittorrent.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/cert6.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/readarr-audiobooks.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/timezone": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/authkey.pub.old": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/privkey3.pem": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/qemu-server/106.conf": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/root/.lesshst": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/default/keyboard": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/privkey6.pem": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/cron.hourly/backup-drive.log": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/qemu-server/103.conf": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/lvm/backup/pve": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/authkey.pub": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/cert7.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/datacenter.cfg": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/subuid": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.rnd": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/network/interfaces": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/gshadow-": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "42"
+  },
+  "/etc/nginx/conf.d/homebridge.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00292-7685682.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/usr.sbin.chronyd": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/accounts/acme-v02.api.letsencrypt.org/directory/446f02a2e6196c1c32097bc8733d1905/meta.json": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_rsa_key": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/fullchain5.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nsswitch.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/options-ssl-nginx.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/wireguard.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/chain8.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/inputrc": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/privkey4.pem": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/postfix/dynamicmaps.cf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_rsa_key.pub": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/cron.daily/pvehost-backup": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/usr.bin.swtpm": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/accounts/acme-staging-v02.api.letsencrypt.org/directory/d6bf89cff21244df8c5ad13a2d02eb78/meta.json": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/accounts/acme-staging-v02.api.letsencrypt.org/directory/d6bf89cff21244df8c5ad13a2d02eb78/regr.json": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00288-1610869796.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/backup/shared-nas": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.secrets/certbot/cloudflare.ini": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/lvm.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/aliases": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/security/opasswd": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/cert3.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/usr.lib.snapd.snap-confine.real": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/wireshark.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.bashrc": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/mapping/pci.cfg": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/lvm/archive/shared-nas_00001-961907085.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/plex.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/environment": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/systemd/system/snap.certbot.renew.service": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/cert5.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/udev/rules.d/70-snap.snapd.rules": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/qemu-server/105.conf": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/shells": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ca-certificates.conf.dpkg-old": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pam.d/common-session-noninteractive": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/lvm.conf.bak": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/usr.bin.tcpdump": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.bash_history-01534.tmp": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/cert8.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/Proxmox-Enhanced-Configuration-Utility/proxmox-configurator.sh": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/group-": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/sbin.dhclient": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/guard.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/shadow": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "42"
+  },
+  "/etc/nginx/conf.d/sabnzbd.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/fstab": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/apt.conf.d/76pveconf": {
+    "mode": "444",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/Proxmox-Enhanced-Configuration-Utility/backup-script/script_state.txt": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/lvm/archive/pve_00294-1021837369.vg": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/cert4.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/systemd/system/snap-certbot-5758.mount": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/shadow-": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "42"
+  },
+  "/etc/systemd/system/mnt-pve-backup.mount": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev/cert7.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/hosts.deny": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/pve-www.key": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/nginx/conf.d/secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/letsencrypt/archive/secure.theurer.dev-wild/fullchain8.pem": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/lidarr.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.profile": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/systemd/system/snap-certbot-5781.mount": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/systemd/system/snap.certbot.renew.timer": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/perl/XML/SAX/ParserDetails.ini": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.bash_history-28041.tmp": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nginx/conf.d/openmediavault.secure.theurer.dev.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/.version": {
+    "mode": "440",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/.pwd.lock": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/.rrd": {
+    "mode": "440",
+    "uid": "0",
+    "gid": "33"
+  },
+  "/etc/ssh/ssh_host_ecdsa_key": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pve/nodes/pve/pve-ssl.pem": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "33"
+  }
+}

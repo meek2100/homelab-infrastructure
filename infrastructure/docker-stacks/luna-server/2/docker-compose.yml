@@ -1,0 +1,19 @@
+services:
+  homebridge:
+    image: homebridge/homebridge:latest
+    container_name: homebridge
+    restart: always
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/homebridge/config:/homebridge
+    networks:
+      vlan40_network: # Connect Homebridge directly to the macvlan network
+        ipv4_address: 192.168.40.25 # Assign a static IP for Homebridge
+        mac_address: 02:F5:58:97:8E:64
+
+networks:
+  vlan40_network: # This network is for tagged traffic that should be on vlan40, it is created by my custom systemd script.
+    external: true

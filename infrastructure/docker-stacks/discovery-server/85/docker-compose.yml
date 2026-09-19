@@ -1,0 +1,14 @@
+services:
+  calibre-web-automated-book-downloader:
+    image: ghcr.io/calibrain/calibre-web-automated-book-downloader:latest
+    container_name: calibre-web-automated-book-downloader
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    ports:
+      - 8084:8084
+    restart: unless-stopped
+    volumes:
+      - ${BASE_PATH}/calibre-web-automated-book-downloader/config:/config
+      - ${NFS_MOUNT_POINT}/share/cwa-book-ingest:/cwa-book-ingest

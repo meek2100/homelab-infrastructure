@@ -1,0 +1,163 @@
+services:
+
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: plex
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      - VERSION=docker
+#      - 'HOSTNAME=Blockbuster+'
+#      - 'ADVERTISE_IP=http://192.168.1.247:32400'
+#      - PLEX_CLAIM=claim-EQ5n_5uvUSC5rCtuMdMv
+    volumes:
+      - ${BASE_PATH}/plex/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    devices:
+#     - /dev/dri:/dev/dri #Required for plex HW transcoding / QuickSync
+     - /dev/dri/card1:/dev/dri/card1 #Required for plex HW transcoding / QuickSync
+     - /dev/dri/renderD128:/dev/dri/renderD128 #Required for plex HW transcoding / QuickSync
+#    network_mode: host
+    ports: # when network: bridge
+       - "32400:32400/tcp" 
+       - "8324:8324/tcp" # Required if network: bridge
+       - "32469:32469/tcp" # Required if network: bridge
+       - "1900:1900/udp" # Required if network: bridge
+       - "32410:32410/udp" # Required if network: bridge
+       - "32412:32412/udp" # Required if network: bridge
+       - "32413:32413/udp" # Required if network: bridge
+       - "32414:32414/udp" # Required if network: bridge
+    privileged: true # libusb_init failed
+    restart: unless-stopped
+    networks:
+       - media-network
+
+# Overseerr has been replaced by Seerr.
+  overseerr:
+    image: lscr.io/linuxserver/overseerr:latest
+    container_name: overseerr
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/overseerr/config:/config
+    ports:
+      - "5055:5055"
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  seerr:
+    image: ghcr.io/seerr-team/seerr:latest
+    container_name: seerr
+    init: true
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      - PORT=5056
+    volumes:
+      - ${BASE_PATH}/seerr/config:/config
+    ports:
+      - "5056:5056"
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  heimdall:
+    image: lscr.io/linuxserver/heimdall:latest
+    container_name: heimdall
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/heimdall/config:/config
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped
+    networks:
+      - media-network
+
+#  kavita:
+#    image: lscr.io/linuxserver/kavita:latest
+#    container_name: kavita
+#    environment:
+#      - PUID=${PUID}
+#      - PGID=${GUID}
+#      - TZ=${TZ}
+#    volumes:
+#      - ${BASE_PATH}/kavita/config:/config
+#      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+#    ports:
+#      - "5000:5000"
+#    restart: unless-stopped
+#    networks:
+#      - media-network
+
+  calibre-web-automated:
+    image: crocodilestick/calibre-web-automated:latest
+    container_name: calibre-web-automated
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/calibre-web-automated/config:/config
+      - ${NFS_MOUNT_POINT}/content/ebooks:/calibre-library
+      - ${NFS_MOUNT_POINT}/share/cwa-book-ingest:/cwa-book-ingest
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+
+    ports:
+      - 8083:8083 # Change the first number to change the port you want to access the Web UI, not the second
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    container_name: audiobookshelf
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/audiobookshelf/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    ports:
+      - "13378:80"
+    restart: unless-stopped
+    networks:
+      - media-network
+
+#  storyteller:
+#    image: registry.gitlab.com/smoores/storyteller:latest
+#    # runtime: nvidia
+#    container_name: storyteller
+#    environment:
+#      - PUID=${PUID}
+#      - PGID=${GUID}
+#      - TZ=${TZ}
+#      - STORYTELLER_SECRET_KEY_FILE=/secret_key.txt
+#    volumes:
+#      - ${BASE_PATH}/storyteller/data:/data:rw
+#      - ${BASE_PATH}/storyteller/secret_key.txt
+#      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+#    ports:
+#      - "8001:8001"
+#    restart: unless-stopped
+#    networks:
+#      - media-network
+
+networks:
+  media-network:
+  
+#volumes:
+#  ${NFS_MOUNT_POINT}:
+#    driver_opts:
+#      type: "nfs"
+#      o: "addr=10.25.25.248,nolock,soft,nfsvers=4"
+#      device: ":/media"

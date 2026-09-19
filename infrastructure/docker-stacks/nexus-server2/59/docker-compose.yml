@@ -1,0 +1,66 @@
+services:
+  adguardhome:
+    image: adguard/adguardhome
+    container_name: adguardhome
+    network_mode: host
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/adguardhome/config:/opt/adguardhome/conf
+      - ${BASE_PATH}/adguardhome/work:/opt/adguardhome/work
+      - ${BASE_PATH}/adguardhome/certs:/opt/adguardhome/certs
+    restart: unless-stopped
+#    ports:
+      # - "53:53/tcp"
+      # - "53:53/udp"
+      # - "80:80/tcp" # Optional: if you want host:80 to forward to container:80
+      # - "443:443/tcp" # Optional: if you want host:443 to forward to container:443
+      # - "853:853/tcp" # Optional: if you want host:853 to forward to container:853
+    
+
+#  adguardhome-sync:
+#    image: lscr.io/linuxserver/adguardhome-sync:latest
+#    container_name: adguardhome-sync
+#    depends_on:
+#      - adguardhome
+#    command: /bin/sh -c "sleep 60 && /init"
+#    environment:
+#      - PUID=${PUID}
+#      - PGID=${GUID}
+#      - TZ=${TZ}
+#      - CONFIGFILE=/config/adguardhome-sync.yaml
+#    volumes:
+#      - ${BASE_PATH}/adguardhome-sync/config:/config
+#    ports:
+#      - 8080:8080
+#    restart: unless-stopped
+
+#  adguardhome-certbot:
+#    image: javanile/crontab
+#    container_name: adguardhome-certbot
+#    restart: unless-stopped
+#    command:
+#      # This runs your script every 12 hours and logs the output
+#      - "* * * * * bash /opt/adguardhome/certs/update_adguard_certs.sh >> /var/log/cron.log 2>&1"
+#    volumes:
+#      - ${BASE_PATH}/adguardhome/certs:/opt/adguardhome/certs
+
+  adguardhome-certbot:
+    image: certbot/dns-cloudflare
+    container_name: adguardhome-certbot
+    restart: unless-stopped
+    volumes:
+      - ${BASE_PATH}/adguardhome/certs:/etc/letsencrypt
+      - ${BASE_PATH}/adguardhome/config/cloudflare:/var/lib/letsencrypt
+      - ${BASE_PATH}/adguardhome/config/cloudflare/.secrets/cloudflare.ini:/root/.secrets/cloudflare.ini:ro
+    # Simplified loop: wakes up every 12 hours to check if the existing cert needs a refresh
+    entrypoint: >
+      /bin/sh -c "
+      trap exit TERM; 
+      while :; do 
+        certbot renew --quiet; 
+        sleep 12h & wait $${!}; 
+      done;
+      "

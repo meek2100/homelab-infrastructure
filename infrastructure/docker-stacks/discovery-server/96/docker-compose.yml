@@ -1,0 +1,338 @@
+services:
+
+  # 1. The Autoheal Daemon: Monitors labeled containers and restarts them if unhealthy
+  autoheal:
+    image: willfarrell/autoheal:latest
+    container_name: autoheal
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # Required to issue restart commands
+
+  vpn-restarter:
+    image: docker:cli
+    container_name: vpn-restarter
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: |
+      /bin/sh -c '
+      echo "Watching Gluetun for restarts..."
+      
+      # Grab the exact timestamp Gluetun started
+      LAST_START=$$(docker inspect -f "{{.State.StartedAt}}" gluetun 2>/dev/null)
+      
+      while true; do
+        sleep 10
+        CURRENT_START=$$(docker inspect -f "{{.State.StartedAt}}" gluetun 2>/dev/null)
+        
+        # If the start time changed, Gluetun was restarted
+        if [ "$$CURRENT_START" != "" ] && [ "$$LAST_START" != "$$CURRENT_START" ]; then
+          echo "Gluetun restart detected! Waiting for tunnel to establish..."
+          
+          # Wait patiently until Gluetun connects and reports healthy
+          while [ "$$(docker inspect -f "{{.State.Health.Status}}" gluetun 2>/dev/null)" != "healthy" ]; do
+            sleep 5
+          done
+          
+          echo "Gluetun is healthy. Restarting dependent containers..."
+          
+          # Find all containers with the dependency label and restart them
+          for c in $$(docker ps -aq --filter label=vpn-dependent=true); do
+            echo "Restarting $$c..."
+            docker restart $$c
+          done
+          
+          # Log the new start time and resume watching
+          LAST_START=$$CURRENT_START
+          echo "Recovery complete. Resuming watch..."
+        fi
+      done'
+
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes:
+      - ${BASE_PATH}/pia/pia-shared:/pia-shared
+    environment:
+      - DNS_UPSTREAM_RESOLVER_TYPE=plain
+      - DNS_UPSTREAM_PLAIN_ADDRESSES=10.0.0.243:53
+#      - WIREGUARD_MTU=1280
+      - OPENVPN_TUN_MTU=1280
+      - OPENVPN_MSSFIX=1280
+      - VPN_SERVICE_PROVIDER=private internet access
+      - OPENVPN_USER=${PIA_USER}
+      - OPENVPN_PASSWORD=${PIA_PASS}
+      - SERVER_REGIONS=Netherlands
+      - SERVER_SELECTION_VPN_PORT_FORWARDING_ONLY=yes
+      - PORT_FORWARD_ONLY=true
+      - VPN_PORT_FORWARDING=on
+      - VPN_PORT_FORWARDING_STATUS_FILE=/pia-shared/port.dat
+    ports:
+#      - 8000:8000 # Built-in HTTP control server
+#      - 9898:9898/tcp # HTTP proxy
+#      - 8388:8388/tcp # Shadowsocks
+#      - 8388:8388/udp # Shadowsocks
+      - 8080:8080 # qBittorrent
+      - 3000:3000 # Firefox HTTP
+      - 3001:3001 # Firefox HTTPS
+      - 5077:5077 # audiobookbay-downloader (development alt) 
+      - 5078:5078 # audiobookbay-downloader (development)   
+      - 5079:5079 # audiobookbay-downloader (control-prod)
+      - 8112:8112 # audiobookbay-downloader (control-prod)
+      - 9091:9091 # audiobookbay-downloader (control-prod)
+    restart: unless-stopped
+    extra_hosts:
+      - "library.gift=193.218.118.42"
+      - "download.library.gift=176.119.25.72"
+    networks:
+       - vpn-network
+    # 2. Tell Autoheal to watch this container
+    labels:
+      - autoheal=true
+    healthcheck:
+      test: ["CMD", "/gluetun-entrypoint", "healthcheck"]
+      interval: 10s       
+      timeout: 10s        
+      retries: 3          
+      start_period: 90s
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/qbittorrent/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    # 3. Tell Autoheal to watch Firefox, and give Firefox a way to know if its network died
+    labels:
+      - autoheal=true
+      - vpn-dependent=true
+    healthcheck:
+      # If Gluetun drops or restarts, this curl fails, triggering a Firefox restart to fix the namespace
+      test: ["CMD-SHELL", "ping -c 1 -W 3 10.0.0.242 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  qbittorrent-porthelper:
+    image: scotte/qbittorrent-porthelper:latest
+    container_name: qbittorrent-porthelper
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      - HOST=${QBIT_IP}
+      - USERNAME=${QBIT_USER}
+      - PASSWORD=${QBIT_PASS}
+    volumes:
+      - ${BASE_PATH}/pia/pia-shared:/piashared
+    restart: unless-stopped
+    networks:
+       - vpn-network
+    depends_on:
+      qbittorrent:
+        condition: service_healthy
+    # 3. Tell Autoheal to watch Firefox, and give Firefox a way to know if its network died
+    labels:
+      - autoheal=true
+      - vpn-dependent=true
+    healthcheck:
+      # If Gluetun drops or restarts, this curl fails, triggering a Firefox restart to fix the namespace
+      test: ["CMD-SHELL", "ping -c 1 -W 3 10.0.0.242 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  firefox:
+    image: lscr.io/linuxserver/firefox:latest
+    container_name: firefox
+    network_mode: "service:gluetun"
+    #security_opt:
+      #- seccomp:unconfined #optional
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      #- FIREFOX_CLI=https://www.linuxserver.io/ #optional
+    volumes:
+      - ${BASE_PATH}/firefox/config:/config
+      #- ${BASE_PATH}/firefox/downloads:/downloads
+      - ${NFS_MOUNT_POINT}/share/firefox-downloads:/downloads:rw
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    shm_size: "256mb"
+    #ports:
+      #- 3000:3000
+      #- 3001:3001
+    restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    # 3. Tell Autoheal to watch Firefox, and give Firefox a way to know if its network died
+    labels:
+      - autoheal=true
+      - vpn-dependent=true
+#    healthcheck:
+#      # Verifies VPN routing via standard web traffic, bypassing root ping restrictions
+#      test: ["CMD-SHELL", "curl -fIsS https://10.0.0.242 || exit 1"]
+#      interval: 15s
+#      timeout: 10s
+#      retries: 3
+#      start_period: 30s
+
+  audiobookbay-automated-dev:
+    image: ghcr.io/meek2100/audiobookbay-automated:crows_nest1
+    container_name: audiobookbay-downloader-dev
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      - DL_CLIENT=qbittorrent
+      - DL_SCHEME=http
+      - DL_HOST=127.0.0.1
+      - DL_PORT=8080
+      - DL_USERNAME=meek2100
+      - DL_PASSWORD=Down4life!
+      - DL_CATEGORY=audiobooks
+      - SAVE_PATH_BASE=/mnt/media/content/audiobooks
+      - ABB_HOSTNAME=audiobookbay.lu #Default
+      - NAV_LINK_NAME=Open Audiobook Shelf #Optional
+      - NAV_LINK_URL=https://audiobookshelf.secure.theurer.dev/ #Optional
+      - SECRET_KEY=thisismykey2
+      - SPLASH_ENABLED=false
+      - SITE_TITLE=The Crow's Nest
+      - SPLASH_MESSAGE=Merry Christmas Kimber and welcome to The Crow's Nest,<br>where you can snuggle up and read or listen to any book.
+      #- LISTEN_PORT=5077
+      #- LOG_LEVEL=DEBUG
+    # ports:
+     # - "5078:5078"
+    restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    # 3. Tell Autoheal to watch Firefox, and give Firefox a way to know if its network died
+    labels:
+      - autoheal=true
+      - vpn-dependent=true
+#    healthcheck:
+#      # Chained check: 1. Verify VPN tunnel. 2. Verify native app health.
+#      test: ["CMD-SHELL", "ping -c 1 -W 3 10.0.0.242 && python3 /app/audiobook_automated/healthcheck.py || exit 1"]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
+#      # I bumped this from 5s to 30s to give the app time to wait for Gluetun's network to establish
+#      start_period: 30s
+
+#  audiobookbay-automated-prod:
+#    image: ghcr.io/jamesry96/audiobookbay-automated:latest
+#    container_name: audiobookbay-downloader-prod
+#    network_mode: "service:gluetun"
+#    environment:
+#      - PUID=${PUID}
+#      - PGID=${GUID}
+#      - TZ=${TZ}
+#      - DL_CLIENT=qbittorrent
+#      - DL_SCHEME=http
+#      - DL_HOST=127.0.0.1
+#      - DL_PORT=8080
+#      - DL_USERNAME=meek2100
+#      - DL_PASSWORD=Down4life!
+#      - DL_CATEGORY=audiobooks
+#      - SAVE_PATH_BASE=/mnt/media/content/audiobooks
+#      - ABB_HOSTNAME=audiobookbay.lu #Default
+#      - NAV_LINK_NAME=Open Audiobook Shelf #Optional
+#      - NAV_LINK_URL=https://audiobookshelf.secure.theurer.dev/ #Optional
+#       - PORT=5079
+#    # ports:
+#     # - "5079:5079"
+#    restart: unless-stopped
+#    depends_on:
+#      gluetun:
+#        condition: service_healthy
+#    # 3. Tell Autoheal to watch Firefox, and give Firefox a way to know if its network died
+#    labels:
+#      - autoheal=true
+#      - vpn-dependent=true
+#    healthcheck:
+#      # If Gluetun drops or restarts, this curl fails, triggering a Firefox restart to fix the namespace
+#      test: ["CMD-SHELL", "ping -c 1 -W 3 10.0.0.242 || exit 1"]
+#      interval: 15s
+#      timeout: 10s
+#      retries: 3
+#      start_period: 30s
+
+#  deluge:
+#    image: lscr.io/linuxserver/deluge:latest
+#    container_name: deluge
+#    network_mode: "service:gluetun"
+#    environment:
+#      - PUID=${PUID}
+#      - PGID=${GUID}
+#      - TZ=${TZ}
+#      - WEBPUI_PORT=8112
+#    volumes:
+#      - ${BASE_PATH}/qbittorrent/config/deluge2:/config
+#      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+#    restart: unless-stopped
+#    depends_on:
+#      gluetun:
+#        condition: service_healthy
+#    # 3. Tell Autoheal to watch Firefox, and give Firefox a way to know if its network died
+#    labels:
+#      - autoheal=true
+#      - vpn-dependent=true
+#    healthcheck:
+#      # If Gluetun drops or restarts, this curl fails, triggering a Firefox restart to fix the namespace
+#      test: ["CMD-SHELL", "ping -c 1 -W 3 10.0.0.242 || exit 1"]
+#      interval: 15s
+#      timeout: 10s
+#      retries: 3
+#      start_period: 30s
+
+#  transmission:
+#    image: lscr.io/linuxserver/transmission:latest
+#    container_name: transmission
+#    network_mode: "service:gluetun" 
+#    environment:
+#      - PUID=${PUID}
+#      - PGID=${GUID}
+#      - TZ=${TZ}
+#      - WEBUI_PORT=9091
+#      - USER=meek2100
+#      - PASS=Down4life!
+#    volumes:
+#      - ${BASE_PATH}/qbittorrent/config/transmission:/config
+#      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+#    restart: unless-stopped
+#    depends_on:
+#      gluetun:
+#        condition: service_healthy
+#    # 3. Tell Autoheal to watch Firefox, and give Firefox a way to know if its network died
+#    labels:
+#      - autoheal=true
+#      - vpn-dependent=true
+#    healthcheck:
+#      # If Gluetun drops or restarts, this curl fails, triggering a Firefox restart to fix the namespace
+#      test: ["CMD-SHELL", "ping -c 1 -W 3 10.0.0.242 || exit 1"]
+#      interval: 15s
+#      timeout: 10s
+#      retries: 3
+#      start_period: 30s
+
+networks:
+  vpn-network:
+  discovery-network:

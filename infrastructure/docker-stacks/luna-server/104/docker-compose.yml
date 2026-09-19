@@ -1,0 +1,13 @@
+services:
+  octoeverywhere:
+    image: octoeverywhere/octoeverywhere:latest
+    container_name: octoeverywhere
+    restart: always
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      - COMPANION_MODE=klipper
+      - PRINTER_IP=192.168.1.90
+    volumes:
+      - ${BASE_PATH}/octoeverywhere/data:/data

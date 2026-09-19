@@ -1,0 +1,20 @@
+{
+	"data": "ENC[AES256_GCM,data:NGDSQNMrVH2jOMaCTx63OTBRbviYlNVcbT5AWoRa2BwLbOcPBHUWbWGBTBYwKU/y+LM1MmuQrRJf3+sGhtXUbdr4aMOt9o4OOThjv9JUyaQZHAUi5reLOu+nMg1ECKywDGdc7Xy78GYXd2T/q9sx67kh6RmbdnCG+XGoQ1OPjyMMH5j9Jx0CLrFTzea3eemg5fHjD9O7sGU6fVwAFIfhAvWiOdXf4jVZzEHUPrxkrcfuyL3QmXh6maeUVsLDh3VsURToZ1eLtf1RIn9FC8PIpY9ElcAUxR03r51IbFzhceHzHl6JBEZs54f5lw2fMsq36zzjiaFyb0Qi1nVSgEYVTNmuSdeaTAwBY/gdee7pEQKXREIi9sKitqXSjpkV9vb/tcbGlBw6E/LH0RrqTmpA7+/SwO5M/IaJrRj/A5D6ULtGvAQ/L7H3mvjbL7zRvynYpDPcGUyMNLnVUouhOQfGaOBmqSswr5ZUFKSOybVHMfMbmYGben1Nz0aFTTxZYvCL900vb/kIAVefdIk6QJ31AoNKCe+pHWE9cPsVhvFUEjNIW4TUDpnEur+sojm0DIui7uy6UC10YhEYAligbwEePZoYfQB4XHgKZNZi97LRvcgIDteUAM78+imutdM1H4acZxBJf4xdOBX5XzZOoR7V3Zve80bwC22r5Hv2uO1+1J8MfEzi7Sc8C3NfvACdlN5fjx3OzP/Q4OerwBNReSTHmNnui9ijWICBculZJBGF4iUzVGxL3phpU/0Mp1hlI7XFdWmg+QFDqvmNAKg6uyXSI0pVPZ1a9LFgpZYbZsfXsvINeUWR0ctQhfjsCRpmGWLuW78O//xHUp8D+VjOpzohqbVh8L7bo1tN7lyBfGj1uFAXSJ2MoMmcifSoz2O2o4c9PpmIN3XfAyLx1PZPxgjmfA2l6keM4t5xDHrqc1x6zBAFboJF8Bp5DUBSm1++eM5466SQzrQW0Z/4kLZN,iv:TWy8nZiGP3tyW0g/zoAWZd0asFl8ihg+uqECQjCzv0o=,tag:1GCo4lyc64IGfIPW1Aty0A==,type:str]",
+	"sops": {
+		"kms": null,
+		"gcp_kms": null,
+		"azure_kv": null,
+		"hc_vault": null,
+		"age": [
+			{
+				"recipient": "age1yqmzhsl58talkkax7g6xwj9xs68rqm2efxa5z0zg2u566m3dzeusj96x5f",
+				"enc": "-----BEGIN AGE ENCRYPTED FILE-----\nYWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBkemt2K2Y0MjhWcmo4K1NS\nazd5Mk9zcVdLNEZvcWFnTDgwNDY0K3FDSHhJCm8wdURzM1hEZDg4RHpBVXRKb2Z0\na1lXY21BcHdwaWNFMlhrL3MramNId00KLS0tIFhNVVJ3NlR0aitET0Z6Y0xzTG9j\nZ045akdrNEVkdmJjR0N1VmtXWXJ5UkkKJx84N1sshD/gimcyKSX9nNweAffDBkyi\npbVzjc212789JynDQmTjkl3LaV17Fgl9ALpQDAlW7M4owaky162ATw==\n-----END AGE ENCRYPTED FILE-----\n"
+			}
+		],
+		"lastmodified": "2026-09-19T18:06:59Z",
+		"mac": "ENC[AES256_GCM,data:NNszPCQZfALvIbwIahoaCMk9e5cHWQgS7083/gUUZjJ97LKYfcKm2yAbw/JGRCBPmA2esRqE92Ch4px5IphD6Cmi/jkYpjVSAyFEH2Qia/0aLarmKBXMg7X6knalPSuVkGHXk0RTudRD9hitIwwC5gJKWeRBEthrxCrm+TPOL08=,iv:Fyb6IAQ3QFyCNUVWmXI1Mm2ub4s/XHUmradReQ+ctmg=,tag:I/LoUwMeQRg8tHQb0imEJQ==,type:str]",
+		"pgp": null,
+		"unencrypted_suffix": "_unencrypted",
+		"version": "3.8.1"
+	}
+}

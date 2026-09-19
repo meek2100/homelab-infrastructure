@@ -1,0 +1,7 @@
+{
+"version": 1,
+"ids": {
+"100": { "node": "pve3", "type": "qemu", "version": 2 },
+"101": { "node": "pve3", "type": "qemu", "version": 1 }}
+
+}

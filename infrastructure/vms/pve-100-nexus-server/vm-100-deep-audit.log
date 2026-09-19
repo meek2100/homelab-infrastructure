@@ -1,0 +1,249 @@
+============================================================
+🔍 Deep VM Audit: VM 100 (vm-100) on Host 192.168.1.250
+============================================================
+
+------------------------------------------------------------
+📌 VM OS Release & Hostname
+------------------------------------------------------------
+nexus-server
+PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
+NAME="Debian GNU/Linux"
+VERSION_ID="12"
+VERSION="12 (bookworm)"
+VERSION_CODENAME=bookworm
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+
+
+------------------------------------------------------------
+📌 VM Network Interfaces & IPs
+------------------------------------------------------------
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+ens18            UP             192.168.1.185/24 fd28:317b:5158:687e:be24:11ff:fe97:ebdb/64 fe80::be24:11ff:fe97:ebdb/64 
+br-92aff97ff438  UP             172.20.0.1/16 fe80::dca0:e4ff:fec3:a1b2/64 
+docker0          UP             172.17.0.1/16 fe80::1c06:fbff:fee0:d80/64 
+br-f0f703eb509d  UP             172.19.0.1/16 fe80::982f:2cff:feeb:ed3c/64 
+br-23eea0c7c541  UP             172.18.0.1/16 fe80::e823:baff:feaa:ebf7/64 
+br-51c433bea17a  UP             172.21.0.1/16 fe80::e8d6:96ff:fe37:20da/64 
+br-566f4e16dd4c  DOWN           172.22.0.1/16 
+veth6e909a5@if2  UP             fe80::3042:8fff:fe0c:7e18/64 
+veth7c5acc8@if2  UP             fe80::a480:2aff:fec8:ea80/64 
+vethe221e12@if2  UP             fe80::3840:4fff:fe3b:7456/64 
+veth2c704bb@if2  UP             fe80::4cfb:1ff:fe27:ac23/64 
+vethd7f4625@if2  UP             fe80::e8ea:9cff:fe4d:6901/64 
+br-047ac66b195f  UP             172.23.0.1/16 fe80::b415:86ff:fedc:e683/64 
+vethb63ae93@if2  UP             fe80::e8f4:f6ff:fe8e:4708/64 
+veth6651abc@if2  UP             fe80::2076:9fff:fe48:4cd0/64 
+veth566ca02@if2  UP             fe80::14e1:73ff:fe6c:bdbd/64 
+
+
+------------------------------------------------------------
+📌 VM Routing Table
+------------------------------------------------------------
+default via 192.168.1.1 dev ens18 
+172.17.0.0/16 dev docker0 proto kernel scope link src 172.17.0.1 
+172.18.0.0/16 dev br-23eea0c7c541 proto kernel scope link src 172.18.0.1 
+172.19.0.0/16 dev br-f0f703eb509d proto kernel scope link src 172.19.0.1 
+172.20.0.0/16 dev br-92aff97ff438 proto kernel scope link src 172.20.0.1 
+172.21.0.0/16 dev br-51c433bea17a proto kernel scope link src 172.21.0.1 
+172.22.0.0/16 dev br-566f4e16dd4c proto kernel scope link src 172.22.0.1 linkdown 
+172.23.0.0/16 dev br-047ac66b195f proto kernel scope link src 172.23.0.1 
+192.168.1.0/24 dev ens18 proto kernel scope link src 192.168.1.185 
+
+
+------------------------------------------------------------
+📌 VM Mounts & /etc/fstab
+------------------------------------------------------------
+# /etc/fstab: static file system information.
+#
+# Use 'blkid' to print the universally unique identifier for a
+# device; this may be used with UUID= as a more robust way to name devices
+# that works even if disks are added and removed. See fstab(5).
+#
+# systemd generates mount units based on this file, see systemd.mount(5).
+# Please run 'systemctl daemon-reload' after making changes here.
+#
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+# / was on /dev/sda1 during installation
+UUID=a30085c6-16a4-4740-8d5b-e3edf235cdf0 /               ext4    errors=remount-ro 0       1
+# swap was on /dev/sda5 during installation
+UUID=342820f6-43dc-4243-b041-3afe7cad6244 none            swap    sw              0       0
+/dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
+--- Mounts ---
+/dev/sda1 on / type ext4 (rw,relatime,errors=remount-ro)
+overlay on /var/lib/docker/overlay2/21068237a553630ed0c3246c080942a11f0ac03ab6d35786c2cb98cbaec0e94e/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/UB4MXKTNTXUQEINKGANSERFO7C:/var/lib/docker/overlay2/l/KFLD2AWSKKBGQYCXMBKTKCJ2QQ:/var/lib/docker/overlay2/l/JN4YJ6ATGTR4XNFRHN6RLW5AN7:/var/lib/docker/overlay2/l/CL5URHD3UAQMUAZNRNBMBHIFFT,upperdir=/var/lib/docker/overlay2/21068237a553630ed0c3246c080942a11f0ac03ab6d35786c2cb98cbaec0e94e/diff,workdir=/var/lib/docker/overlay2/21068237a553630ed0c3246c080942a11f0ac03ab6d35786c2cb98cbaec0e94e/work)
+overlay on /var/lib/docker/overlay2/98eea260163a417f3b19f18e0d7826dbf00d4ce69c09618c8e01ac8aed99432f/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/NT5GOJHZRDLTOWU3XSRHUGLQB3:/var/lib/docker/overlay2/l/BRHK573B2X7IVTRVS7OV27I3ZR:/var/lib/docker/overlay2/l/33RVZSD6VD6JOG7XOTTJRG6QLX:/var/lib/docker/overlay2/l/LIBEHDQUBMYCDYL3MBU73OZLUA:/var/lib/docker/overlay2/l/DI7Z74HSM4Q6RMSUYR2HFQ4CIY:/var/lib/docker/overlay2/l/IH2YUG5OEOOYUG5JT3PPMLL2FH:/var/lib/docker/overlay2/l/VLNPUNQRDEOQJLQ2G5THNYHLOD:/var/lib/docker/overlay2/l/RJ7WFZKQV6RXNWGG3IM7SDK6CG,upperdir=/var/lib/docker/overlay2/98eea260163a417f3b19f18e0d7826dbf00d4ce69c09618c8e01ac8aed99432f/diff,workdir=/var/lib/docker/overlay2/98eea260163a417f3b19f18e0d7826dbf00d4ce69c09618c8e01ac8aed99432f/work)
+overlay on /var/lib/docker/overlay2/7d9ff51f097cfbe634973d137df7f73fedcda915177f35021e5cbc147a155c9c/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/FRWVIFUNDVSBIZSA6FJVAEFFAN:/var/lib/docker/overlay2/l/LPJ4Q3UYZXC7ELIPTD6RKGLHLS:/var/lib/docker/overlay2/l/TVB5L6BRKOPGYFFC7EHJ23VCA5:/var/lib/docker/overlay2/l/YSJHAZ7FN7TGTBXVGSGLECCW77:/var/lib/docker/overlay2/l/F6BVQQWDAVF3L6G62U3LDP2JXR:/var/lib/docker/overlay2/l/DJ6A6B7CIEBN5FESWJQXUXRR2J,upperdir=/var/lib/docker/overlay2/7d9ff51f097cfbe634973d137df7f73fedcda915177f35021e5cbc147a155c9c/diff,workdir=/var/lib/docker/overlay2/7d9ff51f097cfbe634973d137df7f73fedcda915177f35021e5cbc147a155c9c/work)
+overlay on /var/lib/docker/overlay2/f0e0bfc9978a3e0c81d0fd7618d45063c6a956edb922ad9d440d19b16898a43d/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/GCBBJT3KT6GCWNE6LNCI7QWAJ3:/var/lib/docker/overlay2/l/JPC7QLSENFNKIRBFJHIUBQ2WAL:/var/lib/docker/overlay2/l/J4KLFIHRB2DVM7H3EMNDWXQ5ST:/var/lib/docker/overlay2/l/CP6JVHZIYHWA4DLZMNH54BT6CK:/var/lib/docker/overlay2/l/WIBLHOQLEZAQV2HDQ3QDDTW27Z:/var/lib/docker/overlay2/l/C27QCS7HHTCYMOMH2XW2IIRNJV,upperdir=/var/lib/docker/overlay2/f0e0bfc9978a3e0c81d0fd7618d45063c6a956edb922ad9d440d19b16898a43d/diff,workdir=/var/lib/docker/overlay2/f0e0bfc9978a3e0c81d0fd7618d45063c6a956edb922ad9d440d19b16898a43d/work)
+overlay on /var/lib/docker/overlay2/a512dda13259a23bc81179dcaae1670eb18ee223306f58e112fa21d38fa27544/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/65YRBZPRZHX5SN2QLNKOQSQBW6:/var/lib/docker/overlay2/l/WFENDWKQND73TJIU6X6GGMMXFX:/var/lib/docker/overlay2/l/YZXC57BXHEYXUXUFSNDLNFCNL3:/var/lib/docker/overlay2/l/BE2D3RMN2NVG6QJPOACIKN3FGW:/var/lib/docker/overlay2/l/CIER33YBFRZJNPGQK5RFH7CVRX:/var/lib/docker/overlay2/l/3TCYJMLY7WUH5HVM3NP5CPWDKX:/var/lib/docker/overlay2/l/SJSS2IASMDF5MMJB4PFUGSRE6Z:/var/lib/docker/overlay2/l/SJIDGAFBJCVGVXA5PDNYDRBWV4:/var/lib/docker/overlay2/l/LNJXQLBJW7RXVJUL2EBYKHLQPJ:/var/lib/docker/overlay2/l/FWUUBQEDQBGMHZHYGQ7FW5BBYH:/var/lib/docker/overlay2/l/FSYMO62JGYYI42BEHY3T5R4QY5:/var/lib/docker/overlay2/l/Y5EUTG2HLD34RAAETW7SYPCA5J:/var/lib/docker/overlay2/l/L3OSCSAHNG5F35PALYPVZ5NAHL:/var/lib/docker/overlay2/l/C27QCS7HHTCYMOMH2XW2IIRNJV,upperdir=/var/lib/docker/overlay2/a512dda13259a23bc81179dcaae1670eb18ee223306f58e112fa21d38fa27544/diff,workdir=/var/lib/docker/overlay2/a512dda13259a23bc81179dcaae1670eb18ee223306f58e112fa21d38fa27544/work)
+overlay on /var/lib/docker/overlay2/df4b50dbac775e01f7dfe75d810530aafcd38f0623c2b42862db9440d0a2264c/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/F4VWUCS5G37HF7JAKK2Q7JPGSC:/var/lib/docker/overlay2/l/Y6VDHVKWQAPWRPHKZLQOZXQQZZ:/var/lib/docker/overlay2/l/HQPL3AHF62AS6YPQP4OH2NYTRG:/var/lib/docker/overlay2/l/5UALY5GN2VXSWGG7DHH7EX56OX:/var/lib/docker/overlay2/l/D7UNVETHJ3YZM7SE4N2CL43VUC:/var/lib/docker/overlay2/l/HIOOOLAPFU6AFVWDB7D73I7CAX:/var/lib/docker/overlay2/l/BF4XHZCSSXRKLXIQLUNB2YIAPE:/var/lib/docker/overlay2/l/2IF7TTECXQY73RMFQLLMNDH4KV:/var/lib/docker/overlay2/l/ERCFQAD32RLLT7PMX3J5GQYIUS:/var/lib/docker/overlay2/l/SFE25QZTT7I5OQHWLNDYYKCUIO:/var/lib/docker/overlay2/l/BGNXBXNACVOZHGJ7V3QVTGUEPX:/var/lib/docker/overlay2/l/QSFM6WPB6PVQK6FVV6VJHRLAOB,upperdir=/var/lib/docker/overlay2/df4b50dbac775e01f7dfe75d810530aafcd38f0623c2b42862db9440d0a2264c/diff,workdir=/var/lib/docker/overlay2/df4b50dbac775e01f7dfe75d810530aafcd38f0623c2b42862db9440d0a2264c/work)
+overlay on /var/lib/docker/overlay2/2f6e9f5a9bc754c63e57d889cc29d4ec4d98cc137c6f3c9bfc9d77b2763a5e70/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/S5KANFYGTEQXKJDY3EWCFPGPYL:/var/lib/docker/overlay2/l/T72PQ72LLATNURX7JUWFDZHANM:/var/lib/docker/overlay2/l/PQQDFY6O242AKPSREL5NQ4TZKE:/var/lib/docker/overlay2/l/N2NZIKX74F7TLZC7PW3VDXA7KI:/var/lib/docker/overlay2/l/6CR33FAEPVIFFAYTKQ722FKMUF:/var/lib/docker/overlay2/l/GG6NHBTSAWHNSE2LJRRTHH7AVW:/var/lib/docker/overlay2/l/WDMUZGBSEX5MKS7BFOMQG3Z4VF:/var/lib/docker/overlay2/l/YJLJHIEPMQYBIIFKHUO3365ETE:/var/lib/docker/overlay2/l/SGBZQPDYCDKD6IDIBGGOIKPGK3:/var/lib/docker/overlay2/l/2ZYSRZBESCV6JQV3BD4VU2LF7R:/var/lib/docker/overlay2/l/YLXLYTGKM72HD2EMJ5UIWS27LQ:/var/lib/docker/overlay2/l/5QG6GSODKA7N5JUHUXE3ZLXVRE:/var/lib/docker/overlay2/l/WJYIGBIQGSHUKWG5UVTVLNAY5V:/var/lib/docker/overlay2/l/SYEHTXJAKKCO2ZJA5MPO7EALMR:/var/lib/docker/overlay2/l/SARTGIC65W2BICPLXTFTFDSMFW:/var/lib/docker/overlay2/l/PR4QVDEWQ6RZGWIY5DDMO75HGP:/var/lib/docker/overlay2/l/A5ZD5DCUBFWZGYAULDU5SNE3XI:/var/lib/docker/overlay2/l/XLWU2DSUHU57VILGJL756MZYLL:/var/lib/docker/overlay2/l/Z44BEAVWZBCMCPARE5LTFY3CUK:/var/lib/docker/overlay2/l/53JW3PNZSDNJW55UQNMOIJZSL4:/var/lib/docker/overlay2/l/WLJ4KHV5LICAFPM23Q7Q4SRAOK:/var/lib/docker/overlay2/l/YG5XYBUZV7UMSUSI5FFZ7MW3RC:/var/lib/docker/overlay2/l/O2OD6OHK63X4ZGEUJNONB6PCGS:/var/lib/docker/overlay2/l/NKH4OVUAGMCREGZ3XAADBLDF5K:/var/lib/docker/overlay2/l/UCNLPIMKYG7VXMU7SHFH4NKOAH:/var/lib/docker/overlay2/l/JTTWFVFFMFWJ7QTTQWCJ6NDO2F:/var/lib/docker/overlay2/l/OFJZO6RRVRMAX6PDSRJU6AGMNL:/var/lib/docker/overlay2/l/LTQ4TZX3NZRDA2S2HPAAHAUF5W:/var/lib/docker/overlay2/l/RE2DDF7FOVCMEIBS23KOSAVRKC:/var/lib/docker/overlay2/l/Q6CNVS3PXM765GUAJEV4MS7XDR:/var/lib/docker/overlay2/l/PIHSZVIBPFS3TKN3RT7M3SP6JR:/var/lib/docker/overlay2/l/MZA6542ATAL4XYIYC2PB2AVE3T:/var/lib/docker/overlay2/l/SX7FZ6KQLUA6CAAV6N3M3UOJDX,upperdir=/var/lib/docker/overlay2/2f6e9f5a9bc754c63e57d889cc29d4ec4d98cc137c6f3c9bfc9d77b2763a5e70/diff,workdir=/var/lib/docker/overlay2/2f6e9f5a9bc754c63e57d889cc29d4ec4d98cc137c6f3c9bfc9d77b2763a5e70/work)
+overlay on /var/lib/docker/overlay2/c26cc9ebb309ad81e44dab07723843a07cc6c42cbdcf09c7c2d071918796cc1d/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/HD6HLIBQUGC5E4GRWOJHRMFP6C:/var/lib/docker/overlay2/l/5FZXTEDA7CEJBW7M6E4OAJ3FOJ:/var/lib/docker/overlay2/l/DDOZ367ELUUQNNRMUXHQXB4VLS:/var/lib/docker/overlay2/l/GFGTPTE6V2EONPD4DK4PER6JOU,upperdir=/var/lib/docker/overlay2/c26cc9ebb309ad81e44dab07723843a07cc6c42cbdcf09c7c2d071918796cc1d/diff,workdir=/var/lib/docker/overlay2/c26cc9ebb309ad81e44dab07723843a07cc6c42cbdcf09c7c2d071918796cc1d/work)
+overlay on /var/lib/docker/overlay2/9e8991a117e0acad6273bae769373a46b61ef3143066d7b8b6342dbc20cc5c48/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/6AUQIITJLSPISZOE32JUOZWFVH:/var/lib/docker/overlay2/l/5FZXTEDA7CEJBW7M6E4OAJ3FOJ:/var/lib/docker/overlay2/l/DDOZ367ELUUQNNRMUXHQXB4VLS:/var/lib/docker/overlay2/l/GFGTPTE6V2EONPD4DK4PER6JOU,upperdir=/var/lib/docker/overlay2/9e8991a117e0acad6273bae769373a46b61ef3143066d7b8b6342dbc20cc5c48/diff,workdir=/var/lib/docker/overlay2/9e8991a117e0acad6273bae769373a46b61ef3143066d7b8b6342dbc20cc5c48/work)
+overlay on /var/lib/docker/overlay2/b7a1b3314e0cecb2fce14a191466f4e5ec5997989f791f2333ac0faba6565008/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/3FMDITQBWLR5DWU7DDJG6NZB56:/var/lib/docker/overlay2/l/7KVE2AHH5P23PVQRLK7OIIOVDD:/var/lib/docker/overlay2/l/D7EOANB75YLFQPUNUTV4RSNIMX:/var/lib/docker/overlay2/l/4ILRCOXWVK3HWVTIAYSMXV7GUG:/var/lib/docker/overlay2/l/JL2OWPDH3LAIAPB4QTIIGHERJZ:/var/lib/docker/overlay2/l/YR7QIKYS64XKZV4RLWAC7EHOKC:/var/lib/docker/overlay2/l/2CIMBNHMVD6PIFEFFTFAPWVTMW:/var/lib/docker/overlay2/l/I75JA6FAKLW3SQBRAC4LJGYP77:/var/lib/docker/overlay2/l/FTF73LWZWHZDQN6D4LJSWAB7VQ:/var/lib/docker/overlay2/l/YFD3FTF3DZZQBUNDZWNIYRUTA7:/var/lib/docker/overlay2/l/ORZCAYYRUMN3JNQXYBQD73N5G3:/var/lib/docker/overlay2/l/SQFNRRMRQVEPKO3IFLFKH3XKI5:/var/lib/docker/overlay2/l/NZE37YWCXV2MVQYQ54OUTBTGYF:/var/lib/docker/overlay2/l/CUGVU3FP6W74WHG7MD7JJVSOMY:/var/lib/docker/overlay2/l/NV2O6OC7YDRDV2KHEPKNM6BDOD:/var/lib/docker/overlay2/l/5QXPNY7H7CDICP7QQCK7VS3FOT:/var/lib/docker/overlay2/l/PEWJ4BNQEJ7K7XBHR4MTRV6H3E:/var/lib/docker/overlay2/l/LEY76H6D6LKNBIS6XKXXUNBSKS:/var/lib/docker/overlay2/l/CIXLS6ZY5XMGCMJNHZR6KP7TL7,upperdir=/var/lib/docker/overlay2/b7a1b3314e0cecb2fce14a191466f4e5ec5997989f791f2333ac0faba6565008/diff,workdir=/var/lib/docker/overlay2/b7a1b3314e0cecb2fce14a191466f4e5ec5997989f791f2333ac0faba6565008/work)
+overlay on /var/lib/docker/overlay2/dd2c63c06bbebc4d94ff536b08e8eb09206f75612d31a058977c0d62786f2560/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/ISMSXPHN5CCPIX3FBDPWEEA54S:/var/lib/docker/overlay2/l/SLB2KPTBBRXMCU7D3HVANW226M:/var/lib/docker/overlay2/l/M445NMMDQM6MDWYTSPPVM3YPKW:/var/lib/docker/overlay2/l/ND2Z3GLYWQBS224F4S6SUCSH7T:/var/lib/docker/overlay2/l/MVWHUY4M2UABZ242O4PJ2IAD4Z:/var/lib/docker/overlay2/l/BANNGSBYWVYFXGTLHWCK55FD2B:/var/lib/docker/overlay2/l/7WXIO4GCO5OESC4P5QRCPTYOZZ:/var/lib/docker/overlay2/l/PEDPE3EVMOFKLWFP7DBLFP3UHX:/var/lib/docker/overlay2/l/OMPH7AB2PV6WB3QWMW2WVBIEGB:/var/lib/docker/overlay2/l/ITD3NIXWTOIR2QYMD3VK2FCTF6,upperdir=/var/lib/docker/overlay2/dd2c63c06bbebc4d94ff536b08e8eb09206f75612d31a058977c0d62786f2560/diff,workdir=/var/lib/docker/overlay2/dd2c63c06bbebc4d94ff536b08e8eb09206f75612d31a058977c0d62786f2560/work)
+
+
+------------------------------------------------------------
+📌 VM Active Systemd Services
+------------------------------------------------------------
+  UNIT                      LOAD   ACTIVE SUB     DESCRIPTION
+  containerd.service        loaded active running containerd container runtime
+  cron.service              loaded active running Regular background program processing daemon
+  dbus.service              loaded active running D-Bus System Message Bus
+  docker.service            loaded active running Docker Application Container Engine
+  getty@tty1.service        loaded active running Getty on tty1
+  qemu-guest-agent.service  loaded active running QEMU Guest Agent
+  ssh.service               loaded active running OpenBSD Secure Shell server
+  systemd-journald.service  loaded active running Journal Service
+  systemd-logind.service    loaded active running User Login Management
+  systemd-timesyncd.service loaded active running Network Time Synchronization
+  systemd-udevd.service     loaded active running Rule-based Manager for Device Events and Files
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+11 loaded units listed.
+
+
+------------------------------------------------------------
+📌 VM Crontabs & Schedules
+------------------------------------------------------------
+# /etc/crontab: system-wide crontab
+# Unlike any other crontab you don't have to run the `crontab'
+# command to install the new version when you edit this file
+# and files in /etc/cron.d. These files also have username fields,
+# that none of the other crontabs do.
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# Example of job definition:
+# .---------------- minute (0 - 59)
+# |  .------------- hour (0 - 23)
+# |  |  .---------- day of month (1 - 31)
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+# |  |  |  |  |
+# *  *  *  *  * user-name command to be executed
+17 *	* * *	root	cd / && run-parts --report /etc/cron.hourly
+25 6	* * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.daily; }
+47 6	* * 7	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.weekly; }
+52 6	1 * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.monthly; }
+#
+30 3 * * 0 root test -e /run/systemd/system || SERVICE_MODE=1 /usr/lib/x86_64-linux-gnu/e2fsprogs/e2scrub_all_cron
+10 3 * * * root test -e /run/systemd/system || SERVICE_MODE=1 /sbin/e2scrub_all -A -r
+
+
+------------------------------------------------------------
+📌 Docker Version & Info
+------------------------------------------------------------
+Client: Docker Engine - Community
+ Version:           29.6.2
+ API version:       1.55
+ Go version:        go1.26.5
+ Git commit:        dfc4efb
+ Built:             Thu Jul 16 16:12:20 2026
+ OS/Arch:           linux/amd64
+ Context:           default
+
+Server: Docker Engine - Community
+ Engine:
+  Version:          29.6.2
+  API version:      1.55 (minimum version 1.40)
+  Go version:       go1.26.5
+  Git commit:       3d80467
+  Built:            Thu Jul 16 16:12:20 2026
+  OS/Arch:          linux/amd64
+  Experimental:     false
+ containerd:
+  Version:          v2.2.6
+  GitCommit:        11ce9d5f3c68c941867e82890e93e815c1304f1b
+ runc:
+  Version:          1.3.6
+  GitCommit:        v1.3.6-0-g491b69ba
+ docker-init:
+  Version:          0.19.0
+  GitCommit:        de40ad0
+ Containers: 11
+ Images: 10
+ Server Version: 29.6.2
+ Storage Driver: overlay2
+
+
+------------------------------------------------------------
+📌 All Containers (Active & Inactive)
+------------------------------------------------------------
+CONTAINER ID   NAMES                 STATUS                  PORTS                                                                                                                                                                       IMAGE
+583f073c16b7   cloudflared           Up 46 hours                                                                                                                                                                                         cloudflare/cloudflared:latest
+db44de380915   rustdesk-hbbs         Up 47 hours             0.0.0.0:21115-21116->21115-21116/tcp, [::]:21115-21116->21115-21116/tcp, 0.0.0.0:21118->21118/tcp, [::]:21118->21118/tcp, 0.0.0.0:21116->21116/udp, [::]:21116->21116/udp   rustdesk/rustdesk-server:latest
+3eff79ce5571   rustdesk-hbbr         Up 47 hours             0.0.0.0:21117->21117/tcp, [::]:21117->21117/tcp, 0.0.0.0:21119->21119/tcp, [::]:21119->21119/tcp                                                                            rustdesk/rustdesk-server:latest
+1d4cdb5f68c8   watchtower            Up 47 hours (healthy)   8080/tcp                                                                                                                                                                    nickfedor/watchtower:latest
+a80aa52b0359   adguardhome-sync      Up 26 seconds           0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp                                                                                                                                 lscr.io/linuxserver/adguardhome-sync:latest
+777b7350067b   adguardhome-certbot   Up 47 hours             80/tcp, 443/tcp                                                                                                                                                             certbot/dns-cloudflare
+8fd84d2de32f   adguardhome           Up 47 hours                                                                                                                                                                                         adguard/adguardhome
+3b984aee0b0a   portainer             Up 47 hours             0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp, 0.0.0.0:9443->9443/tcp, [::]:9443->9443/tcp, 9000/tcp                                                                          portainer/portainer-ee:latest
+997e73a52b60   nginx-proxy-manager   Up 47 hours                                                                                                                                                                                         jc21/nginx-proxy-manager:latest
+3ab09ea5a929   cloudflare-ddns       Up 47 hours                                                                                                                                                                                         oznu/cloudflare-ddns:latest
+711849da0d0a   wg-easy               Up 47 hours (healthy)   0.0.0.0:51820->51820/udp, [::]:51820->51820/udp, 0.0.0.0:51821->51821/tcp, [::]:51821->51821/tcp                                                                            ghcr.io/wg-easy/wg-easy
+
+
+------------------------------------------------------------
+📌 Docker Networks
+------------------------------------------------------------
+NETWORK ID     NAME                                         DRIVER    SCOPE
+f0f703eb509d   adguardhome_default                          bridge    local
+047006b12dfb   bridge                                       bridge    local
+51c433bea17a   cloudflare-ddns_default                      bridge    local
+4d4f46ad0962   host                                         host      local
+d67c54690562   none                                         null      local
+566f4e16dd4c   portainer-update-1770917046-latest_default   bridge    local
+047ac66b195f   rustdesk-server_default                      bridge    local
+23eea0c7c541   watchtower_default                           bridge    local
+92aff97ff438   wireguard-easy_default                       bridge    local
+
+
+------------------------------------------------------------
+📌 Docker Volumes & Mount Paths
+------------------------------------------------------------
+DRIVER    VOLUME NAME
+local     portainer_data
+
+
+------------------------------------------------------------
+📌 Portainer Stacks & Compose Directories
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 AdGuard Home Config Header
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 Nginx Proxy Manager Proxy Hosts
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 Home Assistant / Homebridge Mounts
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+============================================================
+✅ Deep VM Audit Complete for VM 100 (vm-100)
+============================================================

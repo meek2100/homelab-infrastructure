@@ -1,0 +1,21 @@
+{
+"version": 36,
+"ids": {
+"110": { "node": "pve", "type": "qemu", "version": 38 },
+"113": { "node": "pve", "type": "qemu", "version": 44 },
+"102": { "node": "pve", "type": "qemu", "version": 22 },
+"105": { "node": "pve", "type": "qemu", "version": 28 },
+"108": { "node": "pve", "type": "qemu", "version": 34 },
+"111": { "node": "pve", "type": "qemu", "version": 40 },
+"114": { "node": "pve", "type": "qemu", "version": 46 },
+"100": { "node": "pve", "type": "qemu", "version": 51 },
+"103": { "node": "pve", "type": "qemu", "version": 24 },
+"106": { "node": "pve", "type": "qemu", "version": 30 },
+"109": { "node": "pve", "type": "qemu", "version": 36 },
+"112": { "node": "pve", "type": "qemu", "version": 42 },
+"101": { "node": "pve", "type": "qemu", "version": 20 },
+"104": { "node": "pve", "type": "qemu", "version": 26 },
+"200": { "node": "pve", "type": "qemu", "version": 48 },
+"107": { "node": "pve", "type": "qemu", "version": 32 }}
+
+}

@@ -1,0 +1,68 @@
+services:
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes:
+      - ${BASE_PATH}/pia/pia-shared:/pia-shared
+    environment:
+      - VPN_SERVICE_PROVIDER=private internet access
+      - OPENVPN_USER=${PIA_USER}
+      - OPENVPN_PASSWORD=${PIA_PASS}
+      - SERVER_REGIONS=Netherlands
+      - PORT_FORWARD_ONLY=true
+      - VPN_PORT_FORWARDING=on
+      - OPENVPN_MSSFIX=1220
+      - VPN_PORT_FORWARDING_STATUS_FILE=/pia-shared/port.dat
+    ports:
+      - 9898:9898/tcp # HTTP proxy
+      - 8388:8388/tcp # Shadowsocks
+      - 8388:8388/udp # Shadowsocks
+      - 8080:8080
+
+    networks:
+       - vpn-network
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/qbittorrent/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy
+
+  qbittorrent-porthelper:
+    image: scotte/qbittorrent-porthelper:latest
+    container_name: qbittorrent-porthelper
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      - HOST=${QBIT_IP}
+      - USERNAME=${QBIT_USER}
+      - PASSWORD=${QBIT_PASS}
+    volumes:
+      - ${BASE_PATH}/pia/pia-shared:/piashared
+    depends_on:
+      - qbittorrent
+
+networks:
+  vpn-network:
+  
+#volumes:
+#  nfs-media:
+#    driver_opts:
+#      type: "nfs"
+#      o: "addr=10.25.25.248,nolock,soft,nfsvers=4"
+#      device: ":/media"

@@ -1,0 +1,24 @@
+services:
+  audiobookbay-downloader:
+    image: ghcr.io/jamesry96/audiobookbay-automated:latest
+    ports:
+      - "5078:5078"
+    container_name: audiobookbay-downloader
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      - DOWNLOAD_CLIENT=qbittorrent
+      - DL_SCHEME=http
+      - DL_HOST=10.25.25.246
+      - DL_PORT=8080
+      - DL_USERNAME=meek2100
+      - DL_PASSWORD=Down4life!
+      - DL_CATEGORY=audiobooks
+      - SAVE_PATH_BASE=/audiobooks
+      - ABB_HOSTNAME=audiobookbay.lu #Default
+      - NAV_LINK_NAME=Open Audiobook Shelf #Optional
+      - NAV_LINK_URL=https://audiobookshelf.secure.theurer.dev/ #Optional
+    volumes:
+      - ${NFS_MOUNT_POINT}/share/firefox-downloads:/audiobooks
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw

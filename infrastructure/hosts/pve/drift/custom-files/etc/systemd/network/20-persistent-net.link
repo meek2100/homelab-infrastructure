@@ -1,0 +1,6 @@
+ #/etc/systemd/network/20-persistent-net.link
+ [Match]
+ MACAddress=00:e0:4c:60:d7:82
+
+ [Link]
+ Name=lan1

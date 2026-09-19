@@ -1,0 +1,28 @@
+version: "1"
+
+# More info at https://github.com/pi-hole/docker-pi-hole/ and https://docs.pi-hole.net/
+services:
+  pihole:
+    container_name: pi-hole
+    image: pihole/pihole:latest
+    hostname: luna-server
+    # For DHCP it is recommended to remove these ports and instead add: network_mode: "host"
+    network_mode: host
+    environment:
+      TZ: 'America/Los_Angeles'
+      WEBPASSWORD: 'Down4life!'
+      PIHOLE_DNS_: '1.1.1.1;1.0.0.1'
+      REV_SERVER: 'true'
+      REV_SERVER_CIDR: '192.168.1.0/24'
+      REV_SERVER_TARGET: '192.168.1.1'
+      DNSMASQ_LISTENING: 'all'
+    # Volumes store your data between container upgrades
+    volumes:
+      - data:/etc/pihole
+      - data:/etc/dnsmasq.d
+    #   https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
+    # cap_add:
+    #  - NET_ADMIN # Required if you are using Pi-hole as your DHCP server, else not needed
+    restart: unless-stopped
+volumes:
+  data:

@@ -1,0 +1,16 @@
+services:
+  kavita:
+    image: lscr.io/linuxserver/kavita:latest
+    container_name: kavita
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/kavita/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+#    networks:
+#      - media-network

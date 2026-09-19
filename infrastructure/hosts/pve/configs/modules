@@ -1,0 +1,21 @@
+# /etc/modules: kernel modules to load at boot time.
+#
+# This file contains the names of kernel modules that should be loaded
+# at boot time, one per line. Lines beginning with "#" are ignored.
+# Parameters can be specified after the module name.
+
+# Modules required for PCI passthrough
+vfio
+vfio_iommu_type1
+vfio_pci
+
+## TODO Check if this is no longer supported with gpu passthrough in PVE 8.
+#vfio_virqfd
+
+# Modules required for NVIDIA
+#vfio_nvidia
+
+# Modules required for Intel GVT
+#kvmgt
+#exngt
+#vfio-mdev

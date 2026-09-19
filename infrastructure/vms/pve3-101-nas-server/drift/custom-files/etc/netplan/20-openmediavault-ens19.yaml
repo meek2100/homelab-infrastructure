@@ -1,0 +1,19 @@
+network:
+  ethernets:
+    ens19:
+      match:
+        macaddress: "bc:24:11:bd:7a:26"
+      addresses:
+      - 10.25.25.248/24
+      routes:
+      - to: 0.0.0.0/0
+        via: 10.25.25.248
+        metric: 1
+      dhcp4: no
+      dhcp6: no
+      link-local: []
+      nameservers:
+        addresses:
+        - 1.1.1.1
+        - 1.0.0.1
+        search: [secure.theurer.dev]

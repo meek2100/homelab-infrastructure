@@ -1,0 +1,48 @@
+# File: .gitignore
+
+# Active database states
+*.db
+*.sqlite
+
+# Sensitive volume mapping directories containing personal data or keys
+**/data/
+**/config/
+**/.env
+**/.env.*
+
+# Allow tracking for explicitly named YAML, markdown, and script templates
+!*.yaml
+!*.yml
+!*.sh
+!*.md
+!*.txt
+
+# Override: Strictly ignore master age keys and secrets regardless of txt extension
+master-age-key.txt
+*age-key*.txt
+*.key
+*.pem
+
+# Local agent working directories, scratchpads, and MCP configs
+.agents/
+
+# Unencrypted sensitive drift and credential files
+**/cloudflare.ini
+**/shadow
+**/shadow-
+**/shadow.cfg
+**/gshadow
+**/gshadow-
+**/sasl_passwd
+
+# Python caches and virtual environments
+__pycache__/
+**/.venv/
+**/venv/
+
+# Global Cache and Build Directory Exclusions
+**/.rustup/
+**/.cargo/
+**/.cache/
+**/.npm/
+**/node_modules/

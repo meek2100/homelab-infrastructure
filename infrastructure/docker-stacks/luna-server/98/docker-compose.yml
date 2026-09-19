@@ -1,0 +1,17 @@
+services:
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    #environment:
+      #- GF_SECURITY_ADMIN_USER=admin
+      #- GF_SECURITY_ADMIN_PASSWORD=your_secure_password
+      #- GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ${BASE_PATH}/grafana/data:/var/lib/grafana

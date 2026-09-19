@@ -1,0 +1,414 @@
+services:
+
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: plex
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      - VERSION=docker
+      - HOSTNAME=âPlexServerâ
+#      - PLEX_CLAIM=claim-EQ5n_5uvUSC5rCtuMdMv
+    volumes:
+      - ${BASE_PATH}/plex/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+#    devices:
+#     - /dev/dri:/dev/dri #Required for plex HW transcoding / QuickSync
+#    network_mode: host
+    ports: # when network: bridge
+       - "32400:32400/tcp" 
+       - "8324:8324/tcp" # Required if network: bridge
+       - "32469:32469/tcp" # Required if network: bridge
+       - "1900:1900/udp" # Required if network: bridge
+       - "32410:32410/udp" # Required if network: bridge
+       - "32412:32412/udp" # Required if network: bridge
+       - "32413:32413/udp" # Required if network: bridge
+       - "32414:32414/udp" # Required if network: bridge
+    privileged: true # libusb_init failed
+    restart: unless-stopped
+    networks:
+       - media-network
+
+#  plex:
+#    image: plexinc/pms-docker
+#    container_name: plex
+#    environment:
+#      - PUID=${PUID}
+#      - PGID=${GUID}
+#      - TZ=${TZ}
+#      - VERSION=docker
+#      - HOSTNAME=âPlexServerâ
+#    volumes:
+#      - ${BASE_PATH}/plex/config:/config
+#      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+#    devices:
+#     - /dev/dri:/dev/dri #Required for plex HW transcoding / QuickSync
+#    network_mode: host
+#     ports: # when network: bridge
+#       - "32400:32400/tcp" 
+#       - "8324:8324/tcp" # Required if network: bridge
+#       - "32469:32469/tcp" # Required if network: bridge
+#       - "1900:1900/udp" # Required if network: bridge
+#       - "32410:32410/udp" # Required if network: bridge
+#       - "32412:32412/udp" # Required if network: bridge
+#       - "32413:32413/udp" # Required if network: bridge
+#       - "32414:32414/udp" # Required if network: bridge
+#    privileged: true # libusb_init failed
+#    restart: unless-stopped
+#     networks:
+#       - media-network
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/radarr/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    ports:
+      - "7878:7878"
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/sonarr/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    ports:
+      - "8989:8989"
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/lidarr/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    ports:
+      - "8686:8686"
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/prowlarr/config:/config
+    ports:
+      - "9696:9696"
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/bazarr/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    ports:
+      - "6767:6767"
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  jackett:
+    image: lscr.io/linuxserver/jackett:latest
+    container_name: jackett
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/jackett/config:/config
+    ports:
+      - "9117:9117"
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  overseerr:
+    image: lscr.io/linuxserver/overseerr:latest
+    container_name: overseerr
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/overseerr/config:/config
+    ports:
+      - "5055:5055"
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  ombi:
+    image: lscr.io/linuxserver/ombi:latest
+    container_name: ombi
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/ombi/config:/config
+    ports:
+      - "3579:3579"
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  heimdall:
+    image: lscr.io/linuxserver/heimdall:latest
+    container_name: heimdall
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/heimdall/config:/config
+    ports:
+      - "80:80"
+      - "443:443"
+      # - "8083:80"
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  readarr-ebook:
+    image: lscr.io/linuxserver/readarr:develop
+    container_name: readarr-ebook
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/readarr-ebook/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    ports:
+      - "8787:8787"
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  readarr-audiobook:
+    image: lscr.io/linuxserver/readarr:develop
+    container_name: readarr-audiobook
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/readarr-audiobook/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    ports:
+      - "9797:9797"
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  kavita:
+    image: lscr.io/linuxserver/kavita:latest
+    container_name: kavita
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/kavita/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  calibre:
+    image: lscr.io/linuxserver/calibre:latest
+    container_name: calibre
+#    security_opt:
+#      - seccomp:unconfined #optional
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+#      - PASSWORD= #optional
+#      - CLI_ARGS= #optional
+    volumes:
+      - ${BASE_PATH}/calibre/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    ports:
+      - "8070:8080"
+      - "8181:8181"
+      - "8081:8081"
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  calibre-web:
+    image: lscr.io/linuxserver/calibre-web:latest
+    container_name: calibre-web
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+#      - DOCKER_MODS=linuxserver/mods:universal-calibre #optional
+#      - OAUTHLIB_RELAX_TOKEN_SCOPE=1 #optional
+    volumes:
+      - ${BASE_PATH}/calibre-web/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    ports:
+      - "8083:8083"
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    container_name: audiobookshelf
+    volumes:
+      - ${BASE_PATH}/audiobookshelf/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    ports:
+      - "13378:80"
+    restart: unless-stopped
+    networks:
+      - media-network
+
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes:
+      - ${BASE_PATH}/pia/pia-shared:/pia-shared
+    environment:
+      - VPN_SERVICE_PROVIDER=private internet access
+      - OPENVPN_USER=${PIA_USER}
+      - OPENVPN_PASSWORD=${PIA_PASS}
+      - SERVER_REGIONS=Netherlands
+      - PORT_FORWARD_ONLY=true
+      - VPN_PORT_FORWARDING=on
+      - OPENVPN_MSSFIX=1220
+      - VPN_PORT_FORWARDING_STATUS_FILE=/pia-shared/port.dat
+    ports:
+      - 9898:9898/tcp # HTTP proxy
+      - 8388:8388/tcp # Shadowsocks
+      - 8388:8388/udp # Shadowsocks
+      - 8080:8080
+      - 8090:8090
+    networks:
+       - vpn-network
+
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:latest
+    container_name: sabnzbd
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    #port:
+      #- 8090:8090
+    volumes:
+      - ${BASE_PATH}/sabnzbd/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/qbittorrent/config:/config
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    restart: unless-stopped
+    depends_on:
+      gluetun:
+        condition: service_healthy
+
+  qbittorrent-porthelper:
+    image: scotte/qbittorrent-porthelper:latest
+    container_name: qbittorrent-porthelper
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      - HOST=${QBIT_IP}
+      - USERNAME=${QBIT_USER}
+      - PASSWORD=${QBIT_PASS}
+    volumes:
+      - ${BASE_PATH}/pia/pia-shared:/piashared
+    networks:
+       - vpn-network
+    depends_on:
+      - qbittorrent
+
+  storyteller:
+    image: registry.gitlab.com/smoores/storyteller:latest
+    # runtime: nvidia
+    container_name: storyteller
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      - STORYTELLER_SECRET_KEY_FILE=/run/secrets/secret_key
+    volumes:
+      - ${BASE_PATH}/storyteller/data:/data:rw
+      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+    networks:
+      - media-network
+    secrets:
+      - secret_key
+
+secrets:
+  secret_key:
+    file: ${BASE_PATH}/storyteller/secret_key.txt
+
+networks:
+  vpn-network:
+  media-network:
+  
+#volumes:
+#  ${NFS_MOUNT_POINT}:
+#    driver_opts:
+#      type: "nfs"
+#      o: "addr=10.25.25.248,nolock,soft,nfsvers=4"
+#      device: ":/media"

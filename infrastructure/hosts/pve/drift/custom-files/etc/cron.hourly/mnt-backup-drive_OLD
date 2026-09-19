@@ -1,0 +1,40 @@
+#!/bin/sh
+#These functions return exit codes: 0 = found, 1 = not found
+#Source: https://serverfault.com/questions/50585/whats-the-best-way-to-check-if-a-volume-is-mounted-in-a-bash-script
+#isDevMounted () { findmnt --source "$1" >/dev/null;} #device only
+#isPathMounted() { findmnt --target "$1" >/dev/null;} #path   only
+
+DRIVE_ID="41d79ae9-1b08-4340-bd07-fa29fb713f6a"
+MOUNT_POINT="/mnt/pve/backup"
+LOG_FILE="/etc/cron.hourly/backup-drive.log"
+
+isMounted() {
+    findmnt "$1" > /dev/null 2>&1 
+}
+
+if isMounted "$MOUNT_POINT"; then
+    echo "$(date) - Already mounted" >> "$LOG_FILE"
+else
+    echo "$(date) - Unmounted, attempting to mount" >> "$LOG_FILE"
+    mount UUID="$DRIVE_ID" "$MOUNT_POINT"
+    if isMounted "$MOUNT_POINT"; then  # Verification step
+        echo "$(date) - Mount successful" >> "$LOG_FILE"
+    else
+        echo "$(date) - Mount failed! Check device and permissions." >> "$LOG_FILE" 
+    fi
+fi
+
+
+#Old attempt using partion ID
+#uuid=41d79ae9-1b08-4340-bd07-fa29fb713f6a
+#mounted=41d79ae9-1b08-4340-bd07-fa29fb713f6a /mnt/pve/backup
+#mountpoint=$(lsblk -o UUID,MOUNTPOINT | grep $uuid)
+#if [[ $mountpoint =~ *$uuid*|$mounted ]];
+#then
+#    echo "mounted"
+#else
+#    echo "unmounted"
+#       echo $uuid
+#       echo $mounted
+#       echo $mountpoint
+#fi

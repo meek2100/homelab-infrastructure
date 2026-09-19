@@ -1,0 +1,51 @@
+services:
+  spoolman:
+    #build:
+    #  context: https://github.com/meek2100/Spoolman.git
+    #  dockerfile: Dockerfile
+    #image: ghcr.io/donkie/spoolman:latest
+    image: ghcr.io/meek2100/spoolman:test
+    container_name: spoolman
+    restart: unless-stopped
+    ports:
+      - "7912:8000"
+    volumes:
+      - ${BASE_PATH}/spoolman/data:/home/app/.local/share/spoolman
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    # Added healthcheck using the internal container port (8000)
+    #healthcheck:
+      # Uses the built-in Python interpreter to check the internal API health
+      #test: 
+      #  - "CMD-SHELL"
+      #  - "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:$${SPOOLMAN_PORT:-8000}/api/v1/health')\" || exit 1"
+      #interval: 10s
+      #timeout: 5s
+      #retries: 5
+      #start_period: 30s
+
+  spoolman2slicer:
+    build:
+      context: https://github.com/meek2100/spoolman2slicer.git
+      dockerfile: Dockerfile
+    #image: ghcr.io/bofh69/spoolman2slicer:latest
+    container_name: spoolman2slicer
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      - SM2S_SPOOLMAN_URL=http://spoolman:8000
+      - SM2S_SLICER=orcaslicer
+      - SM2S_LIVE_SYNC=true
+      - SM2S_STARTUP_TIDY=true
+    volumes:
+      # Mount the syncthing directory for Orca Filament & Settings to add new filaments
+      - ${BASE_PATH}/Ender3V2-OrcaSlicer-Backup/backup/user/default/filament:/configs
+      # Mount the configuration directory to persist your custom templates
+      - ${BASE_PATH}/Ender3V2-OrcaSlicer-Backup/backup/user/default/filament/templates:/home/sm2s/.config/spoolman2slicer
+    depends_on:
+      spoolman:
+        condition: service_healthy

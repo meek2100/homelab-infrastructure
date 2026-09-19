@@ -1,0 +1,6 @@
+ #/etc/systemd/network/10-persistent-net.link
+ [Match]
+ MACAddress=e4:b9:7a:95:f6:c7
+
+ [Link]
+ Name=lan0

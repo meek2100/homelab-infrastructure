@@ -1,0 +1,15 @@
+[Unit]
+Description=Manage VXLAN network interfaces in transparent mode on Debian
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/
+ExecStart=/usr/local/bin/vxlan-nm
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

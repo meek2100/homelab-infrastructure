@@ -1,0 +1,63 @@
+# Homelab Workspace Rules & Operating Guidelines
+
+## Phase 1 Operating Principles (Read-Only Audit & Zero-Trust Backup)
+- **Zero Modifications in Phase 1**: All 3 Proxmox hosts (`pve`, `pve2`, `pve3`), VMs, Docker stacks, and network routes are working. No configuration file changes or container modifications will be executed until Phase 1 read-only audits and encrypted restoration blueprints are complete and approved.
+- **Background Command Execution**: When `run_command` transitions to a background task while waiting for user approval:
+  - Do NOT cancel or call `manage_task kill` on the task simply because it is waiting for user approval.
+  - Allow the user to approve the command in the UI at their own pace.
+  - Trust the system notification mechanism to deliver stdout/stderr logs automatically once the task completes after approval.
+- **Synchronous Wait Threshold**: Use an adequate `WaitMsBeforeAsync` threshold (5000–10000ms) for commands intended to run synchronously.
+
+## Technical Learnings & Backup Gotchas
+- **QEMU Guest Agent (QGA) Binary Corruption**: When using `qm guest exec` to extract files from VMs, the output is returned in a JSON envelope (`{"out-data": "..."}`). Directly piping this to a file irreversibly corrupts binary files (like Docker SQLite `.db` files). You MUST run `base64 -w 0` inside the VM, parse the JSON, and `base64.b64decode()` in Python.
+- **File Metadata & Permissions Gap**: Pulling file contents via QGA or `cat` entirely strips file permissions (`chmod`) and ownership (`chown`). If a Docker container database is restored as `root:root` instead of the required container UID (e.g., UID 1000), the container will crash with `Permission Denied`. Metadata must be explicitly captured via `stat -c '%a:%u:%g'` and re-applied during restoration.
+- **Git Push Limits & DPkG Drift**: The dpkg "unowned files" audit technique is powerful but will indiscriminately grab heavily compiled userspace toolchains (like `.rustup` or `.cargo` installed via `curl`). These must be strictly pruned via `find ... -prune`, otherwise 100MB+ `.so` files will permanently jam GitHub repository pushes.
+
+## Architecture & Topology Guidelines
+- **Topology**: All 3 Proxmox nodes (`pve`, `pve2`, `pve3`) operate as **Standalone Hosts** (NO PVE Cluster) to eliminate cluster quorum failure risks if a node reboots or enters a restricted VPN state.
+- **Subnets & Routing**:
+  - `192.168.1.0/24`: Primary Management & Egress LAN
+  - `10.25.25.0/24`: Dedicated High-Speed Private NAS Storage Network (`vmbr1` across hosts, `10.25.25.248` on `nas-server`, `10.25.25.246` on `discovery-server`)
+  - `192.168.40.0/24` & `192.168.50.0/24`: IoT & Security VLANs
+- **Virtualization Strategy**: Use **Full Virtual Machines (VMs)** for all Docker/Portainer hosts. Do NOT run Docker inside unprivileged LXC containers to avoid overlay2 storage driver bugs, permission errors, and update breakages.
+- **Central Repository**: This repository (`homelab-infrastructure`) serves as the single source of truth for all 3 nodes, network routing, DNS configurations, and stack templates.
+
+## Empirical Host & Service Matrix (82 Portainer Stacks Backed Up)
+
+### Node 1: `pve` (Dell Precision 5520 Laptop Profile — `192.168.1.250`)
+- **Hardware**: Intel Xeon E3-1505M v6 (4C/8T), 32GB RAM, 1TB Toshiba NVMe + 2x 1TB WD 2.5" Disks.
+- **Network Interfaces**: `vmbr0` (`192.168.1.250/24`), `vmbr1` (`10.25.25.250/24`).
+- **GPUs**:
+  - Intel HD P630 (`00:02.0`): Assigned as `hostpci0: 0000:00:02` in `VM 103` (`media-server` for Plex QuickSync).
+  - NVIDIA Quadro M1200 4GB (`[10de:13b6]` / `01:00.0`): Currently **100% unmapped / idle** on host `pve`.
+- **Lid & Power Fixes**: Proxmox systemd `HandleLidSwitch=ignore`; ACPI lid script `/etc/acpi/lid-backlight.sh` toggles Intel panel backlight to 0 on close, 400 on open.
+- **Active Virtual Machines**:
+  - `VM 100` (`nexus-server` Ingress VM): **8 Portainer Stacks** (`nginx-proxy-manager`, `cloudflared`, `adguardhome` secondary, `adguardhome-sync`, `wg-easy`, `rustdesk`, etc.)
+  - `VM 102` (`luna-server` Smart Home VM): **32 Portainer Stacks** (`homeassistant`, `homebridge`, `syncthing`, `spoolman`, `gitwatch`, etc.)
+  - `VM 103` (`media-server` Media VM): **9 Portainer Stacks** (`plex`, `audiobookshelf`, `homarr`, `overseerr`, `calibre-web`, `filebrowser`, etc.)
+  - `VM 107` (`vxlan-server` Network Bridge VM): `vxlan-nm.service` daemon on IP `192.168.1.150` (bridging interface `vxlan150`).
+  - `VM 109` (`minecraft-docker` Gaming VM): **2 Portainer Stacks** (`mcbd-connect`, `mcbd-proxy`, etc.)
+
+### Node 2: `pve2` (Awow AK34Pro Mini PC Profile — `192.168.1.240`)
+- **Hardware**: Intel Celeron J3455 (4C/4T), 6GB RAM.
+- **Network Bridges**: `vmbr0` (`192.168.1.240`), `vmbr0.40`, `vmbr0.50`, `vmbr1` (`10.25.25.240`).
+- **Backed Up Portainer VM Stacks**:
+  - `VM 100` (`discovery-server` Download VM): **24 Portainer Stacks** (2 Active: `audiobookbay-automated-dev` VPN master stack, `watchtower`; 22 Inactive/historical stacks).
+  - **Active Container Infrastructure**:
+    - `audiobookbay-automated-dev`: 7 Containers (`gluetun` VPN gateway, `qbittorrent`, `qbittorrent-porthelper`, `firefox`, `audiobookbay-downloader-dev`, `autoheal`, `vpn-restarter`).
+    - `watchtower`: `watchtower` container.
+    - `portainer`: Standalone unstacked UI (`portainer/portainer-ce:latest` on ports 8000/9443).
+    - **Storage Interface**: `ens18` on IP **`10.25.25.246/24`** connecting directly to `nas-server` (`10.25.25.248`).
+
+### Node 3: `pve3` (HP EliteDesk Profile — `192.168.1.245`)
+- **Hardware**: HP EliteDesk Node, 16GB RAM.
+- **Role**: Primary DNS & Core NAS Storage Array.
+- **Network Bridges**: `vmbr0` (`192.168.1.245`), `vmbr1` (`10.25.25.245`).
+- **Backed Up Portainer VM Stacks**:
+  - `VM 100` (`nexus-server2` Primary DNS VM): **7 Portainer Stacks** (2 Active: `adguardhome` v36, `watchtower` v8; 5 Inactive: `cloudflare-ddns` v3, `cloudflared` v1, `nginx-proxy-manager` v9, `pi-hole` v2, `wireguard-easy` v20).
+  - **Active Containers**: `adguardhome`, `adguardhome-certbot` (`172.19.0.2`), `watchtower` (`172.18.0.3`), `portainer` (`172.17.0.2`).
+  - `VM 101` (`nas-server` NAS VM): `OpenMediaVault` on 500GB disk `shared-nas:vm-101-disk-0` with **`ens19` IP `10.25.25.248/24`** (Private Storage Network) and **`ens18` IP `192.168.40.248/24`** (VLAN 40 Management).
+
+## MCP & Tool Standards
+- Keep Model Context Protocol (MCP) servers modular in `mcp-servers/` and reference project-level MCP tools in `.agents/mcp.json`.
+- Secret Backup Standard: Encrypt all secrets using `SOPS` + `age` (`*.enc.yaml`). Keep master key in user password manager; no unencrypted secrets in Git.

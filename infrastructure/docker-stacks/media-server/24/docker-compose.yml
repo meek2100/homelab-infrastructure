@@ -1,0 +1,40 @@
+services:
+  storyteller:
+    image: registry.gitlab.com/smoores/storyteller:latest
+    # runtime: nvidia
+    container_name: storyteller
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+      - STORYTELLER_SECRET_KEY_FILE=/run/secrets/secret_key
+    volumes:
+      - storyteller:/data:rw
+      - nfs-video:/mnt/media:rw
+#      - ~/Documents/Storyteller:/data:rw
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+    networks:
+      - media-network
+    secrets:
+      - secret_key
+
+secrets:
+  secret_key:
+    # Generate a cryptopgraphically secure random string,
+    # e.g. with:
+    #  openssl rand -base64 32
+    # and put it in this file
+    file: ${BASE_PATH}/storyteller/secret_key.txt
+
+networks:
+  media-network:
+
+volumes:
+  storyteller:
+  nfs-video:
+    driver_opts:
+      type: "nfs"
+      o: "addr=10.25.25.248,nolock,soft,nfsvers=4"
+      device: ":/media"

@@ -1,0 +1,221 @@
+============================================================
+🔍 Deep VM Audit: VM 109 (vm-109) on Host 192.168.1.250
+============================================================
+
+------------------------------------------------------------
+📌 VM OS Release & Hostname
+------------------------------------------------------------
+minecraft-docker
+PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
+NAME="Debian GNU/Linux"
+VERSION_ID="12"
+VERSION="12 (bookworm)"
+VERSION_CODENAME=bookworm
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+
+
+------------------------------------------------------------
+📌 VM Network Interfaces & IPs
+------------------------------------------------------------
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+ens18            UP             192.168.1.175/24 fd28:317b:5158:687e:be24:11ff:fe17:c960/64 fe80::be24:11ff:fe17:c960/64 
+docker0          UP             172.17.0.1/16 fe80::9477:e1ff:fed5:37f1/64 
+br-7f2283d1cdc1  UP             172.18.0.1/16 fe80::4cfe:8ff:fe41:12df/64 
+br-2548aa4c7abf  UP             172.19.0.1/16 fe80::dc69:e2ff:fe9c:3923/64 
+vethef61634@if2  UP             fe80::3046:ff:fe4b:d72d/64 
+veth69d80ba@if2  UP             fe80::89a:5ff:fecb:88fb/64 
+vethd69dc2c@if2  UP             fe80::4ca5:c8ff:fe69:8b0e/64 
+vethc82e717@if2  UP             fe80::8ceb:59ff:fe60:d679/64 
+
+
+------------------------------------------------------------
+📌 VM Routing Table
+------------------------------------------------------------
+default via 192.168.1.1 dev ens18 
+172.17.0.0/16 dev docker0 proto kernel scope link src 172.17.0.1 
+172.18.0.0/16 dev br-7f2283d1cdc1 proto kernel scope link src 172.18.0.1 
+172.19.0.0/16 dev br-2548aa4c7abf proto kernel scope link src 172.19.0.1 
+192.168.1.0/24 dev ens18 proto kernel scope link src 192.168.1.175 
+
+
+------------------------------------------------------------
+📌 VM Mounts & /etc/fstab
+------------------------------------------------------------
+# /etc/fstab: static file system information.
+#
+# Use 'blkid' to print the universally unique identifier for a
+# device; this may be used with UUID= as a more robust way to name devices
+# that works even if disks are added and removed. See fstab(5).
+#
+# systemd generates mount units based on this file, see systemd.mount(5).
+# Please run 'systemctl daemon-reload' after making changes here.
+#
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+# / was on /dev/sda1 during installation
+UUID=a30085c6-16a4-4740-8d5b-e3edf235cdf0 /               ext4    errors=remount-ro 0       1
+# swap was on /dev/sda5 during installation
+UUID=342820f6-43dc-4243-b041-3afe7cad6244 none            swap    sw              0       0
+/dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
+--- Mounts ---
+/dev/sda1 on / type ext4 (rw,relatime,errors=remount-ro)
+overlay on /var/lib/docker/overlay2/ba67034916b4aeb70d25b7ea97b26b34320e8f308de0e5fd7d3d214435aa3647/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/NPML7YLFAYKZFS2AX4BFKST3W4:/var/lib/docker/overlay2/l/BFTUSZP7PGFY7JW4FIDWNHK3Z3:/var/lib/docker/overlay2/l/IUQ65KLNGCHWTWCZ57PPGGEOEN:/var/lib/docker/overlay2/l/2EWSTX2RUABJKVBDQI4NEH4Y3H:/var/lib/docker/overlay2/l/KVWDCM7U7VJLBLOQZKACOEDJ4V:/var/lib/docker/overlay2/l/EBC4JFSNGDFDOZ6PSAW3GBZPBR:/var/lib/docker/overlay2/l/IQHZXW52PF24MK7QZHJMD7SVHB:/var/lib/docker/overlay2/l/QTU7R4VERTYMFVYO4GDBXD4AKT,upperdir=/var/lib/docker/overlay2/ba67034916b4aeb70d25b7ea97b26b34320e8f308de0e5fd7d3d214435aa3647/diff,workdir=/var/lib/docker/overlay2/ba67034916b4aeb70d25b7ea97b26b34320e8f308de0e5fd7d3d214435aa3647/work)
+overlay on /var/lib/docker/overlay2/56db79f95eaff95b56aa851e9c8fdc5b1e06f726238b3a63e37838578c3f3d26/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/BGMXLCTB5B2I6UQIRWJUPFL5EG:/var/lib/docker/overlay2/l/3SCMCMZ5KO6Z4NI4O6G3WXVX5A:/var/lib/docker/overlay2/l/JMFVKIN35R6NQGJEC2QYSXBWKM:/var/lib/docker/overlay2/l/3EUCJT3S2M3ZGEC5LNGYB4JWDZ:/var/lib/docker/overlay2/l/YAPZ2CJZSLSK4GOGZXMDIB6DPZ:/var/lib/docker/overlay2/l/HLK5BZMEO7VTZT625CFLEJQ42N:/var/lib/docker/overlay2/l/RL7WOW5ZRSURKOA6TBL4N7FIRM:/var/lib/docker/overlay2/l/FKB2BIZILPDLDCN736GQWLOOSW:/var/lib/docker/overlay2/l/QMIALREUBRQIVOXEGZTEH4WQFR:/var/lib/docker/overlay2/l/JDO7RDNUNFBIEPPFPGLKGQE53L:/var/lib/docker/overlay2/l/YVAA53QKNFBPO5C2OF3BXVZPFW:/var/lib/docker/overlay2/l/KWCEWZ5SEJJF3QR2W6HOBLYSUF:/var/lib/docker/overlay2/l/JTO67LQUO7M4T74LP6SS2VREDH:/var/lib/docker/overlay2/l/TES6CMVZGHJVWWRPWERIDO7VPY:/var/lib/docker/overlay2/l/PRLDLRS2ZS3OEK6LWSAXIH5ED6:/var/lib/docker/overlay2/l/UBAJCZ5YKZKLMPZAH6A5S5MU6I:/var/lib/docker/overlay2/l/7HSIFRLEO5AA6J6TPGL4TRVTX6:/var/lib/docker/overlay2/l/ZL7IMUNSU4TE2EPGV4GD2ILUUA,upperdir=/var/lib/docker/overlay2/56db79f95eaff95b56aa851e9c8fdc5b1e06f726238b3a63e37838578c3f3d26/diff,workdir=/var/lib/docker/overlay2/56db79f95eaff95b56aa851e9c8fdc5b1e06f726238b3a63e37838578c3f3d26/work)
+overlay on /var/lib/docker/overlay2/35eea8f03469ac9e6ef6215d4606738a372067b9d9f72e1b6681b9af08b37582/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/EISEHRQNLYRP53GTCJQH4WLZF4:/var/lib/docker/overlay2/l/IRPEOL73VWAFCHTGJ4DCGLDZSC:/var/lib/docker/overlay2/l/4FAWQOQ6Q233V2XMCHTVF4J3VO:/var/lib/docker/overlay2/l/W4TGSPH65OROLPWI7JLLHL42HR:/var/lib/docker/overlay2/l/YCAYQ7IFOCQNJT63JDNTY7MBSQ:/var/lib/docker/overlay2/l/NCACIIYFGZLESHY43ILK6ZMAHA:/var/lib/docker/overlay2/l/MTBKXETMP73RQ47XWZZVTT4PTA:/var/lib/docker/overlay2/l/7BXQQYNVG4QSTHI2IBHZI7NROM:/var/lib/docker/overlay2/l/5TY3PDX6DDLXOUXNVNVMZEGPFN,upperdir=/var/lib/docker/overlay2/35eea8f03469ac9e6ef6215d4606738a372067b9d9f72e1b6681b9af08b37582/diff,workdir=/var/lib/docker/overlay2/35eea8f03469ac9e6ef6215d4606738a372067b9d9f72e1b6681b9af08b37582/work)
+overlay on /var/lib/docker/overlay2/256deff0af12547554144070e1c40b9b11ffbd917246b2f75484934863e165c9/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/V53S3PHSYJQBDK7GD2NFZCYQIO:/var/lib/docker/overlay2/l/7FLMUEAB2LYSJQYPAOLCZ2GMV3:/var/lib/docker/overlay2/l/K5AOWK5Q2SYDI5JXGQA5M6SVJP:/var/lib/docker/overlay2/l/AB2RBQUWPGDGQ2A4YTGGLSDO6Q,upperdir=/var/lib/docker/overlay2/256deff0af12547554144070e1c40b9b11ffbd917246b2f75484934863e165c9/diff,workdir=/var/lib/docker/overlay2/256deff0af12547554144070e1c40b9b11ffbd917246b2f75484934863e165c9/work)
+
+
+------------------------------------------------------------
+📌 VM Active Systemd Services
+------------------------------------------------------------
+  UNIT                      LOAD   ACTIVE SUB     DESCRIPTION
+  containerd.service        loaded active running containerd container runtime
+  cron.service              loaded active running Regular background program processing daemon
+  dbus.service              loaded active running D-Bus System Message Bus
+  docker.service            loaded active running Docker Application Container Engine
+  getty@tty1.service        loaded active running Getty on tty1
+  qemu-guest-agent.service  loaded active running QEMU Guest Agent
+  ssh.service               loaded active running OpenBSD Secure Shell server
+  systemd-journald.service  loaded active running Journal Service
+  systemd-logind.service    loaded active running User Login Management
+  systemd-timesyncd.service loaded active running Network Time Synchronization
+  systemd-udevd.service     loaded active running Rule-based Manager for Device Events and Files
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+11 loaded units listed.
+
+
+------------------------------------------------------------
+📌 VM Crontabs & Schedules
+------------------------------------------------------------
+# /etc/crontab: system-wide crontab
+# Unlike any other crontab you don't have to run the `crontab'
+# command to install the new version when you edit this file
+# and files in /etc/cron.d. These files also have username fields,
+# that none of the other crontabs do.
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# Example of job definition:
+# .---------------- minute (0 - 59)
+# |  .------------- hour (0 - 23)
+# |  |  .---------- day of month (1 - 31)
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+# |  |  |  |  |
+# *  *  *  *  * user-name command to be executed
+17 *	* * *	root	cd / && run-parts --report /etc/cron.hourly
+25 6	* * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.daily; }
+47 6	* * 7	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.weekly; }
+52 6	1 * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.monthly; }
+#
+30 3 * * 0 root test -e /run/systemd/system || SERVICE_MODE=1 /usr/lib/x86_64-linux-gnu/e2fsprogs/e2scrub_all_cron
+10 3 * * * root test -e /run/systemd/system || SERVICE_MODE=1 /sbin/e2scrub_all -A -r
+
+
+------------------------------------------------------------
+📌 Docker Version & Info
+------------------------------------------------------------
+Client: Docker Engine - Community
+ Version:           29.6.1
+ API version:       1.55
+ Go version:        go1.26.4
+ Git commit:        8900f1d
+ Built:             Fri Jun 26 11:41:04 2026
+ OS/Arch:           linux/amd64
+ Context:           default
+
+Server: Docker Engine - Community
+ Engine:
+  Version:          29.6.1
+  API version:      1.55 (minimum version 1.40)
+  Go version:       go1.26.4
+  Git commit:       8ec5ab3
+  Built:            Fri Jun 26 11:41:04 2026
+  OS/Arch:          linux/amd64
+  Experimental:     false
+ containerd:
+  Version:          v2.2.6
+  GitCommit:        11ce9d5f3c68c941867e82890e93e815c1304f1b
+ runc:
+  Version:          1.3.6
+  GitCommit:        v1.3.6-0-g491b69ba
+ docker-init:
+  Version:          0.19.0
+  GitCommit:        de40ad0
+ Containers: 6
+ Images: 5
+ Server Version: 29.6.1
+ Storage Driver: overlay2
+
+
+------------------------------------------------------------
+📌 All Containers (Active & Inactive)
+------------------------------------------------------------
+CONTAINER ID   NAMES                STATUS                   PORTS                                                                                                                IMAGE
+205819eae8e6   watchtower           Up 2 days (healthy)      8080/tcp                                                                                                             nickfedor/watchtower:latest
+77d04c297238   mcbd-connect         Up 3 days (healthy)      0.0.0.0:19132->19132/udp, [::]:19132->19132/udp                                                                      strausmann/minecraft-bedrock-connect:latest
+875f2ad9b9ec   mcbd-proxy           Up 5 days (healthy)      8000/tcp, 19132/udp, 25565/tcp, 25565/udp, 0.0.0.0:19133-19134->19133-19134/udp, [::]:19133-19134->19133-19134/udp   ghcr.io/meek2100/mcbd-proxy:develop
+f6bf0764afe1   mcbd-friend-server   Exited (0) 2 weeks ago                                                                                                                        itzg/minecraft-bedrock-server:latest
+e22407dd8643   mcbd-family-server   Exited (0) 2 weeks ago                                                                                                                        itzg/minecraft-bedrock-server:latest
+747a13436a60   portainer            Up 5 days                0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp, 0.0.0.0:9443->9443/tcp, [::]:9443->9443/tcp, 9000/tcp                   portainer/portainer-ee:latest
+
+
+------------------------------------------------------------
+📌 Docker Networks
+------------------------------------------------------------
+NETWORK ID     NAME                               DRIVER    SCOPE
+c0705a30e533   bridge                             bridge    local
+8fcba2e2e220   host                               host      local
+2548aa4c7abf   minecraft-on-demand_mcbd-network   bridge    local
+7e740b71c023   none                               null      local
+7f2283d1cdc1   watchtower_default                 bridge    local
+
+
+------------------------------------------------------------
+📌 Docker Volumes & Mount Paths
+------------------------------------------------------------
+DRIVER    VOLUME NAME
+local     portainer_data
+
+
+------------------------------------------------------------
+📌 Portainer Stacks & Compose Directories
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 AdGuard Home Config Header
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 Nginx Proxy Manager Proxy Hosts
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 Home Assistant / Homebridge Mounts
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+============================================================
+✅ Deep VM Audit Complete for VM 109 (vm-109)
+============================================================

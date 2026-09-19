@@ -1,0 +1,4 @@
+[safe]
+	directory = /home/meek2100/docker/Ender3V2-OrcaSlicer-Backup/backup
+	directory = /mnt/media/3d-printer/backups/Ender3V2-DietPi-Backup
+	directory = /app/Ender3V2-DietPi-Backup

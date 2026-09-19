@@ -1,0 +1,125 @@
+sservices:
+  mcbd-connect:
+    container_name: mcbd-connect
+    image: strausmann/minecraft-bedrock-connect:latest
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - NODB=true
+      - CUSTOM_SERVERS=/config/serverlist.json
+      - SERVER_LIMIT=25
+    volumes:
+      - ${BASE_PATH}/mcbd-connect/config:/config
+    restart: unless-stopped
+    ports:
+      - "19132:19132/udp"
+    networks:
+      - mcbd-network
+
+  mcbd-proxy:
+    container_name: mcbd-proxy
+    image: ghcr.io/meek2100/mcbd-proxy:develop
+    environment:
+      #- PUID=${PUID}
+      #- PGID=${PGID}
+      - TZ=${TZ}
+
+      # --- Optional fine-tuning ---
+      - LOG_LEVEL=DEBUG # Logging levels (DEBUG, INFO, WARNING, ERROR) (default: INFO)
+
+      # --- Group 1: Core On-Demand Lifecycle ---
+#      - NB_IDLE_TIMEOUT_SECONDS=600 # Seconds a server can be idle before being stopped. (default: 600)
+#      - NB_PLAYER_CHECK_INTERVAL_SECONDS=60 # How often (in seconds) to check for idle servers. (default: 60)
+      
+      # --- Group 2: Dynamic Readiness Check ---
+#      - NB_QUERY_TIMEOUT_SECONDS=5 # Network timeout for a single server status query.  (default: 5)
+#      - NB_SERVER_READY_MAX_WAIT_TIME_SECONDS=120 # 	Max time the proxy will wait for a server to start when a player connects.  (default: 120)
+#      - NB_INITIAL_BOOT_READY_MAX_WAIT_TIME_SECONDS=180 # Max readiness wait time for servers found running at proxy boot.  (default: 10)
+      
+      # --- Group 3: Startup Buffers ---
+#      - NB_SERVER_STARTUP_DELAY_SECONDS=5 # 	A fixed pause after docker start before readiness probing begins.  (default: 5)
+#      - NB_INITIAL_SERVER_QUERY_DELAY_SECONDS=10 # A fixed pause before probing servers found running at proxy boot.  (default: 10)
+      
+      # --- Server Definitions (replaces the 'servers' array in JSON) ---
+      # Server 1
+#      - NB_S1_NAME=Family Server
+#      - NB_S1_LISTEN_PORT=19133
+#      - NB_S1_CONTAINER_NAME=mcbd-family-server
+#      - NB_S1_INTERNAL_PORT=19132
+      
+      # Server 2
+#      - NB_S2_NAME=Friends Server
+#      - NB_S2_LISTEN_PORT=19134
+#      - NB_S2_CONTAINER_NAME=mcbd-friend-server
+#      - NB_S2_INTERNAL_PORT=19132
+#    command: /bin/sh -c "echo '--- SCRIPT CONTENT AS SEEN BY CONTAINER ---' && cat /app/NB_multi.py && echo '--- END OF SCRIPT ---' && sleep 3600"
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+      - ${BASE_PATH}/mcbd-proxy/config/settings.json:/app/settings.json
+      - ${BASE_PATH}/mcbd-proxy/config/servers.json:/app/servers.json
+
+      # --- UNCOMMENT THE NEXT TWO LINES FOR LOCAL DEBUGGING ---
+#      - ${BASE_PATH}/mcbd-proxy/debug/nether_bridge-debug.py:/app/nether_bridge.py  # Use this to quickly test and debug the scripts used in your docker image.
+#      - ${BASE_PATH}/mcbd-proxy/debug/local_debug.flag:/app/local_debug.flag  # Use this to quickly test and debug the scripts used in your docker image.
+    ports:
+      - "19133:19133/udp"
+      - "19134:19134/udp"
+    networks:
+      - mcbd-network
+
+
+  mcbd-family-server:
+    container_name: mcbd-family-server
+    image: itzg/minecraft-bedrock-server:latest
+    restart: no
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - EULA=TRUE
+#      - SERVER_NAME="Theurerville"
+#      - CONTENT_LOG_FILE_ENABLED=true
+    volumes:
+      - ${BASE_PATH}/mcbd-family-server/data:/data
+    networks:
+      - mcbd-network
+
+
+  mcbd-friend-server:
+    container_name: mcbd-friend-server
+    image: itzg/minecraft-bedrock-server:latest
+    restart: no
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - EULA=true
+#      - SERVER_NAME="Emme and Friends"
+#      - CONTENT_LOG_FILE_ENABLED=true
+    volumes:
+      - ${BASE_PATH}/mcbd-friend-server/data:/data
+    networks:
+      - mcbd-network
+
+  mcbd-car-server:
+    container_name: mcbd-car-server
+    image: itzg/minecraft-bedrock-server:latest
+    restart: no
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - EULA=true
+#      - SERVER_NAME="Cars and Friends"
+#      - CONTENT_LOG_FILE_ENABLED=true
+    volumes:
+      - ${BASE_PATH}/mcbd-friend-server/data:/data
+    networks:
+      - mcbd-network
+
+networks:
+  mcbd-network:
+    driver: bridge

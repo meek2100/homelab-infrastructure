@@ -1,0 +1,19 @@
+services:
+  filebrowser:
+    image: hurlenko/filebrowser
+    container_name: filebrowser
+    user: "${PUID}:${GUID}"
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      #- FB_PORT="8084"
+    volumes:
+      - ${BASE_PATH}/filebrowser/config:/config
+      - ${NFS_MOUNT_POINT}:/data:rw
+    ports:
+      - "8084:8080"
+      #- "8084:8084"
+    restart: unless-stopped
+#    networks:
+#      - media-network

@@ -1,0 +1,46 @@
+services:
+  git-dietpi:
+    image: alpine/git
+    container_name: git-dietpi
+    restart: always
+    volumes:
+      # Mount to exact path defined in your .git/config [safe] section
+      - ${NFS_MOUNT_POINT}/3d-printer/backups/Ender3V2-DietPi-Backup:/app/Ender3V2-DietPi-Backup
+      
+      # Mount the key to the specific path defined in your .git/config [core] sshCommand
+      - /home/meek2100/.ssh/gitwatch_ed25519:/root/.ssh/gitwatch_ed25519:ro
+      - /home/meek2100/.ssh/known_hosts:/root/.ssh/known_hosts:ro
+      
+    working_dir: /app/Ender3V2-DietPi-Backup
+    entrypoint: /bin/sh -c
+    command: >
+      "
+      LAST_SYNC_TIME=$$(date +%s)
+      echo 'Docker Sync Engine active (using local .git/config)...'
+
+      while true; do
+        CURRENT_TIME=$$(date +%s)
+        REASON=''
+
+        # Check conditions and set reason string
+        [ -f .sync_trigger ] && REASON='Pi Trigger file'
+        
+        if [ -z \"$$REASON\" ] && [ $$((CURRENT_TIME - LAST_SYNC_TIME)) -gt 3600 ] && [ -n \"$$(git status --porcelain)\" ]; then
+          REASON='Hourly Safety Check'
+        fi
+
+        if [ -n \"$$REASON\" ]; then
+          echo \"$$(date): Syncing changes - Reason: $$REASON\"
+          
+          rm -f .sync_trigger
+          git add .
+          git commit -m \"Auto-sync: $$(date '+%Y-%m-%d %H:%M:%S') - Reason: $$REASON\"
+          git push
+          
+          LAST_SYNC_TIME=$$CURRENT_TIME
+          echo 'Sync complete. Returning to monitor mode.'
+        fi
+        
+        sleep 30
+      done
+      "

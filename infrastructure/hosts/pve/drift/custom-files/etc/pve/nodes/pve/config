@@ -1,0 +1,2 @@
+acme: account=default
+acmedomain0: pve.secure.theurer.dev,plugin=cloudflare

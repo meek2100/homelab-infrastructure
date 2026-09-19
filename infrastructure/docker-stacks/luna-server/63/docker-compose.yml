@@ -1,0 +1,15 @@
+services:
+  bedrockconnect:
+    image: strausmann/minecraft-bedrock-connect:latest
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      - NODB=true
+      - CUSTOM_SERVERS=/config/serverlist.json
+      - SERVER_LIMIT=25
+    volumes:
+      - ${BASE_PATH}/minecraft-bedrock-connect/config:/config
+    restart: unless-stopped
+    ports:
+      - 19132:19132/udp

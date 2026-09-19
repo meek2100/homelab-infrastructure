@@ -1,0 +1,29 @@
+services:
+  vpn-proxy:
+    image: ghcr.io/meek2100/gp-proxy:web_gui_codereview
+    container_name: gp-proxy-ports
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      #- DNS_SERVERS=192.168.1.185,192.168.1.186
+      - LOG_LEVEL=debug
+      - VPN_MODE=proxy
+      - PROXY_MODE=socks5,socks4,socks4a,http,https,ss
+      - VPN_PORTAL=lehvpn.snapone.com
+      - SPLIT_TUNNEL=false
+      - ALLOWED_SUBNETS=192.168.1.0/24,192.168.10.0/24,192.168.20.0/24,192.168.30.0/24,192.168.40.0/24,192.168.50.0/24,192.168.60.0/24,192.168.70.0/24,192.168.80.0/24,192.168.90.0/24,192.168.100.0/24,10.25.25.0/24,10.20.20.0/24
+      - LOCAL_SUBNETS=192.168.1.0/24,192.168.10.0/24,192.168.20.0/24,192.168.30.0/24,192.168.40.0/24,192.168.50.0/24,192.168.60.0/24,192.168.70.0/24,192.168.80.0/24,192.168.90.0/24,192.168.100.0/24,10.25.25.0/24,10.20.20.0/24
+      - LOCAL_DOMAINS=secure.theurer.dev
+      - LOCAL_DNS=192.168.1.185,192.168.1.186
+    ports:
+      - 8001:8001 # Web Dashboard
+      - 32800:32800/udp # UDP Beacon
+      - 1080:1080 # SOCKS5
+      - 1084:1084 # SOCKS4
+      - 1085:1085 # SOCKS4a
+      - 8080:8080 # HTTP
+      - 8443:8443 # HTTPS
+      - 8388:8388 # Shadowsocks TCP
+      - 8388:8388/udp # Shadowsocks UDP

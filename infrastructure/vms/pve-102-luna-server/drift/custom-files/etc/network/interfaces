@@ -1,0 +1,36 @@
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+# The primary network interface (ens18)
+allow-hotplug ens18
+iface ens18 inet dhcp
+# This is an autoconfigured IPv6 interface
+iface ens18 inet6 auto
+
+# VLAN 40 Sub-interface for Docker macvlan
+auto ens18.40
+iface ens18.40 inet manual
+    post-up ip link set dev ens18.40 up
+    pre-down ip link set dev ens18.40 down
+    pre-down ip link del ens18.40
+
+# Repeat for VLAN 10, VLAN 20, etc.
+# auto ens18.10
+# iface ens18.10 inet manual
+#     post-up ip link set dev ens18.10 up
+#     pre-down ip link set dev ens18.10 down
+#     pre-down ip link del ens18.10
+
+# Also setup a corresponding vlan10_network for docker.
+# sudo docker network create \
+#  -d macvlan \
+#  --subnet=192.168.10.0/24 \
+#  --gateway=192.168.10.1 \
+#  -o parent=ens18.10 \ # <-- Parent is the new VLAN sub-interface
+#  my_vlan10_macvlan_net # <-- Unique name for this network

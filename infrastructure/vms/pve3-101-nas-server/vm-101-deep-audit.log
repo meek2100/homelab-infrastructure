@@ -1,0 +1,240 @@
+============================================================
+🔍 Deep VM Audit: VM 101 (nas-server) on Host 192.168.1.245
+============================================================
+
+------------------------------------------------------------
+📌 VM OS Release & Hostname
+------------------------------------------------------------
+nas-server
+PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
+NAME="Debian GNU/Linux"
+VERSION_ID="12"
+VERSION="12 (bookworm)"
+VERSION_CODENAME=bookworm
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+
+
+------------------------------------------------------------
+📌 VM Network Interfaces & IPs
+------------------------------------------------------------
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+ens18            UP             192.168.40.248/24 
+ens19            UP             10.25.25.248/24 
+
+
+------------------------------------------------------------
+📌 VM Routing Table
+------------------------------------------------------------
+default via 192.168.40.1 dev ens18 proto static 
+default via 10.25.25.248 dev ens19 proto static metric 1 
+10.25.25.0/24 dev ens19 proto kernel scope link src 10.25.25.248 
+192.168.40.0/24 dev ens18 proto kernel scope link src 192.168.40.248 
+
+
+------------------------------------------------------------
+📌 VM Mounts & /etc/fstab
+------------------------------------------------------------
+# /etc/fstab: static file system information.
+#
+# Use 'blkid' to print the universally unique identifier for a
+# device; this may be used with UUID= as a more robust way to name devices
+# that works even if disks are added and removed. See fstab(5).
+#
+# systemd generates mount units based on this file, see systemd.mount(5).
+# Please run 'systemctl daemon-reload' after making changes here.
+#
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+# / was on /dev/sda1 during installation
+UUID=7bc9476d-c6e8-4da5-9ed9-0b5032732867 /               ext4    errors=remount-ro 0       1
+# swap was on /dev/sda5 during installation
+UUID=db751654-cf1d-4c47-9ca5-24061cf7402e none            swap    sw              0       0
+/dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
+# >>> [openmediavault]
+/dev/disk/by-uuid/48dc7932-00a4-4aa4-81e9-ea7dd62d1626		/srv/dev-disk-by-uuid-48dc7932-00a4-4aa4-81e9-ea7dd62d1626	ext4	defaults,nofail,user_xattr,usrjquota=aquota.user,grpjquota=aquota.group,jqfmt=vfsv0,acl	0 2
+/srv/dev-disk-by-uuid-48dc7932-00a4-4aa4-81e9-ea7dd62d1626/media/		/export/media	none	bind,nofail	0 0
+# <<< [openmediavault]
+--- Mounts ---
+/dev/sda1 on / type ext4 (rw,relatime,errors=remount-ro)
+nfsd on /proc/fs/nfsd type nfsd (rw,relatime)
+/dev/sdb1 on /srv/dev-disk-by-uuid-48dc7932-00a4-4aa4-81e9-ea7dd62d1626 type ext4 (rw,relatime,jqfmt=vfsv0,usrjquota=aquota.user,grpjquota=aquota.group)
+/dev/sdb1 on /export/media type ext4 (rw,relatime,jqfmt=vfsv0,usrjquota=aquota.user,grpjquota=aquota.group)
+
+
+------------------------------------------------------------
+📌 VM Active Systemd Services
+------------------------------------------------------------
+  UNIT                           LOAD   ACTIVE SUB     DESCRIPTION
+  avahi-daemon.service           loaded active running Avahi mDNS/DNS-SD Stack
+  chrony.service                 loaded active running chrony, an NTP client/server
+  collectd.service               loaded active running Statistics collection and monitoring daemon
+  cron.service                   loaded active running Regular background program processing daemon
+  dbus.service                   loaded active running D-Bus System Message Bus
+  getty@tty1.service             loaded active running Getty on tty1
+  monit.service                  loaded active running LSB: service and resource monitoring daemon
+  nfs-idmapd.service             loaded active running NFSv4 ID-name mapping service
+  nfs-mountd.service             loaded active running NFS Mount Daemon
+  nfsdcld.service                loaded active running NFSv4 Client Tracking Daemon
+  nginx.service                  loaded active running A high performance web server and a reverse proxy server
+  openmediavault-engined.service loaded active running The OpenMediaVault engine daemon that processes the RPC request
+  php8.2-fpm.service             loaded active running The PHP 8.2 FastCGI Process Manager
+  qemu-guest-agent.service       loaded active running QEMU Guest Agent
+  rpc-statd.service              loaded active running NFS status monitor for NFSv2/3 locking.
+  rpcbind.service                loaded active running RPC bind portmap service
+  rrdcached.service              loaded active running LSB: start or stop rrdcached
+  rsyslog.service                loaded active running System Logging Service
+  smbd.service                   loaded active running Samba SMB Daemon
+  ssh.service                    loaded active running OpenBSD Secure Shell server
+  systemd-journald.service       loaded active running Journal Service
+  systemd-logind.service         loaded active running User Login Management
+  systemd-networkd.service       loaded active running Network Configuration
+  systemd-resolved.service       loaded active running Network Name Resolution
+  systemd-udevd.service          loaded active running Rule-based Manager for Device Events and Files
+  unattended-upgrades.service    loaded active running Unattended Upgrades Shutdown
+  wpa_supplicant.service         loaded active running WPA supplicant
+  wsdd-server.service            loaded active running Web Services Dynamic Discovery host daemon
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+28 loaded units listed.
+
+
+------------------------------------------------------------
+📌 VM Crontabs & Schedules
+------------------------------------------------------------
+# /etc/crontab: system-wide crontab
+# Unlike any other crontab you don't have to run the `crontab'
+# command to install the new version when you edit this file
+# and files in /etc/cron.d. These files also have username fields,
+# that none of the other crontabs do.
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# Example of job definition:
+# .---------------- minute (0 - 59)
+# |  .------------- hour (0 - 23)
+# |  |  .---------- day of month (1 - 31)
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+# |  |  |  |  |
+# *  *  *  *  * user-name command to be executed
+17 *	* * *	root	cd / && run-parts --report /etc/cron.hourly
+25 6	* * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.daily; }
+47 6	* * 7	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.weekly; }
+52 6	1 * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.monthly; }
+#
+# /etc/cron.d/anacron: crontab entries for the anacron package
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+30 7-23 * * *   root	[ -x /etc/init.d/anacron ] && if [ ! -d /run/systemd/system ]; then /usr/sbin/invoke-rc.d anacron start >/dev/null; fi
+30 3 * * 0 root test -e /run/systemd/system || SERVICE_MODE=1 /usr/lib/x86_64-linux-gnu/e2fsprogs/e2scrub_all_cron
+10 3 * * * root test -e /run/systemd/system || SERVICE_MODE=1 /sbin/e2scrub_all -A -r
+#
+# cron.d/mdadm -- schedules periodic redundancy checks of MD devices
+#
+# Copyright Â© martin f. krafft <madduck@madduck.net>
+# distributed under the terms of the Artistic Licence 2.0
+#
+
+# By default, run at 00:57 on every Sunday, but do nothing unless the day of
+# the month is less than or equal to 7. Thus, only run on the first Sunday of
+# each month. crontab(5) sucks, unfortunately, in this regard; therefore this
+# hack (see #380425).
+57 0 * * 0 root if [ -x /usr/share/mdadm/checkarray ] && [ $(date +\%d) -le 7 ]; then /usr/share/mdadm/checkarray --cron --all --idle --quiet; fi
+# Create graphs every 15 minutes
+# m h dom mon dow user    command
+*/15 * * * * root /usr/sbin/omv-mkrrdgraph >/dev/null 2>&1
+# This file is auto-generated by openmediavault (https://www.openmediavault.org)
+# WARNING: Do not edit this file, your changes will get lost.
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+# m h dom mon dow user    command
+# /etc/cron.d/php@PHP_VERSION@: crontab fragment for PHP
+#  This purges session files in session.save_path older than X,
+#  where X is defined in seconds as the largest value of
+#  session.gc_maxlifetime from all your SAPI php.ini files
+#  or 24 minutes if not defined.  The script triggers only
+#  when session.save_handler=files.
+#
+#  WARNING: The scripts tries hard to honour all relevant
+#  session PHP options, but if you do something unusual
+#  you have to disable this script and take care of your
+#  sessions yourself.
+
+# Look for and purge old sessions every 30 minutes
+09,39 *     * * *     root   [ -x /usr/lib/php/sessionclean ] && if [ ! -d /run/systemd/system ]; then /usr/lib/php/sessionclean; fi
+
+
+------------------------------------------------------------
+📌 Docker Version & Info
+------------------------------------------------------------
+{
+  "exitcode": 1,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 All Containers (Active & Inactive)
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 Docker Networks
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 Docker Volumes & Mount Paths
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 Portainer Stacks & Compose Directories
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 AdGuard Home Config Header
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 Nginx Proxy Manager Proxy Hosts
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 Home Assistant / Homebridge Mounts
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+============================================================
+✅ Deep VM Audit Complete for VM 101 (nas-server)
+============================================================

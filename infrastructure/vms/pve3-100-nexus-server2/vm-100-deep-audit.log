@@ -1,0 +1,218 @@
+============================================================
+🔍 Deep VM Audit: VM 100 (nexus-server2) on Host 192.168.1.245
+============================================================
+
+------------------------------------------------------------
+📌 VM OS Release & Hostname
+------------------------------------------------------------
+nexus-server2
+PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
+NAME="Debian GNU/Linux"
+VERSION_ID="12"
+VERSION="12 (bookworm)"
+VERSION_CODENAME=bookworm
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+
+
+------------------------------------------------------------
+📌 VM Network Interfaces & IPs
+------------------------------------------------------------
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+ens18            UP             192.168.1.186/24 fd28:317b:5158:687e:be24:11ff:febb:8ad/64 fe80::be24:11ff:febb:8ad/64 
+docker0          UP             172.17.0.1/16 fe80::c826:eff:fe0a:4ac4/64 
+br-23eea0c7c541  UP             172.18.0.1/16 fe80::90e4:55ff:fe69:3687/64 
+vethbd29602@if2  UP             fe80::2031:7ff:fe85:84a7/64 
+br-2012238a2c41  UP             172.19.0.1/16 fe80::482a:75ff:fe51:6e86/64 
+veth22d64c7@if2  UP             fe80::b05a:13ff:fe08:7825/64 
+veth2344f82@if2  UP             fe80::78b5:2aff:fe7f:36ca/64 
+
+
+------------------------------------------------------------
+📌 VM Routing Table
+------------------------------------------------------------
+default via 192.168.1.1 dev ens18 
+172.17.0.0/16 dev docker0 proto kernel scope link src 172.17.0.1 
+172.18.0.0/16 dev br-23eea0c7c541 proto kernel scope link src 172.18.0.1 
+172.19.0.0/16 dev br-2012238a2c41 proto kernel scope link src 172.19.0.1 
+192.168.1.0/24 dev ens18 proto kernel scope link src 192.168.1.186 
+
+
+------------------------------------------------------------
+📌 VM Mounts & /etc/fstab
+------------------------------------------------------------
+# /etc/fstab: static file system information.
+#
+# Use 'blkid' to print the universally unique identifier for a
+# device; this may be used with UUID= as a more robust way to name devices
+# that works even if disks are added and removed. See fstab(5).
+#
+# systemd generates mount units based on this file, see systemd.mount(5).
+# Please run 'systemctl daemon-reload' after making changes here.
+#
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+# / was on /dev/sda1 during installation
+UUID=a30085c6-16a4-4740-8d5b-e3edf235cdf0 /               ext4    errors=remount-ro 0       1
+# swap was on /dev/sda5 during installation
+UUID=342820f6-43dc-4243-b041-3afe7cad6244 none            swap    sw              0       0
+/dev/sr0        /media/cdrom0   udf,iso9660 user,noauto     0       0
+--- Mounts ---
+/dev/sda1 on / type ext4 (rw,relatime,errors=remount-ro)
+overlay on /var/lib/docker/overlay2/a809d9d38c9d3fe042e1635c212cb19596adf3b062092d64983967613dfca383/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/E4O6BR32WDWUXK4YDT2STYVV52:/var/lib/docker/overlay2/l/IEFUGN4KPGSSJSZHHROLSNE5SP:/var/lib/docker/overlay2/l/C7XIWLANCRIJW6TF6OQ3JA6RX6:/var/lib/docker/overlay2/l/QWCKT6RLAIICCSHDBOUFQAHEIO:/var/lib/docker/overlay2/l/BXHYLBNKI6ERBIAJNHLU7FDFYB:/var/lib/docker/overlay2/l/BSFK7MXM7S2MZLF5LA4CSFDDMY:/var/lib/docker/overlay2/l/AN2OCLUL5CIIOTECRPI77Z5442:/var/lib/docker/overlay2/l/BJTFTYKPLI3OZ4BP2LNQUN2MJZ,upperdir=/var/lib/docker/overlay2/a809d9d38c9d3fe042e1635c212cb19596adf3b062092d64983967613dfca383/diff,workdir=/var/lib/docker/overlay2/a809d9d38c9d3fe042e1635c212cb19596adf3b062092d64983967613dfca383/work)
+overlay on /var/lib/docker/overlay2/72559530c069c4e83921535fc26846b278b44924590602f7d7c682c280419d75/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/G5E3Z7NRPB3XXMWFPZNLZM3F3O:/var/lib/docker/overlay2/l/X5BYXXBK7V7PLSJBY6KKD57YT5:/var/lib/docker/overlay2/l/WKIPM52FZAQEJ47UAUCYO76QTH:/var/lib/docker/overlay2/l/AOVUCZGDFDIGOJ4VNT7NF3BBME:/var/lib/docker/overlay2/l/JMGBVULOIQ274YDDFZNHZUA6QL:/var/lib/docker/overlay2/l/RA26FP6BPM66EQYLR7PXFWTMTP:/var/lib/docker/overlay2/l/TCTOBP3CQJP4FEZU4EJ6OXZAET:/var/lib/docker/overlay2/l/5DF7F4GI3FLLG47KWHQ2KX4AQA:/var/lib/docker/overlay2/l/2WDNOAHHP47HVA3YT52USXKHMY:/var/lib/docker/overlay2/l/WUFGZJFGGAEHNSY5MK3PTIC3W3:/var/lib/docker/overlay2/l/GLCCYZEY3Z466STZUGVAVLXH3C:/var/lib/docker/overlay2/l/IPZOLS5336C3ZLQ4OLGMCRV2IA:/var/lib/docker/overlay2/l/V756YBO6HOEZTNDIYDQPIDFDVJ:/var/lib/docker/overlay2/l/3GMILOGMOZ2O7B2DJUTWSEGPG6,upperdir=/var/lib/docker/overlay2/72559530c069c4e83921535fc26846b278b44924590602f7d7c682c280419d75/diff,workdir=/var/lib/docker/overlay2/72559530c069c4e83921535fc26846b278b44924590602f7d7c682c280419d75/work)
+overlay on /var/lib/docker/overlay2/4f5d932581208218537fa89c3a344877db60190e3d2ab1fb5bd5ba83cb3fdb95/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/LS5AZUEQE4UGXGSHB67WY5NFTD:/var/lib/docker/overlay2/l/UBEZ353L237R22J27UQN275ABH:/var/lib/docker/overlay2/l/RNB2OQOVGRU6VA6P5XPRCGMLE6:/var/lib/docker/overlay2/l/CAANLY2YCS2IALHQFBPPE4UIEX:/var/lib/docker/overlay2/l/OHIDUT6VQYW3V2JDNTE5O2WIXD:/var/lib/docker/overlay2/l/3GMILOGMOZ2O7B2DJUTWSEGPG6,upperdir=/var/lib/docker/overlay2/4f5d932581208218537fa89c3a344877db60190e3d2ab1fb5bd5ba83cb3fdb95/diff,workdir=/var/lib/docker/overlay2/4f5d932581208218537fa89c3a344877db60190e3d2ab1fb5bd5ba83cb3fdb95/work)
+overlay on /var/lib/docker/overlay2/a95b72eaee7fb6fa9342c409f1da57f52b11dd892e1fe6cd414a85db8c2d9efb/merged type overlay (rw,relatime,lowerdir=/var/lib/docker/overlay2/l/GUYZDNMAWNBLUOULTKVWMJCW74:/var/lib/docker/overlay2/l/WERAR5MNKEZJ6EZR5Y5XA4HEJI:/var/lib/docker/overlay2/l/53JBC4ZHPTED5WWXBPXX5LSWD2:/var/lib/docker/overlay2/l/KLLY3BHO4MP5JBLNQW5L4EZKTU,upperdir=/var/lib/docker/overlay2/a95b72eaee7fb6fa9342c409f1da57f52b11dd892e1fe6cd414a85db8c2d9efb/diff,workdir=/var/lib/docker/overlay2/a95b72eaee7fb6fa9342c409f1da57f52b11dd892e1fe6cd414a85db8c2d9efb/work)
+
+
+------------------------------------------------------------
+📌 VM Active Systemd Services
+------------------------------------------------------------
+  UNIT                      LOAD   ACTIVE SUB     DESCRIPTION
+  containerd.service        loaded active running containerd container runtime
+  cron.service              loaded active running Regular background program processing daemon
+  dbus.service              loaded active running D-Bus System Message Bus
+  docker.service            loaded active running Docker Application Container Engine
+  getty@tty1.service        loaded active running Getty on tty1
+  qemu-guest-agent.service  loaded active running QEMU Guest Agent
+  ssh.service               loaded active running OpenBSD Secure Shell server
+  systemd-journald.service  loaded active running Journal Service
+  systemd-logind.service    loaded active running User Login Management
+  systemd-timesyncd.service loaded active running Network Time Synchronization
+  systemd-udevd.service     loaded active running Rule-based Manager for Device Events and Files
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+11 loaded units listed.
+
+
+------------------------------------------------------------
+📌 VM Crontabs & Schedules
+------------------------------------------------------------
+# /etc/crontab: system-wide crontab
+# Unlike any other crontab you don't have to run the `crontab'
+# command to install the new version when you edit this file
+# and files in /etc/cron.d. These files also have username fields,
+# that none of the other crontabs do.
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# Example of job definition:
+# .---------------- minute (0 - 59)
+# |  .------------- hour (0 - 23)
+# |  |  .---------- day of month (1 - 31)
+# |  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+# |  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+# |  |  |  |  |
+# *  *  *  *  * user-name command to be executed
+17 *	* * *	root	cd / && run-parts --report /etc/cron.hourly
+25 6	* * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.daily; }
+47 6	* * 7	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.weekly; }
+52 6	1 * *	root	test -x /usr/sbin/anacron || { cd / && run-parts --report /etc/cron.monthly; }
+#
+30 3 * * 0 root test -e /run/systemd/system || SERVICE_MODE=1 /usr/lib/x86_64-linux-gnu/e2fsprogs/e2scrub_all_cron
+10 3 * * * root test -e /run/systemd/system || SERVICE_MODE=1 /sbin/e2scrub_all -A -r
+
+
+------------------------------------------------------------
+📌 Docker Version & Info
+------------------------------------------------------------
+Client: Docker Engine - Community
+ Version:           29.6.2
+ API version:       1.55
+ Go version:        go1.26.5
+ Git commit:        dfc4efb
+ Built:             Thu Jul 16 16:12:20 2026
+ OS/Arch:           linux/amd64
+ Context:           default
+
+Server: Docker Engine - Community
+ Engine:
+  Version:          29.6.2
+  API version:      1.55 (minimum version 1.40)
+  Go version:       go1.26.5
+  Git commit:       3d80467
+  Built:            Thu Jul 16 16:12:20 2026
+  OS/Arch:          linux/amd64
+  Experimental:     false
+ containerd:
+  Version:          v2.2.6
+  GitCommit:        11ce9d5f3c68c941867e82890e93e815c1304f1b
+ runc:
+  Version:          1.3.6
+  GitCommit:        v1.3.6-0-g491b69ba
+ docker-init:
+  Version:          0.19.0
+  GitCommit:        de40ad0
+ Containers: 4
+ Images: 4
+ Server Version: 29.6.2
+ Storage Driver: overlay2
+
+
+------------------------------------------------------------
+📌 All Containers (Active & Inactive)
+------------------------------------------------------------
+CONTAINER ID   NAMES                 STATUS                  PORTS                                                                                                IMAGE
+e7d0eb609b88   watchtower            Up 45 hours (healthy)   8080/tcp                                                                                             nickfedor/watchtower:latest
+8af3e7211095   adguardhome-certbot   Up 8 days               80/tcp, 443/tcp                                                                                      certbot/dns-cloudflare
+3b9331d10132   adguardhome           Up 8 days                                                                                                                    adguard/adguardhome
+d6b1c0ac826a   portainer             Up 8 days               0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp, 0.0.0.0:9443->9443/tcp, [::]:9443->9443/tcp, 9000/tcp   portainer/portainer-ee:lts
+
+
+------------------------------------------------------------
+📌 Docker Networks
+------------------------------------------------------------
+NETWORK ID     NAME                  DRIVER    SCOPE
+2012238a2c41   adguardhome_default   bridge    local
+1f1d3350cbc2   bridge                bridge    local
+4d4f46ad0962   host                  host      local
+d67c54690562   none                  null      local
+23eea0c7c541   watchtower_default    bridge    local
+
+
+------------------------------------------------------------
+📌 Docker Volumes & Mount Paths
+------------------------------------------------------------
+DRIVER    VOLUME NAME
+local     portainer_data
+
+
+------------------------------------------------------------
+📌 Portainer Stacks & Compose Directories
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 AdGuard Home Config Header
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 Nginx Proxy Manager Proxy Hosts
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+------------------------------------------------------------
+📌 Home Assistant / Homebridge Mounts
+------------------------------------------------------------
+{
+  "exitcode": 0,
+  "exited": 1
+}
+
+============================================================
+✅ Deep VM Audit Complete for VM 100 (nexus-server2)
+============================================================

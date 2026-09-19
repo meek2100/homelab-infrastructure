@@ -1,0 +1,14 @@
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/prometheus/config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ${BASE_PATH}/prometheus/data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped

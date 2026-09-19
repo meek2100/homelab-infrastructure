@@ -1,0 +1,13 @@
+services:
+  testflight-watcher:
+    image: uzurka/testflight-watcher
+    container_name: testflight-watcher
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+      #- TESTFLIGHT_ID=4nJvAFSV # Paste here what comes after the "https://testflight.apple.com/join/" in the beta link
+      #- DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/1333918960864727050/evPcfEJdYbJn9eQgul5uDCEOgNBF0cs3LPSVL8Mo9HK8XOT38_1DcAGyBP5q3uTjFpUr # Paste here the URL of your Discord Webhook
+      - TESTFLIGHT_ID=wiic7QIW    # This is for the Audiobookshelf iOS app.
+      - DISCORD_WEBHOOK_URL=https://hooks.zapier.com/hooks/catch/738245/2f57kxs/    # I'm utilizing a Zappier webhook to trigger PushBullet and SMTP emails.
+    restart: unless-stopped

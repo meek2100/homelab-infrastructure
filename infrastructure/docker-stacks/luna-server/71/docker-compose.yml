@@ -1,0 +1,19 @@
+services:
+  syncthing:
+    image: lscr.io/linuxserver/syncthing:latest
+    container_name: syncthing
+    hostname: syncthing
+    environment:
+      - PUID=${PUID}
+      - PGID=${GUID}
+      - TZ=${TZ}
+    volumes:
+      - ${BASE_PATH}/syncthing/config:/config
+      - ${BASE_PATH}/obsidian/vault:/vault
+      - ${BASE_PATH}/Ender3V2-OrcaSlicer-Backup/backup:/backup
+    ports:
+      - "8384:8384"   # Syncthing Web GUI
+      - "22000:22000/tcp" # For TCP file transfers
+      - "22000:22000/udp" # For QUIC file transfers
+      - "21027:21027/udp" # For local discovery
+    restart: unless-stopped

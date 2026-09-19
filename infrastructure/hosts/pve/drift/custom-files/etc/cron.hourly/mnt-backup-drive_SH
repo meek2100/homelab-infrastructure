@@ -1,0 +1,46 @@
+#!/bin/sh
+
+# Set the log file
+log_file="/etc/cron.hourly/backup-drive.log"
+
+# Function to log messages (POSIX-compliant)
+log_message() {
+  date_str=$(date +%Y-%m-%d\ %H:%M:%S) # Use command substitution
+  printf "%s: %s\n" "$date_str" "$*" >> "$log_file"
+}
+
+# Specify the directory
+#directory="/mnt/pve/backup"
+
+# Check and create directory (POSIX-compliant)
+#if ! mkdir -p "$directory" 2>/dev/null; then # Redirect stderr to suppress mkdir errors if dir exists
+#  if [ ! -d "$directory" ]; then
+#    log_message "Error creating directory '$directory'. Exiting."
+#    exit 1
+#  else
+#    log_message "Directory '$directory' already existed." # Race condition unlikely
+#  fi
+#else
+#  log_message "Directory '$directory' created successfully."
+#fi
+
+# Drive and mount point
+DRIVE_ID="41d79ae9-1b08-4340-bd07-fa29fb713f6a"
+MOUNT_POINT="/mnt/pve/backup"
+
+
+# Check if mounted (POSIX-compliant using `mount` and `grep`)
+if mount | grep -q "$MOUNT_POINT"; then
+  log_message "$MOUNT_POINT is already mounted."
+else
+  log_message "$MOUNT_POINT is unmounted, attempting to mount now..."
+
+  if mount UUID="$DRIVE_ID" "$MOUNT_POINT"; then
+    log_message "$MOUNT_POINT was mounted successfully."
+  else
+    log_message "Failed to mount $MOUNT_POINT. Check device, UUID, permissions, and logs (e.g., dmesg)."
+    exit 1
+  fi
+fi
+
+exit 0

@@ -1,0 +1,412 @@
+{
+  "/etc/ssh/ssh_host_rsa_key": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/networks": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pam.d/common-account": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_ed25519_key": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/tunables/xdg-user-dirs.d/site.local": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/nsswitch.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/sysctl.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/sources.list.d/docker.list": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.local/share/nano/search_history": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/inputrc": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ld.so.cache": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/machine-id": {
+    "mode": "444",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/subgid": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/motd": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_rsa_key.pub": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pam.d/common-session": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/passwd-": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/console-setup/cached_setup_keyboard.sh": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/subuid-": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/apt.conf.d/00trustcdrom": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/python3/debian_config": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/hosts": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ca-certificates.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/gshadow": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "42"
+  },
+  "/etc/apparmor.d/tunables/home.d/ubuntu": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/security/opasswd": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/sshd_config": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/nvidia_modprobe": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.bashrc": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/initramfs-tools/modules": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/kernel-img.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/environment": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/console-setup/cached_Lat15-Fixed16.psf.gz": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/hostname": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/shells": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/group": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pam.d/common-password": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ca-certificates.conf.dpkg-old": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/sudoers.d/meek2100": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/keyrings/docker.asc": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pam.d/common-session-noninteractive": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/console-setup/cached_UTF-8_del.kmap.gz": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/default/console-setup": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/default/locale": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/mailcap": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/profile": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/resolv.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/default/grub": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/group-": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/sbin.dhclient": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/shadow": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "42"
+  },
+  "/root/.bash_history": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/fstab": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/apt.conf.d/00CDMountPoint": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/shadow-": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "42"
+  },
+  "/etc/apt/sources.list~": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/adjtime": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/locale.gen": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/timezone": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/hosts.deny": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/default/keyboard": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/subgid-": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssl/certs/ca-certificates.crt": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_ed25519_key.pub": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apt/sources.list": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/hosts.allow": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/root/.profile": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/console-setup/cached_setup_font.sh": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/subuid": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/console-setup/cached_setup_terminal.sh": {
+    "mode": "755",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/network/interfaces": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/gshadow-": {
+    "mode": "640",
+    "uid": "0",
+    "gid": "42"
+  },
+  "/etc/apt/listchanges.conf": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/modules": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/initramfs-tools/conf.d/resume": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/usr.bin.man": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/.pwd.lock": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_ecdsa_key": {
+    "mode": "600",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/pam.d/common-auth": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/apparmor.d/local/lsb_release": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/passwd": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  },
+  "/etc/ssh/ssh_host_ecdsa_key.pub": {
+    "mode": "644",
+    "uid": "0",
+    "gid": "0"
+  }
+}

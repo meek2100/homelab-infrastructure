@@ -1,0 +1,20 @@
+services:
+
+  browser:
+    image: lscr.io/linuxserver/firefox:latest
+    container_name: firefox
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+      #- HTTP_PROXY=http://localhost:8388  Set the HTTP proxy to Gluetun
+      #- HTTPS_PROXY=https://localhost:8388  Set the HTTPS proxy to Gluetun
+    network_mode: host
+    shm_size: "1gb"
+    volumes:
+      - firefox:/config:rw
+      - firefox:/downloads:rw
+    restart: unless-stopped
+
+volumes:
+  firefox:

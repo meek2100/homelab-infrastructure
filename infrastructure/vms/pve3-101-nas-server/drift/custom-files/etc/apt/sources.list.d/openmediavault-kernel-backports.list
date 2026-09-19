@@ -1,0 +1,1 @@
+deb [signed-by=/usr/share/keyrings/debian-archive-bookworm-automatic.gpg] http://httpredir.debian.org/debian bookworm-backports main contrib non-free non-free-firmware
