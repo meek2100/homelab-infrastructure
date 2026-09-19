@@ -3,7 +3,8 @@ import subprocess
 import os
 import json
 
-mcp = FastMCP("Proxmox Recovery System")
+mcp = FastMCP("Homelab Infrastructure System")
+
 
 def run_script(script_name: str, args: list[str] = None) -> str:
     if args is None:

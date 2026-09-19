@@ -38,11 +38,12 @@ All 1,096 files have been organized out of legacy directories into a structured,
 > - `infrastructure/docker-stacks/media-server/82/`
 > - **Full Service Mapping**: See [`infrastructure/docker-stacks/STACK-INDEX.md`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/STACK-INDEX.md) to instantly locate any of the 82 stacks by app name (e.g., Plex, Home Assistant, AdGuard Home).
  
-## 2. 🧠 The Proxmox Recovery MCP Server
-A custom Python Model Context Protocol (MCP) server is located in `mcp-servers/proxmox-recovery-mcp/` and configured locally in `.agents/mcp_config.json`.
+## 2. 🧠 The Homelab Infrastructure MCP Server
+A custom Python Model Context Protocol (MCP) server is located in `mcp/homelab/` and configured locally in `.agents/mcp_config.json`.
 
-- **Total Tools Provided**: 9 (Backup/Restore Host, Backup/Restore VM, Backup/Restore APT, Start/Restore Stacks).
-- **Execution Architecture**: All python scripts are cleanly encapsulated inside `mcp-servers/proxmox-recovery-mcp/scripts/`.
+- **Total Tools Provided**: 11 (Sync Fleet, Generate Stack Index, Backup/Restore Host, Backup/Restore VM, Backup/Restore APT, Start/Restore Stacks).
+- **Execution Architecture**: All python scripts are cleanly encapsulated inside `mcp/homelab/scripts/`.
+
 
 ### 🛡️ Ironclad Architectural Fixes
 During development, we uncovered and eliminated several critical blindspots:

@@ -3,8 +3,8 @@
 This document provides a searchable, friendly service catalog mapping every Portainer stack ID across all virtual machines to its application name, container images, exposed ports, host node, and SOPS secret encryption status.
 
 ## Summary Metrics
-- **Total Stacks Cataloged**: 84
-- **Total Docker Services Defined**: 147
+- **Total Stacks Cataloged**: 83
+- **Total Docker Services Defined**: 146
 - **Stacks with Encrypted Secrets (`secrets.enc.yaml`)**: 68
 - **Host Virtual Machines**: 6 (`discovery-server`, `luna-server`, `media-server`, `minecraft-docker`, `nexus-server`, `nexus-server2`)
 
@@ -110,11 +110,10 @@ Total Stacks: **2**
 ---
 
 ## VM: `nexus-server` (Node: `pve`, VMID: `100`)
-Total Stacks: **10**
+Total Stacks: **9**
 
 | Stack ID | Primary Services | Container Images | Exposed Ports | Encrypted Secrets | Blueprint Path |
 | :--- | :--- | :--- | :--- | :---: | :--- |
-| **1** | `pihole` | `pihole/pihole:latest` | `Internal / Host` | — None | [nexus-server/1](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/1) |
 | **32** | `watchtower` | `nickfedor/watchtower` | `Internal / Host` | — None | [nexus-server/32](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/32) |
 | **44** | `wg-easy` | `ghcr.io/wg-easy/wg-easy` | `51820:51820/udp, 51821:51821/tcp` | 🔒 Yes | [nexus-server/44](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/44) |
 | **45** | `cloudflare-ddns` | `oznu/cloudflare-ddns:latest` | `Internal / Host` | 🔒 Yes | [nexus-server/45](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/45) |

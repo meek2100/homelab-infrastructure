@@ -102,10 +102,11 @@ homelab-infrastructure/
 │       ├── pve2-100-discovery-server/
 │       ├── pve3-100-nexus-server2/
 │       └── pve3-101-nas-server/
-├── mcp-servers/
-│   └── proxmox-recovery-mcp/       # Proxmox recovery & restoration FastMCP server
-│       ├── server.py               # 9 recovery tools (backup/restore host, vm, stacks)
-│       └── scripts/                # Automated audit, extraction, and restore tools
+├── mcp/
+│   └── homelab/                    # Homelab infrastructure & recovery FastMCP server
+│       ├── server.py               # Recovery, discovery & sync tools (sync_fleet, backup, restore)
+│       └── scripts/                # Automated audit, extraction, sync, and restore tools
+
 └── .agents/                        # Local working directory (untracked in Git)
     └── docs/
         ├── session-state.md        # Live project session & master TODO tracker

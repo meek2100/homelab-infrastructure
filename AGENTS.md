@@ -59,5 +59,6 @@
   - `VM 101` (`nas-server` NAS VM): `OpenMediaVault` on 500GB disk `shared-nas:vm-101-disk-0` with **`ens19` IP `10.25.25.248/24`** (Private Storage Network) and **`ens18` IP `192.168.40.248/24`** (VLAN 40 Management).
 
 ## MCP & Tool Standards
-- Keep Model Context Protocol (MCP) servers modular in `mcp-servers/` and reference project-level MCP tools in `.agents/mcp.json`.
+- Keep Model Context Protocol (MCP) servers modular in `mcp/` and reference project-level MCP tools in `.agents/mcp_config.json`.
 - Secret Backup Standard: Encrypt all secrets using `SOPS` + `age` (`*.enc.yaml`). Keep master key in user password manager; no unencrypted secrets in Git.
+
