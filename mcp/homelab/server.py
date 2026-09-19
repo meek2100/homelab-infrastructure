@@ -139,6 +139,37 @@ def generate_stack_index() -> str:
     """Regenerates infrastructure/docker-stacks/STACK-INDEX.md catalog."""
     return run_script("generate-stack-index.py")
 
+@mcp.tool()
+def snapshot_vm(node: str, vmid: int, name: str, description: str = "", include_ram: bool = False) -> str:
+    """Takes a live Proxmox snapshot of a virtual machine."""
+    args = ["--node", node, "--vmid", str(vmid), "--action", "create", "--name", name]
+    if description: args.extend(["--desc", description])
+    if include_ram: args.append("--include-ram")
+    return run_script("manage-vm-snapshots.py", args)
+
+@mcp.tool()
+def list_vm_snapshots(node: str, vmid: int) -> str:
+    """Lists all Proxmox snapshots for a virtual machine."""
+    return run_script("manage-vm-snapshots.py", ["--node", node, "--vmid", str(vmid), "--action", "list"])
+
+@mcp.tool()
+def rollback_vm(node: str, vmid: int, name: str) -> str:
+    """Rolls back a Proxmox virtual machine to a previous snapshot."""
+    return run_script("manage-vm-snapshots.py", ["--node", node, "--vmid", str(vmid), "--action", "rollback", "--name", name])
+
+@mcp.tool()
+def delete_vm_snapshot(node: str, vmid: int, name: str) -> str:
+    """Deletes a Proxmox snapshot from a virtual machine."""
+    return run_script("manage-vm-snapshots.py", ["--node", node, "--vmid", str(vmid), "--action", "delete", "--name", name])
+
+@mcp.tool()
+def backup_vm_vzdump(node: str, vmid: int, storage: str = None) -> str:
+    """Takes a full Proxmox vzdump backup archive of a virtual machine."""
+    args = ["--node", node, "--vmid", str(vmid), "--action", "vzdump"]
+    if storage: args.extend(["--storage", storage])
+    return run_script("manage-vm-snapshots.py", args)
+
 if __name__ == "__main__":
     mcp.run()
+
 
