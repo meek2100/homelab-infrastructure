@@ -33,11 +33,23 @@ This document details the physical hardware, virtual bridges, dual-WAN egress pa
 * **Port Mirroring (SPAN)**:
   * Configured to mirror selected inspection traffic into **VLAN 100 (`Wireshark - Debug`)** or to `pve` physical interface `eth0` (`vmbr2` with `promisc on`).
 
-### 3. Wireless Access Points: Araknis 830 APs (Wi-Fi 7 / 802.11be)
-* **Hardware Profile**: Dual Araknis AN-830-AP-I Access Points:
-  * **AP 1**: `192.168.1.231` (MAC `14:3F:C3:E8:B9:93`) — 2.4GHz Ch 6 (20MHz, 23dBm), 5GHz Ch 36 (80MHz, 27dBm), 6GHz Ch 21 (160MHz, 25dBm).
-  * **AP 2**: `192.168.1.236` (MAC `14:3F:C3:E8:B9:A2`) — 2.4GHz Ch 1 (20MHz, 23dBm), 5GHz Ch 149 (80MHz, 27dBm), 6GHz Ch 69 (160MHz, 25dBm).
-* **Authoritative SSID Configuration**:
+### 3. Wireless Access Points & Office Point-to-Point Bridge: Araknis 830 APs (Wi-Fi 7 / 802.11be)
+* **Fleet Hardware Profile**: Three Araknis Access Points:
+  * **AP 1 (Core Wired + Bridge Master)**: `192.168.1.231` (MAC `14:3F:C3:E8:B9:93`, Local BSSID `36:3F:C3:E8:B9:96`).
+    * Radios: 2.4GHz Ch 6 (20MHz, 23dBm), 5GHz Ch 36 (80MHz, 27dBm), 6GHz Ch 21 (160MHz, 25dBm).
+    * Dual Role: Broadcasts client SSIDs and acts as the **Wired Bridge Master** for the office backhaul.
+  * **AP 2 (Core Wired)**: `192.168.1.236` (MAC `14:3F:C3:E8:B9:A2`).
+    * Radios: 2.4GHz Ch 1 (20MHz, 23dBm), 5GHz Ch 149 (80MHz, 27dBm), 6GHz Ch 69 (160MHz, 25dBm).
+    * Role: Broadcasts client SSIDs across high-band 5GHz and 6GHz.
+  * **AP 3 (Office Wireless Bridge Client)**:
+    * Local BSSID `36:3F:C3:E8:B9:23`.
+    * Role: Dedicated **Wireless Bridge** client connecting the physical office segment to AP 1 without broadcasting client SSIDs, providing transparent Layer 2 ethernet connectivity until physical cabling is pulled.
+* **Point-to-Point Wireless Backhaul Specification**:
+  * **Backhaul SSID**: `Insomniac_Bridge`
+  * **Radio Band**: 5 GHz (Ch 36, 80 MHz channel width)
+  * **Security**: `WPA3-SAE (Fixed)` with pre-shared passkey.
+  * **Transparent L2 Bridging**: Passes untagged management and 802.1Q tagged VLANs transparently across the air.
+* **Authoritative Client SSID Configuration**:
   * **`Insomniac_MGMT`** (Native VLAN 1): 5 GHz & 6 GHz, WPA3-SAE, Fast Roaming enabled, Client Isolation OFF. Dedicated for wireless administrative/hypervisor access.
   * **`Insomniac`** (VLAN 10 — `Main - Trusted`): 5 GHz & 6 GHz only, WPA3-SAE, Fast Roaming enabled, Client Isolation OFF. Primary high-speed network for phones, laptops, and workstations.
   * **`Insomniac_Guest`** (VLAN 20 — `Guest - Media`): 2.4 GHz & 5 GHz, WPA2/WPA3-SAE Mixed, Band Steering ON, Fast Roaming ON, **Client Isolation OFF**. Destination for Sonos speakers, Smart TVs, and streaming guests.
