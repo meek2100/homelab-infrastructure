@@ -11,8 +11,8 @@ services:
       - TS_EPHEMERAL=true
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false
-      - TS_ROUTES=192.168.1.0/24,192.168.10.0/24,192.168.20.0/24,192.168.30.0/24,10.25.25.0/24
-      - TS_EXTRA_ARGS=--advertise-exit-node --accept-dns=false --snat-subnet-routes=false --accept-routes=true
+      - TS_ROUTES=192.168.1.0/24,192.168.10.0/24,192.168.20.0/24,192.168.30.0/24,192.168.40.0/24,10.25.25.0/24
+      - TS_EXTRA_ARGS=--advertise-exit-node --accept-dns=false --snat-subnet-routes=false --accept-routes=false
     restart: unless-stopped
     volumes:
       - ${BASE_PATH}/tailscale/config:/var/lib/tailscale
