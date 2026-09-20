@@ -259,6 +259,16 @@ def backup_vm_vzdump(node: str, vmid: int, storage: str = None) -> str:
     if storage: args.extend(["--storage", storage])
     return run_script("manage-vm-snapshots.py", args)
 
+@mcp.tool()
+def backup_openwrt(ip: str = "192.168.1.225", user: str = "root") -> str:
+    """Backs up OpenWrt router /etc/config/ files and encrypts sensitive modules via SOPS."""
+    return run_script("backup-openwrt-config.py", ["--ip", ip, "--user", user])
+
+@mcp.tool()
+def sync_wireshark_capture() -> str:
+    """Discovers and synchronizes headless Wireshark capture scripts from luna-server (VM 102)."""
+    return run_script("sync-wireshark-capture-script.py", [])
+
 if __name__ == "__main__":
     mcp.run()
 

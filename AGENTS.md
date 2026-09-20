@@ -69,9 +69,10 @@
 - **Snapshot & Backup Tooling (VM & LXC Support)**:
   - `mcp/homelab/scripts/manage-vm-snapshots.py`: Programmatic snapshot creation, listing, rollback, deletion, and vzdump backup with automatic detection for both QEMU VMs (`qm`) and Linux Containers (`pct`).
   - Native FastMCP tools: `snapshot_vm`, `list_vm_snapshots`, `rollback_vm`, `delete_vm_snapshot`, `backup_vm_vzdump`, `list_vms`, `get_docker_status`.
-- **Fleet Synchronization Tooling**:
-  - `mcp/homelab/scripts/sync-live-fleet.py`: Multi-node live discovery and zero-drift synchronization tool (`sync_fleet`). Discovers, diffs, and backs up `/etc/pve/qemu-server/*.conf` and `/etc/pve/lxc/*.conf`, plus Portainer stacks running in both VMs and LXCs.
-- **Disaster Recovery Tooling**:
-  - `mcp/homelab/scripts/restore-docker-stacks.py`: Hardened SOPS dotenv decryption, base64 guest payload streaming, and error validation (`restore_stacks`). Supports target execution inside both QEMU VMs (via QGA) and LXC containers (via `pct exec`).
-  - `mcp/homelab/scripts/restore-host-configs.py`: Restores host network, grub, storage, cron, and both `/etc/pve/qemu-server` and `/etc/pve/lxc` configurations.
+- **Network Infrastructure & GitOps Tooling**:
+  - `infrastructure/network/vlan-matrix.md`: Authoritative 8-VLAN table (VLAN 1 Management, 10 Main Trusted, 20 Guest Media, 30 Isolated IOT, 40 Servers Admin, 100 Wireshark Debug, 150 CA-1 Test, 200 Core-5 Test).
+  - `infrastructure/network/network-topology.md`: Dual-WAN topology (WAN1 house LAN, WAN2 `10.25.25.0/24` egress for `discovery-server`), Araknis 520 router, 920 switch, 830 APs, and DNS split-horizon.
+  - `mcp/homelab/scripts/backup-openwrt-config.py`: FastMCP tool `backup_openwrt` pulls and SOPS-encrypts OpenWrt `/etc/config/`.
+  - `mcp/homelab/scripts/sync-wireshark-capture-script.py`: FastMCP tool `sync_wireshark_capture` archives headless capture scripts from `luna-server` (VM 102) into Stack 48.
+
 

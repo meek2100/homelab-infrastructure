@@ -1,0 +1,32 @@
+#!/usr/bin/with-contenv bash
+
+# 🧠 THE TOGGLE VALVE: Check if autocapture is explicitly disabled at the stack level
+if [ "${AUTOCAPTURE}" = "false" ]; then
+  echo "🛑 NOC-Automation: AUTOCAPTURE is set to false. Skipping background daemon for manual GUI mode!"
+  exit 0
+fi
+
+echo "🧹 NOC-Automation: Running boot-time storage optimization pass..."
+find /nas-storage/ -name "router_baseline_*.pcapng" -mtime +0 -type f -delete
+
+echo "⏳ NOC-Automation: Pausing 30 seconds for Proxmox and VM network layers to settle..."
+sleep 30
+
+echo "🚀 NOC-Automation: Initializing Headless Capture Engine..."
+ip link set dev ens19 up promisc on
+
+/usr/bin/dumpcap -i ens19 \
+  -f "not host 192.168.40.248 and not port 3000 and not port 3001" \
+  -b filesize:100000 \
+  -b files:100 \
+  -w /captures/router_baseline.pcapng \
+  -q &
+
+while true; do
+  find /captures/ -name "router_baseline_*.pcapng" | while read -r completed_file; do
+    if [[ "$completed_file" != $(ls -1t /captures/router_baseline_*.pcapng 2>/dev/null | head -n 1) ]]; then
+      mv "$completed_file" /nas-storage/ 2>/dev/null
+    fi
+  done
+  sleep 10
+done
