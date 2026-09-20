@@ -83,6 +83,11 @@ block_lan_internet() {
     # Block IPv4
     if ! iptables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; then
         iptables -I FORWARD -i br0 -o "$wan_if" -j REJECT
+        # Keep Luna router (10.20.20.1) management accessible above killswitch
+        iptables -D FORWARD -d 10.20.20.1 -j ACCEPT 2>/dev/null || true
+        iptables -D FORWARD -s 10.20.20.1 -j ACCEPT 2>/dev/null || true
+        iptables -I FORWARD 1 -d 10.20.20.1 -j ACCEPT
+        iptables -I FORWARD 1 -s 10.20.20.1 -j ACCEPT
         log_msg "Killswitch ENGAGED. LAN isolated from direct internet."
     fi
 

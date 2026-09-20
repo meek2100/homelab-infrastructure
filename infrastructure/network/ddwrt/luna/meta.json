@@ -1,0 +1,9 @@
+{
+  "router": "luna-router",
+  "model": "TP-Link Archer C7 v5",
+  "firmware": "DD-WRT v3.0-r56941",
+  "ip": "10.20.20.1",
+  "role": "Upstream WAN2 Gateway & ISP Isolation Barrier",
+  "backup_file": "luna-router-archer-c7-v5.enc.bin",
+  "restore_method": "DD-WRT Web GUI -> Administration -> Backup / Restore -> Select decrypted .bin -> Restore"
+}

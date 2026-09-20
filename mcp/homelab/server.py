@@ -265,9 +265,23 @@ def backup_openwrt(ip: str = "192.168.1.226", user: str = "root") -> str:
     return run_script("backup-openwrt-config.py", ["--ip", ip, "--user", user])
 
 @mcp.tool()
+def restore_openwrt(ip: str = "192.168.1.226", user: str = "root", dry_run: bool = False) -> str:
+    """Restores OpenWrt router configurations, daemons, failover scripts, and decrypts SOPS modules."""
+    args = ["--ip", ip, "--user", user]
+    if dry_run: args.append("--dry-run")
+    return run_script("restore-openwrt-config.py", args)
+
+@mcp.tool()
 def backup_ddwrt(router: str = "all") -> str:
     """Backs up DD-WRT routers (aurora: 10.25.25.1, luna: 10.20.20.1) NVRAM configs and scripts encrypted via SOPS."""
     return run_script("backup-ddwrt-config.py", ["--router", router])
+
+@mcp.tool()
+def restore_ddwrt(router: str = "aurora", ip: str = "10.25.25.1", dry_run: bool = False) -> str:
+    """Restores DD-WRT NVRAM settings, startup/firewall scripts, cron jobs, and PIA VPN watchdogs."""
+    args = ["--router", router, "--ip", ip]
+    if dry_run: args.append("--dry-run")
+    return run_script("restore-ddwrt-config.py", args)
 
 @mcp.tool()
 def get_openwrt_status(ip: str = "192.168.1.226") -> str:
