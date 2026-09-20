@@ -95,3 +95,63 @@ graph TD
 | **`portainer.secure.theurer.dev`** | `192.168.40.185` | Portainer CE Web UI | NPM Reverse Proxy + SSL Wildcard |
 | **`plex.secure.theurer.dev`** | `192.168.40.185` | Plex Media Server (`media-server`:32400) | NPM Reverse Proxy + SSL Wildcard |
 | **`ha.secure.theurer.dev`** | `192.168.40.185` | Home Assistant (`luna-server`:8123) | NPM Reverse Proxy + WebSocket Upgrade |
+| **`home.secure.theurer.dev`** | `192.168.40.185` | Homarr Homelab Dashboard (`media-server`:80) | NPM Reverse Proxy + SSL Wildcard |
+| **`vpn.theurer.dev`** | WAN IP / Dynamic | WireGuard Admin Gateway (`nexus-server`:51820) | Direct UDP Port Forward |
+
+---
+
+## 🛡️ Dual-VPN Administrative Ingress Architecture
+
+The homelab utilizes a resilient, dual-VPN remote access model ensuring both high-performance mobile access and an uninhibited, cloud-independent administrative lifeline:
+
+```mermaid
+graph TD
+    subgraph RemoteClients ["Remote Clients (Phones, Laptops, Road Warriors)"]
+        TC_CLIENT["Tailscale Client<br>(100.x.y.z)"]
+        WG_CLIENT["WireGuard Client<br>(10.8.0.x)"]
+    end
+
+    subgraph Router ["Araknis 520 Router (192.168.1.1 & 192.168.40.1)"]
+        PORT51820["WAN1 Port Forward<br>UDP 51820 ──► 192.168.40.185"]
+        STATIC_ROUTES["Static Routing Table:<br>100.64.0.0/10 via 192.168.40.185<br>10.8.0.0/24 via 192.168.40.185"]
+    end
+
+    subgraph Nexus ["nexus-server (VM 100 on pve - 192.168.40.185)"]
+        WG["WireGuard (wg-easy Stack 44)<br>10.8.0.0/24 (MTU 1420)<br>MASQUERADE ──► eth0"]
+        TS["Tailscale (Stack 69 v22)<br>100.70.65.45<br>Subnets: VLAN 1, 10, 20, 30, 40, Storage"]
+        AG1["AdGuard Home Primary<br>Listening on *:53"]
+        NPM["Nginx Proxy Manager<br>Listening on *:80, *:443"]
+    end
+
+    subgraph Targets ["Homelab Targets"]
+        PVE1["pve Proxmox Mgmt (192.168.1.250:8006, :22)"]
+        PVE3["pve3 Proxmox Mgmt (192.168.1.245:8006, :22)"]
+        SW["Araknis 920 Switch (192.168.1.215:80)"]
+        NAS["OpenMediaVault (192.168.40.248 & 10.25.25.248)"]
+        DEVS["Workstations (VLAN 10) & 3D Printers (VLAN 30)"]
+    end
+
+    WG_CLIENT ── UDP 51820 ──► PORT51820 ──► WG
+    TC_CLIENT ── Direct Mesh / DERP ──► TS
+
+    WG ── Outbound to All VLANs ──► Targets
+    TS ── Outbound to All VLANs ──► Targets
+    Targets ── Return Path to 100.x / 10.8.x ──► STATIC_ROUTES ──► Nexus
+```
+
+### 1. Tailscale Mesh Ingress (`nexus-server/69` - v22)
+* **Tailscale Node IP**: `100.70.65.45` (`tailscale-nexus.tail4499d6.ts.net`).
+* **Advertised Subnets**: `192.168.1.0/24`, `192.168.10.0/24`, `192.168.20.0/24`, `192.168.30.0/24`, `192.168.40.0/24`, `10.25.25.0/24`.
+* **Zero-NAT Real Client Tracking**: `--snat-subnet-routes=false` preserves client `100.x.y.z` IPs, allowing AdGuard Home to log and apply filtering policies per individual mobile device.
+* **Return Path**: Relies on Araknis static route `100.64.0.0/10 via 192.168.40.185`.
+* **Split DNS**: Tailscale admin console delegates `secure.theurer.dev` to `100.70.65.45` (Primary direct mesh) and `192.168.40.186` (Secondary HA on `pve3`).
+
+### 2. WireGuard "Break Glass" Administrative Backdoor (`nexus-server/44`)
+* **Endpoint**: `vpn.theurer.dev:51820/udp` (Port forwarded directly through Araknis WAN1).
+* **Role**: Completely independent of third-party cloud infrastructure (operates if Tailscale or Cloudflare are offline).
+* **Configuration**:
+  * Client IP Range: `10.8.0.0/24`
+  * Optimal MTU: `1420` (prevents PMTU blackholes and packet fragmentation).
+  * Allowed IPs: `192.168.1.0/24, 192.168.10.0/24, 192.168.20.0/24, 192.168.30.0/24, 192.168.40.0/24, 10.25.25.0/24`.
+  * DNS: `192.168.40.185`, `192.168.40.186`.
+* **Full Administrative Reach**: Direct access to Proxmox Web UIs (`:8006`), SSH (`:22`), switch web consoles, router management, and private storage networks.
