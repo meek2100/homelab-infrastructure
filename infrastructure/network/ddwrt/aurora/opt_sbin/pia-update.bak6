@@ -1,0 +1,496 @@
+#!/opt/bin/bash
+# ==============================================================================
+#
+# Title:        PIA WireGuard High-Availability Update Script
+# Description:  This script automates fetching a new WireGuard configuration
+#               from Private Internet Access (PIA) and applies it to one of
+#               several tunnel interfaces on a router. It provides high
+#               availability by rotating through tunnels and attempting to
+#               connect to a randomly selected PIA region. It is designed to
+#               be run automatically via a scheduler like cron.
+#
+# Version:      1.8 (IPv6 Future-proofing, Pushover Alerts, Cleanup Sanity Checks)
+# Author:       meek2100 - https://github.com/meek2100
+# Date:         2025-09-24
+#
+# ==============================================================================
+
+set -e
+
+# === CONFIGURATION AND PATHS ===
+readonly SCRIPT_DIR="/opt/etc/pia-update"
+readonly OUTPUT_DIR="$SCRIPT_DIR/output"
+readonly STATE_DIR="$SCRIPT_DIR/state"
+
+# Run lock and temp files from RAM (/tmp) to prevent flash memory wear
+readonly LOCK_DIR="/tmp/pia_update.lock"
+
+# Add region IDs in an array. The script will try regions in a random order.
+readonly PIA_REGION_IDS=("swiss" "ro" "nl_amsterdam" "is" "sweden")
+readonly GENERATE_CONFIG_FILE="true"
+readonly NUM_TUNNELS=6
+
+# Smart Connectivity IPs
+readonly VPN_CHECK_IP="10.0.0.242" # Internal PIA DNS (tested when VPN is up)
+readonly RAW_CHECK_IP="8.8.8.8"    # Public IP (tested only during fail-safe recovery)
+
+readonly PIA_SERVERLIST_URL="https://serverlist.piaservers.net/vpninfo/servers/v6"
+readonly PIA_TOKEN_URL="https://www.privateinternetaccess.com/api/client/v2/token"
+readonly PIA_CA_CERT_URL="https://raw.githubusercontent.com/pia-foss/manual-connections/master/ca.rsa.4096.crt"
+
+readonly CRED_FILE="$SCRIPT_DIR/pia_creds.conf"
+readonly CERT_FILE="$SCRIPT_DIR/ca.rsa.4096.crt"
+readonly TUNNEL_STATE_FILE="$STATE_DIR/wg_next_tunnel_idx"
+readonly CONFIG_FILE_PATH="$OUTPUT_DIR/wg_latest.conf"
+
+# --- Global Variables ---
+PIA_USER=""
+PIA_PASS=""
+PUSHOVER_TOKEN=""
+PUSHOVER_USER=""
+NEXT_TUNNEL_IDX=1
+PRIVKEY=""
+PUBKEY=""
+REGION_NAME=""
+WG_IP=""
+WG_CN=""
+PEER_IP=""
+SERVER_KEY=""
+DNS1=""
+DNS2=""
+
+# --- Core Functions ---
+
+cleanup() {
+    rmdir "$LOCK_DIR" 2>/dev/null || true
+}
+
+acquire_lock() {
+    if ! mkdir "$LOCK_DIR"; then
+        echo "Script is already running. Exiting."
+        exit 1
+    fi
+    trap 'cleanup' EXIT
+}
+
+check_dependencies() {
+    echo "--> Checking for required tools..."
+    for cmd in jq curl wg ping awk sed; do
+        if ! command -v "$cmd" &>/dev/null; then
+            echo "ERROR: Required command '$cmd' is not installed. Please install it."
+            exit 1
+        fi
+    done
+    echo "  [*] All dependencies are satisfied."
+}
+
+send_pushover() {
+    local title="$1"
+    local message="$2"
+    local priority="${3:-0}"
+    
+    # Only send if the user provided credentials in the conf file
+    if [[ -n "$PUSHOVER_TOKEN" && -n "$PUSHOVER_USER" ]]; then
+        curl -s -F "token=$PUSHOVER_TOKEN" \
+                -F "user=$PUSHOVER_USER" \
+                -F "title=$title" \
+                -F "message=$message" \
+                -F "priority=$priority" \
+                "https://api.pushover.net/1/messages.json" > /dev/null 2>&1 || true
+    fi
+}
+
+check_internet() {
+    local in_recovery=$1
+    
+    if [[ "$in_recovery" == "true" ]]; then
+        echo "--> [Recovery Mode] Checking raw internet connectivity..."
+        if ping -c 3 -W 2 "$RAW_CHECK_IP" &>/dev/null; then
+            echo "  [*] Raw internet connectivity confirmed via $RAW_CHECK_IP."
+            return 0
+        fi
+        echo "  [!] Raw internet connectivity failed. ISP might be down."
+        return 1
+    else
+        echo "--> Checking VPN internet connectivity..."
+        if ping -c 3 -W 2 "$VPN_CHECK_IP" &>/dev/null; then
+            echo "  [*] VPN internet connectivity confirmed via $VPN_CHECK_IP."
+            return 0
+        fi
+        echo "  [!] VPN connectivity failed. Tunnel may be down."
+        return 1
+    fi
+}
+
+block_lan_internet() {
+    echo "--> Applying LAN killswitch (IPv4 & IPv6)..."
+    local wan_if
+    wan_if=$(nvram get wan_iface)
+    
+    if ! iptables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; then
+        iptables -I FORWARD -i br0 -o "$wan_if" -j REJECT
+    fi
+    
+    # Future-proofing: Apply IPv6 block if ip6tables is available
+    if command -v ip6tables &>/dev/null; then
+        if ! ip6tables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; then
+            ip6tables -I FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null || true
+        fi
+    fi
+}
+
+unblock_lan_internet() {
+    echo "--> Lifting LAN killswitch..."
+    local wan_if
+    wan_if=$(nvram get wan_iface)
+    
+    while iptables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; do
+        iptables -D FORWARD -i br0 -o "$wan_if" -j REJECT
+    done
+    
+    if command -v ip6tables &>/dev/null; then
+        while ip6tables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; do
+            ip6tables -D FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null || true
+        done
+    fi
+}
+
+disable_all_tunnels() {
+    echo "--> Disabling all WireGuard tunnels and suspending HA watchdog..."
+    for i in $(seq 1 "$NUM_TUNNELS"); do
+        nvram set "oet${i}_en=0"
+        nvram set "oet${i}_failgrp=0"
+    done
+    
+    # Commit required so watchdog doesn't immediately resurrect them
+    nvram commit 
+    
+    for i in $(seq 1 "$NUM_TUNNELS"); do
+        stopservice "oet${i}" 2>/dev/null || true
+        # Forcefully delete the interface if DD-WRT leaves it hanging
+        ip link delete "oet${i}" 2>/dev/null || true
+    done
+    
+    killall wg_watchdog 2>/dev/null || true 
+    # This rebuilds the firewall
+    /etc/config/eop-tunnel.prewall
+}
+
+enable_all_tunnels() {
+    echo "--> Re-enabling all backup WireGuard tunnels and HA watchdog..."
+    for i in $(seq 1 "$NUM_TUNNELS"); do
+        nvram set "oet${i}_en=1"
+        nvram set "oet${i}_failgrp=1"
+    done
+    nvram commit
+    /etc/config/eop-tunnel.prewall
+}
+
+shuffle_array() {
+    local -n arr="$1"
+    local i tmp j
+    for ((i = ${#arr[@]} - 1; i > 0; i--)); do
+        j=$(( RANDOM % (i + 1) ))
+        tmp="${arr[i]}"
+        arr[i]="${arr[j]}"
+        arr[j]="$tmp"
+    done
+}
+
+load_credentials() {
+    echo "--> Loading credentials..."
+    if [[ ! -f "$CRED_FILE" ]]; then
+        echo "ERROR: Credentials file not found at $CRED_FILE"
+        exit 1
+    fi
+
+    local perms
+    perms=$(ls -ld "$CRED_FILE" | awk '{print $1}')
+    if [[ "$perms" != "-rw-------" ]]; then
+        echo "SECURITY ERROR: Credentials file ($CRED_FILE) has insecure permissions ($perms)."
+        exit 1
+    fi
+
+    # shellcheck source=/dev/null
+    . "$CRED_FILE"
+
+    if [[ -z "$PIA_USER" || -z "$PIA_PASS" ]]; then
+        echo "ERROR: PIA_USER or PIA_PASS not set in $CRED_FILE."
+        exit 1
+    fi
+    echo "  [*] Credentials loaded successfully."
+}
+
+load_state() {
+    echo "--> Loading state..."
+    mkdir -p "$STATE_DIR"
+
+    if [[ -f "$TUNNEL_STATE_FILE" ]]; then
+        NEXT_TUNNEL_IDX=$(cat "$TUNNEL_STATE_FILE")
+    else
+        echo "  [!] No tunnel state file found. Defaulting to tunnel 1."
+        NEXT_TUNNEL_IDX=1
+    fi
+    echo "  [*] Next tunnel to update: $NEXT_TUNNEL_IDX"
+}
+
+save_state() {
+    echo "--> Saving state for next run..."
+    local new_tunnel_idx=$(( NEXT_TUNNEL_IDX % NUM_TUNNELS + 1 ))
+    echo "$new_tunnel_idx" > "$TUNNEL_STATE_FILE"
+    echo "  [*] Next run will update Tunnel $new_tunnel_idx."
+}
+
+get_pia_config() {
+    # Store the temp file in RAM to save flash memory
+    local tmp_server_list="/tmp/pia_server_list.$$.tmp"
+    trap 'rm -f "$tmp_server_list"' RETURN
+
+    echo "--> Generating new WireGuard key pair..."
+    PRIVKEY=$(wg genkey)
+    PUBKEY=$(echo "$PRIVKEY" | wg pubkey)
+
+    echo "--> Getting PIA server list..."
+    curl --max-time 30 -s -o "$tmp_server_list" "$PIA_SERVERLIST_URL"
+    
+    if [[ ! -s "$tmp_server_list" ]]; then
+        echo "ERROR: Failed to download PIA server list or the file is empty."
+        return 1
+    fi
+    echo "  [*] Downloaded server list successfully."
+    
+    echo "--> Getting authentication token..."
+    local token
+    token=$(curl --max-time 30 -s -d "username=$PIA_USER&password=$PIA_PASS" "$PIA_TOKEN_URL" | jq -r '.token')
+    
+    if [[ -z "$token" || "$token" == "null" ]]; then
+        echo "ERROR: Failed to get auth token."
+        return 1
+    fi
+    echo "  [*] Successfully received auth token."
+    
+    echo "--> Shuffling regions to create a random connection order..."
+    local shuffled_regions=("${PIA_REGION_IDS[@]}")
+    shuffle_array shuffled_regions
+
+    for region_id in "${shuffled_regions[@]}"; do
+        echo "--> Trying region: $region_id"
+        
+        local region_json
+        region_json=$(head -n 1 "$tmp_server_list" | jq --arg REGION_ID "$region_id" '.regions[] | select(.id == $REGION_ID and .offline == false and (.servers.wg | length) > 0)')
+
+        if [[ -z "$region_json" ]]; then
+            echo "  [!] Region '$region_id' not found, is offline, or has no WG servers. Trying next..."
+            continue
+        fi
+
+        REGION_NAME=$(echo "$region_json" | jq -r '.name')
+        local wg_servers_json
+        wg_servers_json=$(echo "$region_json" | jq '.servers.wg')
+   
+        local server_count
+        server_count=$(echo "$wg_servers_json" | jq 'length')
+        local random_index=$(( RANDOM % server_count ))
+
+        local server_details
+        readarray -t server_details < <(echo "$wg_servers_json" | jq -r ".[$random_index] | [.ip, .cn] | .[]")
+        
+        WG_IP=${server_details[0]}
+        WG_CN=${server_details[1]}
+        
+        if [[ -z "$WG_IP" ]]; then
+             echo "  [!] Could not select a server for region '$region_id'. Trying next..."
+             continue
+        fi
+        
+        echo "  [*] Found online region '$region_id' ($REGION_NAME)."
+        echo "  [*] Selected random server: $WG_CN ($WG_IP)"
+
+        echo "--> Getting WireGuard connection details..."
+        if [[ ! -f "$CERT_FILE" ]]; then
+            echo "  [*] Downloading CA certificate..."
+            curl --max-time 30 -s -o "$CERT_FILE" "$PIA_CA_CERT_URL"
+        fi
+        
+        local pubkey_encoded
+        pubkey_encoded=$(echo "$PUBKEY" | sed 's/+/%2B/g; s/\//%2F/g; s/=/%3D/g')
+    
+        local token_encoded
+        token_encoded=$(echo "$token" | sed 's/+/%2B/g; s/\//%2F/g; s/=/%3D/g')
+        
+        local add_key_url="https://$WG_CN:1337/addKey?pt=${token_encoded}&pubkey=${pubkey_encoded}"
+        local conn_json
+        conn_json=$(curl --max-time 30 -s -G --cacert "$CERT_FILE" --connect-to "$WG_CN:1337:$WG_IP:1337" "$add_key_url")
+        
+        local status
+        status=$(echo "$conn_json" | jq -r '.status')
+    
+        if [[ "$status" != "OK" ]]; then
+            echo "  [!] Failed to get connection details from server. Response: $conn_json"
+            echo "  [!] Trying next region..."
+            continue
+        fi
+
+        PEER_IP=$(echo "$conn_json" | jq -r '.peer_ip')
+        SERVER_KEY=$(echo "$conn_json" | jq -r '.server_key')
+        DNS1=$(echo "$conn_json" | jq -r '.dns_servers[0]')
+        DNS2=$(echo "$conn_json" | jq -r '.dns_servers[1]')
+        
+        echo "  [*] Received connection details. Assigned Peer IP: $PEER_IP"
+        return 0
+    done
+
+    echo "ERROR: All specified regions failed. Could not find a working server."
+    return 1
+}
+
+generate_wg_config_file() {
+    echo "--> Generating WireGuard config file..."
+    mkdir -p "$OUTPUT_DIR"
+    {
+        echo "[Interface]"
+        echo "PrivateKey = $PRIVKEY"
+        echo "Address = $PEER_IP/32"
+        echo "DNS = $DNS1,$DNS2"
+        echo ""
+        echo "[Peer]"
+        echo "PublicKey = $SERVER_KEY"
+        echo "AllowedIPs = 0.0.0.0/0"
+        echo "Endpoint = $WG_IP:1337"
+        echo "PersistentKeepalive = 25"
+    } > "$CONFIG_FILE_PATH"
+    
+    chmod 600 "$CONFIG_FILE_PATH" # Secure the generated file
+    echo "  [*] Config file saved to $CONFIG_FILE_PATH"
+}
+
+update_router_tunnel() {
+    local tunnel_if=$1
+    local current_tunnel_num=${tunnel_if//oet/} 
+
+    echo "--> Applying new config to $tunnel_if..."
+    nvram set "${tunnel_if}_label=PIA-$REGION_NAME-$WG_CN"
+    nvram set "${tunnel_if}_namep0=PIA-$REGION_NAME-$WG_CN"
+    nvram set "${tunnel_if}_private=$PRIVKEY"
+    nvram set "${tunnel_if}_ipaddr=$PEER_IP"
+    nvram set "${tunnel_if}_ipaddrmask=$PEER_IP/32"
+    nvram set "${tunnel_if}_dns=$DNS1,$DNS2"
+    nvram set "${tunnel_if}_rem0=$WG_IP"
+    nvram set "${tunnel_if}_peerkey0=$SERVER_KEY"
+    nvram set "${tunnel_if}_peerport0=1337"
+    nvram set "${tunnel_if}_ka0=25"
+    nvram set "${tunnel_if}_aip0=0.0.0.0/0"
+    nvram set "${tunnel_if}_killswitch=1"
+    nvram set "${tunnel_if}_en=1"
+
+    echo "  [*] Configuring tunnel fail states (active: $tunnel_if)..."
+    for i in $(seq 1 "$NUM_TUNNELS"); do
+        local failstate=0
+        if [[ "$i" -eq "$current_tunnel_num" ]]; then
+            failstate=2
+        fi
+        nvram set "oet${i}_failstate"="$failstate"
+    done
+
+    echo "  [*] Committing changes to nvram..."
+    nvram commit
+    sleep 2
+
+    echo "--> Applying settings using eop-tunnel.prewall..."
+    /etc/config/eop-tunnel.prewall
+    
+    echo "  [*] Waiting for tunnel to establish (max 60 seconds)..."
+    for i in {1..12}; do
+        if ping -c 1 -W 2 -I "$tunnel_if" "$DNS1" &>/dev/null || ping -c 1 -W 2 -I "$tunnel_if" "$DNS2" &>/dev/null; then
+            echo "SUCCESS: Connection test for $tunnel_if is working."
+            return 0
+        fi
+        sleep 5
+    done
+
+    echo "FAILURE: Connection test failed for $tunnel_if after 60 seconds. Disabling tunnel."
+    stopservice "$tunnel_if"
+    return 1
+}
+
+# --- SCRIPT EXECUTION ---
+
+main() {
+    acquire_lock
+    echo "--- Starting PIA High-Availability Update ---"
+    
+    # Run sanity cleanup in case of lingering killswitch blocks
+    unblock_lan_internet
+    
+    check_dependencies
+    load_credentials
+    load_state
+
+    local tunnel_interface
+    if (( NEXT_TUNNEL_IDX > 0 && NEXT_TUNNEL_IDX <= NUM_TUNNELS )); then
+        tunnel_interface="oet${NEXT_TUNNEL_IDX}"
+    else
+        echo "WARN: Invalid tunnel index '$NEXT_TUNNEL_IDX' found. Defaulting to 1."
+        NEXT_TUNNEL_IDX=1
+        tunnel_interface="oet1"
+    fi
+    echo "Selected Tunnel: $tunnel_interface (oet$NEXT_TUNNEL_IDX)"
+
+    # Backoff variables
+    local backoff=15
+    local max_backoff=3600 # 1 hour max wait time between retries
+    local recovery_mode="false"
+
+    while true; do
+        if check_internet "$recovery_mode" && get_pia_config && update_router_tunnel "$tunnel_interface"; then
+            echo "--> Connection successful! Restoring normal operations."
+            
+            enable_all_tunnels
+            unblock_lan_internet
+            save_state
+            
+            if [[ "$GENERATE_CONFIG_FILE" == "true" ]]; then
+                generate_wg_config_file
+            fi
+            
+            if [[ "$recovery_mode" == "true" ]]; then
+                send_pushover "✅ PIA Connection Restored" "Router tunnels successfully re-enabled. LAN killswitch lifted." "0"
+            fi
+            
+            break 
+        else
+            if [[ "$recovery_mode" == "false" ]]; then
+                echo "--> Update failed. Entering fail-safe mode."
+                
+                # 1. Disable tunnels and rebuild firewall ONLY on the first failure
+                disable_all_tunnels
+                
+                # 2. Give the router a moment to apply the firewall rules
+                sleep 2
+                
+                # 3. Apply the killswitch AFTER the firewall is rebuilt so it doesn't get wiped
+                block_lan_internet
+
+                # 4. Enable recovery mode and send alert
+                recovery_mode="true"
+                send_pushover "🚨 PIA Update Failed" "Network locked down. Router entering fail-safe recovery mode." "1"
+            else
+                echo "--> Still in fail-safe mode. ISP unreachable or update failing."
+            fi
+
+            echo "  [*] Sleeping for $backoff seconds before retrying..."
+            sleep $backoff
+
+            backoff=$((backoff * 2))
+            if (( backoff > max_backoff )); then
+                backoff=$max_backoff
+            fi
+        fi
+    done
+
+    echo "--- Update script finished. ---"
+}
+
+{
+    main
+} 2>&1 | logger -s -t "PIAWG_HA_Update"

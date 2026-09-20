@@ -1,0 +1,290 @@
+#!/bin/sh
+export PATH="/opt/bin:/opt/sbin:/bin:/sbin:/usr/bin:/usr/sbin"
+# ==============================================================================
+#
+# Title:        PIA WireGuard Auto-Recovery Watchdog (DD-WRT) - POSIX NATIVE
+# Description:  A continuous background daemon that monitors a single PIA
+#               WireGuard tunnel (oet1). If the tunnel fails, it engages a
+#               strict LAN killswitch, waits for raw internet to return,
+#               refreshes the certificate, and restores connectivity.
+#
+# ==============================================================================
+
+set -e
+
+# === CONFIGURATION ===
+readonly SCRIPT_DIR="/opt/etc/pia-update"
+readonly CRED_FILE="$SCRIPT_DIR/pia_creds.conf"
+readonly CERT_FILE="$SCRIPT_DIR/ca.rsa.4096.crt"
+readonly LOCK_DIR="/tmp/pia_watchdog.lock"
+
+# IPs and Timers
+readonly VPN_CHECK_IP="10.0.0.242" # Internal PIA DNS to verify tunnel health
+readonly RAW_CHECK_IP="8.8.8.8"    # Public IP to verify ISP health
+readonly HEALTH_CHECK_INTERVAL=60  # Seconds between healthy tunnel checks
+readonly BACKOFF_BASE=15           # Starting seconds for outage backoff
+readonly MAX_BACKOFF=3600          # Max backoff time (1 hour) during deep outages
+
+# PIA API Endpoints
+readonly PIA_SERVERLIST_URL="https://serverlist.piaservers.net/vpninfo/servers/v6"
+readonly PIA_TOKEN_URL="https://www.privateinternetaccess.com/api/client/v2/token"
+readonly PIA_CA_CERT_URL="https://raw.githubusercontent.com/pia-foss/manual-connections/master/ca.rsa.4096.crt"
+readonly PIA_REGION_IDS="swiss ro nl_amsterdam is sweden"
+
+# --- Global Variables ---
+PIA_USER=""
+PIA_PASS=""
+PUSHOVER_TOKEN=""
+PUSHOVER_USER=""
+TUNNEL_IF="oet1"
+
+# --- Core Setup Functions ---
+
+acquire_lock() {
+    if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+        echo "Watchdog is already running. Exiting."
+        exit 1
+    fi
+    trap 'rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT INT TERM
+}
+
+log_msg() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1"
+    logger -t "PIA_Watchdog" " $1"
+}
+
+send_pushover() {
+    local title="$1"
+    local message="$2"
+    local priority="${3:-0}"
+
+    if [ -n "$PUSHOVER_TOKEN" ] && [ -n "$PUSHOVER_USER" ]; then
+        curl --connect-timeout 10 --max-time 15 -s -F "token=$PUSHOVER_TOKEN" \
+            -F "user=$PUSHOVER_USER" -F "title=$title" -F "message=$message" \
+            -F "priority=$priority" "https://api.pushover.net/1/messages.json" > /dev/null 2>&1 || true
+    fi
+}
+
+load_credentials() {
+    if [ ! -f "$CRED_FILE" ]; then
+        log_msg "ERROR: Credentials file not found at $CRED_FILE"
+        exit 1
+    fi
+    # shellcheck source=/dev/null
+    . "$CRED_FILE"
+}
+
+# --- Killswitch & Routing Functions ---
+
+block_lan_internet() {
+    local wan_if
+    wan_if=$(nvram get wan_iface)
+
+    # Block IPv4
+    if ! iptables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; then
+        iptables -I FORWARD -i br0 -o "$wan_if" -j REJECT
+        log_msg "Killswitch ENGAGED. LAN isolated from direct internet."
+    fi
+
+    # Block IPv6 if present
+    if command -v ip6tables >/dev/null 2>&1; then
+        if ! ip6tables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; then
+            ip6tables -I FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null || true
+        fi
+    fi
+}
+
+unblock_lan_internet() {
+    local wan_if
+    wan_if=$(nvram get wan_iface)
+
+    # Lift IPv4
+    while iptables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; do
+        iptables -D FORWARD -i br0 -o "$wan_if" -j REJECT
+        log_msg "Killswitch LIFTED. LAN traffic flowing via VPN."
+    done
+
+    # Lift IPv6
+    if command -v ip6tables >/dev/null 2>&1; then
+        while ip6tables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; do
+            ip6tables -D FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null || true
+        done
+    fi
+}
+
+disable_tunnel() {
+    log_msg "Tearing down tunnel $TUNNEL_IF..."
+    nvram set "${TUNNEL_IF}_en=0"
+    nvram set "${TUNNEL_IF}_failgrp=0"
+    nvram commit
+    stopservice "$TUNNEL_IF" 2>/dev/null || true
+    ip link delete "$TUNNEL_IF" 2>/dev/null || true
+    killall wg_watchdog 2>/dev/null || true
+}
+
+# --- PIA Provisioning Functions ---
+
+get_pia_config() {
+    local tmp_server_list="/tmp/pia_server_list.$$.tmp"
+
+    log_msg "Generating new WireGuard key pair..."
+    local privkey pubkey
+    privkey=$(wg genkey)
+    pubkey=$(echo "$privkey" | wg pubkey)
+
+    curl --max-time 30 -s -o "$tmp_server_list" "$PIA_SERVERLIST_URL"
+    local token
+    token=$(curl --max-time 30 -s -d "username=$PIA_USER&password=$PIA_PASS" "$PIA_TOKEN_URL" | jq -r '.token')
+
+    if [ -z "$token" ] || [ "$token" = "null" ]; then
+        log_msg "API ERROR: Failed to get auth token from PIA."
+        rm -f "$tmp_server_list"
+        return 1
+    fi
+
+    # Shuffle regions securely using standard POSIX tools
+    local shuffled_regions
+    shuffled_regions=$(echo "$PIA_REGION_IDS" | tr ' ' '\n' | awk -v seed="$RANDOM" 'BEGIN{srand(seed)} {print rand()"\t"$0}' | sort -n | cut -f2)
+
+    for region_id in $shuffled_regions; do
+        local region_json wg_servers_json server_count random_index wg_ip wg_cn region_name
+        region_json=$(head -n 1 "$tmp_server_list" | jq --arg REGION_ID "$region_id" '.regions[] | select(.id == $REGION_ID and .offline == false and (.servers.wg | length) > 0)')
+
+        if [ -z "$region_json" ]; then continue; fi
+
+        region_name=$(echo "$region_json" | jq -r '.name')
+        wg_servers_json=$(echo "$region_json" | jq '.servers.wg')
+        server_count=$(echo "$wg_servers_json" | jq 'length')
+        random_index=$(( RANDOM % server_count ))
+        wg_ip=$(echo "$wg_servers_json" | jq -r ".[$random_index].ip")
+        wg_cn=$(echo "$wg_servers_json" | jq -r ".[$random_index].cn")
+
+        if [ ! -f "$CERT_FILE" ]; then
+            curl --max-time 30 -s -o "$CERT_FILE" "$PIA_CA_CERT_URL"
+        fi
+
+        local pubkey_encoded token_encoded add_key_url conn_json status peer_ip server_key dns1 dns2
+        pubkey_encoded=$(echo "$pubkey" | sed 's/+/%2B/g; s/\//%2F/g; s/=/%3D/g')
+        token_encoded=$(echo "$token" | sed 's/+/%2B/g; s/\//%2F/g; s/=/%3D/g')
+        add_key_url="https://$wg_cn:1337/addKey?pt=${token_encoded}&pubkey=${pubkey_encoded}"
+
+        conn_json=$(curl --max-time 30 -s -G --cacert "$CERT_FILE" --connect-to "$wg_cn:1337:$wg_ip:1337" "$add_key_url")
+        status=$(echo "$conn_json" | jq -r '.status')
+
+        if [ "$status" != "OK" ]; then continue; fi
+
+        peer_ip=$(echo "$conn_json" | jq -r '.peer_ip')
+        server_key=$(echo "$conn_json" | jq -r '.server_key')
+        dns1=$(echo "$conn_json" | jq -r '.dns_servers[0]')
+        dns2=$(echo "$conn_json" | jq -r '.dns_servers[1]')
+
+        log_msg "Obtained new config for $region_name ($wg_ip)"
+
+        # Apply to NVRAM safely
+        nvram set "${TUNNEL_IF}_label=PIA-$region_name"
+        nvram set "${TUNNEL_IF}_namep0=PIA-$region_name"
+        nvram set "${TUNNEL_IF}_private=$privkey"
+        nvram set "${TUNNEL_IF}_ipaddr=$peer_ip"
+        nvram set "${TUNNEL_IF}_ipaddrmask=$peer_ip/32"
+        nvram set "${TUNNEL_IF}_dns=$dns1,$dns2"
+        nvram set "${TUNNEL_IF}_rem0=$wg_ip"
+        nvram set "${TUNNEL_IF}_peerkey0=$server_key"
+        nvram set "${TUNNEL_IF}_peerport0=1337"
+        nvram set "${TUNNEL_IF}_ka0=25"
+        nvram set "${TUNNEL_IF}_aip0=0.0.0.0/0"
+        nvram set "${TUNNEL_IF}_killswitch=1"
+        nvram set "${TUNNEL_IF}_en=1"
+        nvram set "${TUNNEL_IF}_failgrp=1"
+        nvram commit
+
+        rm -f "$tmp_server_list"
+        return 0
+    done
+
+    log_msg "API ERROR: Could not find working region."
+    rm -f "$tmp_server_list"
+    return 1
+}
+
+test_and_restore_tunnel() {
+    log_msg "Rebuilding firewall and applying tunnel settings..."
+    /etc/config/eop-tunnel.prewall
+
+    # Read DNS back from NVRAM to ping test
+    local test_dns
+    test_dns=$(nvram get "${TUNNEL_IF}_dns" | cut -d',' -f1)
+
+    log_msg "Waiting up to 60s for WireGuard handshake..."
+
+    local i=1
+    while [ "$i" -le 12 ]; do
+        if ping -c 1 -W 2 -I "$TUNNEL_IF" "$test_dns" >/dev/null 2>&1; then
+            log_msg "SUCCESS: Tunnel is up and passing traffic."
+            return 0
+        fi
+        sleep 5
+        i=$((i + 1))
+    done
+
+    log_msg "FAILURE: Tunnel handshake failed."
+    stopservice "$TUNNEL_IF"
+    return 1
+}
+
+# --- Main Watchdog Loop ---
+
+main() {
+    acquire_lock
+    load_credentials
+    log_msg "--- PIA Watchdog Daemon Started ---"
+
+    unblock_lan_internet # Ensure clean slate on boot
+
+    while true; do
+        # 1. Normal State: Check VPN Health
+        if ping -c 3 -W 2 "$VPN_CHECK_IP" >/dev/null 2>&1; then
+            # Silent loop on success to prevent syslog spam
+            sleep $HEALTH_CHECK_INTERVAL
+            continue
+        fi
+
+        # 2. Failure Detected: Enter Recovery Mode
+        log_msg "🚨 VPN Failure Detected. Initiating Lockdown."
+        send_pushover "VPN Down" "Tunnel lost. Engaging killswitch." "1"
+
+        block_lan_internet
+        disable_tunnel
+
+        local backoff=$BACKOFF_BASE
+
+        # 3. Recovery Loop
+        while true; do
+            log_msg "Checking raw ISP connectivity ($RAW_CHECK_IP)..."
+            if ping -c 3 -W 2 "$RAW_CHECK_IP" >/dev/null 2>&1; then
+                log_msg "ISP is UP. Attempting PIA API rotation..."
+                echo "nameserver 1.1.1.1" > /etc/resolv.conf
+
+                if get_pia_config && test_and_restore_tunnel; then
+                    log_msg "✅ VPN Recovered. Lifting killswitch."
+                    unblock_lan_internet
+                    send_pushover "VPN Restored" "Tunnel recovered successfully." "0"
+                    break # Break out of recovery back to normal monitoring
+                else
+                    log_msg "PIA rotation failed. Backing off for ${backoff}s."
+                fi
+            else
+                log_msg "ISP is DOWN. Waiting out outage. Backing off for ${backoff}s."
+            fi
+
+            # Exponential backoff scaling
+            sleep "$backoff"
+            backoff=$((backoff * 2))
+            if [ "$backoff" -gt "$MAX_BACKOFF" ]; then
+                backoff=$MAX_BACKOFF
+            fi
+        done
+    done
+}
+
+# Run the daemon
+main

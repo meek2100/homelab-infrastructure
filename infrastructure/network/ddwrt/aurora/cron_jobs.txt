@@ -1,0 +1,2 @@
+*/30 * * * * root /opt/sbin/pia-speed-monitor
+*/15 * * * * root /opt/sbin/pia-url-monitor

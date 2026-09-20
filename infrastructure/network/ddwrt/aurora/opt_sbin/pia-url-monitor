@@ -1,0 +1,54 @@
+#!/bin/sh
+# ==============================================================================
+# Title:        PIA URL Accessibility Monitor (POSIX NATIVE)
+# Description:  Checks if a list of URLs are blocking the current VPN IP. 
+#               If blocked (e.g., 403, 503), it logs the error and the endpoint,
+#               then kills the tunnel to force the Watchdog to rotate servers.
+# ==============================================================================
+
+# Space-separated list of URLs to monitor. 
+readonly TARGET_URLS="https://audiobookbay.lu/"
+readonly TUNNEL_IF="oet1"
+readonly USER_AGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"
+
+# Abort if the killswitch is actively engaged (Watchdog is currently in recovery mode)
+WAN_IF=$(nvram get wan_iface)
+if iptables -C FORWARD -i br0 -o "$WAN_IF" -j REJECT >/dev/null 2>&1; then
+    exit 0
+fi
+
+# 1. Verify basic internet first 
+if ! ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1; then
+    exit 0 
+fi
+
+# 2. Iterate through the target URLs
+for url in $TARGET_URLS; do
+    # Fetch HTTP code using a spoofed User-Agent to bypass WAF bot detection
+    HTTP_CODE=$(curl -s -L -A "$USER_AGENT" -o /dev/null -w "%{http_code}" --max-time 10 "$url")
+
+    # Safeguard: Ensure HTTP_CODE is a 3-digit number before evaluating
+    # If curl crashes (e.g. DNS failure), HTTP_CODE will be blank or 000
+    if ! echo "$HTTP_CODE" | grep -qE "^[0-9]{3}$" || [ "$HTTP_CODE" = "000" ]; then
+        continue
+    fi
+
+    case "$HTTP_CODE" in
+        200|201|301|302|308)
+            # Healthy response, check the next URL in the list
+            continue
+            ;;
+        *)
+            # Blocked by firewall (e.g., 403, 503)
+            REGION=$(nvram get "${TUNNEL_IF}_label" | sed 's/PIA-//')
+            REMOTE_IP=$(nvram get "${TUNNEL_IF}_rem0")
+            
+            logger -t "PIA_URL_Monitor" "Access blocked! HTTP ${HTTP_CODE} on ${url} via ${REGION} (${REMOTE_IP}). Triggering rotation."
+            
+            stopservice "$TUNNEL_IF" >/dev/null 2>&1 || true
+            ip link set "$TUNNEL_IF" down >/dev/null 2>&1 || true
+            
+            exit 0
+            ;;
+    esac
+done

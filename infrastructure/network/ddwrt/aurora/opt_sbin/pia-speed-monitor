@@ -1,0 +1,42 @@
+#!/bin/sh
+# ==============================================================================
+# Title: PIA VPN Speed Monitor (High Precision)
+# Description: Checks VPN bandwidth via Cloudflare API. If it drops below
+#              the threshold, it triggers pia-rotate to get a new server.
+# ==============================================================================
+
+# Set your minimum acceptable speed in Kilobits per second (Kbps)
+# (e.g., 1500 Kbps = 1.5 Mbps)
+MIN_KBPS=1800
+
+# Convert Kbps to Bytes per second for curl (1 Kbps = 125 Bytes/sec)
+MIN_BPS=$((MIN_KBPS * 125))
+
+echo "--> Testing VPN download speed (Target: $MIN_KBPS Kbps)..."
+
+# Fetch a 25MB test payload from Cloudflare's infrastructure.
+SPEED_RAW=$(curl --max-time 30 -s -w "%{speed_download}" -o /dev/null "https://speed.cloudflare.com/__down?bytes=25000000")
+
+# Format the output (remove decimals) so the shell can evaluate it
+SPEED=$(echo "$SPEED_RAW" | cut -d'.' -f1)
+
+# Safety check: If curl fails entirely, exit silently.
+if [ -z "$SPEED" ] || [ "$SPEED" -eq 0 ]; then
+    echo "  [!] Speedtest failed completely. VPN might be offline. Deferring to Watchdog."
+    exit 0
+fi
+
+# Convert the result back to Kbps for easy reading
+CURRENT_KBPS=$((SPEED / 125))
+echo "  [*] Current Speed: $CURRENT_KBPS Kbps"
+
+# Check if the current speed is below your target threshold
+if [ "$SPEED" -lt "$MIN_BPS" ]; then
+    echo "  [!] Speed is below the ${MIN_KBPS} Kbps threshold! Rotating server..."
+    logger -t "PIA_Speed" "Speed dropped to $CURRENT_KBPS Kbps. Triggering rotation."
+
+    # Fire the force-rotation script
+    /opt/sbin/pia-rotate
+else
+    echo "  [*] Speed is healthy. No action required."
+fi

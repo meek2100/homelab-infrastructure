@@ -149,6 +149,58 @@ def backup_ddwrt_router(name: str, ip: str, user: str):
             with open(os.path.join(router_dir, f"{script_type}.sh"), "w", encoding="utf-8") as sf:
                 sf.write(out_s)
 
+    # Backup DD-WRT Cron Jobs
+    code_cj, out_cj, _ = run_ssh(ip, "nvram get cron_jobs 2>/dev/null", user=user)
+    if code_cj == 0 and out_cj.strip():
+        with open(os.path.join(router_dir, "cron_jobs.txt"), "w", encoding="utf-8") as cjf:
+            cjf.write(out_cj.strip() + "\n")
+
+    # Backup /usr/bin/is-mounted.sh
+    code_ism, out_ism, _ = run_ssh(ip, "[ -f /usr/bin/is-mounted.sh ] && cat /usr/bin/is-mounted.sh || echo '__NO_ISM__'", user=user)
+    if code_ism == 0 and "__NO_ISM__" not in out_ism:
+        with open(os.path.join(router_dir, "is-mounted.sh"), "w", encoding="utf-8") as ismf:
+            ismf.write(out_ism)
+
+    # Backup custom scripts in /opt/sbin/ (e.g. pia-watchdog, pia-rotate, pia-speed-monitor, pia-url-monitor)
+    code_sbin, out_sbin, _ = run_ssh(ip, "ls -1 /opt/sbin/ 2>/dev/null", user=user)
+    if code_sbin == 0 and out_sbin.strip():
+        opt_sbin_dir = os.path.join(router_dir, "opt_sbin")
+        os.makedirs(opt_sbin_dir, exist_ok=True)
+        for s_file in out_sbin.strip().splitlines():
+            s_file = s_file.strip()
+            if not s_file or s_file in [".", "..", "ifconfig", "route"]:
+                continue
+            code_f, out_f, _ = run_ssh(ip, f"cat '/opt/sbin/{s_file}'", user=user)
+            if code_f == 0:
+                with open(os.path.join(opt_sbin_dir, s_file), "w", encoding="utf-8") as sf:
+                    sf.write(out_f)
+
+    # Backup /opt/etc/pia-update/ directory
+    code_pu, out_pu, _ = run_ssh(ip, "ls -1 /opt/etc/pia-update/ 2>/dev/null", user=user)
+    if code_pu == 0 and out_pu.strip():
+        pia_dir = os.path.join(router_dir, "opt_etc_pia_update")
+        os.makedirs(pia_dir, exist_ok=True)
+        for p_file in out_pu.strip().splitlines():
+            p_file = p_file.strip()
+            if not p_file or p_file in [".", ".."]:
+                continue
+            code_pf, out_pf, _ = run_ssh(ip, f"cat '/opt/etc/pia-update/{p_file}'", user=user)
+            if code_pf == 0:
+                target_pfile = os.path.join(pia_dir, p_file)
+                # Check if credentials or sensitive tokens, encrypt with SOPS
+                if any(x in p_file.lower() for x in ["pass", "cred", "token", "auth", "key", "secret"]):
+                    tmp_pjson = target_pfile + ".tmp.json"
+                    with open(tmp_pjson, "w", encoding="utf-8") as tp:
+                        json.dump({"filename": p_file, "content": out_pf}, tp, indent=2)
+                    try:
+                        encrypt_file_sops(tmp_pjson, os.path.join(pia_dir, f"{p_file}.enc.yaml"))
+                        if os.path.exists(tmp_pjson): os.remove(tmp_pjson)
+                    except Exception:
+                        with open(target_pfile, "w", encoding="utf-8") as pf: pf.write(out_pf)
+                else:
+                    with open(target_pfile, "w", encoding="utf-8") as pf:
+                        pf.write(out_pf)
+
     # Check for /jffs/ files
     code_j, out_j, _ = run_ssh(ip, "[ -d /jffs ] && ls -la /jffs/ 2>/dev/null || echo '__NO_JFFS__'", user=user)
     if code_j == 0 and "__NO_JFFS__" not in out_j:
