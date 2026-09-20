@@ -3,8 +3,45 @@ import subprocess
 import os
 import json
 
+import sys
+
 mcp = FastMCP("Homelab Infrastructure System")
 
+DEFAULT_NODE_IPS = {
+    "pve": "192.168.1.250",
+    "pve2": "192.168.1.240",
+    "pve3": "192.168.1.245"
+}
+
+def get_ssh_key():
+    for candidate in [
+        os.path.expanduser("~/.ssh/proxmox_ed25519"),
+        "/home/dtheurer/.ssh/proxmox_ed25519",
+        "/home/agentsvc/.ssh/proxmox_ed25519",
+        os.path.expanduser("~/.ssh/id_ed25519"),
+        "/home/dtheurer/.ssh/id_ed25519"
+    ]:
+        if os.path.exists(candidate):
+            return candidate
+    return None
+
+def run_ssh_cmd(host_ip: str, cmd: str, timeout: int = 60) -> tuple[int, str, str]:
+    key = get_ssh_key()
+    ssh_args = [
+        "ssh", "-o", "StrictHostKeyChecking=accept-new",
+        "-o", "BatchMode=yes",
+        "-o", "ConnectTimeout=10",
+    ]
+    if key and os.path.exists(key):
+        ssh_args.extend(["-i", key])
+    ssh_args.extend([f"root@{host_ip}", cmd])
+    try:
+        res = subprocess.run(ssh_args, capture_output=True, text=True, timeout=timeout)
+        return res.returncode, res.stdout, res.stderr
+    except subprocess.TimeoutExpired:
+        return 124, "", "SSH connection timed out"
+    except Exception as e:
+        return 1, "", str(e)
 
 def run_script(script_name: str, args: list[str] = None) -> str:
     if args is None:
@@ -13,7 +50,7 @@ def run_script(script_name: str, args: list[str] = None) -> str:
     script_path = os.path.join(os.path.dirname(__file__), "scripts", script_name)
     if not os.path.exists(script_path):
         return f"Error: Script {script_path} not found."
-    cmd = ["python3", script_path] + args
+    cmd = [sys.executable, script_path] + args
     try:
         res = subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True)
         if res.returncode == 0:
@@ -56,6 +93,41 @@ def register_vm(node: str, vmid: str, name: str) -> str:
     return f"Successfully registered VM {name} (ID: {vmid}) on node {node} at {vm_dir}"
 
 @mcp.tool()
+def list_vms(node: str = None) -> str:
+    """Lists virtual machines, status, memory, and uptime on Proxmox nodes."""
+    target_nodes = [node] if node else ["pve", "pve2", "pve3"]
+    results = []
+    for n in target_nodes:
+        ip = DEFAULT_NODE_IPS.get(n)
+        if not ip:
+            continue
+        code, stdout, stderr = run_ssh_cmd(ip, "qm list")
+        if code == 0:
+            results.append(f"🖥️ Node {n} ({ip}):\n{stdout.strip()}")
+        else:
+            results.append(f"❌ Node {n} ({ip}) unreachable: {stderr.strip()}")
+    return "\n\n".join(results)
+
+@mcp.tool()
+def get_docker_status(node: str, vmid: int) -> str:
+    """Queries live container status and health on a VM via QEMU Guest Agent."""
+    ip = DEFAULT_NODE_IPS.get(node)
+    if not ip:
+        return f"Error: Unknown Proxmox node '{node}'"
+    cmd = f"qm guest exec {vmid} -- docker ps"
+    code, stdout, stderr = run_ssh_cmd(ip, cmd)
+    if code != 0:
+        return f"Error querying VM {vmid} on {node}: {stderr.strip()}"
+    try:
+        data = json.loads(stdout)
+        out_data = data.get("out-data", "")
+        if out_data:
+            return f"🐳 Containers on VM {vmid} ({node}):\n{out_data.strip()}"
+        return f"QGA response: {stdout}"
+    except Exception:
+        return stdout
+
+@mcp.tool()
 def audit_infrastructure() -> str:
     out = "Running Phase 1 Audits...\n"
     out += run_bash_script("phase1-system-drift-audit.sh") + "\n"
@@ -94,8 +166,10 @@ def backup_stacks() -> str:
     return run_script("phase2-split-stacks.py")
 
 @mcp.tool()
-def restore_stacks(node: str, vmid: str, dry_run: bool = False) -> str:
-    args = ["--node", node, "--vmid", vmid]
+def restore_stacks(node: str, vmid: str, stack: str = None, dry_run: bool = False) -> str:
+    """Restores Portainer Docker stacks, decrypts SOPS secrets, and restarts containers."""
+    args = ["--node", node, "--vmid", str(vmid)]
+    if stack: args.extend(["--stack", str(stack)])
     if dry_run: args.append("--dry-run")
     return run_script("restore-docker-stacks.py", args)
 
