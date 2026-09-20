@@ -42,10 +42,24 @@ def get_age_key_path():
     return None
 
 def get_ssh_key():
+    user_home_key = os.path.expanduser("~/.ssh/ddwrt_id_ed25519")
+    if os.path.exists(user_home_key):
+        return user_home_key
+
+    # If key exists on Windows DrvFs (/mnt/c/...), copy it to ~/.ssh/ and chmod 600
+    win_key = "/mnt/c/Users/dtheurer/.ssh/ddwrt_id_ed25519"
+    if os.path.exists(win_key):
+        try:
+            os.makedirs(os.path.dirname(user_home_key), exist_ok=True)
+            shutil.copy2(win_key, user_home_key)
+            os.chmod(user_home_key, 0o600)
+            return user_home_key
+        except Exception:
+            pass
+
     for candidate in [
         "/home/dtheurer/.ssh/ddwrt_id_ed25519",
-        os.path.expanduser("~/.ssh/ddwrt_id_ed25519"),
-        "/mnt/c/Users/dtheurer/.ssh/ddwrt_id_ed25519",
+        win_key,
         os.path.expanduser("~/.ssh/pi_id_ed25519"),
         "/home/dtheurer/.ssh/pi_id_ed25519",
     ]:

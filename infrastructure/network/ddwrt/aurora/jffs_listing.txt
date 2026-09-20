@@ -1,0 +1,2 @@
+drwxr-xr-x    2 root     root             3 Aug 18  2024 .
+drwxr-xr-x   15 root     root           219 Aug 18  2024 ..
