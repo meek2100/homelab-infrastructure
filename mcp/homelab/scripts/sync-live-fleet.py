@@ -51,14 +51,27 @@ def get_age_key_path():
         return p2
     return None
 
-def run_ssh(host_ip, cmd, identity_file=None, timeout=15):
+def get_ssh_key():
+    for candidate in [
+        os.path.expanduser("~/.ssh/proxmox_ed25519"),
+        "/home/dtheurer/.ssh/proxmox_ed25519",
+        "/home/agentsvc/.ssh/proxmox_ed25519",
+        os.path.expanduser("~/.ssh/id_ed25519"),
+        "/home/dtheurer/.ssh/id_ed25519",
+    ]:
+        if os.path.exists(candidate):
+            return candidate
+    return None
+
+def run_ssh(host_ip, cmd, identity_file=None, timeout=60):
+    key = identity_file or get_ssh_key()
     ssh_args = [
         "ssh", "-o", "StrictHostKeyChecking=accept-new",
         "-o", "BatchMode=yes",
-        "-o", "ConnectTimeout=8",
+        "-o", "ConnectTimeout=10",
     ]
-    if identity_file and os.path.exists(identity_file):
-        ssh_args.extend(["-i", identity_file])
+    if key and os.path.exists(key):
+        ssh_args.extend(["-i", key])
     ssh_args.extend([f"root@{host_ip}", cmd])
     try:
         res = subprocess.run(ssh_args, capture_output=True, text=True, timeout=timeout)
@@ -70,7 +83,7 @@ def run_ssh(host_ip, cmd, identity_file=None, timeout=15):
 
 def run_qga_b64(host_ip, vmid, file_path, identity_file=None):
     cmd = f"qm guest exec {vmid} -- base64 -w 0 '{file_path}'"
-    code, stdout, stderr = run_ssh(host_ip, cmd, identity_file=identity_file, timeout=20)
+    code, stdout, stderr = run_ssh(host_ip, cmd, identity_file=identity_file, timeout=60)
 
     if code != 0 or not stdout:
         return None
@@ -83,7 +96,7 @@ def run_qga_b64(host_ip, vmid, file_path, identity_file=None):
     except Exception:
         return None
 
-def run_qga_cmd(host_ip, vmid, inner_cmd, identity_file=None, timeout=20):
+def run_qga_cmd(host_ip, vmid, inner_cmd, identity_file=None, timeout=60):
     cmd = f"qm guest exec {vmid} -- {inner_cmd}"
     code, stdout, stderr = run_ssh(host_ip, cmd, identity_file=identity_file, timeout=timeout)
     if code != 0 or not stdout:

@@ -61,10 +61,10 @@ Full service catalog and container port mapping available in [`infrastructure/do
 
 | Node | Hostname | IP | Host Config Directory | Portainer Stacks Backup | Detailed Breakdown |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`pve`** | Dell Precision 5520 | `192.168.1.250` | [`infrastructure/hosts/pve/configs/`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/hosts/pve/configs/) | **51 Stacks** ([`luna`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/luna-server/): 32, [`media`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/): 9, [`nexus`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/): 8, [`mc`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/minecraft-docker/): 2) | [`vm-102-breakdown.md`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/vms/pve-102-luna-server/vm-102-breakdown.md) |
+| **`pve`** | Dell Precision 5520 | `192.168.1.250` | [`infrastructure/hosts/pve/configs/`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/hosts/pve/configs/) | **52 Stacks** ([`luna`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/luna-server/): 32, [`media`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/): 9, [`nexus`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/): 9, [`mc`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/minecraft-docker/): 2) | [`vm-102-breakdown.md`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/vms/pve-102-luna-server/vm-102-breakdown.md) |
 | **`pve2`** | Awow AK34Pro | `192.168.1.240` | [`infrastructure/hosts/pve2/configs/`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/hosts/pve2/configs/) | **24 Stacks** ([`discovery-server`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/discovery-server/): 24) | [`vm-100-breakdown.md`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/vms/pve2-100-discovery-server/vm-100-breakdown.md) |
 | **`pve3`** | HP EliteDesk | `192.168.1.245` | [`infrastructure/hosts/pve3/configs/`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/hosts/pve3/configs/) | **7 Stacks** ([`nexus-server2`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server2/): 7) | [`vm-100-breakdown.md`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/vms/pve3-100-nexus-server2/vm-100-breakdown.md), [`vm-101-breakdown.md`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/vms/pve3-101-nas-server/vm-101-breakdown.md) |
-| **Total** | | | | **82 Stacks** | See [`STACK-INDEX.md`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/STACK-INDEX.md) |
+| **Total** | | | | **83 Stacks** | See [`STACK-INDEX.md`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/STACK-INDEX.md) |
 
 ---
 
@@ -72,7 +72,7 @@ Full service catalog and container port mapping available in [`infrastructure/do
 
 ```text
 homelab-infrastructure/
-├── README.md                       # Master network topology, IP map & 82-stack inventory
+├── README.md                       # Master network topology, IP map & 83-stack inventory
 ├── AGENTS.md                       # Permanent workspace rules & empirical host matrix
 ├── .gitignore                      # Security rules (ignoring .key, .venv, .agents, .db)
 ├── .sops.yaml                      # SOPS single master age public key encryption rules
@@ -81,13 +81,13 @@ homelab-infrastructure/
 │   │   ├── network-topology-map.md # Multi-subnet (192.168.1.x, 10.25.25.x, VLAN 40/50) topology
 │   │   ├── recovery-walkthrough.md # Bare-metal disaster recovery sequence
 │   │   └── security-backup-guide.md# SOPS + age secret encryption standards
-│   ├── docker-stacks/              # 82 versioned Portainer stacks & deploy metadata
+│   ├── docker-stacks/              # 83 versioned Portainer stacks & deploy metadata
 │   │   ├── STACK-INDEX.md          # Master catalog mapping stack IDs to services & ports
 │   │   ├── discovery-server/       # 24 stacks (VPN download gateway, autoheal, qbittorrent)
 │   │   ├── luna-server/            # 32 stacks (Home Assistant, Homebridge, Syncthing)
 │   │   ├── media-server/           # 9 stacks (Plex, Overseerr, Audiobookshelf, Calibre)
 │   │   ├── minecraft-docker/       # 2 stacks (Bedrock connect & proxy)
-│   │   ├── nexus-server/           # 8 stacks (Nginx Proxy Manager, Cloudflared, WireGuard)
+│   │   ├── nexus-server/           # 9 stacks (Nginx Proxy Manager, Cloudflared, WireGuard, Tailscale)
 │   │   └── nexus-server2/          # 7 stacks (AdGuard Home primary DNS, Cloudflare DDNS)
 │   ├── hosts/                      # Physical Proxmox host configurations and system drift
 │   │   ├── pve/                    # Dell Precision 5520 Node (192.168.1.250)
