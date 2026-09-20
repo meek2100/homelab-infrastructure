@@ -94,38 +94,54 @@ def register_vm(node: str, vmid: str, name: str) -> str:
 
 @mcp.tool()
 def list_vms(node: str = None) -> str:
-    """Lists virtual machines, status, memory, and uptime on Proxmox nodes."""
+    """Lists both Virtual Machines (QEMU) and LXC Containers across Proxmox nodes."""
     target_nodes = [node] if node else ["pve", "pve2", "pve3"]
     results = []
     for n in target_nodes:
         ip = DEFAULT_NODE_IPS.get(n)
         if not ip:
             continue
-        code, stdout, stderr = run_ssh_cmd(ip, "qm list")
-        if code == 0:
-            results.append(f"🖥️ Node {n} ({ip}):\n{stdout.strip()}")
-        else:
-            results.append(f"❌ Node {n} ({ip}) unreachable: {stderr.strip()}")
+        code_qm, stdout_qm, _ = run_ssh_cmd(ip, "qm list")
+        code_pct, stdout_pct, _ = run_ssh_cmd(ip, "pct list")
+        node_lines = [f"🖥️ Proxmox Node {n} ({ip}):"]
+        if code_qm == 0 and stdout_qm.strip():
+            node_lines.append(f"  [QEMU VMs]\n{stdout_qm.strip()}")
+        if code_pct == 0 and stdout_pct.strip():
+            node_lines.append(f"  [LXC Containers]\n{stdout_pct.strip()}")
+        if len(node_lines) == 1:
+            node_lines.append("  (No VMs or LXCs found or node unreachable)")
+        results.append("\n".join(node_lines))
     return "\n\n".join(results)
 
 @mcp.tool()
 def get_docker_status(node: str, vmid: int) -> str:
-    """Queries live container status and health on a VM via QEMU Guest Agent."""
+    """Queries live container status and health on a VM (via QGA) or LXC (via pct exec)."""
     ip = DEFAULT_NODE_IPS.get(node)
     if not ip:
         return f"Error: Unknown Proxmox node '{node}'"
-    cmd = f"qm guest exec {vmid} -- docker ps"
-    code, stdout, stderr = run_ssh_cmd(ip, cmd)
-    if code != 0:
-        return f"Error querying VM {vmid} on {node}: {stderr.strip()}"
-    try:
-        data = json.loads(stdout)
-        out_data = data.get("out-data", "")
-        if out_data:
-            return f"🐳 Containers on VM {vmid} ({node}):\n{out_data.strip()}"
-        return f"QGA response: {stdout}"
-    except Exception:
-        return stdout
+
+    code_type, out_type, _ = run_ssh_cmd(ip, f"test -f /etc/pve/qemu-server/{vmid}.conf && echo qm || (test -f /etc/pve/lxc/{vmid}.conf && echo pct || echo qm)")
+    tool = out_type.strip() if code_type == 0 and out_type.strip() in ["qm", "pct"] else "qm"
+
+    if tool == "qm":
+        cmd = f"qm guest exec {vmid} -- docker ps"
+        code, stdout, stderr = run_ssh_cmd(ip, cmd)
+        if code != 0:
+            return f"Error querying VM {vmid} on {node}: {stderr.strip()}"
+        try:
+            data = json.loads(stdout)
+            out_data = data.get("out-data", "")
+            if out_data:
+                return f"🐳 Containers on VM {vmid} ({node}):\n{out_data.strip()}"
+            return f"QGA response: {stdout}"
+        except Exception:
+            return stdout
+    else:
+        cmd = f"pct exec {vmid} -- docker ps"
+        code, stdout, stderr = run_ssh_cmd(ip, cmd)
+        if code != 0:
+            return f"Error querying LXC {vmid} on {node}: {stderr.strip()}"
+        return f"🐳 Containers on LXC {vmid} ({node}):\n{stdout.strip()}"
 
 @mcp.tool()
 def audit_infrastructure() -> str:
@@ -215,7 +231,7 @@ def generate_stack_index() -> str:
 
 @mcp.tool()
 def snapshot_vm(node: str, vmid: int, name: str, description: str = "", include_ram: bool = False) -> str:
-    """Takes a live Proxmox snapshot of a virtual machine."""
+    """Takes a live Proxmox snapshot of a virtual machine (QEMU) or LXC container."""
     args = ["--node", node, "--vmid", str(vmid), "--action", "create", "--name", name]
     if description: args.extend(["--desc", description])
     if include_ram: args.append("--include-ram")
@@ -223,22 +239,22 @@ def snapshot_vm(node: str, vmid: int, name: str, description: str = "", include_
 
 @mcp.tool()
 def list_vm_snapshots(node: str, vmid: int) -> str:
-    """Lists all Proxmox snapshots for a virtual machine."""
+    """Lists all Proxmox snapshots for a virtual machine (QEMU) or LXC container."""
     return run_script("manage-vm-snapshots.py", ["--node", node, "--vmid", str(vmid), "--action", "list"])
 
 @mcp.tool()
 def rollback_vm(node: str, vmid: int, name: str) -> str:
-    """Rolls back a Proxmox virtual machine to a previous snapshot."""
+    """Rolls back a Proxmox virtual machine (QEMU) or LXC container to a previous snapshot."""
     return run_script("manage-vm-snapshots.py", ["--node", node, "--vmid", str(vmid), "--action", "rollback", "--name", name])
 
 @mcp.tool()
 def delete_vm_snapshot(node: str, vmid: int, name: str) -> str:
-    """Deletes a Proxmox snapshot from a virtual machine."""
+    """Deletes a Proxmox snapshot from a virtual machine (QEMU) or LXC container."""
     return run_script("manage-vm-snapshots.py", ["--node", node, "--vmid", str(vmid), "--action", "delete", "--name", name])
 
 @mcp.tool()
 def backup_vm_vzdump(node: str, vmid: int, storage: str = None) -> str:
-    """Takes a full Proxmox vzdump backup archive of a virtual machine."""
+    """Takes a full Proxmox vzdump backup archive of a virtual machine (QEMU) or LXC container."""
     args = ["--node", node, "--vmid", str(vmid), "--action", "vzdump"]
     if storage: args.extend(["--storage", storage])
     return run_script("manage-vm-snapshots.py", args)

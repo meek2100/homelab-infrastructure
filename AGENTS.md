@@ -66,10 +66,12 @@
 ## MCP & Tool Standards
 - Keep Model Context Protocol (MCP) servers modular in `mcp/` and reference project-level MCP tools in `.agents/mcp_config.json`.
 - Secret Backup Standard: Encrypt all secrets using `SOPS` + `age` (`*.enc.yaml`). Keep master key in user password manager; no unencrypted secrets in Git.
-- **Snapshot & Backup Tooling**:
-  - `mcp/homelab/scripts/manage-vm-snapshots.py`: Programmatic snapshot creation, listing, rollback, deletion, and vzdump backup.
-  - Native FastMCP tools: `snapshot_vm`, `list_vm_snapshots`, `rollback_vm`, `delete_vm_snapshot`, `backup_vm_vzdump`.
+- **Snapshot & Backup Tooling (VM & LXC Support)**:
+  - `mcp/homelab/scripts/manage-vm-snapshots.py`: Programmatic snapshot creation, listing, rollback, deletion, and vzdump backup with automatic detection for both QEMU VMs (`qm`) and Linux Containers (`pct`).
+  - Native FastMCP tools: `snapshot_vm`, `list_vm_snapshots`, `rollback_vm`, `delete_vm_snapshot`, `backup_vm_vzdump`, `list_vms`, `get_docker_status`.
 - **Fleet Synchronization Tooling**:
-  - `mcp/homelab/scripts/sync-live-fleet.py`: Multi-node live discovery and zero-drift synchronization tool (`sync_fleet`).
+  - `mcp/homelab/scripts/sync-live-fleet.py`: Multi-node live discovery and zero-drift synchronization tool (`sync_fleet`). Discovers, diffs, and backs up `/etc/pve/qemu-server/*.conf` and `/etc/pve/lxc/*.conf`, plus Portainer stacks running in both VMs and LXCs.
 - **Disaster Recovery Tooling**:
-  - `mcp/homelab/scripts/restore-docker-stacks.py`: Hardened SOPS dotenv decryption, base64 QGA streaming, and error validation (`restore_stacks`).
+  - `mcp/homelab/scripts/restore-docker-stacks.py`: Hardened SOPS dotenv decryption, base64 guest payload streaming, and error validation (`restore_stacks`). Supports target execution inside both QEMU VMs (via QGA) and LXC containers (via `pct exec`).
+  - `mcp/homelab/scripts/restore-host-configs.py`: Restores host network, grub, storage, cron, and both `/etc/pve/qemu-server` and `/etc/pve/lxc` configurations.
+

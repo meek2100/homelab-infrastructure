@@ -63,21 +63,40 @@ def run_ssh(host_ip, cmd, identity_file=None, timeout=120):
     except Exception as e:
         return 1, "", str(e)
 
-def run_qga_cmd(host_ip, vmid, inner_cmd, identity_file=None, timeout=120):
-    cmd = f"qm guest exec {vmid} -- sh -c \"{inner_cmd}\""
-    code, stdout, stderr = run_ssh(host_ip, cmd, identity_file=identity_file, timeout=timeout)
-    if code != 0:
-        return None, stderr or f"SSH error {code}"
-    try:
-        data = json.loads(stdout)
-        exitcode = data.get("exitcode", 0)
-        out_data = data.get("out-data", "")
-        err_data = data.get("err-data", "")
-        if exitcode != 0:
-            return None, err_data or out_data or f"Exit code {exitcode}"
-        return out_data, None
-    except Exception:
+def get_guest_tool(host_ip, vmid, identity_file=None):
+    """Detects whether target is a QEMU VM (qm) or LXC Container (pct)."""
+    check_cmd = f"test -f /etc/pve/qemu-server/{vmid}.conf && echo qm || (test -f /etc/pve/lxc/{vmid}.conf && echo pct || echo qm)"
+    code, stdout, _ = run_ssh(host_ip, check_cmd, identity_file=identity_file, timeout=10)
+    if code == 0 and stdout.strip() in ["qm", "pct"]:
+        return stdout.strip()
+    return "qm"
+
+def run_guest_cmd(host_ip, vmid, inner_cmd, identity_file=None, timeout=120):
+    tool = get_guest_tool(host_ip, vmid, identity_file=identity_file)
+    if tool == "qm":
+        cmd = f"qm guest exec {vmid} -- sh -c \"{inner_cmd}\""
+        code, stdout, stderr = run_ssh(host_ip, cmd, identity_file=identity_file, timeout=timeout)
+        if code != 0:
+            return None, stderr or f"SSH error {code}"
+        try:
+            data = json.loads(stdout)
+            exitcode = data.get("exitcode", 0)
+            out_data = data.get("out-data", "")
+            err_data = data.get("err-data", "")
+            if exitcode != 0:
+                return None, err_data or out_data or f"Exit code {exitcode}"
+            return out_data, None
+        except Exception:
+            return stdout, None
+    else:
+        # LXC Container via pct exec
+        cmd = f"pct exec {vmid} -- sh -c \"{inner_cmd}\""
+        code, stdout, stderr = run_ssh(host_ip, cmd, identity_file=identity_file, timeout=timeout)
+        if code != 0:
+            return None, stderr or stdout or f"Exit code {code}"
         return stdout, None
+
+run_qga_cmd = run_guest_cmd
 
 def decrypt_secrets(secrets_path):
     key_file = get_age_key_path()

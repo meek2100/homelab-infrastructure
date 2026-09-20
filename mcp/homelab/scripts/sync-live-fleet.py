@@ -81,31 +81,50 @@ def run_ssh(host_ip, cmd, identity_file=None, timeout=60):
     except Exception as e:
         return 1, "", str(e)
 
-def run_qga_b64(host_ip, vmid, file_path, identity_file=None):
-    cmd = f"qm guest exec {vmid} -- base64 -w 0 '{file_path}'"
-    code, stdout, stderr = run_ssh(host_ip, cmd, identity_file=identity_file, timeout=60)
-
-    if code != 0 or not stdout:
-        return None
-    try:
-        payload = json.loads(stdout)
-        b64_data = payload.get("out-data", "").strip()
-        if not b64_data:
+def run_guest_b64(host_ip, vmid, file_path, guest_type="qemu", identity_file=None):
+    if guest_type == "lxc":
+        cmd = f"pct exec {vmid} -- base64 -w 0 '{file_path}'"
+        code, stdout, _ = run_ssh(host_ip, cmd, identity_file=identity_file, timeout=60)
+        if code != 0 or not stdout.strip():
             return None
-        return base64.b64decode(b64_data).decode("utf-8", errors="replace")
-    except Exception:
-        return None
+        try:
+            return base64.b64decode(stdout.strip()).decode("utf-8", errors="replace")
+        except Exception:
+            return None
+    else:
+        cmd = f"qm guest exec {vmid} -- base64 -w 0 '{file_path}'"
+        code, stdout, _ = run_ssh(host_ip, cmd, identity_file=identity_file, timeout=60)
+        if code != 0 or not stdout:
+            return None
+        try:
+            payload = json.loads(stdout)
+            b64_data = payload.get("out-data", "").strip()
+            if not b64_data:
+                return None
+            return base64.b64decode(b64_data).decode("utf-8", errors="replace")
+        except Exception:
+            return None
 
-def run_qga_cmd(host_ip, vmid, inner_cmd, identity_file=None, timeout=60):
-    cmd = f"qm guest exec {vmid} -- {inner_cmd}"
-    code, stdout, stderr = run_ssh(host_ip, cmd, identity_file=identity_file, timeout=timeout)
-    if code != 0 or not stdout:
-        return None
-    try:
-        payload = json.loads(stdout)
-        return payload.get("out-data", "")
-    except Exception:
-        return None
+def run_guest_cmd(host_ip, vmid, inner_cmd, guest_type="qemu", identity_file=None, timeout=60):
+    if guest_type == "lxc":
+        cmd = f"pct exec {vmid} -- {inner_cmd}"
+        code, stdout, _ = run_ssh(host_ip, cmd, identity_file=identity_file, timeout=timeout)
+        if code != 0:
+            return None
+        return stdout
+    else:
+        cmd = f"qm guest exec {vmid} -- {inner_cmd}"
+        code, stdout, _ = run_ssh(host_ip, cmd, identity_file=identity_file, timeout=timeout)
+        if code != 0 or not stdout:
+            return None
+        try:
+            payload = json.loads(stdout)
+            return payload.get("out-data", "")
+        except Exception:
+            return None
+
+run_qga_b64 = run_guest_b64
+run_qga_cmd = run_guest_cmd
 
 def decrypt_sops_yaml(enc_yaml_path):
     key_file = get_age_key_path()
@@ -194,11 +213,28 @@ def audit_node(node_info, staging_dir, identity_file=None):
                 with open(os.path.join(qemu_stage, f"{vmid}.conf"), "w") as f:
                     f.write(c_out)
 
-    # VM List
-    code, qm_out, _ = run_ssh(ip, "qm list", identity_file=identity_file)
+    # LXC Container configs
+    lxc_stage = os.path.join(node_stage, "lxc")
+    os.makedirs(lxc_stage, exist_ok=True)
+    code_lxc, stdout_lxc, _ = run_ssh(ip, "ls -1 /etc/pve/lxc/*.conf 2>/dev/null", identity_file=identity_file)
+    lxc_conf_files = stdout_lxc.strip().split("\n") if code_lxc == 0 and stdout_lxc.strip() else []
+
+    for cf in lxc_conf_files:
+        if not cf: continue
+        vmid_m = re.search(r'/(\d+)\.conf', cf)
+        if vmid_m:
+            vmid = vmid_m.group(1)
+            _, c_out, _ = run_ssh(ip, f"cat '{cf}'", identity_file=identity_file)
+            if c_out:
+                with open(os.path.join(lxc_stage, f"{vmid}.conf"), "w") as f:
+                    f.write(c_out)
+
+    # VM & LXC List
+    code_qm, qm_out, _ = run_ssh(ip, "qm list", identity_file=identity_file)
+    code_pct, pct_out, _ = run_ssh(ip, "pct list", identity_file=identity_file)
 
     vms = []
-    if code == 0 and qm_out:
+    if code_qm == 0 and qm_out:
         lines = qm_out.strip().split("\n")
         for line in lines[1:]:
             parts = line.split()
@@ -207,11 +243,25 @@ def audit_node(node_info, staging_dir, identity_file=None):
                     vmid = int(parts[0])
                     name = parts[1]
                     status = parts[2]
-                    vms.append({"vmid": vmid, "name": name, "status": status})
+                    vms.append({"vmid": vmid, "name": name, "status": status, "type": "qemu"})
                 except ValueError:
                     pass
 
-    print(f"  ✓ Discovered {len(vms)} VMs on {node}: {', '.join(f'{v['vmid']}:{v['name']} ({v['status']})' for v in vms)}")
+    if code_pct == 0 and pct_out:
+        lines = pct_out.strip().split("\n")
+        for line in lines[1:]:
+            parts = line.split()
+            if len(parts) >= 2:
+                try:
+                    vmid = int(parts[0])
+                    status = parts[1]
+                    name = parts[2] if len(parts) > 2 else f"ct-{vmid}"
+                    vms.append({"vmid": vmid, "name": name, "status": status, "type": "lxc"})
+                except ValueError:
+                    pass
+
+    guest_summary = ', '.join(f"{v['vmid']}:{v['name']} ({v['status']})" for v in vms)
+    print(f"  ✓ Discovered {len(vms)} guests on {node}: {guest_summary}")
     return {
         "node": node,
         "ip": ip,
@@ -224,23 +274,26 @@ def audit_vm_docker(node_info, vm, staging_dir, identity_file=None):
     node = node_info["node"]
     ip = node_info["ip"]
     vmid = vm["vmid"]
+    guest_type = vm.get("type", "qemu")
+    label = "VM" if guest_type == "qemu" else "LXC"
     vm_name = VM_NAME_MAPPINGS.get((node, vmid), vm["name"])
 
     if vm["status"] != "running":
-        print(f"  - VM {vmid} ({vm_name}) is {vm['status']}. Skipping Docker audit.")
+        print(f"  - {label} {vmid} ({vm_name}) is {vm['status']}. Skipping Docker audit.")
         return []
 
-    # Check QGA
-    who = run_qga_cmd(ip, vmid, "whoami", identity_file=identity_file)
+    # Check guest responsiveness
+    who = run_guest_cmd(ip, vmid, "whoami", guest_type=guest_type, identity_file=identity_file)
     if not who:
-        print(f"  - VM {vmid} ({vm_name}): QEMU Guest Agent not responding. Skipping.")
+        reason = "QEMU Guest Agent not responding" if guest_type == "qemu" else "LXC container not responding"
+        print(f"  - {label} {vmid} ({vm_name}): {reason}. Skipping.")
         return []
 
-    print(f"\n🐳 Auditing Docker & Portainer on VM {vmid} ({vm_name}) on {node}...")
+    print(f"\n🐳 Auditing Docker & Portainer on {label} {vmid} ({vm_name}) on {node}...")
 
-    find_out = run_qga_cmd(ip, vmid, "find /var/lib/docker/volumes/portainer_data/_data/compose/ -name docker-compose.yml 2>/dev/null", identity_file=identity_file)
+    find_out = run_guest_cmd(ip, vmid, "find /var/lib/docker/volumes/portainer_data/_data/compose/ -name docker-compose.yml 2>/dev/null", guest_type=guest_type, identity_file=identity_file)
     if not find_out:
-        print(f"  - No Portainer stacks found on VM {vmid}.")
+        print(f"  - No Portainer stacks found on {label} {vmid}.")
         return []
 
     lines = [l.strip() for l in find_out.split("\n") if l.strip().endswith("docker-compose.yml")]
@@ -261,7 +314,7 @@ def audit_vm_docker(node_info, vm, staging_dir, identity_file=None):
                     "env_path": l.replace("docker-compose.yml", "stack.env")
                 }
 
-    print(f"  ✓ Discovered {len(stacks_raw)} Portainer stacks in VM {vmid}.")
+    print(f"  ✓ Discovered {len(stacks_raw)} Portainer stacks in {label} {vmid}.")
 
     results = []
     vm_stage_dir = os.path.join(staging_dir, "docker-stacks", vm_name)
@@ -271,8 +324,8 @@ def audit_vm_docker(node_info, vm, staging_dir, identity_file=None):
         s_stage = os.path.join(vm_stage_dir, s_id)
         os.makedirs(s_stage, exist_ok=True)
 
-        compose_content = run_qga_b64(ip, vmid, info["yml_path"], identity_file=identity_file)
-        env_content = run_qga_b64(ip, vmid, info["env_path"], identity_file=identity_file)
+        compose_content = run_guest_b64(ip, vmid, info["yml_path"], guest_type=guest_type, identity_file=identity_file)
+        env_content = run_guest_b64(ip, vmid, info["env_path"], guest_type=guest_type, identity_file=identity_file)
 
 
         if compose_content:
@@ -343,33 +396,34 @@ def compute_diffs(staging_dir):
                     "diff": "".join(diff[:50])
                 })
 
-        # VM configs in qemu-server
-        qemu_stage = os.path.join(node_stage, "qemu-server")
-        if os.path.exists(qemu_stage):
-            for cf in glob.glob(os.path.join(qemu_stage, "*.conf")):
-                cf_name = os.path.basename(cf)
-                repo_cf = os.path.join(HOSTS_DIR, node, "configs", "qemu-server", cf_name)
+        # Guest configs in qemu-server and lxc
+        for cfg_subdir in ["qemu-server", "lxc"]:
+            guest_stage = os.path.join(node_stage, cfg_subdir)
+            if os.path.exists(guest_stage):
+                for cf in glob.glob(os.path.join(guest_stage, "*.conf")):
+                    cf_name = os.path.basename(cf)
+                    repo_cf = os.path.join(HOSTS_DIR, node, "configs", cfg_subdir, cf_name)
 
-                with open(cf, 'r', encoding='utf-8') as f:
-                    staged_conf = f.read()
+                    with open(cf, 'r', encoding='utf-8') as f:
+                        staged_conf = f.read()
 
-                repo_conf = ""
-                if os.path.exists(repo_cf):
-                    with open(repo_cf, 'r', encoding='utf-8') as f:
-                        repo_conf = f.read()
+                    repo_conf = ""
+                    if os.path.exists(repo_cf):
+                        with open(repo_cf, 'r', encoding='utf-8') as f:
+                            repo_conf = f.read()
 
-                if staged_conf.strip() != repo_conf.strip():
-                    diff = list(difflib.unified_diff(
-                        repo_conf.splitlines(keepends=True),
-                        staged_conf.splitlines(keepends=True),
-                        fromfile=f"repo/{node}/qemu-server/{cf_name}",
-                        tofile=f"live/{node}/qemu-server/{cf_name}"
-                    ))
-                    diffs["vm_configs"].append({
-                        "node": node,
-                        "conf": cf_name,
-                        "diff": "".join(diff)
-                    })
+                    if staged_conf.strip() != repo_conf.strip():
+                        diff = list(difflib.unified_diff(
+                            repo_conf.splitlines(keepends=True),
+                            staged_conf.splitlines(keepends=True),
+                            fromfile=f"repo/{node}/{cfg_subdir}/{cf_name}",
+                            tofile=f"live/{node}/{cfg_subdir}/{cf_name}"
+                        ))
+                        diffs["vm_configs"].append({
+                            "node": node,
+                            "conf": f"{cfg_subdir}/{cf_name}",
+                            "diff": "".join(diff)
+                        })
 
     # Docker stacks
     staged_stacks = glob.glob(os.path.join(staging_dir, "docker-stacks", "*", "*"))
@@ -473,6 +527,17 @@ def apply_sync(staging_dir, diffs):
             for cf in glob.glob(os.path.join(qemu_stage, "*.conf")):
                 shutil.copy2(cf, os.path.join(repo_qemu, os.path.basename(cf)))
             print(f"  ✓ Synced {node} VM configs in qemu-server/")
+
+        # lxc
+        lxc_stage = os.path.join(node_stage, "lxc")
+        if os.path.exists(lxc_stage):
+            repo_lxc = os.path.join(repo_node_cfg, "lxc")
+            os.makedirs(repo_lxc, exist_ok=True)
+            lxc_files = glob.glob(os.path.join(lxc_stage, "*.conf"))
+            for cf in lxc_files:
+                shutil.copy2(cf, os.path.join(repo_lxc, os.path.basename(cf)))
+            if lxc_files:
+                print(f"  ✓ Synced {node} LXC configs in lxc/")
 
     # 2. Docker stacks
     staged_stacks = glob.glob(os.path.join(staging_dir, "docker-stacks", "*", "*"))

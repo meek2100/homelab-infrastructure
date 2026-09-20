@@ -53,6 +53,7 @@ def restore_host_configs(target_node=None, dry_run=False):
         # We tar up the local_dir contents and extract them into remote_parent_dir
         dir_mappings = {
             "qemu-server": "/etc/pve/qemu-server",
+            "lxc": "/etc/pve/lxc",
             "acpi": "/etc/acpi",
             "etc/modprobe.d": "/etc/modprobe.d",
             "custom-configs/etc": "/etc",

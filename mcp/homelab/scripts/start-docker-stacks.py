@@ -24,31 +24,48 @@ def start_docker_stacks(target_node=None, target_vmid=None, dry_run=False):
         if not host_ip:
             continue
 
+        tool_check_cmd = f"ssh -o StrictHostKeyChecking=accept-new root@{host_ip} 'test -f /etc/pve/qemu-server/{vmid}.conf && echo qm || (test -f /etc/pve/lxc/{vmid}.conf && echo pct || echo qm)'"
+        tool_res = subprocess.run(tool_check_cmd, shell=True, capture_output=True, text=True)
+        tool = tool_res.stdout.strip() if tool_res.returncode == 0 and tool_res.stdout.strip() in ["qm", "pct"] else "qm"
+        label = "VM" if tool == "qm" else "LXC"
+
         print(f"\n============================================================")
-        print(f"🚀 Starting Docker Stacks: VM {vmid} on {node_name}")
+        print(f"🚀 Starting Docker Stacks: {label} {vmid} on {node_name}")
         print(f"============================================================")
         
-        # We find all compose directories on the VM and run docker compose up -d
-        find_cmd = f"ssh -o StrictHostKeyChecking=accept-new root@{host_ip} 'qm guest exec {vmid} -- sh -c \"find /var/lib/docker/volumes/portainer_data/_data/compose -name docker-compose.yml -o -name docker-compose.yaml\"'"
-        res = subprocess.run(find_cmd, shell=True, capture_output=True, text=True)
-        
-        try:
-            data = json.loads(res.stdout)
-            compose_files = data.get("out-data", "").splitlines()
-            if not compose_files:
-                print("  No compose files found on this VM.")
+        # We find all compose directories on the guest and run docker compose up -d
+        if tool == "qm":
+            find_cmd = f"ssh -o StrictHostKeyChecking=accept-new root@{host_ip} 'qm guest exec {vmid} -- sh -c \"find /var/lib/docker/volumes/portainer_data/_data/compose -name docker-compose.yml -o -name docker-compose.yaml\"'"
+            res = subprocess.run(find_cmd, shell=True, capture_output=True, text=True)
+            try:
+                data = json.loads(res.stdout)
+                compose_files = data.get("out-data", "").splitlines()
+            except Exception as e:
+                print(f"  ❌ Failed to discover stacks or QEMU Guest Agent not running: {e}")
                 continue
-                
-            for compose_file in compose_files:
-                compose_dir = os.path.dirname(compose_file)
-                if dry_run:
-                    print(f"  [DRY RUN] Would start stack at {compose_dir}")
-                else:
-                    print(f"  Starting stack at {compose_dir}...")
+        else:
+            find_cmd = f"ssh -o StrictHostKeyChecking=accept-new root@{host_ip} 'pct exec {vmid} -- sh -c \"find /var/lib/docker/volumes/portainer_data/_data/compose -name docker-compose.yml -o -name docker-compose.yaml\"'"
+            res = subprocess.run(find_cmd, shell=True, capture_output=True, text=True)
+            compose_files = res.stdout.splitlines() if res.returncode == 0 else []
+
+        if not compose_files:
+            print(f"  No compose files found on this {label}.")
+            continue
+            
+        for compose_file in compose_files:
+            compose_file = compose_file.strip()
+            if not compose_file:
+                continue
+            compose_dir = os.path.dirname(compose_file)
+            if dry_run:
+                print(f"  [DRY RUN] Would start stack at {compose_dir}")
+            else:
+                print(f"  Starting stack at {compose_dir}...")
+                if tool == "qm":
                     up_cmd = f"ssh -o StrictHostKeyChecking=accept-new root@{host_ip} 'qm guest exec {vmid} -- sh -c \"cd {compose_dir} && docker compose up -d\"'"
-                    subprocess.run(up_cmd, shell=True)
-        except Exception as e:
-            print(f"  ❌ Failed to discover stacks or qemu-guest-agent not running: {e}")
+                else:
+                    up_cmd = f"ssh -o StrictHostKeyChecking=accept-new root@{host_ip} 'pct exec {vmid} -- sh -c \"cd {compose_dir} && docker compose up -d\"'"
+                subprocess.run(up_cmd, shell=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

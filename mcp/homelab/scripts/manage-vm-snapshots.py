@@ -59,57 +59,77 @@ def run_ssh(host_ip, cmd, timeout=300):
     except Exception as e:
         return 1, "", str(e)
 
+def get_guest_tool(ip, vmid):
+    """Detects whether target is a QEMU VM (qm) or LXC Container (pct)."""
+    check_cmd = f"test -f /etc/pve/qemu-server/{vmid}.conf && echo qm || (test -f /etc/pve/lxc/{vmid}.conf && echo pct || echo qm)"
+    code, stdout, _ = run_ssh(ip, check_cmd, timeout=10)
+    if code == 0 and stdout.strip() in ["qm", "pct"]:
+        return stdout.strip()
+    return "qm"
+
 def create_snapshot(node, vmid, snap_name, description="", include_ram=False):
     ip = get_node_ip(node)
     if not ip:
         return f"Error: Node {node} IP not found."
 
-    cmd = f"qm snapshot {vmid} '{snap_name}'"
+    tool = get_guest_tool(ip, vmid)
+    label = "VM" if tool == "qm" else "LXC"
+
+    cmd = f"{tool} snapshot {vmid} '{snap_name}'"
     if description:
         cmd += f" --description '{description}'"
-    if include_ram:
+    if include_ram and tool == "qm":
         cmd += " --vmstate 1"
 
-    print(f"📸 Creating snapshot '{snap_name}' for VM {vmid} on {node} ({ip})...")
+    print(f"📸 Creating snapshot '{snap_name}' for {label} {vmid} on {node} ({ip})...")
     code, stdout, stderr = run_ssh(ip, cmd, timeout=120)
     if code == 0:
-        return f"✅ Snapshot '{snap_name}' successfully created for VM {vmid} on {node}.\n{stdout.strip()}"
-    return f"❌ Failed to create snapshot for VM {vmid} on {node} (exit code {code}):\n{stderr.strip()}\n{stdout.strip()}"
+        return f"✅ Snapshot '{snap_name}' successfully created for {label} {vmid} on {node}.\n{stdout.strip()}"
+    return f"❌ Failed to create snapshot for {label} {vmid} on {node} (exit code {code}):\n{stderr.strip()}\n{stdout.strip()}"
 
 def list_snapshots(node, vmid):
     ip = get_node_ip(node)
     if not ip:
         return f"Error: Node {node} IP not found."
 
-    cmd = f"qm listsnapshot {vmid}"
+    tool = get_guest_tool(ip, vmid)
+    label = "VM" if tool == "qm" else "LXC"
+
+    cmd = f"{tool} listsnapshot {vmid}"
     code, stdout, stderr = run_ssh(ip, cmd, timeout=30)
     if code == 0:
-        return stdout.strip() or f"No snapshots found for VM {vmid} on {node}."
-    return f"❌ Failed to list snapshots for VM {vmid} on {node}:\n{stderr.strip()}"
+        return stdout.strip() or f"No snapshots found for {label} {vmid} on {node}."
+    return f"❌ Failed to list snapshots for {label} {vmid} on {node}:\n{stderr.strip()}"
 
 def rollback_snapshot(node, vmid, snap_name):
     ip = get_node_ip(node)
     if not ip:
         return f"Error: Node {node} IP not found."
 
-    cmd = f"qm rollback {vmid} '{snap_name}'"
-    print(f"🔄 Rolling back VM {vmid} on {node} to snapshot '{snap_name}'...")
+    tool = get_guest_tool(ip, vmid)
+    label = "VM" if tool == "qm" else "LXC"
+
+    cmd = f"{tool} rollback {vmid} '{snap_name}'"
+    print(f"🔄 Rolling back {label} {vmid} on {node} to snapshot '{snap_name}'...")
     code, stdout, stderr = run_ssh(ip, cmd, timeout=120)
     if code == 0:
-        return f"✅ Successfully rolled back VM {vmid} on {node} to snapshot '{snap_name}'.\n{stdout.strip()}"
-    return f"❌ Rollback failed for VM {vmid} on {node}:\n{stderr.strip()}\n{stdout.strip()}"
+        return f"✅ Successfully rolled back {label} {vmid} on {node} to snapshot '{snap_name}'.\n{stdout.strip()}"
+    return f"❌ Rollback failed for {label} {vmid} on {node}:\n{stderr.strip()}\n{stdout.strip()}"
 
 def delete_snapshot(node, vmid, snap_name):
     ip = get_node_ip(node)
     if not ip:
         return f"Error: Node {node} IP not found."
 
-    cmd = f"qm delsnapshot {vmid} '{snap_name}'"
-    print(f"🗑️ Deleting snapshot '{snap_name}' from VM {vmid} on {node}...")
+    tool = get_guest_tool(ip, vmid)
+    label = "VM" if tool == "qm" else "LXC"
+
+    cmd = f"{tool} delsnapshot {vmid} '{snap_name}'"
+    print(f"🗑️ Deleting snapshot '{snap_name}' from {label} {vmid} on {node}...")
     code, stdout, stderr = run_ssh(ip, cmd, timeout=180)
     if code == 0:
-        return f"✅ Successfully deleted snapshot '{snap_name}' from VM {vmid} on {node}.\n{stdout.strip()}"
-    return f"❌ Failed to delete snapshot '{snap_name}' from VM {vmid} on {node}:\n{stderr.strip()}\n{stdout.strip()}"
+        return f"✅ Successfully deleted snapshot '{snap_name}' from {label} {vmid} on {node}.\n{stdout.strip()}"
+    return f"❌ Failed to delete snapshot '{snap_name}' from {label} {vmid} on {node}:\n{stderr.strip()}\n{stdout.strip()}"
 
 def vzdump_backup(node, vmid, storage=None, mode="snapshot"):
     ip = get_node_ip(node)
