@@ -33,12 +33,15 @@ This document details the physical hardware, virtual bridges, dual-WAN egress pa
 * **Port Mirroring (SPAN)**:
   * Configured to mirror selected inspection traffic into **VLAN 100 (`Wireshark - Debug`)** or to `pve` physical interface `eth0` (`vmbr2` with `promisc on`).
 
-### 3. Wireless Access Points: Araknis 830 APs
-* **Role**: High-Density Wi-Fi Access Points.
-* **SSID to VLAN Mapping**:
-  * *Trusted / Private*: Mapped to VLAN 10 (`Main - Trusted`)
-  * *Guest / Media*: Mapped to VLAN 20 (`Guest - Media`)
-  * *Smart Home / IoT*: Mapped to VLAN 30 (`Isolated - IOT`) — 2.4 GHz only, 20 MHz channel width (channels 1, 6, 11).
+### 3. Wireless Access Points: Araknis 830 APs (Wi-Fi 7 / 802.11be)
+* **Hardware Profile**: Dual Araknis AN-830-AP-I Access Points:
+  * **AP 1**: `192.168.1.231` (MAC `14:3F:C3:E8:B9:93`) — 2.4GHz Ch 6 (20MHz, 23dBm), 5GHz Ch 36 (80MHz, 27dBm), 6GHz Ch 21 (160MHz, 25dBm).
+  * **AP 2**: `192.168.1.236` (MAC `14:3F:C3:E8:B9:A2`) — 2.4GHz Ch 1 (20MHz, 23dBm), 5GHz Ch 149 (80MHz, 27dBm), 6GHz Ch 69 (160MHz, 25dBm).
+* **Authoritative SSID Configuration**:
+  * **`Insomniac_MGMT`** (Native VLAN 1): 5 GHz & 6 GHz, WPA3-SAE, Fast Roaming enabled, Client Isolation OFF. Dedicated for wireless administrative/hypervisor access.
+  * **`Insomniac`** (VLAN 10 — `Main - Trusted`): 5 GHz & 6 GHz only, WPA3-SAE, Fast Roaming enabled, Client Isolation OFF. Primary high-speed network for phones, laptops, and workstations.
+  * **`Insomniac_Guest`** (VLAN 20 — `Guest - Media`): 2.4 GHz & 5 GHz, WPA2/WPA3-SAE Mixed, Band Steering ON, Fast Roaming ON, **Client Isolation OFF**. Destination for Sonos speakers, Smart TVs, and streaming guests.
+  * **`Insomniac_IOT`** (VLAN 30 — `Isolated - IOT`): 2.4 GHz only, WPA2-PSK, Fast Roaming OFF (prevents legacy 802.11b/g/n chip dropouts), Wi-Fi 6/7 OFF, Client Isolation OFF. Strictly for smart plugs, bulbs, and microcontrollers.
 
 ### 4. Auxiliary Remote Node: OpenWrt Router
 * **Management IP**: `192.168.1.225` (Dropbear SSH on port 22)
