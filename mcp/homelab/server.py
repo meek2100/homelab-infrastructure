@@ -260,9 +260,14 @@ def backup_vm_vzdump(node: str, vmid: int, storage: str = None) -> str:
     return run_script("manage-vm-snapshots.py", args)
 
 @mcp.tool()
-def backup_openwrt(ip: str = "192.168.1.225", user: str = "root") -> str:
-    """Backs up OpenWrt router /etc/config/ files and encrypts sensitive modules via SOPS."""
+def backup_openwrt(ip: str = "192.168.1.226", user: str = "root") -> str:
+    """Backs up OpenWrt router /etc/config/, custom scripts, daemons, and encrypts sensitive modules via SOPS."""
     return run_script("backup-openwrt-config.py", ["--ip", ip, "--user", user])
+
+@mcp.tool()
+def backup_ddwrt(router: str = "all") -> str:
+    """Backs up DD-WRT routers (aurora: 10.25.25.1, luna: 10.20.20.1) NVRAM configs and scripts encrypted via SOPS."""
+    return run_script("backup-ddwrt-config.py", ["--router", router])
 
 @mcp.tool()
 def sync_wireshark_capture() -> str:

@@ -1,0 +1,11 @@
+# Put your custom commands here that should be executed once
+# the system init finished. By default this file does nothing.
+
+# Ensure wan is UP so failover monitor can detect P1 carrier/STP
+ip link set wan up
+
+# Source-IP routing: ensures br-lan uses 192.168.1.226 (not 192.168.2.1)
+# when reaching 192.168.1.0/24 hosts (Rule 7 - agents.md)
+ip route replace 192.168.1.0/24 dev br-lan proto static scope link src 192.168.1.226 metric 10
+
+exit 0

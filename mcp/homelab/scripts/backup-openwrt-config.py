@@ -30,10 +30,10 @@ def get_age_key_path():
 
 def get_ssh_key():
     for candidate in [
-        "/mnt/c/Users/dtheurer/.ssh/pi_id_ed25519",
         "/home/dtheurer/.ssh/pi_id_ed25519",
         os.path.expanduser("~/.ssh/pi_id_ed25519"),
         "/home/agentsvc/.ssh/pi_id_ed25519",
+        "/mnt/c/Users/dtheurer/.ssh/pi_id_ed25519",
         os.path.expanduser("~/.ssh/proxmox_ed25519"),
         "/home/dtheurer/.ssh/proxmox_ed25519",
         "/home/agentsvc/.ssh/proxmox_ed25519",
@@ -153,7 +153,69 @@ def backup_openwrt(ip=OPENWRT_DEFAULT_IP, user="root"):
         else:
             backed_up.append(f"{mod} (plain)")
 
-    summary = f"✅ Successfully backed up {len(backed_up)} OpenWrt modules from {ip} ({distrib}) into {configs_dir}."
+    # Backup custom system files, scripts, and hooks
+    custom_files = [
+        "/etc/sysupgrade.conf",
+        "/etc/rc.local",
+        "/etc/crontabs/root",
+        "/etc/vxlan-nm.conf",
+        "/etc/init.d/vxlan-nm",
+        "/usr/bin/vxlan-nm",
+        "/usr/bin/failover-tester.py",
+        "/usr/bin/vxlan-tester.py",
+        "/bin/opkg_wrapper.bak",
+        "/usr/bin/opkgscript.sh",
+    ]
+
+    custom_dir = os.path.join(OPENWRT_TARGET_DIR, "custom")
+    os.makedirs(custom_dir, exist_ok=True)
+
+    for cf in custom_files:
+        code_cf, out_cf, _ = run_ssh(ip, f"[ -f '{cf}' ] && cat '{cf}' || echo '__MISSING__'", user=user)
+        if code_cf == 0 and out_cf and "__MISSING__" not in out_cf:
+            rel_name = cf.strip("/").replace("/", "_")
+            out_path = os.path.join(custom_dir, rel_name)
+            with open(out_path, "w", encoding="utf-8") as f:
+                f.write(out_cf)
+            backed_up.append(f"custom: {cf}")
+
+    # Backup /etc/scripts/ directory
+    code_scripts, out_scripts, _ = run_ssh(ip, "ls -1 /etc/scripts/ 2>/dev/null", user=user)
+    if code_scripts == 0 and out_scripts:
+        scripts_dir = os.path.join(OPENWRT_TARGET_DIR, "scripts")
+        os.makedirs(scripts_dir, exist_ok=True)
+        for s_file in out_scripts.strip().splitlines():
+            s_file = s_file.strip()
+            if not s_file: continue
+            code_s, out_s, _ = run_ssh(ip, f"cat '/etc/scripts/{s_file}'", user=user)
+            if code_s == 0:
+                with open(os.path.join(scripts_dir, s_file), "w", encoding="utf-8") as f:
+                    f.write(out_s)
+                backed_up.append(f"script: /etc/scripts/{s_file}")
+
+    # Backup installed package manifest
+    code_pkg, out_pkg, _ = run_ssh(ip, "opkg list-installed 2>/dev/null", user=user)
+    if code_pkg == 0 and out_pkg:
+        with open(os.path.join(OPENWRT_TARGET_DIR, "opkg.installed"), "w", encoding="utf-8") as f:
+            f.write(out_pkg)
+        backed_up.append("package list: opkg.installed")
+
+    # Check for any historical .bak files in /etc/config/ or /etc/
+    code_baks, out_baks, _ = run_ssh(ip, "find /etc/ /usr/bin/ -name '*.bak' 2>/dev/null", user=user)
+    if code_baks == 0 and out_baks:
+        baks_dir = os.path.join(OPENWRT_TARGET_DIR, "legacy_baks")
+        os.makedirs(baks_dir, exist_ok=True)
+        for bak_path in out_baks.strip().splitlines():
+            bak_path = bak_path.strip()
+            if not bak_path: continue
+            code_b, out_b, _ = run_ssh(ip, f"cat '{bak_path}'", user=user)
+            if code_b == 0:
+                bak_name = bak_path.strip("/").replace("/", "_")
+                with open(os.path.join(baks_dir, bak_name), "w", encoding="utf-8") as f:
+                    f.write(out_b)
+                backed_up.append(f"bak: {bak_path}")
+
+    summary = f"✅ Successfully backed up {len(backed_up)} OpenWrt modules, scripts, and custom assets from {ip} ({distrib}) into {OPENWRT_TARGET_DIR}."
     print(summary)
     return summary
 

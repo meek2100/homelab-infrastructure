@@ -1,0 +1,72 @@
+#!/bin/sh
+# /usr/bin/vxlan-nm - VXLAN Tunnel Manager for OpenWRT
+# Maintains the vxlan150 interface and monitors remote VTEP health.
+# Bridge membership is managed exclusively by failover.sh.
+
+CONF_FILE="/etc/vxlan-nm.conf"
+[ -f "$CONF_FILE" ] && . "$CONF_FILE"
+
+# Defaults
+: "${PHYSICAL_IF:=wl1-sta0}"
+: "${VXLAN_IF:=vxlan150}"
+: "${VXLAN_VNI:=150}"
+: "${DST_PORT:=4789}"
+: "${LOCAL_IP:=192.168.1.225}"
+: "${REMOTE_IP:=192.168.1.150}"
+: "${CHECK_INTERVAL:=15}"
+: "${FAIL_THRESHOLD:=3}"
+: "${MTU:=1450}"
+: "${LOG_FILE:=/var/log/vxlan-nm.log}"
+
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') $*" >> "$LOG_FILE"
+    logger -t vxlan-nm "$*"
+}
+
+delete_vxlan() {
+    ip link del "$VXLAN_IF" 2>/dev/null
+}
+
+create_vxlan() {
+    if ! ip link show "$VXLAN_IF" >/dev/null 2>&1; then
+        log "Creating VXLAN $VXLAN_IF (VNI $VXLAN_VNI) on $PHYSICAL_IF"
+        ip link add "$VXLAN_IF" type vxlan id "$VXLAN_VNI" dev "$PHYSICAL_IF" dstport "$DST_PORT" local "$LOCAL_IP" remote "$REMOTE_IP"
+        ip link set "$VXLAN_IF" mtu "$MTU"
+        ip link set "$VXLAN_IF" up
+    fi
+}
+
+check_health() {
+    # Verify tunnel endpoint is reachable over the backhaul (wl1-sta0)
+    if ping -c 1 -W 2 "$REMOTE_IP" >/dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+main_loop() {
+    log "VXLAN Tunnel Manager started (Backhaul: $PHYSICAL_IF, VTEP: $REMOTE_IP)."
+    FAILS=0
+
+    while :; do
+        create_vxlan
+
+        if check_health; then
+            FAILS=0
+        else
+            FAILS=$((FAILS + 1))
+            log "Remote VTEP ($REMOTE_IP) unreachable ($FAILS/$FAIL_THRESHOLD)"
+            if [ "$FAILS" -ge "$FAIL_THRESHOLD" ]; then
+                log "Resetting VXLAN interface..."
+                delete_vxlan
+                FAILS=0
+            fi
+        fi
+
+        sleep "$CHECK_INTERVAL"
+    done
+}
+
+mkdir -p "$(dirname "$LOG_FILE")"
+main_loop

@@ -98,8 +98,13 @@ graph TD
         NAS_MGMT["OpenMediaVault Admin (192.168.40.248)"]
     end
 
-    subgraph WAN2_SAN ["Dedicated WAN2 Egress & Storage (10.25.25.0/24 on vmbr1)"]
-        WAN2 --> DS["discovery-server (10.25.25.246)<br>Default Route: 10.25.25.1"]
+    subgraph WAN2_DDWRT ["WAN2 Egress & Storage Network (10.25.25.0/24 & Upstream 10.20.20.0/24)"]
+        LUNA_R["luna-router (DD-WRT: 10.20.20.1)<br>Upstream Gateway | User: meek2100<br>SSH Key: ddwrt_id_ed25519"]
+        AURORA_R["aurora-router (DD-WRT: 10.25.25.1)<br>WAN2 Isolation Router | User: root<br>SSH Key: ddwrt_id_ed25519"]
+        
+        LUNA_R --> AURORA_R
+        AURORA_R --> WAN2
+        AURORA_R --> DS["discovery-server (10.25.25.246)<br>Default Route: 10.25.25.1"]
         DS -- Direct L2 NFS/SMB Write --> NAS_DATA["nas-server (10.25.25.248)<br>/media/"]
     end
 
@@ -113,6 +118,19 @@ graph TD
     VLANs -- Port 53 DNS Queries --> AG1
     VLANs -- HTTPS Ingress --> NPM
 ```
+
+### 5. Upstream DD-WRT Routing Fleet (WAN2 & Dedicated Discovery Isolation)
+
+* **Aurora Router (`aurora-router` — `10.25.25.1`)**:
+  * **Role**: Primary gateway and isolation barrier for the high-bandwidth torrent / download network (`10.25.25.0/24`) on `vmbr1`.
+  * **Management IP**: `10.25.25.1` (Dropbear/SSH on port 22).
+  * **User**: `root` | **Identity**: `ddwrt_id_ed25519` (`C:/Users/dtheurer/.ssh/ddwrt_id_ed25519` or `~/.ssh/ddwrt_id_ed25519`).
+  * **Clients**: `discovery-server` (`10.25.25.246`), `nas-server` (`10.25.25.248`), Araknis 520 `WAN2` port.
+* **Luna Router (`luna-router` — `10.20.20.1`)**:
+  * **Role**: Upstream gateway from `aurora-router`, operating the upstream `10.20.20.0/24` transit subnet.
+  * **Management IP**: `10.20.20.1`.
+  * **User**: `meek2100` | **Identity**: `ddwrt_id_ed25519` (`C:/Users/dtheurer/.ssh/ddwrt_id_ed25519` or `~/.ssh/ddwrt_id_ed25519`).
+
 
 ---
 
