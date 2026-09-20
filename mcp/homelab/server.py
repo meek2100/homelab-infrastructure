@@ -270,6 +270,26 @@ def backup_ddwrt(router: str = "all") -> str:
     return run_script("backup-ddwrt-config.py", ["--router", router])
 
 @mcp.tool()
+def get_openwrt_status(ip: str = "192.168.1.226") -> str:
+    """Queries live OpenWrt router status, uptime, active routes, and failover daemon state."""
+    return run_script("get-openwrt-status.py", ["--ip", ip])
+
+@mcp.tool()
+def get_ddwrt_status(ip: str = "10.25.25.1") -> str:
+    """Queries DD-WRT router (aurora: 10.25.25.1) system status, WAN route, and PIA watchdog status."""
+    return run_script("get-ddwrt-status.py", ["--ip", ip])
+
+@mcp.tool()
+def get_wireshark_status(vmid: int = 102) -> str:
+    """Queries luna-server (VM 102) ens19 SPAN mirror interface packet counters and capture archives."""
+    return run_script("get-wireshark-status.py", ["--vmid", str(vmid)])
+
+@mcp.tool()
+def verify_network_matrix(profile: str = "all") -> str:
+    """Runs a complete ICMP and TCP port matrix reachability test across all VLANs and targets."""
+    return run_script("verify-network-matrix.py", ["--profile", profile])
+
+@mcp.tool()
 def sync_wireshark_capture() -> str:
     """Discovers and synchronizes headless Wireshark capture scripts from luna-server (VM 102)."""
     return run_script("sync-wireshark-capture-script.py", [])
