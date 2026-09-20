@@ -51,6 +51,21 @@ This document provides the authoritative network segmentation specification for 
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
+### 📋 Authoritative Inter-VLAN ACL Rule Table (Araknis 520 Router)
+
+Apply the following rules in **exact order of priority (1 to 8)** in the router GUI under **Security ➔ Access Control / Inter-VLAN Routing**:
+
+| Priority | Rule Name | Source Interface / IP | Destination Interface / IP | Protocol / Port | Action | Purpose & Operational Rationale |
+| :---: | :--- | :--- | :--- | :--- | :---: | :--- |
+| **1** | `ALLOW-VLAN40-ALL` | `VLAN 40 (Servers - Admin)` | `Any Subnet` | Any | **PERMIT** | **Safety Lifeline**: Ensures WireGuard (`192.168.40.185:51820`) and Tailscale can manage all Proxmox nodes, switches, APs, and IoT. |
+| **2** | `ALLOW-VLAN10-LAN` | `VLAN 10 (Main - Trusted)` | `VLAN 1, VLAN 20, VLAN 30, VLAN 40` | Any | **PERMIT** | Trusted PCs manage the homelab, print, control Sonos, and access NAS shares. |
+| **3** | `ALLOW-VLAN30-DNS` | `VLAN 30 (Isolated - IOT)` | `192.168.40.185`, `192.168.40.186` | UDP / TCP `53` | **PERMIT** | Allows smart plugs and sensors to query internal AdGuard Home DNS. |
+| **4** | `ALLOW-VLAN30-HA` | `VLAN 30 (Isolated - IOT)` | `192.168.40.30` (or HA IP) | TCP `8123` | **PERMIT** | Allows local IoT integrations (ESPHome, Shelly, Tuya) to push states to Home Assistant. |
+| **5** | `ALLOW-VLAN20-DNS` | `VLAN 20 (Guest - Media)` | `192.168.40.185`, `192.168.40.186` | UDP / TCP `53` | **PERMIT** | Allows Smart TVs, Sonos, and guest devices to resolve DNS for streaming services. |
+| **6** | `ALLOW-SONOS-CALLBACK`| `VLAN 20 (Guest - Media)` | `VLAN 10 (Main - Trusted)` | TCP `3400, 3401, 3500` | **PERMIT** | **Sonos UPnP Reverse Callback**: Enables speakers to push volume and track progress back to phones on VLAN 10. |
+| **7** | `BLOCK-VLAN30-INTERNAL`| `VLAN 30 (Isolated - IOT)` | `VLAN 1, VLAN 10, VLAN 40` | Any | **DENY** | **IoT Isolation**: Blocks untrusted smart home hardware from initiating connections to hypervisors or PCs. |
+| **8** | `BLOCK-VLAN20-INTERNAL`| `VLAN 20 (Guest - Media)` | `VLAN 1, VLAN 10, VLAN 40` | Any | **DENY** | **Guest Isolation**: Blocks guest devices from probing internal administration or server infrastructure. |
+
 ---
 
 ## 🎵 Sonos & Spotify Connect Configuration Rules
@@ -65,7 +80,11 @@ This document provides the authoritative network segmentation specification for 
      - `239.255.255.250:1900/udp` (SSDP / Sonos device discovery)
    - **Sonos Event Subscription Callback (TCP 3400/3401/3500)**:
      - When a phone on VLAN 10 sends a play command to Sonos (port 1400/tcp), Sonos accepts it and **initiates an inbound connection back to the phone on TCP port 3400/3401 or 3500** to push track progress and volume updates.
-     - An explicit ACL rule must permit: `Source VLAN 20 (Sonos IPs) ──► Destination VLAN 10 (TCP 3400, 3401, 3500)`.
+     - Rule 6 (`ALLOW-SONOS-CALLBACK`) permits this exact return traffic, preventing volume slider freezing and connection drops.
+
+3. **Switch & AP Multicast Performance Tuning (Araknis 920 Switch & 830 APs)**:
+   - **IGMP Snooping & Querier**: Enable IGMP Snooping on VLAN 10, 20, and 40. Configure the Araknis 920 switch as the **IGMP Querier** for these VLANs.
+   - **Multicast-to-Unicast**: Enable Multicast-to-Unicast conversion on the Araknis 830 APs. This prevents high-frequency discovery multicasts from degrading 2.4 GHz and 5 GHz wireless throughput.
 
 ---
 
@@ -76,13 +95,13 @@ To prevent asymmetric routing blackholes and allow WireGuard and Tailscale to fu
 | Route Name | Destination Subnet | Subnet Mask | Gateway / Next Hop | VLAN Interface | Purpose |
 | :--- | :--- | :--- | :--- | :---: | :--- |
 | **`Tailscale-Subnet`** | `100.64.0.0` | `255.192.0.0` (`/10`) | `192.168.40.185` | `VLAN 40` | Direct return path for un-NATted Tailscale clients, enabling real client IP logging in AdGuard Home. |
-| **`WireGuard-Subnet`** | `10.8.0.0` | `255.255.255.0` (`/24`) | `192.168.40.185` | `VLAN 40` | Guaranteed return path for WireGuard administrative backdoor traffic. |
+| **`WireGuard-Subnet`** | `10.8.0.0` | `255.255.255.0` (`/24`) | `192.168.40.185` | `VLAN 40` | Guaranteed return path for WireGuard administrative backdoor traffic without relying on host MASQUERADE. |
 
 ---
 
 ## 🛑 Zero-Lockout Implementation Ordering
 When applying ACL rules in the Araknis 520 router GUI:
-1. **First**: Apply Rule 1 (`Permit VLAN 40 to ALL VLANs`) to protect management ingress.
-2. **Second**: Apply Rule 2 (`Permit VLAN 10 to VLAN 40, VLAN 30, and VLAN 20`).
-3. **Third**: Apply DNS and Home Assistant exemption rules for VLAN 30 and VLAN 20.
-4. **Finally**: Apply Deny/Block rules for VLAN 30 and VLAN 20.
+1. **First**: Apply Rule 1 (`ALLOW-VLAN40-ALL`) to protect management ingress.
+2. **Second**: Apply Rule 2 (`ALLOW-VLAN10-LAN`).
+3. **Third**: Apply DNS and Home Assistant exemption rules (Rules 3, 4, 5, 6).
+4. **Finally**: Apply Deny/Block rules (Rules 7 and 8) for VLAN 30 and VLAN 20.

@@ -155,3 +155,5 @@ graph TD
   * Allowed IPs: `192.168.1.0/24, 192.168.10.0/24, 192.168.20.0/24, 192.168.30.0/24, 192.168.40.0/24, 10.25.25.0/24`.
   * DNS: `192.168.40.185`, `192.168.40.186`.
 * **Full Administrative Reach**: Direct access to Proxmox Web UIs (`:8006`), SSH (`:22`), switch web consoles, router management, and private storage networks.
+* **Return Path**: Relies on Araknis static route `10.8.0.0/24 via 192.168.40.185` to ensure return packets from VLAN 1 (`192.168.1.0/24`) and other subnets route back to `nexus-server` even if container MASQUERADE is bypassed or un-NATted.
+* **Client Profile Synchronization**: Because WireGuard client `.conf` profiles are generated statically, client devices must download a fresh profile or QR code from `https://vpn.theurer.dev:51821` whenever `WG_ALLOWED_IPS` or subnets are added.
