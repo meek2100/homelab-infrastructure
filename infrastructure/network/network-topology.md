@@ -55,14 +55,30 @@ This document details the physical hardware, virtual bridges, dual-WAN egress pa
   * **`Insomniac_Guest`** (VLAN 20 — `Guest - Media`): 2.4 GHz & 5 GHz, WPA2/WPA3-SAE Mixed, Band Steering ON, Fast Roaming ON, **Client Isolation OFF**. Destination for Sonos speakers, Smart TVs, and streaming guests.
   * **`Insomniac_IOT`** (VLAN 30 — `Isolated - IOT`): 2.4 GHz only, WPA2-PSK, Fast Roaming OFF (prevents legacy 802.11b/g/n chip dropouts), Wi-Fi 6/7 OFF, Client Isolation OFF. Strictly for smart plugs, bulbs, and microcontrollers.
 
-### 4. Auxiliary Remote Node: OpenWrt Router
-* **Management IP**: `192.168.1.225` (Dropbear SSH on port 22)
-* **Role**: Remote network segment running a 3-Priority Failover System:
-  * **Priority 1 (P1)**: Primary Wi-Fi Bridge via AP `192.168.1.237` (1500 MTU).
-  * **Priority 2 (P2)**: L2 VXLAN tunnel (`vxlan150`, VNI 150, UDP 4789, MTU 1450, MSS clamped to 1406) connected to VM 107 (`vxlan-server`) on `pve`.
-  * **Priority 3 (P3)**: Offline / VTEP recovery mode.
-* **Lab Networks**:
-  * Associated with **VLAN 150 (`CA-1 Test`)** for Control4 CA-1 controller integration.
+### 4. Auxiliary Office Infrastructure: OpenWrt Router & Office Switch
+* **Physical Office Ingress Chain**:
+  ```text
+  Araknis 520 Router (192.168.1.1)
+    └── Araknis 920 Core Switch (192.168.1.215)
+          └── Araknis 830 AP 1 (Wired Master: 192.168.1.231)
+                └── [5GHz PTP Backhaul: Insomniac_Bridge]
+                      └── Araknis 830 AP 3 (Office Station Bridge)
+                            └── OpenWrt Router (Belkin AX3200: 192.168.1.226)
+                                  └── Netgear Office Switch (192.168.1.220)
+                                        └── Workstation PC
+  ```
+* **OpenWrt Router Hardware & Profile (Belkin AX3200)**:
+  * **Primary Management IP**: `192.168.1.226` (Dropbear SSH on port 22)
+  * **Out-of-Band Backup Management IP**: `10.99.99.1` (Available via optional 2.4GHz Wi-Fi or dedicated LAN port 1 if bridge/main routing drops)
+  * **Authentication**: Dedicated SSH Key `pi_id_ed25519` (`/mnt/c/Users/dtheurer/.ssh/pi_id_ed25519` or `~/.ssh/pi_id_ed25519`)
+  * **3-Priority Resilient Failover System**:
+    1. **Priority 1 (P1 - Primary)**: Direct physical wire to Bridged 830 AP (1500 MTU).
+    2. **Priority 2 (P2 - Tunnel)**: Layer 2 VXLAN tunnel (`vxlan150`, VNI 150, UDP 4789, MTU 1450, MSS clamped to 1406) connected to VM 107 (`vxlan-server`) on `pve`.
+    3. **Priority 3 (P3 - Wireless)**: Wireless Extender / Client Repeater utilizing `relayd`.
+  * **Lab Network Integration**: Associated with **VLAN 150 (`CA-1 Test`)** for Control4 CA-1 automation controller testing.
+* **Netgear Office Switch**:
+  * **Management IP**: `192.168.1.220` (VLAN 1)
+  * **Role**: Local desktop distribution switch connecting office PCs, printers, and test benches to the OpenWrt router.
 
 ---
 

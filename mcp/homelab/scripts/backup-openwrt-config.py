@@ -12,7 +12,7 @@ import shutil
 import subprocess
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-OPENWRT_DEFAULT_IP = "192.168.1.225"
+OPENWRT_DEFAULT_IP = "192.168.1.226"
 OPENWRT_TARGET_DIR = os.path.join(REPO_ROOT, "infrastructure", "network", "openwrt")
 
 SOPS_BINARY = shutil.which("sops") or os.path.expanduser("~/.local/bin/sops")
@@ -30,6 +30,10 @@ def get_age_key_path():
 
 def get_ssh_key():
     for candidate in [
+        "/mnt/c/Users/dtheurer/.ssh/pi_id_ed25519",
+        "/home/dtheurer/.ssh/pi_id_ed25519",
+        os.path.expanduser("~/.ssh/pi_id_ed25519"),
+        "/home/agentsvc/.ssh/pi_id_ed25519",
         os.path.expanduser("~/.ssh/proxmox_ed25519"),
         "/home/dtheurer/.ssh/proxmox_ed25519",
         "/home/agentsvc/.ssh/proxmox_ed25519",
