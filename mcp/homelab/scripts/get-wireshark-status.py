@@ -41,30 +41,32 @@ def run_ssh(host_ip, cmd, user="root", timeout=30):
         return 1, "", str(e)
 
 def get_wireshark_status(node_ip="192.168.1.250", vmid=102):
-    # Remote command on pve executing inside VM 102 via QGA
-    qga_cmd = """
-python3 -c '
-import subprocess, json
+    # Remote script on pve executing inside VM 102 via QGA
+    script = f"""import subprocess, json
 
 def qm_exec(cmd):
-    res = subprocess.run(["qm", "guest", "exec", "102", "--", "sh", "-c", cmd], capture_output=True, text=True)
+    res = subprocess.run(["qm", "guest", "exec", "{vmid}", "--", "sh", "-c", cmd], capture_output=True, text=True)
     if res.returncode == 0:
-        data = json.loads(res.stdout)
-        out = data.get("out-data", "")
-        return out
+        try:
+            data = json.loads(res.stdout)
+            return data.get("out-data", "")
+        except Exception:
+            return res.stdout
     return ""
 
 print("=== 1. ens19 SPAN Capture Interface Status ===")
 print(qm_exec("ip -s link show ens19 2>/dev/null || echo ens19 not found"))
 
 print("=== 2. Wireshark Docker Container State ===")
-print(qm_exec("docker ps -a --filter name=wireshark --format \"table {{.Names}}\\\\t{{.Status}}\\\\t{{.Ports}}\" 2>/dev/null || docker ps"))
+print(qm_exec("docker ps -a --filter name=wireshark 2>/dev/null || docker ps"))
 
 print("=== 3. Recent PCAP Capture Files on NAS ===")
-print(qm_exec("ls -lh /nas-storage/*.pcap* /nas-storage/*.pcapng 2>/dev/null | tail -n 10 || echo No captures found in /nas-storage/"))
-'
+print(qm_exec("docker exec wireshark ls -lh /nas-storage/ 2>/dev/null | tail -n 10 || echo 'No captures found'"))
 """
-    code, out, err = run_ssh(node_ip, qga_cmd)
+    b64_payload = base64.b64encode(script.encode("utf-8")).decode("ascii")
+    remote_cmd = f"echo '{b64_payload}' | base64 -d | python3"
+
+    code, out, err = run_ssh(node_ip, remote_cmd)
     if code != 0:
         return f"❌ Error querying Wireshark status on {node_ip} (VM {vmid}): {err.strip()}"
     return out.strip()

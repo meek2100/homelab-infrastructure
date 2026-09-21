@@ -28,10 +28,15 @@ This document details the physical hardware, virtual bridges, dual-WAN egress pa
     * `pve2`: Awow AK34Pro (`enp1s0` bound to `vmbr0`)
     * `pve3`: HP EliteDesk (`eno1` bound to `vmbr0`)
   * Uplinks to Araknis 830 APs.
-* **Multicast Optimization**:
-  * **IGMP Snooping v2/v3 & Querier**: Enabled on VLAN 1 and VLAN 40 to prevent mDNS and SSDP multicast floods from exhausting wireless airtime on the APs.
+* **Multicast Optimization & Routing (FASTPATH Multicast Package)**:
+  * **IGMP Snooping v2/v3 & Querier**: Enabled on VLANs 1, 10, 20, 40 to prevent mDNS and SSDP multicast floods from exhausting wireless airtime on the APs.
+  * **Switch-Native Multicast Relay & Forwarding Database (MFDB)**: The 920 switch natively tracks multicast group memberships (e.g. `225.1.0.0` Control4/SnapOne discovery, `239.255.255.250` SSDP, `224.0.0.251` mDNS) directly in hardware ASIC across VLANs. **No Docker `multicast-relay` container is needed or desired**, eliminating software bridging loops.
+  * **Static ARP & Static Multicast**: Supports hardware-pinned static ARP entries to prevent ARP timeouts and unicast flooding for critical IoT controllers and bridges (Control4, Hue).
+* **Management & CLI Protocols (AN-920-SW-F-24-POE)**:
+  * **Web GUI**: HTTP/HTTPS on `192.168.1.215`.
+  * **CLI Shell**: Supports native **SSH Version 2 (port 22)** and Telnet with RSA/DSA host keys. Allows scriptable CLI audits, port status inspection, and programmatic PoE port power-cycling.
 * **Port Mirroring (SPAN)**:
-  * Configured to mirror selected inspection traffic into **VLAN 100 (`Wireshark - Debug`)** or to `pve` physical interface `eth0` (`vmbr2` with `promisc on`).
+  * Configured to mirror selected inspection traffic into **VLAN 100 (`Wireshark - Debug`)** or to `pve` physical interface `lan1` (`vmbr1` with `promisc on`).
 
 ### 3. Wireless Access Points & Office Point-to-Point Bridge: Araknis 830 APs (Wi-Fi 7 / 802.11be)
 * **Fleet Hardware Profile**: Three Araknis Access Points:
@@ -73,8 +78,14 @@ This document details the physical hardware, virtual bridges, dual-WAN egress pa
   * **Authentication**: Dedicated SSH Key `pi_id_ed25519` (`/mnt/c/Users/dtheurer/.ssh/pi_id_ed25519` or `~/.ssh/pi_id_ed25519`)
   * **3-Priority Resilient Failover System**:
     1. **Priority 1 (P1 - Primary)**: Direct physical wire to Bridged 830 AP (1500 MTU).
-    2. **Priority 2 (P2 - Tunnel)**: Layer 2 VXLAN tunnel (`vxlan150`, VNI 150, UDP 4789, MTU 1450, MSS clamped to 1406) connected to VM 107 (`vxlan-server`) on `pve`.
+    2. **Priority 2 (P2 - Tunnel)**: Layer 2 VXLAN tunnel (`vxlan150`, VNI 150, UDP 4789, MTU 1450, MSS clamped to 1406) connected to VM 107 (`vxlan-server`) on `pve`. *(Note: VM 107 is currently shut down pending failover loop-prevention / RSTP redesign to prevent L2 storm suppression).*
     3. **Priority 3 (P3 - Wireless)**: Wireless Extender / Client Repeater utilizing `relayd`.
+  * **Split Untagged Native / Tagged VXLAN Trunking Architecture (Planned Redesign)**:
+    * **Limitation**: Araknis 830 AP wireless bridge does not support transparent 802.1Q VLAN tagging (drops/strips VLAN-tagged frames), forcing all office switch devices onto untagged `192.168.1.0/24`.
+    * **Split Design**:
+      * **Untagged Traffic (VLAN 1 / Management)**: Passes natively across the physical AP bridge (1500 MTU) with zero overhead. Uses VXLAN only as standby failover if the AP bridge drops.
+      * **Tagged Traffic (VLANs 10, 20, 30, 40, 150)**: Encapsulated over VXLAN into UDP packets (port 4789). Since the outer packets are standard untagged UDP, they traverse the 830 AP bridge transparently without stripping.
+      * **Loop Prevention**: Keeping untagged VLAN 1 out of the VXLAN tunnel during normal operation guarantees no Layer 2 loop can form on the management LAN.
   * **Lab Network Integration**: Associated with **VLAN 150 (`CA-1 Test`)** for Control4 CA-1 automation controller testing.
 * **Netgear Office Switch**:
   * **Management IP**: `192.168.1.220` (VLAN 1)
@@ -146,6 +157,9 @@ graph TD
 | **`ha.secure.theurer.dev`** | `192.168.40.185` | Home Assistant (`luna-server`:8123) | NPM Reverse Proxy + WebSocket Upgrade |
 | **`home.secure.theurer.dev`** | `192.168.40.185` | Homarr Homelab Dashboard (`media-server`:80) | NPM Reverse Proxy + SSL Wildcard |
 | **`vpn.theurer.dev`** | WAN IP / Dynamic | WireGuard Admin Gateway (`nexus-server`:51820) | Direct UDP Port Forward |
+| **`all.ddnskey.com`** | `24.22.108.194` / `158.173.241.54` | Araknis 520 WAN1 & WAN2 Interface Tracking | No-IP Dynamic DNS Daemon |
+| **`luna.servebeer.com`** | WAN1 / Upstream IP | Luna Router DD-WRT OpenVPN Tunnel Endpoint | No-IP DDNS |
+| **`aurora.servebeer.com`** | WAN2 / Upstream IP | Aurora Router DD-WRT OpenVPN Tunnel Endpoint | No-IP DDNS |
 
 ---
 
@@ -162,7 +176,7 @@ graph TD
 
     subgraph Router ["Araknis 520 Router (192.168.1.1 & 192.168.40.1)"]
         PORT51820["WAN1 Port Forward<br>UDP 51820 ──► 192.168.40.185"]
-        STATIC_ROUTES["Static Routing Table:<br>100.64.0.0/10 via 192.168.40.185<br>10.8.0.0/24 via 192.168.40.185"]
+        STATIC_ROUTES["Static Routing Table:<br>192.168.2.0/24 via 192.168.1.225 (LAN)<br>100.64.0.0/10 via 192.168.40.185 (LAN)<br>10.8.0.0/24 via 192.168.40.185 (LAN)<br>10.20.20.0/24 via 10.25.25.1 (WAN2)"]
     end
 
     subgraph Nexus ["nexus-server (VM 100 on pve - 192.168.40.185)"]
@@ -205,4 +219,9 @@ graph TD
   * DNS: `192.168.40.185`, `192.168.40.186`.
 * **Full Administrative Reach**: Direct access to Proxmox Web UIs (`:8006`), SSH (`:22`), switch web consoles, router management, and private storage networks.
 * **Return Path**: Relies on Araknis static route `10.8.0.0/24 via 192.168.40.185` to ensure return packets from VLAN 1 (`192.168.1.0/24`) and other subnets route back to `nexus-server` even if container MASQUERADE is bypassed or un-NATted.
+
+### 3. Emergency Out-of-Band Fallback: Araknis 520 Router-Native OpenVPN & No-IP
+* **Endpoint**: `all.ddnskey.com` on WAN1 (`24.22.108.194`).
+* **Role**: True out-of-band hardware lifeline. Because this OpenVPN server runs directly inside the Araknis 520 router hardware and uses router-native No-IP DDNS, it functions even if all 3 Proxmox nodes, VMs, and Docker containers are completely powered down or unreachable.
+* **WAN2 Role**: Strictly dedicated to **outbound-isolated egress** (torrent traffic and PIA VPN). Multi-hop NAT (Luna ➔ Aurora ➔ Araknis) and the Aurora killswitch make WAN2 an egress barrier rather than an inbound administrative route.
 * **Client Profile Synchronization**: Because WireGuard client `.conf` profiles are generated statically, client devices must download a fresh profile or QR code from `https://vpn.theurer.dev:51821` whenever `WG_ALLOWED_IPS` or subnets are added.

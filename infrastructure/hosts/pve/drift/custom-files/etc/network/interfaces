@@ -28,13 +28,13 @@ iface vmbr0 inet static
 	bridge-pvid 1
 
 auto vmbr1
-iface vmbr1 inet static
-	address 10.25.25.250/24
-	bridge-ports lan1
-	bridge-stp off
-	bridge-fd 0
-	bridge-vlan-aware yes
-	bridge-vids 2-4094
-	bridge-pvid 1
+iface vmbr1 inet manual
+        bridge-ports lan1
+        bridge-stp off
+        bridge-fd 0
+        bridge-vlan-aware yes
+        bridge-vids 2-4094
+        bridge-pvid 1
+        post-up ip link set dev lan1 promisc on
 
 source /etc/network/interfaces.d/*

@@ -16,8 +16,6 @@ iface lan0 inet manual
 
 iface lan1 inet manual
 
-iface eth0 inet manual
-
 auto vmbr0
 iface vmbr0 inet static
 	address 192.168.1.250/24
@@ -30,23 +28,13 @@ iface vmbr0 inet static
 	bridge-pvid 1
 
 auto vmbr1
-iface vmbr1 inet static
-	address 10.25.25.250/24
+iface vmbr1 inet manual
 	bridge-ports lan1
 	bridge-stp off
 	bridge-fd 0
 	bridge-vlan-aware yes
 	bridge-vids 2-4094
 	bridge-pvid 1
-
-auto vmbr2
-iface vmbr2 inet manual
-        bridge-ports eth0
-        bridge-stp off
-        bridge-fd 0
-        bridge-vlan-aware yes
-        bridge-vids 2-4094
-        bridge-pvid 1
-        post-up ip link set dev eth0 promisc on
+	post-up ip link set dev lan1 promisc on
 
 source /etc/network/interfaces.d/*

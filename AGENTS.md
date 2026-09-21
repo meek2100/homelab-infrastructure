@@ -28,10 +28,8 @@
 
 ### Node 1: `pve` (Dell Precision 5520 Laptop Profile — `192.168.1.250`)
 - **Hardware**: Intel Xeon E3-1505M v6 (4C/8T), 32GB RAM, 1TB Toshiba NVMe + 2x 1TB WD 2.5" Disks.
-- **Network Interfaces**:
-  - `vmbr0` (`192.168.1.250/24`): Primary management & bridge
-  - `vmbr1` (`10.25.25.250/24`): Dedicated high-speed storage network
-  - `vmbr2`: VLAN-aware bridge (VLANs 2-4094, `eth0` with promiscuous mode on)
+  - `vmbr0` (`192.168.1.250/24` on `lan0` / Dell DBQBCBC064, MAC `9c:eb:e8:96:11:44`): Primary management & VLAN trunk
+  - `vmbr1` (on `lan1` / Dell DA200, MAC `00:24:9b:55:a0:49`, promiscuous mode on): Dedicated Wireshark SPAN packet capture bridge (mapped to VM 102 `tap102i1`)
 - **GPUs**:
   - Intel HD P630 (`00:02.0`): Assigned as `hostpci0: 0000:00:02` in `VM 103` (`media-server` for Plex QuickSync).
   - NVIDIA Quadro M1200 4GB (`[10de:13b6]` / `01:00.0`): Currently **100% unmapped / idle** on host `pve`.
@@ -72,6 +70,8 @@
 - **Network Infrastructure & GitOps Tooling**:
   - `infrastructure/network/vlan-matrix.md`: Authoritative 8-VLAN table (VLAN 1 Management, 10 Main Trusted, 20 Guest Media, 30 Isolated IOT, 40 Servers Admin, 100 Wireshark Debug, 150 CA-1 Test, 200 Core-5 Test).
   - `infrastructure/network/network-topology.md`: Dual-WAN topology (WAN1 house LAN, WAN2 `10.25.25.0/24` egress for `discovery-server`), Araknis 520 router, 920 switch, 830 APs, and DNS split-horizon.
+  - `mcp/homelab/scripts/manage-araknis-switch.py`: FastMCP tools `backup_araknis_switch`, `get_araknis_switch_status`, `power_cycle_switch_poe_port` via interactive FASTPATH SSH automation.
+  - `mcp/homelab/scripts/manage-araknis-router.py`: FastMCP tools `backup_araknis_router`, `get_araknis_router_status`, `restore_araknis_router` via authenticated REST API (`/api/cgi-bin/v1/`).
   - `mcp/homelab/scripts/backup-openwrt-config.py`: FastMCP tool `backup_openwrt` pulls and SOPS-encrypts OpenWrt `/etc/config/`.
   - `mcp/homelab/scripts/sync-wireshark-capture-script.py`: FastMCP tool `sync_wireshark_capture` archives headless capture scripts from `luna-server` (VM 102) into Stack 48.
 

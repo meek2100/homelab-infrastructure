@@ -1,0 +1,9 @@
+services:
+  multicast-relay:
+    image: ghcr.io/scyto/multicast-relay:latest
+    container_name: multicast-relay
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - INTERFACES=ens20 ens21 ens22
+      - OPTS=--noMDNS --relay 239.255.255.250:1902 --verbose

@@ -48,9 +48,10 @@ def run_script(script_name: str, args: list[str] = None) -> str:
         args = []
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     script_path = os.path.join(os.path.dirname(__file__), "scripts", script_name)
-    if not os.path.exists(script_path):
-        return f"Error: Script {script_path} not found."
-    cmd = [sys.executable, script_path] + args
+    python_bin = os.path.join(repo_root, ".venv", "bin", "python3")
+    if not os.path.exists(python_bin):
+        python_bin = sys.executable
+    cmd = [python_bin, script_path] + args
     try:
         res = subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True)
         if res.returncode == 0:
@@ -307,6 +308,21 @@ def verify_network_matrix(profile: str = "all") -> str:
 def sync_wireshark_capture() -> str:
     """Discovers and synchronizes headless Wireshark capture scripts from luna-server (VM 102)."""
     return run_script("sync-wireshark-capture-script.py", [])
+
+@mcp.tool()
+def backup_araknis_switch() -> str:
+    """Backs up Araknis 920 switch running-config over SSH into infrastructure/network/configs/."""
+    return run_script("manage-araknis-switch.py", ["backup"])
+
+@mcp.tool()
+def get_araknis_switch_status() -> str:
+    """Queries live Araknis 920 switch ports, link speeds, learned MAC table, STP, and IGMP snooping."""
+    return run_script("manage-araknis-switch.py", ["status"])
+
+@mcp.tool()
+def power_cycle_switch_poe_port(port: str) -> str:
+    """Power cycles PoE power on an Araknis 920 switch port (e.g. '1/0/3' to reboot an AP or camera)."""
+    return run_script("manage-araknis-switch.py", ["poe-cycle", port])
 
 if __name__ == "__main__":
     mcp.run()
