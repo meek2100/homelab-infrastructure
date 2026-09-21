@@ -75,4 +75,12 @@
   - `mcp/homelab/scripts/backup-openwrt-config.py`: FastMCP tool `backup_openwrt` pulls and SOPS-encrypts OpenWrt `/etc/config/`.
   - `mcp/homelab/scripts/sync-wireshark-capture-script.py`: FastMCP tool `sync_wireshark_capture` archives headless capture scripts from `luna-server` (VM 102) into Stack 48.
 
-
+## Araknis 520 Router REST API — Technical Reference
+- **Auth Mechanism**: HTTP Basic Auth via `GET /api/cgi-bin/v1/authorize` with `Authorization: Basic base64(user:pass)` header. Returns `302` on success, `401` on failure. NO session cookies — send the `Authorization` header on every request.
+- **Base URL**: `http://192.168.1.1/api/cgi-bin/v1/`
+- **Discovery method**: Chrome DevTools XHR/fetch breakpoint on "authorize" while logging in revealed the React SPA sends `GET` (not `POST`) with Basic Auth header, not form data.
+- **Backup format**: `GET /command/export-config` returns HTTP `201` with a base64-encoded OpenSSL-encrypted config blob (`Salted__` prefix). Restore via `POST /command/restore-config` with the blob as body.
+- **Known working endpoints**: `/config/lan/subnets`, `/config/wan`, `/status/wan`, `/status/ports`, `/status/system/system-information`, `/status/system/stats`, `/config/firewall`, `/config/lan/dhcp-reservation`, `/config/acls`, `/command/export-config`, `/command/restore-config`.
+- **Timed-out endpoints (avoid)**: `/config/firewall/interzone` — hangs indefinitely, use 2s timeout.
+- **VLAN DNS**: All 8 VLANs use `192.168.40.185` (nexus-server AdGuard) and `192.168.40.186` (nexus-server2 AdGuard) as DHCP-assigned DNS servers.
+- **Config backup file**: `infrastructure/network/configs/araknis-520-backup.cfg` (19K encrypted blob).
