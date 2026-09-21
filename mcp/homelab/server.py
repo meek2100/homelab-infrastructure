@@ -324,7 +324,28 @@ def power_cycle_switch_poe_port(port: str) -> str:
     """Power cycles PoE power on an Araknis 920 switch port (e.g. '1/0/3' to reboot an AP or camera)."""
     return run_script("manage-araknis-switch.py", ["poe-cycle", port])
 
+@mcp.tool()
+def backup_araknis_router() -> str:
+    """Exports the Araknis 520 router full configuration via REST API and saves to infrastructure/network/configs/araknis-520-backup.cfg."""
+    return run_script("manage-araknis-router.py", ["backup"])
+
+@mcp.tool()
+def get_araknis_router_status() -> str:
+    """Queries the Araknis 520 router REST API for system info, WAN status, LAN subnets, DHCP reservations, and firewall config."""
+    return run_script("manage-araknis-router.py", ["status"])
+
+@mcp.tool()
+def restore_araknis_router(backup_file: str = "") -> str:
+    """Restores the Araknis 520 router configuration from a blueprint file via REST API. Uses the default backup if backup_file is empty."""
+    args = ["restore"]
+    if backup_file:
+        args += ["--backup-file", backup_file]
+    return run_script("manage-araknis-router.py", args)
+
 if __name__ == "__main__":
     mcp.run()
+
+
+
 
 
