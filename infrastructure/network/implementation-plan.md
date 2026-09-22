@@ -176,14 +176,67 @@ The Araknis 830 AP 5GHz wireless bridge strips 802.1Q tags across the link to th
 
 ### Blocker: NSDP Requires Layer 2 Local Execution
 
-The GS108Ev2 has **no HTTP REST API**. It uses **NSDP (Netgear Switch Discovery Protocol)** — a proprietary Layer 2 UDP broadcast protocol on ports **63321 / 63322**. NSDP does not route across Layer 3 boundaries.
+The GS108Ev2 has **no HTTP REST API, no SSH, and no web UI**. It uses **NSDP (Netgear Switch Discovery Protocol)** — a proprietary Layer 2 UDP broadcast protocol on ports **63321 (client) / 63322 (switch)**. NSDP frames rely on local MAC broadcast and do not route across Layer 3 boundaries.
 
-The MCP server runs on a remote host. `manage-netgear-switch.py` must run on a host **physically on VLAN 1 (`192.168.1.0/24`)**.
+The MCP server runs on an external/routed host. `manage-netgear-switch.py` must run on a host **physically on VLAN 1 (`192.168.1.0/24`)**.
 
-**Resolution options (choose one):**
+**Resolution options:**
 1. **SSH-exec wrapper** *(recommended)*: Update `backup_netgear_switch` in `server.py` to SSH into `pve` (`192.168.1.250`) and run `manage-netgear-switch.py` there using the repo's `.venv`.
 2. **Manual execution**: SSH into `pve` directly and run `.venv/bin/python3 mcp/homelab/scripts/manage-netgear-switch.py backup`.
-3. **VM-based agent**: Deploy a lightweight agent inside `nexus-server` or `vxlan-server` (both on VLAN 1) that proxies NSDP requests.
+3. **VM-based agent / proxy**: Deploy a lightweight daemon inside `nexus-server` or `vxlan-server` (both on VLAN 1) that proxies NSDP requests or provides a local REST API endpoint.
+
+---
+
+### 🔬 Technical Learnings & Driver Comparison
+
+#### 1. `netgear-tool` ([GitHub: s-t-e-f-a-n-o/netgear-tool](https://github.com/s-t-e-f-a-n-o/netgear-tool)) — Primary Driver
+* **Protocol Implementation**: Pure Python communicating directly over raw NSDP sockets (UDP 63321/63322).
+* **Capabilities**:
+  * System info extraction (Model, Firmware, MAC, IP, Gateway).
+  * Port settings (enable state, speed configured, actual negotiated speed, duplex).
+  * Port statistics (bytes RX, bytes TX, CRC error counters for cable diagnostic).
+  * 802.1Q VLAN IDs and per-port VLAN membership tables.
+  * PVIDs (Port VLAN IDs).
+  * Advanced L2 features: rate limiting, IGMP snooping, port mirroring, loop detection, power saving, QoS mode, broadcast storm filtering.
+* **Architecture**: Clean context manager (`with sw: ...`) managing socket lifecycle. Converts internal dataclasses and `IntEnum` objects neatly to JSON.
+* **Learnings**: The most comprehensive and reliable library for full configuration extraction and backup of the GS108Ev2.
+
+#### 2. `py-netgear-plus` ([GitHub: foxey/py-netgear-plus](https://github.com/foxey/py-netgear-plus)) — Fallback Driver
+* **Protocol Implementation**: Python client designed primarily for the Home Assistant Netgear Plus custom integration.
+* **Capabilities**: Automatic model detection (`autodetect_model()`), switch information retrieval (`get_switch_infos()`), and port status.
+* **Learnings**: Useful as a secondary fallback for basic switch metadata, but lacks granular L2 features (such as CRC error counters, deep 802.1Q membership mapping, and granular rate limits) found in `netgear-tool`.
+
+---
+
+### 📚 Candidate Repositories for Investigation
+
+To eliminate dependency on the proprietary Windows 11 Netgear ProSAFE Plus Configuration Utility, the following open-source NSDP projects have been identified for deep-dive investigation:
+
+1. **[`nccgroup/nsdp-discover`](https://github.com/nccgroup/nsdp-discover)**
+   * **Language**: Python
+   * **Focus**: Discovery, credential testing, and security assessment of Netgear NSDP switches by NCC Group.
+   * **Value**: Excellent reference for NSDP opcode dissection, protocol frame structure, authentication exchange verification, and edge-case behavior.
+
+2. **[`AlbanBedel/libnsdp`](https://github.com/AlbanBedel/libnsdp)**
+   * **Language**: C
+   * **Focus**: Clean C library and CLI utilities for Netgear Switch Discovery Protocol.
+   * **Value**: High-performance, zero-runtime-overhead reference implementation. Ideal for cross-compiling directly for OpenWrt (Belkin AX3200 on `192.168.1.226`) or embedding into low-footprint Linux containers.
+
+3. **[`yaamai/go-nsdp`](https://github.com/yaamai/go-nsdp)**
+   * **Language**: Go
+   * **Focus**: Go package implementing the NSDP protocol.
+   * **Value**: Enables building a standalone single-binary CLI or background daemon (e.g. an NSDP-to-REST bridge or a Netgear Prometheus exporter) that can run directly on Proxmox (`pve`) or OpenWrt without Python virtual environments or runtime dependencies.
+
+---
+
+### 🛠️ Non-Windows Automation & Configuration Pathways
+
+| Strategy | Mechanism | Pros | Cons |
+| :--- | :--- | :--- | :--- |
+| **A. SSH-Exec to PVE** | MCP script SSHs to `pve` (`192.168.1.250`) and runs `manage-netgear-switch.py` in repo `.venv` | Zero new services; uses existing Python tooling | Requires SSH key auth between MCP host and PVE |
+| **B. OpenWrt Native Binary** | Compile `libnsdp` or `go-nsdp` into a standalone binary deployed to OpenWrt (`192.168.1.226`) | Runs directly adjacent to GS108E switch; independent of Proxmox | Requires cross-compilation pipeline for OpenWrt target architecture |
+| **C. Lightweight Go REST Micro-Daemon** | Run a small Go daemon (`go-nsdp`) on `nexus-server` or `pve` exposing a local REST API (`/status`, `/backup`, `/config`) | Eliminates L2 broadcast limitations for remote MCP tools | Requires maintaining a small service container |
+| **D. NSDP UDP Proxy / Relay** | Forward UDP 63321/63322 packets between remote MCP host and VLAN 1 | Keeps tooling remote | NSDP packet formatting expects matching subnet semantics; prone to timeout issues |
 
 ---
 
