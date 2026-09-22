@@ -85,8 +85,8 @@ def load_credentials():
         data = yaml.safe_load(result.stdout)
         password = data.get("password")
         user = data.get("username", user)
-        # Secret file has switch_ip; router is always 192.168.1.1
-        host = DEFAULT_ROUTER_IP
+        # Secret file has switch_ip; router IP auto-detected across VLANs
+        host = os.environ.get("ARAKNIS_HOST") or probe_router_host()
 
     if not password:
         raise RuntimeError(
@@ -95,6 +95,21 @@ def load_credentials():
         )
 
     return host, user, password
+
+
+def probe_router_host(candidates=None):
+    """Probe candidate router interface IPs to find the reachable gateway."""
+    import socket
+    candidates = candidates or ["192.168.10.1", "192.168.1.1", "192.168.40.1"]
+    for ip in candidates:
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.settimeout(0.5)
+                if sock.connect_ex((ip, 80)) == 0:
+                    return ip
+        except Exception:
+            pass
+    return DEFAULT_ROUTER_IP
 
 
 def create_session(host, user, password):
@@ -126,6 +141,16 @@ def api_get(s, host, path, timeout=10):
     resp = s.get(url, timeout=timeout)
     resp.raise_for_status()
     return resp.json()
+
+
+def api_put(s, host, path, data, timeout=15):
+    url = f"http://{host}{BASE_PATH}{path}"
+    resp = s.put(url, json=data, timeout=timeout)
+    resp.raise_for_status()
+    try:
+        return resp.json()
+    except Exception:
+        return {"status_code": resp.status_code, "text": resp.text}
 
 
 def cmd_status(s, host):
@@ -210,15 +235,29 @@ def cmd_backup(s, host):
 
 
 def cmd_dhcp_table(s, host):
-    """List all DHCP reservations and active leases."""
+    """List all DHCP reservations and active client leases."""
     results = {}
     for key, path in [("reservations", "/config/lan/dhcp-reservation"),
-                       ("active_leases", "/status/lan/dhcp-leases")]:
+                       ("clients_services", "/status/clients-services")]:
         try:
             results[key] = api_get(s, host, path)
         except Exception as e:
             results[key] = {"error": str(e)}
     return {"status": "success", "dhcp": results}
+
+
+def cmd_get_acls(s, host):
+    """Retrieve current ACL configuration and services."""
+    data = api_get(s, host, "/config/acls")
+    return {"status": "success", "acls": data}
+
+
+def cmd_apply_acls(s, host, payload_file):
+    """Apply ACL configuration from a JSON file."""
+    with open(payload_file, "r") as f:
+        payload = json.load(f)
+    resp = api_put(s, host, "/config/acls", payload)
+    return {"status": "success", "response": resp}
 
 
 def cmd_restore(s, host, backup_file=None):
@@ -243,8 +282,9 @@ def cmd_restore(s, host, backup_file=None):
 
 def main():
     parser = argparse.ArgumentParser(description="Araknis 520 Router REST API Management Tool")
-    parser.add_argument("action", choices=["backup", "status", "dhcp-table", "restore"])
+    parser.add_argument("action", choices=["backup", "status", "dhcp-table", "get-acls", "apply-acls", "restore"])
     parser.add_argument("--backup-file", help="Path to backup file (for restore)")
+    parser.add_argument("--payload-file", help="Path to JSON file containing {aclConfig, serviceManagement} (for apply-acls)")
     parser.add_argument("--json", action="store_true", help="Output raw JSON")
     args = parser.parse_args()
 
@@ -259,6 +299,12 @@ def main():
             result = cmd_status(s, host)
         elif args.action == "dhcp-table":
             result = cmd_dhcp_table(s, host)
+        elif args.action == "get-acls":
+            result = cmd_get_acls(s, host)
+        elif args.action == "apply-acls":
+            if not args.payload_file:
+                raise ValueError("--payload-file required for apply-acls")
+            result = cmd_apply_acls(s, host, args.payload_file)
         elif args.action == "restore":
             result = cmd_restore(s, host, args.backup_file)
 

@@ -16,8 +16,8 @@ TARGETS = [
     {"name": "pve2 (AK34Pro Mini PC)", "ip": "192.168.1.240", "tcp": [22, 8006], "category": "Hypervisor"},
     {"name": "pve3 (HP EliteDesk)", "ip": "192.168.1.245", "tcp": [22, 8006], "category": "Hypervisor"},
 
-    # Core Network Hardware (VLAN 1)
-    {"name": "Araknis 520 Core Router", "ip": "192.168.1.1", "tcp": [80, 443], "category": "Network Infrastructure"},
+    # Core Network Hardware (VLAN 1 / VLAN 10)
+    {"name": "Araknis 520 Core Router", "ip": "192.168.10.1", "tcp": [80], "category": "Network Infrastructure"},
     {"name": "Araknis 920 Switch", "ip": "192.168.1.215", "tcp": [80, 443], "category": "Network Infrastructure"},
     {"name": "Araknis 830 AP 1 (Master)", "ip": "192.168.1.231", "tcp": [80, 443], "category": "Wireless Infrastructure"},
     {"name": "Araknis 830 AP 2 (Core)", "ip": "192.168.1.236", "tcp": [80, 443], "category": "Wireless Infrastructure"},
@@ -40,6 +40,9 @@ TARGETS = [
     {"name": "OpenMediaVault Data (SAN)", "ip": "10.25.25.248", "tcp": [445], "category": "Private Storage Network"},
     {"name": "discovery-server (SAN)", "ip": "10.25.25.246", "tcp": [22], "category": "Private Storage Network"},
     {"name": "Control4 Core Controller (core5)", "ip": "192.168.10.200", "tcp": [80, 443], "category": "Automation Controller"},
+
+    # IoT Network Devices (VLAN 30)
+    {"name": "mainsail (3D Printer Klipper)", "ip": "192.168.30.90", "tcp": [22, 80, 7125], "category": "IoT Device"},
 ]
 
 def ping_host(ip, timeout=1):
