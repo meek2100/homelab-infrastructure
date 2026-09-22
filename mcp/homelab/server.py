@@ -342,6 +342,22 @@ def restore_araknis_router(backup_file: str = "") -> str:
         args += ["--backup-file", backup_file]
     return run_script("manage-araknis-router.py", args)
 
+@mcp.tool()
+def backup_netgear_switch(ip: str = "192.168.1.220") -> str:
+    """Backs up Netgear GS108Ev2 switch configuration (system info, ports, VLANs, IGMP, rate limits) into infrastructure/network/configs/."""
+    args = ["backup"]
+    if ip != "192.168.1.220":
+        args.extend(["--ip", ip])
+    return run_script("manage-netgear-switch.py", args)
+
+@mcp.tool()
+def get_netgear_switch_status(ip: str = "192.168.1.220") -> str:
+    """Queries live Netgear GS108Ev2 switch ports, link speed, packet counters, and CRC error statistics."""
+    args = ["status"]
+    if ip != "192.168.1.220":
+        args.extend(["--ip", ip])
+    return run_script("manage-netgear-switch.py", args)
+
 if __name__ == "__main__":
     mcp.run()
 
