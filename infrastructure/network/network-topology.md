@@ -90,6 +90,10 @@ This document details the physical hardware, virtual bridges, dual-WAN egress pa
 * **Netgear Office Switch**:
   * **Management IP**: `192.168.1.220` (VLAN 1)
   * **Role**: Local desktop distribution switch connecting office PCs, printers, and test benches to the OpenWrt router.
+  * **⚠️ No Official API or CLI**: The GS108Ev2 is a Netgear "Easy Smart" switch with **no HTTP REST API, no SSH, and no official programmatic interface**. It is exclusively managed via the **Netgear ProSAFE Plus Configuration Utility** (Windows/macOS desktop app).
+  * **Protocol**: The ProSAFE utility communicates over a **proprietary Layer 2 protocol — NSDP (Netgear Switch Discovery Protocol)** — using UDP broadcast/unicast on **ports 63321 and 63322**. Standard HTTP/TCP requests cannot reach the switch management interface.
+  * **Community Tooling**: The MCP tools (`backup_netgear_switch`, `get_netgear_switch_status`) use the open-source community libraries [`netgear-tool`](https://github.com/s-t-e-f-a-n-o/netgear-tool) and [`py-netgear-plus`](https://github.com/foxey/py-netgear-plus) which reverse-engineer the NSDP protocol. These libraries **must run on the same Layer 2 broadcast domain as the switch** (VLAN 1 / `192.168.1.0/24`) since NSDP does not route across Layer 3 boundaries.
+
 
 ---
 

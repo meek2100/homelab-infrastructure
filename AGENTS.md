@@ -72,7 +72,7 @@
   - `infrastructure/network/network-topology.md`: Dual-WAN topology (WAN1 house LAN, WAN2 `10.25.25.0/24` egress for `discovery-server`), Araknis 520 router, 920 switch, 830 APs, and DNS split-horizon.
   - `mcp/homelab/scripts/manage-araknis-switch.py`: FastMCP tools `backup_araknis_switch`, `get_araknis_switch_status`, `power_cycle_switch_poe_port` via interactive FASTPATH SSH automation.
   - `mcp/homelab/scripts/manage-araknis-router.py`: FastMCP tools `backup_araknis_router`, `get_araknis_router_status`, `restore_araknis_router` via authenticated REST API (`/api/cgi-bin/v1/`).
-  - `mcp/homelab/scripts/manage-netgear-switch.py`: FastMCP tools `backup_netgear_switch`, `get_netgear_switch_status` via HTTP web UI automation (`netgear-tool` and `py-netgear-plus`).
+  - `mcp/homelab/scripts/manage-netgear-switch.py`: FastMCP tools `backup_netgear_switch`, `get_netgear_switch_status` via community NSDP drivers (`netgear-tool` and `py-netgear-plus`). **Note: The GS108Ev2 has NO official API or CLI.** It is an "Easy Smart" switch designed only for the Netgear ProSAFE Plus Configuration Utility, which uses a proprietary Layer 2 UDP protocol (NSDP — Netgear Switch Discovery Protocol, ports 63321/63322). The community drivers reverse-engineer NSDP; they do NOT use HTTP/REST.
   - `mcp/homelab/scripts/backup-openwrt-config.py`: FastMCP tool `backup_openwrt` pulls and SOPS-encrypts OpenWrt `/etc/config/`.
   - `mcp/homelab/scripts/sync-wireshark-capture-script.py`: FastMCP tool `sync_wireshark_capture` archives headless capture scripts from `luna-server` (VM 102) into Stack 48.
 

@@ -4,6 +4,25 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 
 ---
 
+## 📈 Progress Summary — Last Updated 2026-09-22
+
+| Part | Title | Status |
+| :--- | :--- | :---: |
+| **Part 1** | Core Router & Switch ACL Configuration (21 rules) | ✅ 100% Verified |
+| **Part 2** | End-to-End Verification & Testing Runbook (5 tests) | ✅ 100% Verified |
+| **Part 2.5** | Multicast & Discovery Architecture (Native NSDP/mDNS) | ✅ Settled |
+| **Part 2.6** | WAN2 & Storage SAN Isolation (untagged vmbr1) | ✅ Settled |
+| **Part 2.7** | vxlan-server Split Trunking Architecture (VM 107) | ✅ Designed — `vxlan-server` on standby, tested |
+| **Part 2.8** | Netgear GS108Ev2 Office Switch GitOps & Backup | 🟡 In Progress — SOPS secrets stored; NSDP tooling installed in `.venv`; **MCP backup cannot run remotely** (requires L2-local host on VLAN 1) |
+| **Part 3** | Unified Monitoring, SNMP & Observability (Grafana stack) | ⏳ Pending — not yet deployed |
+
+### Key Protocol Constraints Discovered This Session
+- **Netgear GS108Ev2** — No HTTP REST API. Uses **NSDP** (Layer 2 UDP, ports 63321/63322). The `backup_netgear_switch` / `get_netgear_switch_status` MCP tools **must execute from a host physically on VLAN 1** (`192.168.1.0/24`). Running from a remote routed host will always time out. To resolve: add SSH-exec wrapper invoking `manage-netgear-switch.py` on `pve` (192.168.1.250) or `nexus-server`.
+
+---
+
+
+
 ## 🏛️ Empirical Network Architecture & IP Reference
 
 | Equipment | Model | IP Address | Subnet / VLAN | Role | Status |
@@ -13,7 +32,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **AP 1 (Master)**| Araknis 830 Wi-Fi 7 | `192.168.1.231` | VLAN 1 (Management) | Broadcasts SSIDs + Wired Master for 5GHz PTP Bridge | 🟢 Active |
 | **AP 2 (Core)** | Araknis 830 Wi-Fi 7 | `192.168.1.236` | VLAN 1 (Management) | Broadcasts SSIDs (Ch 1 / 149 / 69) | 🟢 Active |
 | **AP 3 (Bridge)**| Araknis 830 Wi-Fi 7 | `192.168.1.237` | VLAN 1 (Management) | Dedicated Wireless Bridge Client (Insomniac_Bridge) | 🟢 Active |
-| **Office Switch**| Netgear GS108Ev2 | `192.168.1.220` | VLAN 1 (Management) | Desktop distribution switch behind OpenWrt | 🟢 Active |
+| **Office Switch**| Netgear GS108Ev2 | `192.168.1.220` | VLAN 1 (Management) | Desktop distribution switch behind OpenWrt — **No official API/CLI; managed via NSDP (UDP 63321/63322)** | 🟢 Active |
 | **Office Router**| Belkin AX3200 (OpenWrt) | `192.168.1.226` / `10.99.99.1` | VLAN 1 & VLAN 150 | 3-Priority Failover (Wire, VXLAN 150, Wi-Fi repeater) | 🟢 Active |
 | **WAN2 Router** | Asus RT-N66U (DD-WRT Aurora)| `10.25.25.1` & `10.20.20.2` | WAN2 / `10.25.25.0/24` | Torrent/discovery isolation with PIA VPN auto-watchdog | 🟢 Active |
 | **Upstream GW** | DD-WRT Luna | `10.20.20.1` | `10.20.20.0/24` | Upstream transit gateway (firewalled from WAN) | 🟢 Active |
@@ -143,7 +162,35 @@ The Araknis 830 AP 5GHz wireless bridge strips 802.1Q tags across the link to th
 
 ---
 
+## 🔌 Part 2.8: Netgear GS108Ev2 Office Switch — GitOps Backup Status
+
+### Current State: 🟡 In Progress
+
+| Item | Status |
+| :--- | :---: |
+| SOPS-encrypted credentials saved to `infrastructure/secrets/araknis-switch.enc.yaml` | ✅ Done |
+| Community NSDP drivers installed (`netgear-tool`, `py-netgear-plus`) in repo `.venv` | ✅ Done |
+| `manage-netgear-switch.py` script authored with `status` and `backup` actions | ✅ Done |
+| FastMCP tools `backup_netgear_switch` / `get_netgear_switch_status` registered in `server.py` | ✅ Done |
+| Live backup executed & `netgear-gs108e-backup.json` committed to repo | ❌ Blocked |
+
+### Blocker: NSDP Requires Layer 2 Local Execution
+
+The GS108Ev2 has **no HTTP REST API**. It uses **NSDP (Netgear Switch Discovery Protocol)** — a proprietary Layer 2 UDP broadcast protocol on ports **63321 / 63322**. NSDP does not route across Layer 3 boundaries.
+
+The MCP server runs on a remote host. `manage-netgear-switch.py` must run on a host **physically on VLAN 1 (`192.168.1.0/24`)**.
+
+**Resolution options (choose one):**
+1. **SSH-exec wrapper** *(recommended)*: Update `backup_netgear_switch` in `server.py` to SSH into `pve` (`192.168.1.250`) and run `manage-netgear-switch.py` there using the repo's `.venv`.
+2. **Manual execution**: SSH into `pve` directly and run `.venv/bin/python3 mcp/homelab/scripts/manage-netgear-switch.py backup`.
+3. **VM-based agent**: Deploy a lightweight agent inside `nexus-server` or `vxlan-server` (both on VLAN 1) that proxies NSDP requests.
+
+---
+
 ## 📊 Part 3: Unified Monitoring, SNMP & Observability Roadmap
+
+> **Status: ⏳ Pending — not yet deployed.**
+> Prerequisite: All Part 2.x backup & GitOps tasks should be settled before standing up the observability stack to avoid configuration drift.
 
 * **Host**: `nexus-server` (`192.168.40.185`).
 * **Components**:
@@ -153,3 +200,4 @@ The Araknis 830 AP 5GHz wireless bridge strips 802.1Q tags across the link to th
   * `pve-exporter`: Proxmox QEMU VM and LXC storage/CPU metrics.
   * `prometheus`: Central TSDB (30-day retention).
   * `grafana`: Unified homelab dashboard.
+

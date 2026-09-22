@@ -1,12 +1,28 @@
 #!/usr/bin/env python3
 """
 Netgear GS108Ev2 Switch Management & Automation Tool
-Interacts with the Netgear GS108Ev2 switch (192.168.1.220) via HTTP web management interface.
+
+IMPORTANT — No Official API or CLI:
+  The GS108Ev2 is a Netgear "Easy Smart" switch with NO official HTTP REST API, SSH, or CLI.
+  It is exclusively managed by the Netgear ProSAFE Plus Configuration Utility (Windows/macOS
+  desktop app), which uses NSDP (Netgear Switch Discovery Protocol) — a proprietary Layer 2
+  UDP broadcast protocol on ports 63321 and 63322. Standard HTTP connections will always time out.
+
+  To interact programmatically, this script uses community open-source libraries that
+  reverse-engineer NSDP:
+    - netgear-tool   (primary driver, communicates via raw NSDP packets)
+    - py-netgear-plus (fallback driver)
+
+  REQUIREMENT: This script MUST run on a host in the same Layer 2 broadcast domain as the
+  switch (VLAN 1 / 192.168.1.0/24). NSDP packets do not route across Layer 3 boundaries.
+  Running this from a remote host over a routed connection will NOT work.
+
 Supports:
   - Configuration backup (system metadata, port configurations, VLANs, IGMP, rate limits)
   - Port status and operational health inspection (link speed, packet counters, CRC errors)
   - Integration with SOPS-encrypted credentials
 """
+
 
 import argparse
 import json
@@ -114,8 +130,13 @@ def connect_switch(host, password, timeout=10.0):
     raise RuntimeError(
         f"Unable to connect to Netgear switch at {host}. Attempted drivers failed:\n"
         + "\n".join(f"  - {err}" for err in errors)
-        + "\n\nNote: If the switch is only accessible via ProSAFE Plus Utility, ensure 'Switch Management Mode' "
-        "is set to 'Web browser and Plus Utility' in the utility."
+        + "\n\nDiagnostic: The GS108Ev2 uses NSDP (Netgear Switch Discovery Protocol) — a proprietary "
+        "Layer 2 UDP protocol on ports 63321/63322. There is NO HTTP REST API.\n"
+        "Common causes of failure:\n"
+        "  1. This host is NOT on the same Layer 2 broadcast domain as the switch (VLAN 1 / 192.168.1.0/24). "
+        "NSDP does not route — run this script from a host directly on VLAN 1.\n"
+        "  2. The switch is powered off or unreachable at the given IP.\n"
+        "  3. The community NSDP library is not installed: run 'pip install netgear-tool py-netgear-plus'."
     )
 
 
