@@ -1,0 +1,31 @@
+sudo nano /etc/network/interfaces# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+# The primary network interface (now part of the bridge)
+auto ens18
+iface ens18 inet manual
+    # No IP address on ens18 directly
+
+# The bridge interface
+auto br0
+iface br0 inet dhcp
+    bridge-ports ens18 vxlan42
+    bridge-stp off
+    bridge-fd 0
+
+# VXLAN Interface - Currently managed by systemd with vxlan42.service
+#auto vxlan42
+#iface vxlan42 inet manual
+#    type vxlan
+#    vxlan-id 42
+#    vxlan-local-dev ens18
+#    vxlan-remoteip 192.168.1.225
+#    vxlan-port 4789
+#    post-up ip link set $IFACE up
+#    pre-up modprobe vxlan

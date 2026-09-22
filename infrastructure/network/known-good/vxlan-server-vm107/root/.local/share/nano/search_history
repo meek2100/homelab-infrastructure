@@ -1,0 +1,8 @@
+logger -t vxlan-nm "$*"
+DST
+DST_PORT
+PubkeyAuthentication
+AuthorizedKeysFile
+
+
+

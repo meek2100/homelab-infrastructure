@@ -1,0 +1,15 @@
+config igmpproxy
+	option quickleave 1
+#	option verbose [0-3](none, minimal[default], more, maximum)
+
+config phyint
+    option network wlan
+    option zone wan
+    option role upstream
+    option disable 0
+
+config phyint
+    option network lan
+    option zone lan
+    option role downstream
+    option disable 0

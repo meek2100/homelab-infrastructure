@@ -1,0 +1,20 @@
+{
+  "ip": "192.168.1.226",
+  "user": "root",
+  "distribution": "'OpenWrt 24.10.0 r28427-6df0e3d02a'",
+  "config_count": 12,
+  "modules": [
+    "dhcp",
+    "dropbear",
+    "firewall",
+    "igmpproxy",
+    "luci",
+    "network",
+    "rpcd",
+    "system",
+    "ubihealthd",
+    "ubootenv",
+    "uhttpd",
+    "wireless"
+  ]
+}
