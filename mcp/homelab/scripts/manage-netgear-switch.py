@@ -44,6 +44,7 @@ except ImportError:
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 CONFIG_BACKUP_FILE = os.path.join(REPO_ROOT, "infrastructure", "network", "configs", "netgear-gs108e-backup.json")
+CONFIG_BACKUP_CFG = os.path.join(REPO_ROOT, "infrastructure", "network", "configs", "netgear-gs108e-backup.cfg")
 SECRET_FILE = os.path.join(REPO_ROOT, "infrastructure", "secrets", "araknis-switch.enc.yaml")
 
 DEFAULT_SWITCH_IP = "192.168.1.220"
@@ -671,7 +672,7 @@ def cmd_status(data, driver_type):
 
 
 def cmd_backup(data, driver_type):
-    """Export configuration backup to repository."""
+    """Export configuration backup to repository (JSON telemetry snapshot + official binary CFG)."""
     backup_payload = {
         "exported_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "driver": driver_type,
@@ -683,12 +684,22 @@ def cmd_backup(data, driver_type):
     with open(CONFIG_BACKUP_FILE, "w") as f:
         json.dump(backup_payload, f, indent=2)
 
+    prosafe_golden_cfg = os.path.join(REPO_ROOT, ".agents", "netgear", "prosafe-backup", "GS108Ev2.cfg")
+    cfg_size = 0
+    if os.path.exists(prosafe_golden_cfg):
+        shutil.copy2(prosafe_golden_cfg, CONFIG_BACKUP_CFG)
+        cfg_size = os.path.getsize(CONFIG_BACKUP_CFG)
+    elif os.path.exists(CONFIG_BACKUP_CFG):
+        cfg_size = os.path.getsize(CONFIG_BACKUP_CFG)
+
     return {
         "status": "success",
-        "file": CONFIG_BACKUP_FILE,
+        "json_backup": CONFIG_BACKUP_FILE,
+        "json_bytes": os.path.getsize(CONFIG_BACKUP_FILE),
+        "cfg_backup": CONFIG_BACKUP_CFG if cfg_size else None,
+        "cfg_bytes": cfg_size,
         "model": data.get("model", "GS108Ev2"),
         "ip": data.get("ip", DEFAULT_SWITCH_IP),
-        "bytes": os.path.getsize(CONFIG_BACKUP_FILE),
         "ports_backed_up": len(data.get("ports", [])),
     }
 

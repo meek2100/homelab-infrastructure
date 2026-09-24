@@ -1,0 +1,168 @@
+{
+  "exported_at": "2026-09-24T23:09:04Z",
+  "driver": "openwrt_l2_relay",
+  "protocol": "NSDP",
+  "switch_config": {
+    "mac": "84:1b:5e:98:f1:f4",
+    "ip": "192.168.1.220",
+    "raw_hex": "0102000000000000e89f8050582f841b5e98f1f40000c79e4e534450000000000001000847533130384576320002000200000003000000040006841b5e98f1f40005000000060004c0a801dc00070004ffffff0000080004c0a80101000b000100000c000101000d0007312e30302e3132000e0000000f00010174000008000000087ffcffff0c0000030105010c0000030205010c0000030300010c0000030405010c0000030504010c0000030605010c0000030704010c0000030805011000003101000000020c7733e60000000345108781000000000000000000000000000000000000000000000000000000000000000010000031020000000001099a2b000000009c4256d100000000000000000000000000000000000000000000000000000000000000001000003103000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000310400000000192b555300000000c0e43fbf000000000000000000000000000000000000000000000000000000000000000010000031050000000000562f2c000000009ccfbe660000000000000000000000000000000000000000000000000000000000000003100000310600000000242864df00000000d205871c0000000000000000000000000000000000000000000000000000000000000000100000310700000000031891d0000000008d3f23290000000000000000000000000000000000000000000000000000000000000000100000310800000003d6eda5f6000000024e7342260000000000000000000000000000000000000000000000000000000000000000600000010878000015013030313131313131313131313100001c201000a2ffff0000",
+    "parsed_tags": [
+      "0x1",
+      "0x2",
+      "0x3",
+      "0x4",
+      "0x5",
+      "0x6",
+      "0x7",
+      "0x8",
+      "0xb",
+      "0xc",
+      "0xd",
+      "0xe",
+      "0xf",
+      "0x7400",
+      "0x6000",
+      "0x7800"
+    ],
+    "model": "GS108Ev2",
+    "device_name": "",
+    "netmask": "255.255.255.0",
+    "gateway": "192.168.1.1",
+    "firmware": "1.00.12",
+    "firmware_bank2": "",
+    "serial_number": "\u00010011111111111\u0000\u0000\u001c \u0010",
+    "port_count": 8,
+    "ports": [
+      {
+        "port": 1,
+        "link_up": true,
+        "speed_act": "1000 Mbps Full",
+        "duplex": "Full",
+        "enabled": true
+      },
+      {
+        "port": 2,
+        "link_up": true,
+        "speed_act": "1000 Mbps Full",
+        "duplex": "Full",
+        "enabled": true
+      },
+      {
+        "port": 3,
+        "link_up": false,
+        "speed_act": "No Link",
+        "duplex": "Full",
+        "enabled": true
+      },
+      {
+        "port": 4,
+        "link_up": true,
+        "speed_act": "1000 Mbps Full",
+        "duplex": "Full",
+        "enabled": true
+      },
+      {
+        "port": 5,
+        "link_up": true,
+        "speed_act": "100 Mbps Full",
+        "duplex": "Full",
+        "enabled": true
+      },
+      {
+        "port": 6,
+        "link_up": true,
+        "speed_act": "1000 Mbps Full",
+        "duplex": "Full",
+        "enabled": true
+      },
+      {
+        "port": 7,
+        "link_up": true,
+        "speed_act": "100 Mbps Full",
+        "duplex": "Full",
+        "enabled": true
+      },
+      {
+        "port": 8,
+        "link_up": true,
+        "speed_act": "1000 Mbps Full",
+        "duplex": "Full",
+        "enabled": true
+      }
+    ],
+    "port_statistics": [
+      {
+        "port": 1,
+        "bytes_rx": 8799073254,
+        "bytes_tx": 14043613057,
+        "packets_rx": 0,
+        "packets_tx": 0,
+        "crc_errors": 0,
+        "drops": 0
+      },
+      {
+        "port": 2,
+        "bytes_rx": 17406507,
+        "bytes_tx": 2621593297,
+        "packets_rx": 0,
+        "packets_tx": 0,
+        "crc_errors": 0,
+        "drops": 0
+      },
+      {
+        "port": 3,
+        "bytes_rx": 0,
+        "bytes_tx": 0,
+        "packets_rx": 0,
+        "packets_tx": 0,
+        "crc_errors": 0,
+        "drops": 0
+      },
+      {
+        "port": 4,
+        "bytes_rx": 422270291,
+        "bytes_tx": 3236183999,
+        "packets_rx": 0,
+        "packets_tx": 0,
+        "crc_errors": 0,
+        "drops": 0
+      },
+      {
+        "port": 5,
+        "bytes_rx": 5648172,
+        "bytes_tx": 2630860390,
+        "packets_rx": 0,
+        "packets_tx": 0,
+        "crc_errors": 0,
+        "drops": 3
+      },
+      {
+        "port": 6,
+        "bytes_rx": 606627039,
+        "bytes_tx": 3523577628,
+        "packets_rx": 0,
+        "packets_tx": 0,
+        "crc_errors": 0,
+        "drops": 0
+      },
+      {
+        "port": 7,
+        "bytes_rx": 51941840,
+        "bytes_tx": 2369725225,
+        "packets_rx": 0,
+        "packets_tx": 0,
+        "crc_errors": 0,
+        "drops": 0
+      },
+      {
+        "port": 8,
+        "bytes_rx": 16490800630,
+        "bytes_tx": 9906111014,
+        "packets_rx": 0,
+        "packets_tx": 0,
+        "crc_errors": 0,
+        "drops": 0
+      }
+    ]
+  }
+}

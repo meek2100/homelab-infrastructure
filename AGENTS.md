@@ -72,10 +72,10 @@
   - `infrastructure/network/network-topology.md`: Dual-WAN topology (WAN1 house LAN, WAN2 `10.25.25.0/24` egress for `discovery-server`), Araknis 520 router, 920 switch, 830 APs, and DNS split-horizon.
   - `mcp/homelab/scripts/manage-araknis-switch.py`: FastMCP tools `backup_araknis_switch`, `get_araknis_switch_status`, `power_cycle_switch_poe_port` via interactive FASTPATH SSH automation.
   - `mcp/homelab/scripts/manage-araknis-router.py`: FastMCP tools `backup_araknis_router`, `get_araknis_router_status`, `restore_araknis_router` via authenticated REST API (`/api/cgi-bin/v1/`).
-  - `mcp/homelab/scripts/manage-netgear-switch.py`: FastMCP tools `backup_netgear_switch`, `get_netgear_switch_status` via native headless NSDP protocol driver. Accompanied by helper wrappers `mcp/homelab/scripts/probe-netgear-l2.sh` and `mcp/homelab/scripts/inspect-nsdp-live.sh`. Complete execution guide in `.agents/NETWORK_AUTOMATION_RUNBOOK.md`.
+  - `mcp/homelab/scripts/manage-netgear-switch.py`: FastMCP tools `backup_netgear_switch`, `get_netgear_switch_status` via native headless NSDP protocol driver. Accompanied by helper wrappers `mcp/homelab/scripts/probe-netgear-l2.sh` and `mcp/homelab/scripts/inspect-nsdp-live.sh`. Complete execution guide in `.agents/netgear/NETWORK_AUTOMATION_RUNBOOK.md`.
   - `mcp/homelab/scripts/backup-openwrt-config.py`: FastMCP tool `backup_openwrt` pulls and SOPS-encrypts OpenWrt `/etc/config/`.
   - `mcp/homelab/scripts/sync-wireshark-capture-script.py`: FastMCP tool `sync_wireshark_capture` archives headless capture scripts from `luna-server` (VM 102) into Stack 48.
-  - `.agents/NETWORK_AUTOMATION_RUNBOOK.md`: Authoritative quick-reference runbook for all network automation, Netgear NSDP, and Wireshark capture scripts.
+  - `.agents/netgear/NETWORK_AUTOMATION_RUNBOOK.md`: Authoritative quick-reference runbook for all network automation, Netgear NSDP, and Wireshark capture scripts.
 
 ## Araknis 520 Router REST API — Technical Reference
 - **Auth Mechanism**: HTTP Basic Auth via `GET /api/cgi-bin/v1/authorize` with `Authorization: Basic base64(user:pass)` header. Returns `302` on success, `401` on failure. NO session cookies — send the `Authorization` header on every request.

@@ -13,7 +13,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Part 2.5** | Multicast & Discovery Architecture (Native Bonjour/IGMP) | ✅ Settled |
 | **Part 2.6** | WAN2 & Storage SAN Isolation (untagged vmbr1) | ✅ Settled |
 | **Part 2.7** | vxlan-server Split Trunking Architecture (VM 107) | ✅ Designed — `vxlan-server` on standby, tested |
-| **Part 2.8** | Netgear GS108Ev2 Office Switch GitOps & Backup | 🟡 In Progress — Native NSDP packet driver complete; pending L2 execution |
+| **Part 2.8** | Netgear GS108Ev2 Office Switch GitOps & Backup | 🟢 Complete — Native NSDP packet driver, L2 relay, and binary/JSON backups verified |
 | **Part 2.9** | Wireshark Headless SPAN Sniffer & Storage Engine (Stack 48) | 🟢 Hardened — 500M tmpfs, 50MB chunks, watchdog, continuous 24h FIFO |
 | **Part 3** | Unified Monitoring, SNMP & Observability (Grafana stack) | ⏳ Pending — not yet deployed |
 
@@ -165,16 +165,16 @@ The Araknis 830 AP 5GHz wireless bridge strips 802.1Q tags across the link to th
 
 ## 🔌 Part 2.8: Netgear GS108Ev2 Office Switch — Headless NSDP Architecture & GitOps
 
-### Current State: 🟡 Architecture Revised (Headless NSDP Native)
+### Current State: 🟢 Resolved & Verified (Headless NSDP Native Driver)
 
 | Item | Status |
 | :--- | :---: |
 | Headless NSDP wire protocol & framing reverse-engineered | ✅ Documented |
 | Incompatible web-scraping drivers (`py-netgear-plus`) identified & retired | ✅ Done |
 | SOPS-encrypted credentials saved to `infrastructure/secrets/araknis-switch.enc.yaml` | ✅ Done |
-| Pure NSDP socket driver & packet parser in `manage-netgear-switch.py` | 🟡 In Progress |
-| Layer 2 adjacent proxy/runner architecture (OpenWrt `nsdpd` / PVE L2 host) | 🟡 Blueprint Ready |
-| Live backup executed & `netgear-gs108e-backup.json` committed to repo | ⏳ Pending L2 Run |
+| Pure NSDP socket driver & multi-port parser in `manage-netgear-switch.py` | ✅ Verified Live |
+| Layer 2 adjacent proxy/runner architecture (OpenWrt `192.168.1.226` / PVE `192.168.1.250`) | ✅ Verified Live |
+| Live backup executed & `netgear-gs108e-backup.json` + `netgear-gs108e-backup.cfg` committed | ✅ Done |
 
 ---
 
