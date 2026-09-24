@@ -38,7 +38,7 @@ def main():
     }
     delimiter = bytes.fromhex("ffff0000")
 
-    while pos < len(data) and found < 30:
+    while pos < len(data) and found < 150:
         idx = data.find(sig, pos)
         if idx == -1:
             break

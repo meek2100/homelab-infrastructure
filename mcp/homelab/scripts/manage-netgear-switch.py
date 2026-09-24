@@ -298,15 +298,47 @@ def query_via_l2_ssh(relay_host="192.168.1.250", switch_ip=DEFAULT_SWITCH_IP, pa
         enc_pw = bytes(b ^ xor_key[i % len(xor_key)] for i, b in enumerate(password.encode("ascii", "ignore")))
         auth_hex = enc_pw.hex()
 
-    py_code = f"""import socket, struct, json, sys
+    py_code = f"""import socket, struct, json, os, sys
+
+mgr_mac = bytes.fromhex('a029198f5d45')
+for iface in ['vmbr0', 'lan0', 'eth0', 'br-lan']:
+    p = f'/sys/class/net/{{iface}}/address'
+    if os.path.exists(p):
+        mgr_mac = bytes(int(b, 16) for b in open(p).read().strip().split(':'))
+        break
+
+sw_mac = bytes.fromhex('841b5e98f1f4')
 
 auth_hex = "{auth_hex}"
-auth_tlv = bytearray()
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.settimeout(3.0)
+try:
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+except Exception:
+    pass
+
+seq = 0x0350
+
+# 1. If password provided, send Login WriteReq (opcode 0x03) as captured from ProSAFE Frame #23
 if auth_hex:
     enc_pw = bytes.fromhex(auth_hex)
-    auth_tlv = struct.pack(">HH", 0x000A, len(enc_pw)) + enc_pw
+    auth_header = struct.pack(
+        '>BBHI6s6sHH4s4s',
+        0x01, 0x03, 0, 0, mgr_mac, sw_mac, 0, seq, b'NSDP', b'\\x00'*4
+    )
+    auth_body = struct.pack('>HH', 0x000A, len(enc_pw)) + enc_pw + bytes.fromhex('ffff0000')
+    try:
+        sock.sendto(auth_header + auth_body, ('{switch_ip}', 63322))
+        auth_resp, _ = sock.recvfrom(2048)
+    except Exception:
+        pass
+    seq += 1
 
-header = struct.pack(">BBHI6s6sHH4s4s", 0x01, 0x01, 0, 0, b"\\x00"*6, b"\\x00"*6, 0, 1, b"NSDP", b"\\x00"*4)
+# 2. Query Read Request (opcode 0x01) for system telemetry and port statistics
+header = struct.pack(
+    '>BBHI6s6sHH4s4s',
+    0x01, 0x01, 0, 0, mgr_mac, sw_mac, 0, seq, b'NSDP', b'\\x00'*4
+)
 tags = [
     0x0001,  # Model name
     0x0003,  # Device name
@@ -324,10 +356,10 @@ tags = [
     0x2900,  # PVIDs
 ]
 
-body = bytearray(auth_tlv)
+body = bytearray()
 for t in tags:
-    body += struct.pack(">HH", t, 0)
-body += struct.pack(">HH", 0xFFFF, 0)
+    body += struct.pack('>HH', t, 0)
+body += bytes.fromhex('ffff0000')
 packet = bytes(header + body)
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
