@@ -319,7 +319,7 @@ def query_via_l2_ssh(relay_host="192.168.1.250", switch_ip=DEFAULT_SWITCH_IP, pa
         enc_pw = bytes(b ^ xor_key[i % len(xor_key)] for i, b in enumerate(password.encode("ascii", "ignore")))
         auth_hex = enc_pw.hex()
 
-    py_code = f"""import socket, struct, json, os, sys
+    py_code = f"""import socket, struct, json, os, sys, time
 
 switch_ip = sys.argv[1] if len(sys.argv) > 1 else "{switch_ip}"
 
@@ -341,18 +341,19 @@ if os.path.exists('/proc/net/arp'):
 
 auth_hex = "{auth_hex}"
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.settimeout(3.0)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 try:
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
 except Exception:
     pass
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
 try:
     sock.bind(("", 63321))
 except Exception:
     pass
 
-seq = 0x0350
+seq = int(time.time() * 10) & 0xFFFF
 
 # 1. Challenge / Handshake (Tag 0x0014)
 try:
@@ -361,9 +362,10 @@ try:
         0x01, 0x01, 0, 0, mgr_mac, sw_mac, 0, seq, b'NSDP', b'\\x00'*4
     )
     c_body = struct.pack('>HH', 0x0014, 0) + bytes.fromhex('ffff0000')
+    sock.settimeout(1.5)
     sock.sendto(c_header + c_body, (switch_ip, 63322))
     sock.recvfrom(2048)
-    seq += 1
+    seq = (seq + 1) & 0xFFFF
 except Exception:
     pass
 
@@ -376,11 +378,12 @@ if auth_hex:
     )
     auth_body = struct.pack('>HH', 0x000A, len(enc_pw)) + enc_pw + bytes.fromhex('ffff0000')
     try:
+        sock.settimeout(1.5)
         sock.sendto(auth_header + auth_body, (switch_ip, 63322))
         sock.recvfrom(2048)
     except Exception:
         pass
-    seq += 1
+    seq = (seq + 1) & 0xFFFF
 
 # 3. Query Read Request (opcode 0x01)
 header = struct.pack(
@@ -414,20 +417,31 @@ for t in tags:
 body += bytes.fromhex('ffff0000')
 
 resp = None
-try:
-    sock.sendto(bytes(header + body), (switch_ip, 63322))
-    resp, _ = sock.recvfrom(4096)
-except Exception:
-    pass
+for _ in range(3):
+    try:
+        sock.settimeout(2.0)
+        sock.sendto(bytes(header + body), (switch_ip, 63322))
+        resp, _ = sock.recvfrom(4096)
+        if resp:
+            break
+    except Exception:
+        time.sleep(0.2)
 
 if not resp or len(resp) < 32 or resp[24:28] != b"NSDP":
     try:
         bcast_header = struct.pack(
             '>BBHI6s6sHH4s4s',
-            0x01, 0x01, 0, 0, mgr_mac, b'\\x00'*6, 0, seq, b'NSDP', b'\\x00'*4
+            0x01, 0x01, 0, 0, mgr_mac, b'\\x00'*6, 0, (seq + 1) & 0xFFFF, b'NSDP', b'\\x00'*4
         )
-        sock.sendto(bytes(bcast_header + body), ('192.168.1.255', 63322))
-        resp, _ = sock.recvfrom(4096)
+        for b_target in ['192.168.1.255', '255.255.255.255']:
+            try:
+                sock.settimeout(2.0)
+                sock.sendto(bytes(bcast_header + body), (b_target, 63322))
+                resp, _ = sock.recvfrom(4096)
+                if resp:
+                    break
+            except Exception:
+                pass
     except Exception:
         pass
 
