@@ -1,34 +1,30 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PVE_HOST="192.168.1.250"
 SWITCH_IP="${1:-192.168.1.220}"
+RELAY_HOST="${2:-192.168.1.250}"
 
-SSH_KEY=""
+SSH_OPTS=(-o StrictHostKeyChecking=accept-new -o BatchMode=yes -o ConnectTimeout=5)
 for candidate in \
   "${HOME}/.ssh/proxmox_ed25519" \
   "/home/dtheurer/.ssh/proxmox_ed25519" \
   "${HOME}/.ssh/id_ed25519" \
-  "/home/dtheurer/.ssh/id_ed25519"; do
+  "/home/dtheurer/.ssh/id_ed25519" \
+  "${HOME}/.ssh/pi_id_ed25519" \
+  "/home/dtheurer/.ssh/pi_id_ed25519"; do
   if [ -f "$candidate" ]; then
-    SSH_KEY="$candidate"
-    break
+    SSH_OPTS+=(-i "$candidate")
   fi
 done
 
-SSH_OPTS=(-o StrictHostKeyChecking=accept-new -o BatchMode=yes)
-if [ -n "$SSH_KEY" ]; then
-  SSH_OPTS+=(-i "$SSH_KEY")
-fi
+echo "🔍 Probing Netgear GS108Ev2 (${SWITCH_IP}) via Layer 2 relay ${RELAY_HOST} on VLAN 1..."
 
-echo "🔍 Probing Netgear GS108Ev2 (${SWITCH_IP}) via Proxmox pve (${PVE_HOST} on VLAN 1)..."
-
-ssh "${SSH_OPTS[@]}" "root@${PVE_HOST}" "python3 -c \"
+ssh "${SSH_OPTS[@]}" "root@${RELAY_HOST}" "python3 -c \"
 import socket, struct, json, os, sys
 
-# 1. Determine local host MAC on VLAN 1 (vmbr0)
+# 1. Determine local host MAC on VLAN 1
 mgr_mac = bytes.fromhex('a029198f5d45')
-for iface in ['vmbr0', 'lan0', 'eth0']:
+for iface in ['vmbr0', 'br-lan', 'lan0', 'eth0']:
     path = f'/sys/class/net/{iface}/address'
     if os.path.exists(path):
         mgr_mac = bytes(int(b, 16) for b in open(path).read().strip().split(':'))
