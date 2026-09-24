@@ -594,21 +594,21 @@ def connect_and_gather(host, password, timeout=3.0):
     except Exception as e:
         errors.append(f"local-native-nsdp: {e}")
 
-    # 2. PVE L2 Adjacent Relay (executes pure Python NSDP directly on Proxmox pve on vmbr0)
-    try:
-        data = query_via_l2_ssh(relay_host="192.168.1.250", switch_ip=host, password=password)
-        return "pve_l2_relay", data
-    except Exception as e:
-        errors.append(f"pve-l2-relay (192.168.1.250): {e}")
-
-    # 3. OpenWrt L2 Adjacent Relay (executes pure Python NSDP directly on Belkin AX3200 on br-lan)
+    # 2. OpenWrt L2 Adjacent Relay (executes pure Python NSDP directly on Belkin AX3200 on br-lan)
     try:
         data = query_via_l2_ssh(relay_host="192.168.1.226", switch_ip=host, password=password)
         return "openwrt_l2_relay", data
     except Exception as e:
         errors.append(f"openwrt-l2-relay (192.168.1.226): {e}")
 
-    # 3. REST proxy daemon on adjacent router (OpenWrt Belkin AX3200 on 192.168.1.226)
+    # 3. PVE L2 Adjacent Relay (executes pure Python NSDP directly on Proxmox pve on vmbr0)
+    try:
+        data = query_via_l2_ssh(relay_host="192.168.1.250", switch_ip=host, password=password)
+        return "pve_l2_relay", data
+    except Exception as e:
+        errors.append(f"pve-l2-relay (192.168.1.250): {e}")
+
+    # 4. REST proxy daemon on adjacent router (OpenWrt Belkin AX3200 on 192.168.1.226)
     proxy_url = os.environ.get("NETGEAR_PROXY_URL", DEFAULT_OPENWRT_PROXY)
     if requests:
         try:
@@ -622,8 +622,18 @@ def connect_and_gather(host, password, timeout=3.0):
         + "\n".join(f"  - {err}" for err in errors)
         + "\n\nDiagnostic: The GS108Ev2 is completely headless and communicates exclusively via NSDP "
         "(UDP 63321/63322). It has NO web GUI. NSDP does not route across Layer 3 boundaries.\n"
-        "Execution must occur on a host physically on VLAN 1 (e.g. pve at 192.168.1.250 or OpenWrt at 192.168.1.226)."
+        "Execution must occur on a host physically on VLAN 1 (e.g. OpenWrt at 192.168.1.226 or pve at 192.168.1.250)."
     )
+
+
+def _fmt_bytes(n):
+    if not isinstance(n, (int, float)):
+        return "0 B"
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
+        if abs(n) < 1024.0:
+            return f"{n:3.1f} {unit}"
+        n /= 1024.0
+    return f"{n:.1f} PB"
 
 
 def cmd_status(data, driver_type):
@@ -643,8 +653,8 @@ def cmd_status(data, driver_type):
         f"Driver:   {driver_type}",
         "",
         "Port Status & Diagnostics:",
-        f"{'Port':<6} {'State':<8} {'Actual Speed':<14} {'RX Bytes':<12} {'TX Bytes':<12} {'CRC Errors':<10}",
-        "-" * 70,
+        f"{'Port':<6} {'State':<8} {'Speed':<14} {'RX Traffic':<14} {'TX Traffic':<14} {'CRC Errors':<10}",
+        "-" * 72,
     ]
 
     ports = data.get("ports", [])
@@ -660,11 +670,11 @@ def cmd_status(data, driver_type):
             st = stats_by_port.get(port_num, {})
             state_str = "UP" if p.get("link_up", p.get("enabled")) else "DOWN"
             speed_act = p.get("speed_act", "No Link")
-            rx = st.get("bytes_rx", 0)
-            tx = st.get("bytes_tx", 0)
+            rx_str = _fmt_bytes(st.get("bytes_rx", 0))
+            tx_str = _fmt_bytes(st.get("bytes_tx", 0))
             crc = st.get("crc_errors", 0)
             summary_lines.append(
-                f"{port_num:<6} {state_str:<8} {speed_act:<14} {rx:<12} {tx:<12} {crc:<10}"
+                f"{port_num:<6} {state_str:<8} {speed_act:<14} {rx_str:<14} {tx_str:<14} {crc:<10}"
             )
 
     if "pvids" in data:
