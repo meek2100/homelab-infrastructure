@@ -21,6 +21,7 @@ Headless NSDP Native Driver:
 """
 
 import argparse
+import base64
 import json
 import os
 import shutil
@@ -226,47 +227,76 @@ class NativeNSDPClient:
         if self.TAG_FIRMWARE_B1 in tlvs:
             parsed["firmware"] = tlvs[self.TAG_FIRMWARE_B1].decode("ascii", errors="ignore").rstrip("\x00")
 
-        # Decode Port Link Matrix (0x0C00) - 4 bytes per port
+        # Decode Port Link Matrix (0x0C00) - supports 3 bytes/port and 4 bytes/port
         ports = []
-        speed_map = {0: "No Link", 1: "10 Mbps", 2: "100 Mbps", 3: "1000 Mbps"}
-        duplex_map = {1: "Half", 2: "Full"}
+        speed_map = {0: "No Link", 1: "10 Mbps Half", 2: "10 Mbps Full", 3: "100 Mbps Half", 4: "100 Mbps Full", 5: "1000 Mbps Full"}
         if self.TAG_PORT_LINK in tlvs:
             link_data = tlvs[self.TAG_PORT_LINK]
-            num_ports = len(link_data) // 4
+            stride = 3 if len(link_data) % 3 == 0 and len(link_data) // 3 in (5, 8, 16, 24) else (4 if len(link_data) % 4 == 0 else 3)
+            num_ports = len(link_data) // stride
             for i in range(num_ports):
-                p_offset = i * 4
-                link_status = link_data[p_offset]
-                speed_code = link_data[p_offset + 1]
-                duplex_code = link_data[p_offset + 2]
-                admin_code = link_data[p_offset + 3]
-                ports.append({
-                    "port": i + 1,
-                    "enabled": (admin_code == 1),
-                    "link_up": (link_status == 1),
-                    "speed_act": speed_map.get(speed_code, f"Code {speed_code}"),
-                    "duplex": duplex_map.get(duplex_code, "Unknown"),
-                })
+                p_offset = i * stride
+                if stride == 3:
+                    port_id = link_data[p_offset]
+                    speed_code = link_data[p_offset + 1]
+                    duplex_code = link_data[p_offset + 2]
+                    ports.append({
+                        "port": port_id,
+                        "enabled": True,
+                        "link_up": (speed_code > 0),
+                        "speed_act": speed_map.get(speed_code, f"Code {speed_code}"),
+                        "duplex": "Full" if duplex_code == 1 or speed_code in (2, 4, 5) else ("Half" if speed_code in (1, 3) else "None"),
+                    })
+                else:
+                    link_status = link_data[p_offset]
+                    speed_code = link_data[p_offset + 1]
+                    duplex_code = link_data[p_offset + 2]
+                    admin_code = link_data[p_offset + 3]
+                    ports.append({
+                        "port": i + 1,
+                        "enabled": (admin_code == 1),
+                        "link_up": (link_status == 1 or speed_code > 0),
+                        "speed_act": speed_map.get(speed_code, f"Code {speed_code}"),
+                        "duplex": "Full" if duplex_code == 2 else "Half",
+                    })
         parsed["ports"] = ports
 
-        # Decode Port Statistics (0x1000) - 192 bytes (24 bytes per port)
+        # Decode Port Statistics (0x1000) - supports 49 bytes/port (GS108Ev2) and 24 bytes/port
         stats = []
         if self.TAG_PORT_STATS in tlvs:
             stat_data = tlvs[self.TAG_PORT_STATS]
-            num_ports = min(len(stat_data) // 24, 8)
-            for i in range(num_ports):
-                s_offset = i * 24
-                rx_bytes, tx_bytes, rx_pkts, tx_pkts, crc_errors, drops = struct.unpack_from(
-                    ">IIIIII", stat_data, s_offset
-                )
-                stats.append({
-                    "port": i + 1,
-                    "bytes_rx": rx_bytes,
-                    "bytes_tx": tx_bytes,
-                    "packets_rx": rx_pkts,
-                    "packets_tx": tx_pkts,
-                    "crc_errors": crc_errors,
-                    "drops": drops,
-                })
+            if len(stat_data) >= 392 and len(stat_data) % 49 == 0:
+                num_ports = len(stat_data) // 49
+                for i in range(num_ports):
+                    s_offset = i * 49
+                    port_id, rx_bytes, tx_bytes, rx_pkts, tx_pkts, crc_errors, drops = struct.unpack_from(
+                        ">BQQQQQQ", stat_data, s_offset
+                    )
+                    stats.append({
+                        "port": port_id,
+                        "bytes_rx": rx_bytes,
+                        "bytes_tx": tx_bytes,
+                        "packets_rx": rx_pkts,
+                        "packets_tx": tx_pkts,
+                        "crc_errors": crc_errors,
+                        "drops": drops,
+                    })
+            elif len(stat_data) >= 192:
+                num_ports = min(len(stat_data) // 24, 8)
+                for i in range(num_ports):
+                    s_offset = i * 24
+                    rx_bytes, tx_bytes, rx_pkts, tx_pkts, crc_errors, drops = struct.unpack_from(
+                        ">IIIIII", stat_data, s_offset
+                    )
+                    stats.append({
+                        "port": i + 1,
+                        "bytes_rx": rx_bytes,
+                        "bytes_tx": tx_bytes,
+                        "packets_rx": rx_pkts,
+                        "packets_tx": tx_pkts,
+                        "crc_errors": crc_errors,
+                        "drops": drops,
+                    })
         parsed["port_statistics"] = stats
 
         # Decode PVIDs (0x2900) - 16 bytes (8 x uint16)
@@ -277,21 +307,24 @@ class NativeNSDPClient:
         return parsed
 
 
-def get_ssh_key():
+def get_ssh_key_args():
+    args = []
     for candidate in [
+        "/home/dtheurer/.ssh/proxmox_ed25519",
+        os.path.expanduser("~/.ssh/proxmox_ed25519"),
+        "/home/dtheurer/.ssh/id_ed25519",
+        os.path.expanduser("~/.ssh/id_ed25519"),
         "/home/dtheurer/.ssh/pi_id_ed25519",
         os.path.expanduser("~/.ssh/pi_id_ed25519"),
         "/mnt/c/Users/dtheurer/.ssh/pi_id_ed25519",
     ]:
         if os.path.exists(candidate):
-            return candidate
-    return None
+            args.extend(["-i", candidate])
+    return args
 
 
 def query_via_l2_ssh(relay_host="192.168.1.250", switch_ip=DEFAULT_SWITCH_IP, password=None, timeout=10):
     """Execute native NSDP client query directly on an L2 adjacent host (PVE or OpenWrt on VLAN 1) via SSH."""
-    key = get_ssh_key()
-
     auth_hex = ""
     if password:
         xor_key = b"NtgrSmartSwitchRock"
@@ -300,14 +333,23 @@ def query_via_l2_ssh(relay_host="192.168.1.250", switch_ip=DEFAULT_SWITCH_IP, pa
 
     py_code = f"""import socket, struct, json, os, sys
 
+switch_ip = sys.argv[1] if len(sys.argv) > 1 else "{switch_ip}"
+
 mgr_mac = bytes.fromhex('a029198f5d45')
-for iface in ['vmbr0', 'lan0', 'eth0', 'br-lan']:
+for iface in ['vmbr0', 'br-lan', 'lan0', 'eth0']:
     p = f'/sys/class/net/{{iface}}/address'
     if os.path.exists(p):
         mgr_mac = bytes(int(b, 16) for b in open(p).read().strip().split(':'))
         break
 
 sw_mac = bytes.fromhex('841b5e98f1f4')
+if os.path.exists('/proc/net/arp'):
+    for line in open('/proc/net/arp'):
+        parts = line.split()
+        if len(parts) >= 4 and parts[0] == switch_ip:
+            if parts[3] != '00:00:00:00:00:00':
+                sw_mac = bytes(int(b, 16) for b in parts[3].split(':'))
+                break
 
 auth_hex = "{auth_hex}"
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -317,9 +359,27 @@ try:
 except Exception:
     pass
 
+try:
+    sock.bind(("", 63321))
+except Exception:
+    pass
+
 seq = 0x0350
 
-# 1. If password provided, send Login WriteReq (opcode 0x03) as captured from ProSAFE Frame #23
+# 1. Challenge / Handshake (Tag 0x0014)
+try:
+    c_header = struct.pack(
+        '>BBHI6s6sHH4s4s',
+        0x01, 0x01, 0, 0, mgr_mac, sw_mac, 0, seq, b'NSDP', b'\\x00'*4
+    )
+    c_body = struct.pack('>HH', 0x0014, 0) + bytes.fromhex('ffff0000')
+    sock.sendto(c_header + c_body, (switch_ip, 63322))
+    sock.recvfrom(2048)
+    seq += 1
+except Exception:
+    pass
+
+# 2. Login WriteReq (opcode 0x03) with XOR encrypted password in Tag 0x000A
 if auth_hex:
     enc_pw = bytes.fromhex(auth_hex)
     auth_header = struct.pack(
@@ -328,13 +388,13 @@ if auth_hex:
     )
     auth_body = struct.pack('>HH', 0x000A, len(enc_pw)) + enc_pw + bytes.fromhex('ffff0000')
     try:
-        sock.sendto(auth_header + auth_body, ('{switch_ip}', 63322))
-        auth_resp, _ = sock.recvfrom(2048)
+        sock.sendto(auth_header + auth_body, (switch_ip, 63322))
+        sock.recvfrom(2048)
     except Exception:
         pass
     seq += 1
 
-# 2. Query Read Request (opcode 0x01) for system telemetry and port statistics
+# 3. Query Read Request (opcode 0x01)
 header = struct.pack(
     '>BBHI6s6sHH4s4s',
     0x01, 0x01, 0, 0, mgr_mac, sw_mac, 0, seq, b'NSDP', b'\\x00'*4
@@ -350,8 +410,12 @@ tags = [
     0x000B,  # DHCP mode
     0x000D,  # Firmware 1
     0x000E,  # Firmware 2
+    0x000F,  # Active Slot
     0x0C00,  # Port status / speed / duplex
     0x1000,  # Port statistics
+    0x6000,  # Port count
+    0x7400,  # Capability mask
+    0x7800,  # System status / serial
     0x2800,  # 802.1Q VLAN membership
     0x2900,  # PVIDs
 ]
@@ -360,24 +424,26 @@ body = bytearray()
 for t in tags:
     body += struct.pack('>HH', t, 0)
 body += bytes.fromhex('ffff0000')
-packet = bytes(header + body)
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.settimeout(2.5)
+resp = None
 try:
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    sock.sendto(bytes(header + body), (switch_ip, 63322))
+    resp, _ = sock.recvfrom(4096)
 except Exception:
     pass
 
-try:
+if not resp or len(resp) < 32 or resp[24:28] != b"NSDP":
     try:
-        sock.bind(("", 63321))
+        bcast_header = struct.pack(
+            '>BBHI6s6sHH4s4s',
+            0x01, 0x01, 0, 0, mgr_mac, b'\\x00'*6, 0, seq, b'NSDP', b'\\x00'*4
+        )
+        sock.sendto(bytes(bcast_header + body), ('192.168.1.255', 63322))
+        resp, _ = sock.recvfrom(4096)
     except Exception:
         pass
-    sock.sendto(packet, ("{switch_ip}", 63322))
-    resp, _ = sock.recvfrom(4096)
-finally:
-    sock.close()
+
+sock.close()
 
 if not resp or len(resp) < 32 or resp[24:28] != b"NSDP":
     print(json.dumps({{"error": "Invalid or missing NSDP response", "raw_len": len(resp) if resp else 0}}))
@@ -394,34 +460,7 @@ while offset + 4 <= len(resp):
     tlvs[tag] = resp[offset : offset + length]
     offset += length
 
-# Fallback: if bulk query did not return data TLVs, query tags individually
-if not any(t in tlvs for t in [0x0001, 0x0003, 0x0C00, 0x1000]):
-    for t in tags:
-        s_body = bytearray(auth_tlv) + struct.pack(">HH", t, 0) + struct.pack(">HH", 0xFFFF, 0)
-        s_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s_sock.settimeout(0.5)
-        try:
-            try:
-                s_sock.bind(("", 63321))
-            except Exception:
-                pass
-            s_sock.sendto(bytes(header + s_body), ("{switch_ip}", 63322))
-            s_resp, _ = s_sock.recvfrom(4096)
-            if s_resp and len(s_resp) > 36:
-                s_off = 32
-                while s_off + 4 <= len(s_resp):
-                    stag, slen = struct.unpack_from(">HH", s_resp, s_off)
-                    s_off += 4
-                    if stag == 0xFFFF or s_off + slen > len(s_resp):
-                        break
-                    tlvs[stag] = s_resp[s_off : s_off + slen]
-                    s_off += slen
-        except Exception:
-            pass
-        finally:
-            s_sock.close()
-
-out = {{"mac": resp_mac, "ip": "{switch_ip}", "raw_hex": resp.hex(), "parsed_tags": [hex(k) for k in tlvs.keys()]}}
+out = {{"mac": resp_mac, "ip": switch_ip, "raw_hex": resp.hex(), "parsed_tags": [hex(k) for k in tlvs.keys()]}}
 if 0x0001 in tlvs: out["model"] = tlvs[0x0001].decode("ascii", "ignore").rstrip("\\x00")
 if 0x0003 in tlvs: out["device_name"] = tlvs[0x0003].decode("ascii", "ignore").rstrip("\\x00")
 if 0x0006 in tlvs and len(tlvs[0x0006]) == 4: out["ip"] = socket.inet_ntoa(tlvs[0x0006])
@@ -432,32 +471,55 @@ if 0x000E in tlvs: out["firmware_bank2"] = tlvs[0x000E].decode("ascii", "ignore"
 if 0x7800 in tlvs: out["serial_number"] = tlvs[0x7800].decode("ascii", "ignore").rstrip("\\x00")
 if 0x6000 in tlvs and len(tlvs[0x6000]) >= 1: out["port_count"] = tlvs[0x6000][0]
 
-speed_map = {{0: "No Link", 1: "10 Mbps", 2: "100 Mbps", 3: "1000 Mbps"}}
-duplex_map = {{1: "Half", 2: "Full"}}
+speed_map = {{0: "No Link", 1: "10 Mbps Half", 2: "10 Mbps Full", 3: "100 Mbps Half", 4: "100 Mbps Full", 5: "1000 Mbps Full"}}
 ports = []
 if 0x0C00 in tlvs:
     ld = tlvs[0x0C00]
-    for i in range(len(ld) // 4):
-        ports.append({{
-            "port": i + 1,
-            "link_up": ld[i*4] == 1,
-            "speed_act": speed_map.get(ld[i*4+1], f"Code {{ld[i*4+1]}}"),
-            "duplex": duplex_map.get(ld[i*4+2], "Unknown"),
-            "enabled": ld[i*4+3] == 1
-        }})
+    stride = 3 if len(ld) % 3 == 0 and len(ld) // 3 in (5, 8, 16, 24) else (4 if len(ld) % 4 == 0 else 3)
+    for i in range(len(ld) // stride):
+        p_off = i * stride
+        if stride == 3:
+            pid = ld[p_off]
+            spd = ld[p_off + 1]
+            dupx = ld[p_off + 2]
+            ports.append({{
+                "port": pid,
+                "link_up": spd > 0,
+                "speed_act": speed_map.get(spd, f"Code {{spd}}"),
+                "duplex": "Full" if dupx == 1 or spd in (2, 4, 5) else ("Half" if spd in (1, 3) else "None"),
+                "enabled": True
+            }})
+        else:
+            ports.append({{
+                "port": i + 1,
+                "link_up": ld[p_off] == 1,
+                "speed_act": speed_map.get(ld[p_off+1], f"Code {{ld[p_off+1]}}"),
+                "duplex": "Full" if ld[p_off+2] == 2 else "Half",
+                "enabled": ld[p_off+3] == 1
+            }})
 out["ports"] = ports
 
 stats = []
 if 0x1000 in tlvs:
     sd = tlvs[0x1000]
-    for i in range(min(len(sd) // 24, 8)):
-        rx_b, tx_b, rx_p, tx_p, crc, drp = struct.unpack_from(">IIIIII", sd, i*24)
-        stats.append({{
-            "port": i + 1,
-            "bytes_rx": rx_b, "bytes_tx": tx_b,
-            "packets_rx": rx_p, "packets_tx": tx_p,
-            "crc_errors": crc, "drops": drp
-        }})
+    if len(sd) >= 392 and len(sd) % 49 == 0:
+        for i in range(len(sd) // 49):
+            pid, rx_b, tx_b, rx_p, tx_p, crc, drp = struct.unpack_from(">BQQQQQQ", sd, i * 49)
+            stats.append({{
+                "port": pid,
+                "bytes_rx": rx_b, "bytes_tx": tx_b,
+                "packets_rx": rx_p, "packets_tx": tx_p,
+                "crc_errors": crc, "drops": drp
+            }})
+    elif len(sd) >= 192:
+        for i in range(min(len(sd) // 24, 8)):
+            rx_b, tx_b, rx_p, tx_p, crc, drp = struct.unpack_from(">IIIIII", sd, i * 24)
+            stats.append({{
+                "port": i + 1,
+                "bytes_rx": rx_b, "bytes_tx": tx_b,
+                "packets_rx": rx_p, "packets_tx": tx_p,
+                "crc_errors": crc, "drops": drp
+            }})
 out["port_statistics"] = stats
 
 if 0x2900 in tlvs and len(tlvs[0x2900]) >= 16:
@@ -476,13 +538,15 @@ if 0x2800 in tlvs:
 
 print(json.dumps(out))
 """
+
+    b64_code = base64.b64encode(py_code.encode("utf-8")).decode("ascii")
     ssh_args = [
         "ssh", "-o", "StrictHostKeyChecking=accept-new",
-        "-o", "BatchMode=yes", "-o", "ConnectTimeout=4",
+        "-o", "BatchMode=yes", "-o", "ConnectTimeout=5",
     ]
-    if key:
-        ssh_args.extend(["-i", key])
-    ssh_args.extend([f"root@{relay_host}", f"python3 -c '{py_code}'"])
+    ssh_args.extend(get_ssh_key_args())
+    ssh_cmd = f"echo '{b64_code}' | base64 -d | python3 - '{switch_ip}'"
+    ssh_args.extend([f"root@{relay_host}", ssh_cmd])
 
     res = subprocess.run(ssh_args, capture_output=True, text=True, timeout=timeout, check=False)
     if res.returncode != 0:
