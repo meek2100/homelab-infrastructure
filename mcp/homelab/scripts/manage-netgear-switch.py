@@ -296,6 +296,7 @@ class NativeNSDPClient:
 
 
 def get_ssh_key_args():
+    seen = set()
     args = []
     for candidate in [
         "/home/dtheurer/.ssh/proxmox_ed25519",
@@ -306,13 +307,15 @@ def get_ssh_key_args():
         os.path.expanduser("~/.ssh/pi_id_ed25519"),
         "/mnt/c/Users/dtheurer/.ssh/pi_id_ed25519",
     ]:
-        if os.path.exists(candidate):
+        can_abs = os.path.abspath(candidate)
+        if os.path.exists(candidate) and can_abs not in seen:
+            seen.add(can_abs)
             args.extend(["-i", candidate])
     return args
 
 
-def query_via_l2_ssh(relay_host="192.168.1.250", switch_ip=DEFAULT_SWITCH_IP, password=None, timeout=10):
-    """Execute native NSDP client query directly on an L2 adjacent host (PVE or OpenWrt on VLAN 1) via SSH."""
+def query_via_l2_ssh(relay_host="192.168.1.226", switch_ip=DEFAULT_SWITCH_IP, password=None, timeout=15):
+    """Execute native NSDP client query directly on an L2 adjacent host (OpenWrt or PVE on VLAN 1) via SSH."""
     auth_hex = ""
     if password:
         xor_key = b"NtgrSmartSwitchRock"
@@ -355,43 +358,14 @@ except Exception:
 
 seq = int(time.time() * 10) & 0xFFFF
 
-# 1. Challenge / Handshake (Tag 0x0014)
-try:
-    c_header = struct.pack(
-        '>BBHI6s6sHH4s4s',
-        0x01, 0x01, 0, 0, mgr_mac, sw_mac, 0, seq, b'NSDP', b'\\x00'*4
-    )
-    c_body = struct.pack('>HH', 0x0014, 0) + bytes.fromhex('ffff0000')
-    sock.settimeout(1.5)
-    sock.sendto(c_header + c_body, (switch_ip, 63322))
-    sock.recvfrom(2048)
-    seq = (seq + 1) & 0xFFFF
-except Exception:
-    pass
-
-# 2. Login WriteReq (opcode 0x03) with XOR encrypted password in Tag 0x000A
-if auth_hex:
-    enc_pw = bytes.fromhex(auth_hex)
-    auth_header = struct.pack(
-        '>BBHI6s6sHH4s4s',
-        0x01, 0x03, 0, 0, mgr_mac, sw_mac, 0, seq, b'NSDP', b'\\x00'*4
-    )
-    auth_body = struct.pack('>HH', 0x000A, len(enc_pw)) + enc_pw + bytes.fromhex('ffff0000')
-    try:
-        sock.settimeout(1.5)
-        sock.sendto(auth_header + auth_body, (switch_ip, 63322))
-        sock.recvfrom(2048)
-    except Exception:
-        pass
-    seq = (seq + 1) & 0xFFFF
-
-# 3. Query Read Request (opcode 0x01)
+# Authentic query tags matching verified probe
 header = struct.pack(
     '>BBHI6s6sHH4s4s',
     0x01, 0x01, 0, 0, mgr_mac, sw_mac, 0, seq, b'NSDP', b'\\x00'*4
 )
 tags = [
     0x0001,  # Model name
+    0x0002,  # Code2
     0x0003,  # Device name
     0x0004,  # Switch MAC
     0x0005,  # Location
@@ -399,16 +373,15 @@ tags = [
     0x0007,  # Netmask
     0x0008,  # Gateway
     0x000B,  # DHCP mode
+    0x000C,  # Code0C
     0x000D,  # Firmware 1
     0x000E,  # Firmware 2
     0x000F,  # Active Slot
+    0x7400,  # Capability mask
     0x0C00,  # Port status / speed / duplex
     0x1000,  # Port statistics
     0x6000,  # Port count
-    0x7400,  # Capability mask
     0x7800,  # System status / serial
-    0x2800,  # 802.1Q VLAN membership
-    0x2900,  # PVIDs
 ]
 
 body = bytearray()
