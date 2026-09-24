@@ -95,38 +95,52 @@ try:
             0x0005: 'Location', 0x0006: 'IP', 0x0007: 'Netmask', 0x0008: 'Gateway',
             0x000B: 'DHCPMode', 0x000C: 'Code0C', 0x000D: 'Firmware_B1',
             0x000E: 'Firmware_B2', 0x000F: 'ActiveSlot', 0x7400: 'CapabilityMask',
-            0x0C00: 'PortLink', 0x1000: 'PortStats', 0x6000: 'PortCount', 0x7800: 'SystemStatus'
+            0x6000: 'PortCount', 0x7800: 'SystemStatus'
         }
+        port_links = []
+        port_stats = []
+        speed_map = {0: 'Down', 1: '10M-H', 2: '10M-F', 3: '100M-H', 4: '100M-F', 5: '1000M-F'}
+
         while offset + 4 <= len(resp):
             tag, length = struct.unpack_from('>HH', resp, offset)
             offset += 4
             if tag == 0xFFFF or offset + length > len(resp):
                 break
             val = resp[offset:offset+length]
-            name = tag_names.get(tag, f'0x{tag:04X}')
-            if tag in (0x0001, 0x0003, 0x000D, 0x000E):
-                tlvs[name] = val.decode('ascii', errors='replace').strip('\x00')
-            elif tag == 0x0004:
-                tlvs[name] = ':'.join('%02x' % b for b in val)
-            elif tag in (0x0006, 0x0007, 0x0008):
-                tlvs[name] = socket.inet_ntoa(val)
-            elif tag == 0x0C00:
-                speed_map = {0: 'Down', 1: '10M-H', 2: '10M-F', 3: '100M-H', 4: '100M-F', 5: '1000M-F'}
-                stride = 3 if len(val) % 3 == 0 and len(val) // 3 in (5, 8, 16, 24) else (4 if len(val) % 4 == 0 else 3)
-                num_p = len(val) // stride
-                ports = []
-                for i in range(num_p):
-                    p_bytes = val[i*stride : (i+1)*stride]
-                    pid = p_bytes[0]
-                    pspd = p_bytes[1]
-                    s_str = speed_map.get(pspd, f'Code {pspd}')
-                    ports.append(f'Port {pid}: {s_str}')
-                tlvs[name] = ports
-            elif tag == 0x6000 and len(val) >= 1:
-                tlvs[name] = val[0]
+            if tag == 0x0C00:
+                if len(val) == 3:
+                    pid, spd, dupx = val[0], val[1], val[2]
+                    port_links.append(f'Port {pid}: {speed_map.get(spd, f"Code {spd}")}')
+                elif len(val) % 3 == 0:
+                    for i in range(len(val) // 3):
+                        p = val[i*3:(i+1)*3]
+                        port_links.append(f'Port {p[0]}: {speed_map.get(p[1], f"Code {p[1]}")}')
+            elif tag == 0x1000:
+                if len(val) == 49:
+                    pid = val[0]
+                    rx_b, tx_b, rx_p, tx_p, crc, drp = struct.unpack_from('>QQQQQQ', val, 1)
+                    port_stats.append({
+                        'port': pid, 'rx_bytes': rx_b, 'tx_bytes': tx_b,
+                        'rx_pkts': rx_p, 'tx_pkts': tx_p, 'crc': crc, 'drops': drp
+                    })
             else:
-                tlvs[name] = f'{len(val)}B (hex: {val[:16].hex()}...)'
+                name = tag_names.get(tag, f'0x{tag:04X}')
+                if tag in (0x0001, 0x0003, 0x000D, 0x000E):
+                    tlvs[name] = val.decode('ascii', errors='replace').strip('\x00')
+                elif tag == 0x0004:
+                    tlvs[name] = ':'.join('%02x' % b for b in val)
+                elif tag in (0x0006, 0x0007, 0x0008):
+                    tlvs[name] = socket.inet_ntoa(val)
+                elif tag == 0x6000 and len(val) >= 1:
+                    tlvs[name] = val[0]
+                else:
+                    tlvs[name] = f'{len(val)}B (hex: {val[:16].hex()}...)'
             offset += length
+
+        if port_links:
+            tlvs['PortLinks'] = sorted(port_links, key=lambda x: int(x.split()[1].rstrip(':')))
+        if port_stats:
+            tlvs['PortStats'] = sorted(port_stats, key=lambda x: x['port'])
         print(json.dumps(tlvs, indent=2))
 except Exception as e:
     print(f'Unicast query timed out or errored: {e}. Trying broadcast discovery...')

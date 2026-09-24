@@ -194,16 +194,21 @@ class NativeNSDPClient:
             raise ValueError(f"Invalid NSDP signature: {sig}")
 
         tlvs = {}
+        port_links_raw = []
+        port_stats_raw = []
         offset = 32
         while offset + 4 <= len(data):
             tag, length = struct.unpack_from(">HH", data, offset)
             offset += 4
-            if tag == 0xFFFF:
-                break
-            if offset + length > len(data):
+            if tag == 0xFFFF or offset + length > len(data):
                 break
             val = data[offset : offset + length]
-            tlvs[tag] = val
+            if tag == self.TAG_PORT_LINK:
+                port_links_raw.append(val)
+            elif tag == self.TAG_PORT_STATS:
+                port_stats_raw.append(val)
+            else:
+                tlvs[tag] = val
             offset += length
 
         parsed = {
@@ -227,78 +232,61 @@ class NativeNSDPClient:
         if self.TAG_FIRMWARE_B1 in tlvs:
             parsed["firmware"] = tlvs[self.TAG_FIRMWARE_B1].decode("ascii", errors="ignore").rstrip("\x00")
 
-        # Decode Port Link Matrix (0x0C00) - supports 3 bytes/port and 4 bytes/port
+        # Decode Port Link Matrix (0x0C00)
         ports = []
         speed_map = {0: "No Link", 1: "10 Mbps Half", 2: "10 Mbps Full", 3: "100 Mbps Half", 4: "100 Mbps Full", 5: "1000 Mbps Full"}
-        if self.TAG_PORT_LINK in tlvs:
-            link_data = tlvs[self.TAG_PORT_LINK]
-            stride = 3 if len(link_data) % 3 == 0 and len(link_data) // 3 in (5, 8, 16, 24) else (4 if len(link_data) % 4 == 0 else 3)
-            num_ports = len(link_data) // stride
-            for i in range(num_ports):
-                p_offset = i * stride
-                if stride == 3:
-                    port_id = link_data[p_offset]
-                    speed_code = link_data[p_offset + 1]
-                    duplex_code = link_data[p_offset + 2]
+        for link_data in port_links_raw:
+            if len(link_data) == 3:
+                pid, spd, dupx = link_data[0], link_data[1], link_data[2]
+                ports.append({
+                    "port": pid,
+                    "enabled": True,
+                    "link_up": (spd > 0),
+                    "speed_act": speed_map.get(spd, f"Code {spd}"),
+                    "duplex": "Full" if dupx == 1 or spd in (2, 4, 5) else ("Half" if spd in (1, 3) else "None"),
+                })
+            elif len(link_data) % 3 == 0:
+                for i in range(len(link_data) // 3):
+                    p = link_data[i*3:(i+1)*3]
                     ports.append({
-                        "port": port_id,
+                        "port": p[0],
                         "enabled": True,
-                        "link_up": (speed_code > 0),
-                        "speed_act": speed_map.get(speed_code, f"Code {speed_code}"),
-                        "duplex": "Full" if duplex_code == 1 or speed_code in (2, 4, 5) else ("Half" if speed_code in (1, 3) else "None"),
+                        "link_up": (p[1] > 0),
+                        "speed_act": speed_map.get(p[1], f"Code {p[1]}"),
+                        "duplex": "Full" if p[2] == 1 or p[1] in (2, 4, 5) else ("Half" if p[1] in (1, 3) else "None"),
                     })
-                else:
-                    link_status = link_data[p_offset]
-                    speed_code = link_data[p_offset + 1]
-                    duplex_code = link_data[p_offset + 2]
-                    admin_code = link_data[p_offset + 3]
-                    ports.append({
-                        "port": i + 1,
-                        "enabled": (admin_code == 1),
-                        "link_up": (link_status == 1 or speed_code > 0),
-                        "speed_act": speed_map.get(speed_code, f"Code {speed_code}"),
-                        "duplex": "Full" if duplex_code == 2 else "Half",
-                    })
+        ports.sort(key=lambda p: p["port"])
         parsed["ports"] = ports
 
-        # Decode Port Statistics (0x1000) - supports 49 bytes/port (GS108Ev2) and 24 bytes/port
+        # Decode Port Statistics (0x1000)
         stats = []
-        if self.TAG_PORT_STATS in tlvs:
-            stat_data = tlvs[self.TAG_PORT_STATS]
-            if len(stat_data) >= 392 and len(stat_data) % 49 == 0:
-                num_ports = len(stat_data) // 49
-                for i in range(num_ports):
-                    s_offset = i * 49
-                    port_id, rx_bytes, tx_bytes, rx_pkts, tx_pkts, crc_errors, drops = struct.unpack_from(
-                        ">BQQQQQQ", stat_data, s_offset
-                    )
+        for stat_data in port_stats_raw:
+            if len(stat_data) == 49:
+                pid = stat_data[0]
+                rx_b, tx_b, rx_p, tx_p, crc, drp = struct.unpack_from(">QQQQQQ", stat_data, 1)
+                stats.append({
+                    "port": pid,
+                    "bytes_rx": rx_b,
+                    "bytes_tx": tx_b,
+                    "packets_rx": rx_p,
+                    "packets_tx": tx_p,
+                    "crc_errors": crc,
+                    "drops": drp,
+                })
+            elif len(stat_data) >= 49 and len(stat_data) % 49 == 0:
+                for i in range(len(stat_data) // 49):
+                    pid, rx_b, tx_b, rx_p, tx_p, crc, drp = struct.unpack_from(">BQQQQQQ", stat_data, i * 49)
                     stats.append({
-                        "port": port_id,
-                        "bytes_rx": rx_bytes,
-                        "bytes_tx": tx_bytes,
-                        "packets_rx": rx_pkts,
-                        "packets_tx": tx_pkts,
-                        "crc_errors": crc_errors,
-                        "drops": drops,
+                        "port": pid,
+                        "bytes_rx": rx_b,
+                        "bytes_tx": tx_b,
+                        "packets_rx": rx_p,
+                        "packets_tx": tx_p,
+                        "crc_errors": crc,
+                        "drops": drp,
                     })
-            elif len(stat_data) >= 192:
-                num_ports = min(len(stat_data) // 24, 8)
-                for i in range(num_ports):
-                    s_offset = i * 24
-                    rx_bytes, tx_bytes, rx_pkts, tx_pkts, crc_errors, drops = struct.unpack_from(
-                        ">IIIIII", stat_data, s_offset
-                    )
-                    stats.append({
-                        "port": i + 1,
-                        "bytes_rx": rx_bytes,
-                        "bytes_tx": tx_bytes,
-                        "packets_rx": rx_pkts,
-                        "packets_tx": tx_pkts,
-                        "crc_errors": crc_errors,
-                        "drops": drops,
-                    })
+        stats.sort(key=lambda s: s["port"])
         parsed["port_statistics"] = stats
-
         # Decode PVIDs (0x2900) - 16 bytes (8 x uint16)
         if self.TAG_PVID in tlvs and len(tlvs[self.TAG_PVID]) >= 16:
             pvids = list(struct.unpack(">8H", tlvs[self.TAG_PVID][:16]))
@@ -452,12 +440,20 @@ if not resp or len(resp) < 32 or resp[24:28] != b"NSDP":
 resp_mac = ":".join(f"{{b:02x}}" for b in resp[14:20])
 offset = 32
 tlvs = {{}}
+port_links_raw = []
+port_stats_raw = []
 while offset + 4 <= len(resp):
     tag, length = struct.unpack_from(">HH", resp, offset)
     offset += 4
     if tag == 0xFFFF or offset + length > len(resp):
         break
-    tlvs[tag] = resp[offset : offset + length]
+    val = resp[offset : offset + length]
+    if tag == 0x0C00:
+        port_links_raw.append(val)
+    elif tag == 0x1000:
+        port_stats_raw.append(val)
+    else:
+        tlvs[tag] = val
     offset += length
 
 out = {{"mac": resp_mac, "ip": switch_ip, "raw_hex": resp.hex(), "parsed_tags": [hex(k) for k in tlvs.keys()]}}
@@ -473,36 +469,40 @@ if 0x6000 in tlvs and len(tlvs[0x6000]) >= 1: out["port_count"] = tlvs[0x6000][0
 
 speed_map = {{0: "No Link", 1: "10 Mbps Half", 2: "10 Mbps Full", 3: "100 Mbps Half", 4: "100 Mbps Full", 5: "1000 Mbps Full"}}
 ports = []
-if 0x0C00 in tlvs:
-    ld = tlvs[0x0C00]
-    stride = 3 if len(ld) % 3 == 0 and len(ld) // 3 in (5, 8, 16, 24) else (4 if len(ld) % 4 == 0 else 3)
-    for i in range(len(ld) // stride):
-        p_off = i * stride
-        if stride == 3:
-            pid = ld[p_off]
-            spd = ld[p_off + 1]
-            dupx = ld[p_off + 2]
+for ld in port_links_raw:
+    if len(ld) == 3:
+        pid, spd, dupx = ld[0], ld[1], ld[2]
+        ports.append({{
+            "port": pid,
+            "link_up": spd > 0,
+            "speed_act": speed_map.get(spd, f"Code {{spd}}"),
+            "duplex": "Full" if dupx == 1 or spd in (2, 4, 5) else ("Half" if spd in (1, 3) else "None"),
+            "enabled": True
+        }})
+    elif len(ld) % 3 == 0:
+        for i in range(len(ld) // 3):
+            p = ld[i*3:(i+1)*3]
             ports.append({{
-                "port": pid,
-                "link_up": spd > 0,
-                "speed_act": speed_map.get(spd, f"Code {{spd}}"),
-                "duplex": "Full" if dupx == 1 or spd in (2, 4, 5) else ("Half" if spd in (1, 3) else "None"),
+                "port": p[0],
+                "link_up": p[1] > 0,
+                "speed_act": speed_map.get(p[1], f"Code {{p[1]}}"),
+                "duplex": "Full" if p[2] == 1 or p[1] in (2, 4, 5) else ("Half" if p[1] in (1, 3) else "None"),
                 "enabled": True
             }})
-        else:
-            ports.append({{
-                "port": i + 1,
-                "link_up": ld[p_off] == 1,
-                "speed_act": speed_map.get(ld[p_off+1], f"Code {{ld[p_off+1]}}"),
-                "duplex": "Full" if ld[p_off+2] == 2 else "Half",
-                "enabled": ld[p_off+3] == 1
-            }})
+ports.sort(key=lambda p: p["port"])
 out["ports"] = ports
 
 stats = []
-if 0x1000 in tlvs:
-    sd = tlvs[0x1000]
-    if len(sd) >= 392 and len(sd) % 49 == 0:
+for sd in port_stats_raw:
+    if len(sd) == 49:
+        pid, rx_b, tx_b, rx_p, tx_p, crc, drp = struct.unpack_from(">BQQQQQQ", sd, 0)
+        stats.append({{
+            "port": pid,
+            "bytes_rx": rx_b, "bytes_tx": tx_b,
+            "packets_rx": rx_p, "packets_tx": tx_p,
+            "crc_errors": crc, "drops": drp
+        }})
+    elif len(sd) >= 49 and len(sd) % 49 == 0:
         for i in range(len(sd) // 49):
             pid, rx_b, tx_b, rx_p, tx_p, crc, drp = struct.unpack_from(">BQQQQQQ", sd, i * 49)
             stats.append({{
@@ -511,15 +511,7 @@ if 0x1000 in tlvs:
                 "packets_rx": rx_p, "packets_tx": tx_p,
                 "crc_errors": crc, "drops": drp
             }})
-    elif len(sd) >= 192:
-        for i in range(min(len(sd) // 24, 8)):
-            rx_b, tx_b, rx_p, tx_p, crc, drp = struct.unpack_from(">IIIIII", sd, i * 24)
-            stats.append({{
-                "port": i + 1,
-                "bytes_rx": rx_b, "bytes_tx": tx_b,
-                "packets_rx": rx_p, "packets_tx": tx_p,
-                "crc_errors": crc, "drops": drp
-            }})
+stats.sort(key=lambda s: s["port"])
 out["port_statistics"] = stats
 
 if 0x2900 in tlvs and len(tlvs[0x2900]) >= 16:
