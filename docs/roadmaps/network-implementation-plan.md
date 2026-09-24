@@ -17,8 +17,8 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Part 2.9** | Wireshark Headless SPAN Sniffer & Storage Engine (Stack 48) | 🟢 Hardened — 500M tmpfs, 50MB chunks, watchdog, continuous 24h FIFO |
 | **Part 3** | Unified Monitoring, SNMP & Observability (Grafana stack) | ⏳ Pending — not yet deployed |
 
-### Key Protocol Constraints Discovered This Session
-- **Netgear GS108Ev2** — No HTTP REST API. Uses **NSDP** (Layer 2 UDP, ports 63321/63322). The `backup_netgear_switch` / `get_netgear_switch_status` MCP tools **must execute from a host physically on VLAN 1** (`192.168.1.0/24`). Running from a remote routed host will always time out. To resolve: add SSH-exec wrapper invoking `manage-netgear-switch.py` on `pve` (192.168.1.250) or `nexus-server`.
+### Key Protocol Constraints & Architecture Settled
+- **Netgear GS108Ev2** — No HTTP REST API. Uses **NSDP** (Layer 2 UDP, ports 63321/63322). The `backup_netgear_switch` / `get_netgear_switch_status` MCP tools execute via pure Python NSDP using an automated Layer 2 adjacent relay hierarchy: primary OpenWrt router (`192.168.1.226` on `br-lan`) with fallback to Proxmox `pve` (`192.168.1.250` on `vmbr0`). Live telemetry and synchronized dual JSON/binary GitOps backups are 100% verified.
 
 ---
 
