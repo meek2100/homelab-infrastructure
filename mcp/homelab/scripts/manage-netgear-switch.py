@@ -539,16 +539,15 @@ if 0x2800 in tlvs:
 print(json.dumps(out))
 """
 
-    b64_code = base64.b64encode(py_code.encode("utf-8")).decode("ascii")
     ssh_args = [
         "ssh", "-o", "StrictHostKeyChecking=accept-new",
         "-o", "BatchMode=yes", "-o", "ConnectTimeout=5",
     ]
     ssh_args.extend(get_ssh_key_args())
-    ssh_cmd = f"echo '{b64_code}' | base64 -d | python3 - '{switch_ip}'"
+    ssh_cmd = f"python3 - '{switch_ip}'"
     ssh_args.extend([f"root@{relay_host}", ssh_cmd])
 
-    res = subprocess.run(ssh_args, capture_output=True, text=True, timeout=timeout, check=False)
+    res = subprocess.run(ssh_args, input=py_code, capture_output=True, text=True, timeout=timeout, check=False)
     if res.returncode != 0:
         raise RuntimeError(f"L2 Relay ({relay_host}) SSH NSDP execution failed (rc {res.returncode}): {res.stderr.strip()}")
 

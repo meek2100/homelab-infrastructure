@@ -19,8 +19,9 @@ done
 
 echo "🔍 Probing Netgear GS108Ev2 (${SWITCH_IP}) via Layer 2 relay ${RELAY_HOST} on VLAN 1..."
 
-# Encode Python probe script into base64 to ensure 100% immunity to shell escaping collisions
-B64_SCRIPT=$(base64 -w 0 << 'EOF'
+# Pipe the Python probe script directly through SSH standard input to python3
+# This eliminates reliance on remote base64 binaries (which Busybox/OpenWrt lacks) and shell quoting
+ssh "${SSH_OPTS[@]}" "root@${RELAY_HOST}" "python3 - '${SWITCH_IP}'" << 'EOF'
 import socket, struct, json, os, sys
 
 switch_ip = sys.argv[1] if len(sys.argv) > 1 else '192.168.1.220'
@@ -144,6 +145,3 @@ except Exception as e:
 finally:
     sock.close()
 EOF
-)
-
-ssh "${SSH_OPTS[@]}" "root@${RELAY_HOST}" "echo '${B64_SCRIPT}' | base64 -d | python3 - '${SWITCH_IP}'"
