@@ -6,27 +6,92 @@ if [ "${AUTOCAPTURE}" = "false" ]; then
   exit 0
 fi
 
-echo "🧹 NOC-Automation: Running boot-time storage optimization pass..."
-find /nas-storage/ -name "router_baseline_*.pcapng" -mtime +0 -type f -delete
+CAPTURE_DIR="/captures"
+STORAGE_DIR="/nas-storage"
+CAPTURE_FILTER="not host 192.168.40.248 and not port 3000 and not port 3001"
+CHUNK_SIZE_KB=50000   # 50 MB chunks
+MAX_RING_FILES=100    # Dumpcap ring buffer limit
+RETENTION_MINUTES=1440 # 24 hours
+MAX_ARCHIVE_FILES=150 # Hard safety cap on archive storage
 
-echo "⏳ NOC-Automation: Pausing 30 seconds for Proxmox and VM network layers to settle..."
-sleep 30
+DUMPCAP_PID=""
 
-echo "🚀 NOC-Automation: Initializing Headless Capture Engine..."
-ip link set dev ens19 up promisc on
+cleanup() {
+  echo "🛑 NOC-Automation: Received termination signal. Cleaning up..."
+  if [ -n "$DUMPCAP_PID" ] && kill -0 "$DUMPCAP_PID" 2>/dev/null; then
+    kill -TERM "$DUMPCAP_PID" 2>/dev/null
+    wait "$DUMPCAP_PID" 2>/dev/null
+  fi
+  exit 0
+}
+trap cleanup SIGTERM SIGINT SIGHUP
 
-/usr/bin/dumpcap -i ens19 \
-  -f "not host 192.168.40.248 and not port 3000 and not port 3001" \
-  -b filesize:100000 \
-  -b files:100 \
-  -w /captures/router_baseline.pcapng \
-  -q &
+echo "⏳ NOC-Automation: Pausing 15 seconds for Proxmox and VM network layers to settle..."
+sleep 15
 
-while true; do
-  find /captures/ -name "router_baseline_*.pcapng" | while read -r completed_file; do
-    if [[ "$completed_file" != $(ls -1t /captures/router_baseline_*.pcapng 2>/dev/null | head -n 1) ]]; then
-      mv "$completed_file" /nas-storage/ 2>/dev/null
+echo "🚀 NOC-Automation: Initializing Headless Capture Engine on ens19..."
+ip link set dev ens19 up promisc on 2>/dev/null || true
+
+start_dumpcap() {
+  echo "🚀 NOC-Automation: Starting dumpcap (${CHUNK_SIZE_KB}KB chunks into ${CAPTURE_DIR} tmpfs)..."
+  /usr/bin/dumpcap -i ens19 \
+    -f "${CAPTURE_FILTER}" \
+    -b filesize:"${CHUNK_SIZE_KB}" \
+    -b files:"${MAX_RING_FILES}" \
+    -w "${CAPTURE_DIR}/router_baseline.pcapng" \
+    -q &
+  DUMPCAP_PID=$!
+  echo "✓ Dumpcap started with PID ${DUMPCAP_PID}"
+}
+
+prune_archive() {
+  if [ -d "${STORAGE_DIR}" ] && [ -w "${STORAGE_DIR}" ]; then
+    # Prune captures older than 24 hours
+    find "${STORAGE_DIR}" -name "router_baseline_*.pcapng" -type f -mmin +"${RETENTION_MINUTES}" -delete 2>/dev/null
+
+    # Hard cap check: delete oldest files if count exceeds MAX_ARCHIVE_FILES
+    local total_files
+    total_files=$(ls -1 "${STORAGE_DIR}"/router_baseline_*.pcapng 2>/dev/null | wc -l)
+    if [ "$total_files" -gt "${MAX_ARCHIVE_FILES}" ]; then
+      local excess=$(( total_files - MAX_ARCHIVE_FILES ))
+      echo "🧹 NOC-Automation: Pruning $excess excess capture files beyond safety cap (${MAX_ARCHIVE_FILES})..."
+      ls -1t "${STORAGE_DIR}"/router_baseline_*.pcapng 2>/dev/null | tail -n "$excess" | xargs -r rm -f
     fi
-  done
+  fi
+}
+
+# Boot-time initial prune pass
+echo "🧹 NOC-Automation: Running boot-time storage optimization pass..."
+prune_archive
+
+start_dumpcap
+
+loop_count=0
+while true; do
+  # 1. Watchdog: Ensure dumpcap is alive; restart if crashed
+  if [ -z "$DUMPCAP_PID" ] || ! kill -0 "$DUMPCAP_PID" 2>/dev/null; then
+    echo "⚠️ NOC-Automation: [$(date '+%Y-%m-%d %H:%M:%S')] dumpcap is not running! Restarting..."
+    start_dumpcap
+  fi
+
+  # 2. Transfer completed chunks from tmpfs to NAS storage to protect tmpfs capacity and avoid drive wear
+  if [ -d "${STORAGE_DIR}" ] && [ -w "${STORAGE_DIR}" ]; then
+    active_file=$(ls -1t "${CAPTURE_DIR}"/router_baseline_*.pcapng 2>/dev/null | head -n 1)
+    for completed_file in "${CAPTURE_DIR}"/router_baseline_*.pcapng; do
+      [ -e "$completed_file" ] || continue
+      if [ "$completed_file" != "$active_file" ]; then
+        mv "$completed_file" "${STORAGE_DIR}/" 2>/dev/null
+      fi
+    done
+  else
+    echo "⚠️ NOC-Automation: [$(date '+%Y-%m-%d %H:%M:%S')] ${STORAGE_DIR} is NOT writable or mounted! Buffering in tmpfs..."
+  fi
+
+  # 3. Periodic continuous 24-hour FIFO pruning (every ~5 minutes: 30 iterations * 10s)
+  loop_count=$(( loop_count + 1 ))
+  if [ $(( loop_count % 30 )) -eq 0 ]; then
+    prune_archive
+  fi
+
   sleep 10
 done

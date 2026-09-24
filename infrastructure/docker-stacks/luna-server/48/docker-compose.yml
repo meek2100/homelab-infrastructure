@@ -18,5 +18,5 @@ services:
       - ${BASE_PATH}/wireshark/custom-services.d:/custom-services.d
       - ${NFS_MOUNT_POINT}/wireshark-captures:/nas-storage
     tmpfs:
-      - /captures:rw,size=150M,mode=1777
+      - /captures:rw,size=500M,mode=1777
     restart: unless-stopped
