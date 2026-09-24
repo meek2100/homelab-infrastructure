@@ -48,3 +48,4 @@ __pycache__/
 **/.cache/
 **/.npm/
 **/node_modules/
+.vscode/
