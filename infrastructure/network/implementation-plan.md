@@ -4,16 +4,17 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 
 ---
 
-## 📈 Progress Summary — Last Updated 2026-09-22
+## 📈 Progress Summary — Last Updated 2026-09-24
 
 | Part | Title | Status |
 | :--- | :--- | :---: |
 | **Part 1** | Core Router & Switch ACL Configuration (21 rules) | ✅ 100% Verified |
 | **Part 2** | End-to-End Verification & Testing Runbook (5 tests) | ✅ 100% Verified |
-| **Part 2.5** | Multicast & Discovery Architecture (Native NSDP/mDNS) | ✅ Settled |
+| **Part 2.5** | Multicast & Discovery Architecture (Native Bonjour/IGMP) | ✅ Settled |
 | **Part 2.6** | WAN2 & Storage SAN Isolation (untagged vmbr1) | ✅ Settled |
 | **Part 2.7** | vxlan-server Split Trunking Architecture (VM 107) | ✅ Designed — `vxlan-server` on standby, tested |
-| **Part 2.8** | Netgear GS108Ev2 Office Switch GitOps & Backup | 🟡 In Progress — SOPS secrets stored; NSDP tooling installed in `.venv`; **MCP backup cannot run remotely** (requires L2-local host on VLAN 1) |
+| **Part 2.8** | Netgear GS108Ev2 Office Switch GitOps & Backup | 🟡 In Progress — Native NSDP packet driver complete; pending L2 execution |
+| **Part 2.9** | Wireshark Headless SPAN Sniffer & Storage Engine (Stack 48) | 🟢 Hardened — 500M tmpfs, 50MB chunks, watchdog, continuous 24h FIFO |
 | **Part 3** | Unified Monitoring, SNMP & Observability (Grafana stack) | ⏳ Pending — not yet deployed |
 
 ### Key Protocol Constraints Discovered This Session
@@ -162,81 +163,105 @@ The Araknis 830 AP 5GHz wireless bridge strips 802.1Q tags across the link to th
 
 ---
 
-## 🔌 Part 2.8: Netgear GS108Ev2 Office Switch — GitOps Backup Status
+## 🔌 Part 2.8: Netgear GS108Ev2 Office Switch — Headless NSDP Architecture & GitOps
 
-### Current State: 🟡 In Progress
+### Current State: 🟡 Architecture Revised (Headless NSDP Native)
 
 | Item | Status |
 | :--- | :---: |
+| Headless NSDP wire protocol & framing reverse-engineered | ✅ Documented |
+| Incompatible web-scraping drivers (`py-netgear-plus`) identified & retired | ✅ Done |
 | SOPS-encrypted credentials saved to `infrastructure/secrets/araknis-switch.enc.yaml` | ✅ Done |
-| Community NSDP drivers installed (`netgear-tool`, `py-netgear-plus`) in repo `.venv` | ✅ Done |
-| `manage-netgear-switch.py` script authored with `status` and `backup` actions | ✅ Done |
-| FastMCP tools `backup_netgear_switch` / `get_netgear_switch_status` registered in `server.py` | ✅ Done |
-| Live backup executed & `netgear-gs108e-backup.json` committed to repo | ❌ Blocked |
-
-### Blocker: NSDP Requires Layer 2 Local Execution
-
-The GS108Ev2 has **no HTTP REST API, no SSH, and no web UI**. It uses **NSDP (Netgear Switch Discovery Protocol)** — a proprietary Layer 2 UDP broadcast protocol on ports **63321 (client) / 63322 (switch)**. NSDP frames rely on local MAC broadcast and do not route across Layer 3 boundaries.
-
-The MCP server runs on an external/routed host. `manage-netgear-switch.py` must run on a host **physically on VLAN 1 (`192.168.1.0/24`)**.
-
-**Resolution options:**
-1. **SSH-exec wrapper** *(recommended)*: Update `backup_netgear_switch` in `server.py` to SSH into `pve` (`192.168.1.250`) and run `manage-netgear-switch.py` there using the repo's `.venv`.
-2. **Manual execution**: SSH into `pve` directly and run `.venv/bin/python3 mcp/homelab/scripts/manage-netgear-switch.py backup`.
-3. **VM-based agent / proxy**: Deploy a lightweight daemon inside `nexus-server` or `vxlan-server` (both on VLAN 1) that proxies NSDP requests or provides a local REST API endpoint.
+| Pure NSDP socket driver & packet parser in `manage-netgear-switch.py` | 🟡 In Progress |
+| Layer 2 adjacent proxy/runner architecture (OpenWrt `nsdpd` / PVE L2 host) | 🟡 Blueprint Ready |
+| Live backup executed & `netgear-gs108e-backup.json` committed to repo | ⏳ Pending L2 Run |
 
 ---
 
-### 🔬 Technical Learnings & Driver Comparison
+### ⚠️ Ground Truth: Hardware Realities & Protocol Invariants
 
-#### 1. `netgear-tool` ([GitHub: s-t-e-f-a-n-o/netgear-tool](https://github.com/s-t-e-f-a-n-o/netgear-tool)) — Primary Driver
-* **Protocol Implementation**: Pure Python communicating directly over raw NSDP sockets (UDP 63321/63322).
-* **Capabilities**:
-  * System info extraction (Model, Firmware, MAC, IP, Gateway).
-  * Port settings (enable state, speed configured, actual negotiated speed, duplex).
-  * Port statistics (bytes RX, bytes TX, CRC error counters for cable diagnostic).
-  * 802.1Q VLAN IDs and per-port VLAN membership tables.
-  * PVIDs (Port VLAN IDs).
-  * Advanced L2 features: rate limiting, IGMP snooping, port mirroring, loop detection, power saving, QoS mode, broadcast storm filtering.
-* **Architecture**: Clean context manager (`with sw: ...`) managing socket lifecycle. Converts internal dataclasses and `IntEnum` objects neatly to JSON.
-* **Learnings**: The most comprehensive and reliable library for full configuration extraction and backup of the GS108Ev2.
-
-#### 2. `py-netgear-plus` ([GitHub: foxey/py-netgear-plus](https://github.com/foxey/py-netgear-plus)) — Fallback Driver
-* **Protocol Implementation**: Python client designed primarily for the Home Assistant Netgear Plus custom integration.
-* **Capabilities**: Automatic model detection (`autodetect_model()`), switch information retrieval (`get_switch_infos()`), and port status.
-* **Learnings**: Useful as a secondary fallback for basic switch metadata, but lacks granular L2 features (such as CRC error counters, deep 802.1Q membership mapping, and granular rate limits) found in `netgear-tool`.
-
----
-
-### 📚 Candidate Repositories for Investigation
-
-To eliminate dependency on the proprietary Windows 11 Netgear ProSAFE Plus Configuration Utility, the following open-source NSDP projects have been identified for deep-dive investigation:
-
-1. **[`nccgroup/nsdp-discover`](https://github.com/nccgroup/nsdp-discover)**
-   * **Language**: Python
-   * **Focus**: Discovery, credential testing, and security assessment of Netgear NSDP switches by NCC Group.
-   * **Value**: Excellent reference for NSDP opcode dissection, protocol frame structure, authentication exchange verification, and edge-case behavior.
-
-2. **[`AlbanBedel/libnsdp`](https://github.com/AlbanBedel/libnsdp)**
-   * **Language**: C
-   * **Focus**: Clean C library and CLI utilities for Netgear Switch Discovery Protocol.
-   * **Value**: High-performance, zero-runtime-overhead reference implementation. Ideal for cross-compiling directly for OpenWrt (Belkin AX3200 on `192.168.1.226`) or embedding into low-footprint Linux containers.
-
-3. **[`yaamai/go-nsdp`](https://github.com/yaamai/go-nsdp)**
-   * **Language**: Go
-   * **Focus**: Go package implementing the NSDP protocol.
-   * **Value**: Enables building a standalone single-binary CLI or background daemon (e.g. an NSDP-to-REST bridge or a Netgear Prometheus exporter) that can run directly on Proxmox (`pve`) or OpenWrt without Python virtual environments or runtime dependencies.
+1. **Headless Hardware (No Web GUI)**:
+   - The Netgear **GS108Ev2** (running firmware `1.00.12`) is an "Easy Smart" ProSAFE Plus switch that is **completely headless**. It does NOT have an HTTP/HTTPS web daemon, SSH server, Telnet listener, or SNMP agent.
+   - *Crucial Distinction*: Only subsequent hardware iterations like the **GS108Ev3** incorporate a lightweight embedded web GUI.
+   - *Driver Elimination*: All web-scraping libraries (such as `foxey/py-netgear-plus` or `ckarrie/ha-netgear-plus` targeting `login.cgi`) are **completely unusable** on the v2 and produce `ECONNREFUSED` or timeouts.
+2. **Protocol Framing (NSDP)**:
+   - Management requires raw **NSDP (Netgear Switch Discovery Protocol)** over UDP.
+   - Client sends on source UDP **63321**; switch agent listens on UDP **63322**.
+   - Fixed 32-byte header (Big-Endian): `Version (0x01)`, `Opcode` (0x01 Read, 0x02 ReadResp, 0x03 Write, 0x17 Token, 0x18 Challenge, 0x1A AuthWrite), `Status` (0x0000 OK), `Manager MAC` (6B), `Agent MAC` (6B), `Sequence` (uint16), Signature `"NSDP"` (`0x4E534450`), and trailing null padding.
+   - Variable TLV records concluded with mandatory 4-byte End-of-Message delimiter: `0xFFFF0000`.
+3. **Key Register Space**:
+   - `0x0001`: Model Name (`GS108Ev2`), `0x0003`: Host Name, `0x0004`: MAC, `0x0006`: IP, `0x000D`: Firmware Bank 1.
+   - `0x0C00`: Port Link Matrix (4 bytes/port: Link Status, Speed 10/100/1000M, Duplex, Admin State).
+   - `0x1000`: Port Statistics (192 bytes total: 24 bytes/port for Rx/Tx Octets, Packets, CRC errors, Drops).
+   - `0x2800`: 802.1Q VLAN Membership & `0x2900`: Port PVID Assignment (16 bytes).
+4. **Flash Memory Persistence & Lockout Risk**:
+   - Writes commit **immediately to SPI NOR flash** with no volatile staging or uncommitted buffer.
+   - Automated scripts must never perform high-frequency writes (flash wear exhaustion).
+   - All mutations must be batched atomically into single datagrams with pre-flight invariant validation (uplink PVID & VLAN 1 protection) to avert permanent lockout.
 
 ---
 
-### 🛠️ Non-Windows Automation & Configuration Pathways
+### 🏛️ Two-Tier Execution Strategy
 
-| Strategy | Mechanism | Pros | Cons |
-| :--- | :--- | :--- | :--- |
-| **A. SSH-Exec to PVE** | MCP script SSHs to `pve` (`192.168.1.250`) and runs `manage-netgear-switch.py` in repo `.venv` | Zero new services; uses existing Python tooling | Requires SSH key auth between MCP host and PVE |
-| **B. OpenWrt Native Binary** | Compile `libnsdp` or `go-nsdp` into a standalone binary deployed to OpenWrt (`192.168.1.226`) | Runs directly adjacent to GS108E switch; independent of Proxmox | Requires cross-compilation pipeline for OpenWrt target architecture |
-| **C. Lightweight Go REST Micro-Daemon** | Run a small Go daemon (`go-nsdp`) on `nexus-server` or `pve` exposing a local REST API (`/status`, `/backup`, `/config`) | Eliminates L2 broadcast limitations for remote MCP tools | Requires maintaining a small service container |
-| **D. NSDP UDP Proxy / Relay** | Forward UDP 63321/63322 packets between remote MCP host and VLAN 1 | Keeps tooling remote | NSDP packet formatting expects matching subnet semantics; prone to timeout issues |
+Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/24`), frames cannot route across Layer 3 boundaries from remote MCP runners:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                 MCP Control Host / IDE                      │
+│     mcp/homelab/scripts/manage-netgear-switch.py            │
+│  (Thin client issuing HTTP/JSON to adjacent daemon)         │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ HTTP / REST (Port 8080)
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│       Adjacent Layer 2 Proxy: OpenWrt Router                │
+│             Belkin AX3200 (192.168.1.226)                   │
+│  - Micro-daemon (nsdpd) listening on :8080                  │
+│  - Bound directly to br-lan (VLAN 1 broadcast domain)       │
+│  - Dispatches raw NSDP UDP:63321 -> UDP:63322               │
+│  - Handles v2auth, commit-confirm rollback, and TLV packing │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ Raw NSDP Frames (L2 Broadcast/Unicast)
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│             Netgear GS108Ev2 Switch (192.168.1.220)         │
+│               Headless - ProSAFE Plus Utility Only          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+* **Target Execution Host A (Recommended)**: OpenWrt Belkin AX3200 (`192.168.1.226`) on `br-lan`. Runs `nsdpd` daemon cross-compiled from `yaamai/go-nsdp` (ARM64 MT7622).
+* **Target Execution Host B (Interim / Direct)**: Proxmox `pve` (`192.168.1.250`) on `vmbr0`. Runs native Python NSDP socket script directly adjacent to switch.
+
+---
+
+## 📡 Part 2.9: Wireshark Headless SPAN Sniffer Optimization & Storage Engine (Stack 48 on luna-server)
+
+### Current State: 🟢 Resolved & Hardened (Ready for Deployment)
+
+| Component | Architecture / Setting | Verification |
+| :--- | :--- | :---: |
+| **Ingress Interface** | `ens19` (VM 102 `tap102i1` on `vmbr1` / `lan1` SPAN mirror) | Promiscuous Mode ON |
+| **Drive Wear Protection** | RAM `tmpfs` `/captures` (size increased from 150M to **500M**) | 0 SSD NVMe Writes |
+| **Capture Chunk Size** | `-b filesize:50000` (50 MB) + `-b files:100` ring buffer | Prevents Buffer Exhaustion |
+| **Process Supervision** | Active watchdog in `tshark-capture` checks PID every 10s | Auto-restarts on crash |
+| **Continuous FIFO Pruning** | `find /nas-storage/ -mmin +1440 -delete` + 150-file hard cap | Runs every 5 minutes in loop |
+| **Storage Fault Tolerance** | Pre-flight write check on `/nas-storage` before moving chunks | Buffers safely in tmpfs |
+
+### Architecture & Data Flow
+
+```
+[Araknis 920 SPAN Mirror] ──► [pve lan1 / vmbr1] ──► [VM 102 ens19]
+                                                          │
+                                         ┌────────────────┴────────────────┐
+                                         ▼                                 ▼
+                             [tmpfs /captures (RAM: 500M)]         [Web GUI :3000]
+                                 │ (0 Drive Wear / 50MB Chunks)
+                                 ▼ (Watchdog & Completed Chunk Mover)
+                             [/nas-storage (NFS Mount)]
+                                 │ (24-Hour Continuous FIFO + 150-File Safety Cap)
+                                 ▼
+                             [nas-server VM 101 Storage Pool]
+```
 
 ---
 

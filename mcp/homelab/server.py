@@ -344,12 +344,11 @@ def restore_araknis_router(backup_file: str = "") -> str:
 
 @mcp.tool()
 def backup_netgear_switch(ip: str = "192.168.1.220") -> str:
-    """Backs up Netgear GS108Ev2 switch configuration (system info, ports, VLANs, IGMP, rate limits) into infrastructure/network/configs/.
+    """Backs up Netgear GS108Ev2 switch configuration (system info, ports, VLANs, PVIDs) into infrastructure/network/configs/.
 
-    NOTE: The GS108Ev2 has NO official API or CLI. Communication uses NSDP (Netgear Switch Discovery Protocol),
-    a proprietary Layer 2 UDP protocol on ports 63321/63322. This tool must run on the same L2 broadcast domain
-    as the switch (VLAN 1 / 192.168.1.0/24). Standard HTTP/REST connections will always time out.
-    Uses community drivers: netgear-tool and py-netgear-plus (both reverse-engineer NSDP).
+    NOTE: The GS108Ev2 has NO official API or CLI and NO web GUI. Communication uses NSDP (Netgear Switch Discovery Protocol),
+    a proprietary Layer 2 UDP protocol on ports 63321/63322. Uses pure-Python native NSDP packet driver with OpenWrt L2
+    adjacent relay (Belkin AX3200 on br-lan / 192.168.1.226).
     """
     args = ["backup"]
     if ip != "192.168.1.220":
@@ -360,10 +359,9 @@ def backup_netgear_switch(ip: str = "192.168.1.220") -> str:
 def get_netgear_switch_status(ip: str = "192.168.1.220") -> str:
     """Queries live Netgear GS108Ev2 switch ports, link speed, packet counters, and CRC error statistics.
 
-    NOTE: The GS108Ev2 has NO official API or CLI. Communication uses NSDP (Netgear Switch Discovery Protocol),
-    a proprietary Layer 2 UDP protocol on ports 63321/63322. This tool must run on the same L2 broadcast domain
-    as the switch (VLAN 1 / 192.168.1.0/24). Standard HTTP/REST connections will always time out.
-    Uses community drivers: netgear-tool and py-netgear-plus (both reverse-engineer NSDP).
+    NOTE: The GS108Ev2 has NO official API or CLI and NO web GUI. Communication uses NSDP (Netgear Switch Discovery Protocol),
+    a proprietary Layer 2 UDP protocol on ports 63321/63322. Uses pure-Python native NSDP packet driver with OpenWrt L2
+    adjacent relay (Belkin AX3200 on br-lan / 192.168.1.226).
     """
     args = ["status"]
     if ip != "192.168.1.220":

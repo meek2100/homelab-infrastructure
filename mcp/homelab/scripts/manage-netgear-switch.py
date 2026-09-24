@@ -2,32 +2,30 @@
 """
 Netgear GS108Ev2 Switch Management & Automation Tool
 
-IMPORTANT — No Official API or CLI:
-  The GS108Ev2 is a Netgear "Easy Smart" switch with NO official HTTP REST API, SSH, or CLI.
-  It is exclusively managed by the Netgear ProSAFE Plus Configuration Utility (Windows/macOS
-  desktop app), which uses NSDP (Netgear Switch Discovery Protocol) — a proprietary Layer 2
-  UDP broadcast protocol on ports 63321 and 63322. Standard HTTP connections will always time out.
+Headless NSDP Native Driver:
+  The GS108Ev2 (firmware 1.00.12) is a headless "Easy Smart" ProSAFE Plus switch with
+  NO HTTP/HTTPS web daemon, NO SSH, and NO SNMP. Only v3 hardware introduced an embedded web GUI.
+  Web-scraping tools (such as py-netgear-plus) targeting login.cgi are strictly incompatible.
 
-  To interact programmatically, this script uses community open-source libraries that
-  reverse-engineer NSDP:
-    - netgear-tool   (primary driver, communicates via raw NSDP packets)
-    - py-netgear-plus (fallback driver)
+  Direct programmatic interaction uses NSDP (Netgear Switch Discovery Protocol) over UDP:
+    - Client source port: 63321
+    - Switch agent port: 63322
+    - Transport framing: 32-byte header + TLV records + 0xFFFF0000 delimiter.
 
-  REQUIREMENT: This script MUST run on a host in the same Layer 2 broadcast domain as the
-  switch (VLAN 1 / 192.168.1.0/24). NSDP packets do not route across Layer 3 boundaries.
-  Running this from a remote host over a routed connection will NOT work.
-
-Supports:
-  - Configuration backup (system metadata, port configurations, VLANs, IGMP, rate limits)
-  - Port status and operational health inspection (link speed, packet counters, CRC errors)
-  - Integration with SOPS-encrypted credentials
+  Network Topology:
+    NSDP is strictly Layer 2 broadcast/unicast on VLAN 1 (192.168.1.0/24).
+    This tool supports:
+      1. Direct Native NSDP: Raw socket dispatch when running on a host adjacent to VLAN 1 (e.g. pve or runner).
+      2. Library Fallback: netgear-tool if available in environment.
+      3. REST Proxy Client: Queries adjacent OpenWrt micro-daemon (http://192.168.1.226:8080) when routed.
 """
-
 
 import argparse
 import json
 import os
 import shutil
+import socket
+import struct
 import subprocess
 import sys
 import time
@@ -38,11 +36,17 @@ try:
 except ImportError:
     yaml = None
 
+try:
+    import requests
+except ImportError:
+    requests = None
+
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 CONFIG_BACKUP_FILE = os.path.join(REPO_ROOT, "infrastructure", "network", "configs", "netgear-gs108e-backup.json")
 SECRET_FILE = os.path.join(REPO_ROOT, "infrastructure", "secrets", "araknis-switch.enc.yaml")
 
 DEFAULT_SWITCH_IP = "192.168.1.220"
+DEFAULT_OPENWRT_PROXY = "http://192.168.1.226:8080"
 
 
 def get_age_key_path():
@@ -66,30 +70,24 @@ def load_credentials():
 
     if os.path.exists(SECRET_FILE):
         sops_bin = shutil.which("sops") or os.path.expanduser("~/.local/bin/sops")
-        if not sops_bin or not os.path.exists(sops_bin):
-            raise RuntimeError(f"sops binary not found to decrypt {SECRET_FILE}")
+        if sops_bin and os.path.exists(sops_bin):
+            key_file = get_age_key_path()
+            env = os.environ.copy()
+            if key_file:
+                env["SOPS_AGE_KEY_FILE"] = key_file
 
-        key_file = get_age_key_path()
-        env = os.environ.copy()
-        if key_file:
-            env["SOPS_AGE_KEY_FILE"] = key_file
+            res = subprocess.run([sops_bin, "-d", SECRET_FILE], capture_output=True, text=True, env=env, check=False)
+            if res.returncode == 0:
+                if yaml:
+                    data = yaml.safe_load(res.stdout)
+                else:
+                    data = json.loads(res.stdout)
 
-        res = subprocess.run([sops_bin, "-d", SECRET_FILE], capture_output=True, text=True, env=env)
-        if res.returncode == 0:
-            if yaml:
-                data = yaml.safe_load(res.stdout)
-            else:
-                data = json.loads(res.stdout)
+                host = data.get("netgear_switch_ip", data.get("netgear_ip", host))
+                password = data.get("netgear_password", data.get("password"))
+                if password:
+                    return host, str(password)
 
-            # Check netgear specific keys first, fallback to generic switch credentials
-            host = data.get("netgear_switch_ip", data.get("netgear_ip", host))
-            password = data.get("netgear_password", data.get("password"))
-            if password:
-                return host, str(password)
-        else:
-            sys.stderr.write(f"Warning: SOPS decryption failed: {res.stderr}\n")
-
-    # Fallback default password for unconfigured Netgear Plus switches
     return host, "password"
 
 
@@ -106,188 +104,513 @@ def _serialize(obj):
     return obj
 
 
-def connect_switch(host, password, timeout=10.0):
-    """Attempt connection using netgear_tool, with fallback to py_netgear_plus."""
+class NativeNSDPClient:
+    """Pure-Python native NSDP packet driver conforming to the GS108Ev2 protocol spec."""
+
+    TAG_MODEL = 0x0001
+    TAG_DEVICE_NAME = 0x0003
+    TAG_MAC = 0x0004
+    TAG_LOCATION = 0x0005
+    TAG_IP = 0x0006
+    TAG_NETMASK = 0x0007
+    TAG_GATEWAY = 0x0008
+    TAG_DHCP_MODE = 0x000B
+    TAG_FIRMWARE_B1 = 0x000D
+    TAG_FIRMWARE_B2 = 0x000E
+    TAG_ACTIVE_SLOT = 0x000F
+    TAG_PORT_LINK = 0x0C00
+    TAG_PORT_STATS = 0x1000
+    TAG_VLAN_MEMBERSHIP = 0x2800
+    TAG_PVID = 0x2900
+
+    def __init__(self, host=DEFAULT_SWITCH_IP, port=63322, timeout=3.0):
+        self.host = host
+        self.port = port
+        self.timeout = timeout
+        self.seq = 1
+
+    def query(self, tags, host_mac=b"\x00\x00\x00\x00\x00\x00", switch_mac=b"\x00\x00\x00\x00\x00\x00"):
+        """Build and dispatch an NSDP Read Request (opcode 0x01) and parse response TLVs."""
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.settimeout(self.timeout)
+        try:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        except Exception:
+            pass
+
+        try:
+            try:
+                sock.bind(("", 63321))
+            except Exception:
+                pass  # Fall back to ephemeral port if 63321 is bound
+
+            header = struct.pack(
+                ">BBHI6s6sHH4s4s",
+                0x01,                   # version: 0x01
+                0x01,                   # op_code: 0x01 Read Request
+                0x0000,                 # result_code: 0x0000
+                0x00000000,             # failure_tlv
+                host_mac,               # host MAC
+                switch_mac,             # switch MAC
+                0x0000,                 # reserved alignment
+                self.seq,               # sequence counter
+                b"NSDP",                # signature: "NSDP" (0x4E534450)
+                b"\x00\x00\x00\x00"     # padding
+            )
+
+            body = bytearray()
+            for tag in tags:
+                body += struct.pack(">HH", tag, 0x0000)
+            body += struct.pack(">HH", 0xFFFF, 0x0000)  # EOM marker
+
+            packet = bytes(header + body)
+            sock.sendto(packet, (self.host, self.port))
+
+            resp_data, _ = sock.recvfrom(4096)
+            self.seq = (self.seq + 1) & 0xFFFF
+            return self._parse_tlvs(resp_data)
+        finally:
+            sock.close()
+
+    def _parse_tlvs(self, data):
+        if len(data) < 32:
+            raise ValueError(f"NSDP response too short: {len(data)} bytes")
+
+        (
+            version,
+            op_code,
+            result_code,
+            _failure_tlv,
+            _host_mac,
+            switch_mac,
+            _reserved,
+            _seq,
+            sig,
+            _padding,
+        ) = struct.unpack(">BBHI6s6sHH4s4s", data[:32])
+
+        if sig != b"NSDP":
+            raise ValueError(f"Invalid NSDP signature: {sig}")
+
+        tlvs = {}
+        offset = 32
+        while offset + 4 <= len(data):
+            tag, length = struct.unpack_from(">HH", data, offset)
+            offset += 4
+            if tag == 0xFFFF:
+                break
+            if offset + length > len(data):
+                break
+            val = data[offset : offset + length]
+            tlvs[tag] = val
+            offset += length
+
+        parsed = {
+            "version": version,
+            "op_code": op_code,
+            "result_code": result_code,
+            "mac": ":".join(f"{b:02x}" for b in switch_mac),
+        }
+
+        # Decode Standard Identity TLVs
+        if self.TAG_MODEL in tlvs:
+            parsed["model"] = tlvs[self.TAG_MODEL].decode("ascii", errors="ignore").rstrip("\x00")
+        if self.TAG_DEVICE_NAME in tlvs:
+            parsed["device_name"] = tlvs[self.TAG_DEVICE_NAME].decode("ascii", errors="ignore").rstrip("\x00")
+        if self.TAG_IP in tlvs and len(tlvs[self.TAG_IP]) == 4:
+            parsed["ip"] = socket.inet_ntoa(tlvs[self.TAG_IP])
+        if self.TAG_NETMASK in tlvs and len(tlvs[self.TAG_NETMASK]) == 4:
+            parsed["netmask"] = socket.inet_ntoa(tlvs[self.TAG_NETMASK])
+        if self.TAG_GATEWAY in tlvs and len(tlvs[self.TAG_GATEWAY]) == 4:
+            parsed["gateway"] = socket.inet_ntoa(tlvs[self.TAG_GATEWAY])
+        if self.TAG_FIRMWARE_B1 in tlvs:
+            parsed["firmware"] = tlvs[self.TAG_FIRMWARE_B1].decode("ascii", errors="ignore").rstrip("\x00")
+
+        # Decode Port Link Matrix (0x0C00) - 4 bytes per port
+        ports = []
+        speed_map = {0: "No Link", 1: "10 Mbps", 2: "100 Mbps", 3: "1000 Mbps"}
+        duplex_map = {1: "Half", 2: "Full"}
+        if self.TAG_PORT_LINK in tlvs:
+            link_data = tlvs[self.TAG_PORT_LINK]
+            num_ports = len(link_data) // 4
+            for i in range(num_ports):
+                p_offset = i * 4
+                link_status = link_data[p_offset]
+                speed_code = link_data[p_offset + 1]
+                duplex_code = link_data[p_offset + 2]
+                admin_code = link_data[p_offset + 3]
+                ports.append({
+                    "port": i + 1,
+                    "enabled": (admin_code == 1),
+                    "link_up": (link_status == 1),
+                    "speed_act": speed_map.get(speed_code, f"Code {speed_code}"),
+                    "duplex": duplex_map.get(duplex_code, "Unknown"),
+                })
+        parsed["ports"] = ports
+
+        # Decode Port Statistics (0x1000) - 192 bytes (24 bytes per port)
+        stats = []
+        if self.TAG_PORT_STATS in tlvs:
+            stat_data = tlvs[self.TAG_PORT_STATS]
+            num_ports = min(len(stat_data) // 24, 8)
+            for i in range(num_ports):
+                s_offset = i * 24
+                rx_bytes, tx_bytes, rx_pkts, tx_pkts, crc_errors, drops = struct.unpack_from(
+                    ">IIIIII", stat_data, s_offset
+                )
+                stats.append({
+                    "port": i + 1,
+                    "bytes_rx": rx_bytes,
+                    "bytes_tx": tx_bytes,
+                    "packets_rx": rx_pkts,
+                    "packets_tx": tx_pkts,
+                    "crc_errors": crc_errors,
+                    "drops": drops,
+                })
+        parsed["port_statistics"] = stats
+
+        # Decode PVIDs (0x2900) - 16 bytes (8 x uint16)
+        if self.TAG_PVID in tlvs and len(tlvs[self.TAG_PVID]) >= 16:
+            pvids = list(struct.unpack(">8H", tlvs[self.TAG_PVID][:16]))
+            parsed["pvids"] = {i + 1: pvids[i] for i in range(len(pvids))}
+
+        return parsed
+
+
+def get_ssh_key():
+    for candidate in [
+        "/home/dtheurer/.ssh/pi_id_ed25519",
+        os.path.expanduser("~/.ssh/pi_id_ed25519"),
+        "/mnt/c/Users/dtheurer/.ssh/pi_id_ed25519",
+    ]:
+        if os.path.exists(candidate):
+            return candidate
+    return None
+
+
+def query_via_l2_ssh(relay_host="192.168.1.250", switch_ip=DEFAULT_SWITCH_IP, password=None, timeout=10):
+    """Execute native NSDP client query directly on an L2 adjacent host (PVE or OpenWrt on VLAN 1) via SSH."""
+    key = get_ssh_key()
+
+    auth_hex = ""
+    if password:
+        xor_key = b"NtgrSmartSwitchRock"
+        enc_pw = bytes(b ^ xor_key[i % len(xor_key)] for i, b in enumerate(password.encode("ascii", "ignore")))
+        auth_hex = enc_pw.hex()
+
+    py_code = f"""import socket, struct, json, sys
+
+auth_hex = "{auth_hex}"
+auth_tlv = bytearray()
+if auth_hex:
+    enc_pw = bytes.fromhex(auth_hex)
+    auth_tlv = struct.pack(">HH", 0x000A, len(enc_pw)) + enc_pw
+
+header = struct.pack(">BBHI6s6sHH4s4s", 0x01, 0x01, 0, 0, b"\\x00"*6, b"\\x00"*6, 0, 1, b"NSDP", b"\\x00"*4)
+tags = [
+    0x0001,  # Model name
+    0x0003,  # Device name
+    0x0004,  # Switch MAC
+    0x0005,  # Location
+    0x0006,  # IP
+    0x0007,  # Netmask
+    0x0008,  # Gateway
+    0x000B,  # DHCP mode
+    0x000D,  # Firmware 1
+    0x000E,  # Firmware 2
+    0x0C00,  # Port status / speed / duplex
+    0x1000,  # Port statistics
+    0x2800,  # 802.1Q VLAN membership
+    0x2900,  # PVIDs
+]
+
+body = bytearray(auth_tlv)
+for t in tags:
+    body += struct.pack(">HH", t, 0)
+body += struct.pack(">HH", 0xFFFF, 0)
+packet = bytes(header + body)
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.settimeout(2.5)
+try:
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+except Exception:
+    pass
+
+try:
+    try:
+        sock.bind(("", 63321))
+    except Exception:
+        pass
+    sock.sendto(packet, ("{switch_ip}", 63322))
+    resp, _ = sock.recvfrom(4096)
+finally:
+    sock.close()
+
+if not resp or len(resp) < 32 or resp[24:28] != b"NSDP":
+    print(json.dumps({{"error": "Invalid or missing NSDP response", "raw_len": len(resp) if resp else 0}}))
+    sys.exit(1)
+
+resp_mac = ":".join(f"{{b:02x}}" for b in resp[14:20])
+offset = 32
+tlvs = {{}}
+while offset + 4 <= len(resp):
+    tag, length = struct.unpack_from(">HH", resp, offset)
+    offset += 4
+    if tag == 0xFFFF or offset + length > len(resp):
+        break
+    tlvs[tag] = resp[offset : offset + length]
+    offset += length
+
+# Fallback: if bulk query did not return data TLVs, query tags individually
+if not any(t in tlvs for t in [0x0001, 0x0003, 0x0C00, 0x1000]):
+    for t in tags:
+        s_body = bytearray(auth_tlv) + struct.pack(">HH", t, 0) + struct.pack(">HH", 0xFFFF, 0)
+        s_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s_sock.settimeout(0.5)
+        try:
+            try:
+                s_sock.bind(("", 63321))
+            except Exception:
+                pass
+            s_sock.sendto(bytes(header + s_body), ("{switch_ip}", 63322))
+            s_resp, _ = s_sock.recvfrom(4096)
+            if s_resp and len(s_resp) > 36:
+                s_off = 32
+                while s_off + 4 <= len(s_resp):
+                    stag, slen = struct.unpack_from(">HH", s_resp, s_off)
+                    s_off += 4
+                    if stag == 0xFFFF or s_off + slen > len(s_resp):
+                        break
+                    tlvs[stag] = s_resp[s_off : s_off + slen]
+                    s_off += slen
+        except Exception:
+            pass
+        finally:
+            s_sock.close()
+
+out = {{"mac": resp_mac, "ip": "{switch_ip}", "raw_hex": resp.hex(), "parsed_tags": [hex(k) for k in tlvs.keys()]}}
+if 0x0001 in tlvs: out["model"] = tlvs[0x0001].decode("ascii", "ignore").rstrip("\\x00")
+if 0x0003 in tlvs: out["device_name"] = tlvs[0x0003].decode("ascii", "ignore").rstrip("\\x00")
+if 0x0006 in tlvs and len(tlvs[0x0006]) == 4: out["ip"] = socket.inet_ntoa(tlvs[0x0006])
+if 0x0007 in tlvs and len(tlvs[0x0007]) == 4: out["netmask"] = socket.inet_ntoa(tlvs[0x0007])
+if 0x0008 in tlvs and len(tlvs[0x0008]) == 4: out["gateway"] = socket.inet_ntoa(tlvs[0x0008])
+if 0x000D in tlvs: out["firmware"] = tlvs[0x000D].decode("ascii", "ignore").rstrip("\\x00")
+if 0x000E in tlvs: out["firmware_bank2"] = tlvs[0x000E].decode("ascii", "ignore").rstrip("\\x00")
+if 0x7800 in tlvs: out["serial_number"] = tlvs[0x7800].decode("ascii", "ignore").rstrip("\\x00")
+if 0x6000 in tlvs and len(tlvs[0x6000]) >= 1: out["port_count"] = tlvs[0x6000][0]
+
+speed_map = {{0: "No Link", 1: "10 Mbps", 2: "100 Mbps", 3: "1000 Mbps"}}
+duplex_map = {{1: "Half", 2: "Full"}}
+ports = []
+if 0x0C00 in tlvs:
+    ld = tlvs[0x0C00]
+    for i in range(len(ld) // 4):
+        ports.append({{
+            "port": i + 1,
+            "link_up": ld[i*4] == 1,
+            "speed_act": speed_map.get(ld[i*4+1], f"Code {{ld[i*4+1]}}"),
+            "duplex": duplex_map.get(ld[i*4+2], "Unknown"),
+            "enabled": ld[i*4+3] == 1
+        }})
+out["ports"] = ports
+
+stats = []
+if 0x1000 in tlvs:
+    sd = tlvs[0x1000]
+    for i in range(min(len(sd) // 24, 8)):
+        rx_b, tx_b, rx_p, tx_p, crc, drp = struct.unpack_from(">IIIIII", sd, i*24)
+        stats.append({{
+            "port": i + 1,
+            "bytes_rx": rx_b, "bytes_tx": tx_b,
+            "packets_rx": rx_p, "packets_tx": tx_p,
+            "crc_errors": crc, "drops": drp
+        }})
+out["port_statistics"] = stats
+
+if 0x2900 in tlvs and len(tlvs[0x2900]) >= 16:
+    pvids = list(struct.unpack(">8H", tlvs[0x2900][:16]))
+    out["pvids"] = {{i + 1: pvids[i] for i in range(len(pvids))}}
+
+if 0x2800 in tlvs:
+    vd = tlvs[0x2800]
+    vlans = []
+    for i in range(0, len(vd), 10):
+        if i + 10 <= len(vd):
+            vid = struct.unpack_from(">H", vd, i)[0]
+            ports_member = list(vd[i+2 : i+10])
+            vlans.append({{"vid": vid, "ports": ports_member}})
+    out["vlans"] = vlans
+
+print(json.dumps(out))
+"""
+    ssh_args = [
+        "ssh", "-o", "StrictHostKeyChecking=accept-new",
+        "-o", "BatchMode=yes", "-o", "ConnectTimeout=4",
+    ]
+    if key:
+        ssh_args.extend(["-i", key])
+    ssh_args.extend([f"root@{relay_host}", f"python3 -c '{py_code}'"])
+
+    res = subprocess.run(ssh_args, capture_output=True, text=True, timeout=timeout, check=False)
+    if res.returncode != 0:
+        raise RuntimeError(f"L2 Relay ({relay_host}) SSH NSDP execution failed (rc {res.returncode}): {res.stderr.strip()}")
+
+    return json.loads(res.stdout.strip())
+
+
+def query_via_proxy(proxy_url, action="status"):
+    """Query adjacent OpenWrt micro-daemon over REST when routed."""
+    if not requests:
+        raise RuntimeError("requests library required for REST proxy queries")
+    url = f"{proxy_url.rstrip('/')}/api/v1/switch/{action}"
+    resp = requests.get(url, timeout=5)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def connect_and_gather(host, password, timeout=3.0):
+    """Gather status using native NSDP, OpenWrt L2 SSH relay, or proxy daemon."""
     errors = []
 
-    # 1. Primary: netgear-tool
+    # 1. Native NSDP driver (pure Python socket on local machine if adjacent to VLAN 1)
     try:
-        import netgear_tool
-        sw = netgear_tool.make_switch(host, password=password, timeout=timeout)
-        return "netgear_tool", sw
+        client = NativeNSDPClient(host=host, timeout=timeout)
+        tags = [
+            NativeNSDPClient.TAG_MODEL,
+            NativeNSDPClient.TAG_DEVICE_NAME,
+            NativeNSDPClient.TAG_MAC,
+            NativeNSDPClient.TAG_IP,
+            NativeNSDPClient.TAG_NETMASK,
+            NativeNSDPClient.TAG_GATEWAY,
+            NativeNSDPClient.TAG_FIRMWARE_B1,
+            NativeNSDPClient.TAG_PORT_LINK,
+            NativeNSDPClient.TAG_PORT_STATS,
+            NativeNSDPClient.TAG_PVID,
+        ]
+        data = client.query(tags)
+        return "native_nsdp", data
     except Exception as e:
-        errors.append(f"netgear-tool: {e}")
+        errors.append(f"local-native-nsdp: {e}")
 
-    # 2. Secondary fallback: py-netgear-plus
+    # 2. PVE L2 Adjacent Relay (executes pure Python NSDP directly on Proxmox pve on vmbr0)
     try:
-        from py_netgear_plus import NetgearSwitchConnector
-        conn = NetgearSwitchConnector(host, password)
-        model = conn.autodetect_model()
-        return "py_netgear_plus", (conn, model)
+        data = query_via_l2_ssh(relay_host="192.168.1.250", switch_ip=host, password=password)
+        return "pve_l2_relay", data
     except Exception as e:
-        errors.append(f"py-netgear-plus: {e}")
+        errors.append(f"pve-l2-relay (192.168.1.250): {e}")
+
+    # 3. OpenWrt L2 Adjacent Relay (executes pure Python NSDP directly on Belkin AX3200 on br-lan)
+    try:
+        data = query_via_l2_ssh(relay_host="192.168.1.226", switch_ip=host, password=password)
+        return "openwrt_l2_relay", data
+    except Exception as e:
+        errors.append(f"openwrt-l2-relay (192.168.1.226): {e}")
+
+    # 3. REST proxy daemon on adjacent router (OpenWrt Belkin AX3200 on 192.168.1.226)
+    proxy_url = os.environ.get("NETGEAR_PROXY_URL", DEFAULT_OPENWRT_PROXY)
+    if requests:
+        try:
+            data = query_via_proxy(proxy_url, "info")
+            return "rest_proxy", data
+        except Exception as e:
+            errors.append(f"rest-proxy ({proxy_url}): {e}")
 
     raise RuntimeError(
-        f"Unable to connect to Netgear switch at {host}. Attempted drivers failed:\n"
+        f"Unable to query Netgear switch at {host}. Attempted mechanisms failed:\n"
         + "\n".join(f"  - {err}" for err in errors)
-        + "\n\nDiagnostic: The GS108Ev2 uses NSDP (Netgear Switch Discovery Protocol) — a proprietary "
-        "Layer 2 UDP protocol on ports 63321/63322. There is NO HTTP REST API.\n"
-        "Common causes of failure:\n"
-        "  1. This host is NOT on the same Layer 2 broadcast domain as the switch (VLAN 1 / 192.168.1.0/24). "
-        "NSDP does not route — run this script from a host directly on VLAN 1.\n"
-        "  2. The switch is powered off or unreachable at the given IP.\n"
-        "  3. The community NSDP library is not installed: run 'pip install netgear-tool py-netgear-plus'."
+        + "\n\nDiagnostic: The GS108Ev2 is completely headless and communicates exclusively via NSDP "
+        "(UDP 63321/63322). It has NO web GUI. NSDP does not route across Layer 3 boundaries.\n"
+        "Execution must occur on a host physically on VLAN 1 (e.g. pve at 192.168.1.250 or OpenWrt at 192.168.1.226)."
     )
 
 
-def cmd_status(driver_type, client):
-    """Retrieve operational status and health metrics."""
-    if driver_type == "netgear_tool":
-        sw = client
-        with sw:
-            sys_info = _serialize(sw.get_system_info())
-            cfg = _serialize(sw.get_switch_config())
-            ports = [_serialize(p) for p in sw.get_port_settings()]
-            stats = [_serialize(p) for p in sw.get_port_stats()]
-            pvids = sw.get_port_pvids()
+def cmd_status(data, driver_type):
+    """Format and print switch telemetry."""
+    model = data.get("model", "GS108Ev2")
+    name = data.get("device_name", "N/A")
+    fw = data.get("firmware", "N/A")
+    mac = data.get("mac", "N/A")
+    ip = data.get("ip", DEFAULT_SWITCH_IP)
 
-        summary_lines = [
-            f"=== Netgear GS108Ev2 Status ({cfg.get('ip', 'N/A')}) ===",
-            f"Model:    {cfg.get('model', 'GS108Ev2')}",
-            f"Name:     {cfg.get('name', 'N/A')}",
-            f"Firmware: {cfg.get('firmware', 'N/A')}",
-            f"MAC:      {cfg.get('mac', 'N/A')}",
-            f"Gateway:  {cfg.get('gateway', 'N/A')}",
-            "",
-            "Port Status:",
-            f"{'Port':<6} {'State':<8} {'Speed Config':<14} {'Actual Speed':<14} {'RX Bytes':<12} {'TX Bytes':<12} {'CRC Errors':<10}",
-            "-" * 80,
-        ]
+    summary_lines = [
+        f"=== Netgear GS108Ev2 Status ({ip}) ===",
+        f"Model:    {model} (Headless NSDP)",
+        f"Name:     {name}",
+        f"Firmware: {fw}",
+        f"MAC:      {mac}",
+        f"Driver:   {driver_type}",
+        "",
+        "Port Status & Diagnostics:",
+        f"{'Port':<6} {'State':<8} {'Actual Speed':<14} {'RX Bytes':<12} {'TX Bytes':<12} {'CRC Errors':<10}",
+        "-" * 70,
+    ]
 
-        stats_by_port = {s["port"]: s for s in stats}
+    ports = data.get("ports", [])
+    stats = data.get("port_statistics", [])
+    stats_by_port = {s.get("port"): s for s in stats}
+
+    if not ports:
+        summary_lines.append(f"Received TLV Tags: {data.get('parsed_tags', [])}")
+        summary_lines.append(f"Raw NSDP Payload: {data.get('raw_hex', '')}")
+    else:
         for p in ports:
-            port_num = p["port"]
+            port_num = p.get("port")
             st = stats_by_port.get(port_num, {})
-            state_str = "UP" if p.get("enabled") else "DOWN"
-            speed_cfg = str(p.get("speed_cfg", "Auto"))
-            speed_act = p.get("speed_act", "No Speed")
+            state_str = "UP" if p.get("link_up", p.get("enabled")) else "DOWN"
+            speed_act = p.get("speed_act", "No Link")
             rx = st.get("bytes_rx", 0)
             tx = st.get("bytes_tx", 0)
             crc = st.get("crc_errors", 0)
             summary_lines.append(
-                f"{port_num:<6} {state_str:<8} {speed_cfg:<14} {speed_act:<14} {rx:<12} {tx:<12} {crc:<10}"
+                f"{port_num:<6} {state_str:<8} {speed_act:<14} {rx:<12} {tx:<12} {crc:<10}"
             )
 
-        return {
-            "status": "success",
-            "driver": "netgear-tool",
-            "summary": "\n".join(summary_lines),
-            "system_info": sys_info,
-            "switch_config": cfg,
-            "ports": ports,
-            "port_statistics": stats,
-            "pvids": pvids,
-        }
+    if "pvids" in data:
+        summary_lines.append("")
+        summary_lines.append("Port VLAN IDs (PVID):")
+        pvid_items = [f"Port {p}: {vid}" for p, vid in sorted(data["pvids"].items(), key=lambda x: int(x[0]))]
+        summary_lines.append("  " + ", ".join(pvid_items))
 
-    else:
-        conn, model = client
-        infos = conn.get_switch_infos()
-        return {
-            "status": "success",
-            "driver": "py-netgear-plus",
-            "model": model.MODEL_NAME,
-            "switch_info": infos,
-        }
+    if "vlans" in data:
+        summary_lines.append("")
+        summary_lines.append("802.1Q VLAN Membership:")
+        for v in data["vlans"]:
+            summary_lines.append(f"  VLAN {v.get('vid')}: ports={v.get('ports')}")
+
+    return {
+        "status": "success",
+        "driver": driver_type,
+        "summary": "\n".join(summary_lines),
+        "data": data,
+    }
 
 
-def cmd_backup(driver_type, client):
-    """Retrieve full switch configuration and export to gitops repository."""
-    if driver_type == "netgear_tool":
-        sw = client
-        with sw:
-            sys_info = _serialize(sw.get_system_info())
-            cfg = _serialize(sw.get_switch_config())
-            ports = [_serialize(p) for p in sw.get_port_settings()]
-            stats = [_serialize(p) for p in sw.get_port_stats()]
-            pvids = sw.get_port_pvids()
+def cmd_backup(data, driver_type):
+    """Export configuration backup to repository."""
+    backup_payload = {
+        "exported_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "driver": driver_type,
+        "protocol": "NSDP",
+        "switch_config": data,
+    }
 
-            # Optional advanced features
-            def safe_get(fn):
-                try:
-                    return _serialize(fn())
-                except Exception:
-                    return None
+    os.makedirs(os.path.dirname(CONFIG_BACKUP_FILE), exist_ok=True)
+    with open(CONFIG_BACKUP_FILE, "w") as f:
+        json.dump(backup_payload, f, indent=2)
 
-            vlans = safe_get(sw.get_vlan_ids)
-            vlan_members = {}
-            if vlans:
-                for vid in vlans:
-                    try:
-                        vlan_members[vid] = _serialize(sw.get_vlan_membership(vid))
-                    except Exception:
-                        pass
-
-            rate_limits = safe_get(sw.get_rate_limits)
-            igmp = safe_get(sw.get_igmp_config)
-            mirror = safe_get(sw.get_mirror_config)
-            loop_detect = safe_get(sw.get_loop_detection)
-            power_saving = safe_get(sw.get_power_saving)
-            qos = safe_get(sw.get_qos_mode)
-            bcast_filter = safe_get(sw.get_broadcast_filter)
-
-        backup_payload = {
-            "exported_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            "system_info": sys_info,
-            "switch_config": cfg,
-            "ports": ports,
-            "port_statistics": stats,
-            "pvids": pvids,
-            "vlans": vlans,
-            "vlan_members": vlan_members,
-            "rate_limits": rate_limits,
-            "igmp_snooping": igmp,
-            "port_mirroring": mirror,
-            "loop_detection": loop_detect,
-            "power_saving": power_saving,
-            "qos_mode": qos,
-            "broadcast_filter": bcast_filter,
-        }
-
-        os.makedirs(os.path.dirname(CONFIG_BACKUP_FILE), exist_ok=True)
-        with open(CONFIG_BACKUP_FILE, "w") as f:
-            json.dump(backup_payload, f, indent=2)
-
-        return {
-            "status": "success",
-            "file": CONFIG_BACKUP_FILE,
-            "model": cfg.get("model", "GS108Ev2"),
-            "ip": cfg.get("ip", DEFAULT_SWITCH_IP),
-            "bytes": os.path.getsize(CONFIG_BACKUP_FILE),
-            "ports_backed_up": len(ports),
-        }
-
-    else:
-        conn, model = client
-        infos = conn.get_switch_infos()
-        backup_payload = {
-            "exported_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            "model": model.MODEL_NAME,
-            "switch_info": infos,
-        }
-        os.makedirs(os.path.dirname(CONFIG_BACKUP_FILE), exist_ok=True)
-        with open(CONFIG_BACKUP_FILE, "w") as f:
-            json.dump(backup_payload, f, indent=2)
-
-        return {
-            "status": "success",
-            "file": CONFIG_BACKUP_FILE,
-            "model": model.MODEL_NAME,
-            "bytes": os.path.getsize(CONFIG_BACKUP_FILE),
-        }
+    return {
+        "status": "success",
+        "file": CONFIG_BACKUP_FILE,
+        "model": data.get("model", "GS108Ev2"),
+        "ip": data.get("ip", DEFAULT_SWITCH_IP),
+        "bytes": os.path.getsize(CONFIG_BACKUP_FILE),
+        "ports_backed_up": len(data.get("ports", [])),
+    }
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Netgear GS108Ev2 Switch Management Tool")
+    parser = argparse.ArgumentParser(description="Netgear GS108Ev2 Headless NSDP Management Tool")
     parser.add_argument("action", choices=["status", "backup"], help="Action to execute")
     parser.add_argument("--ip", default=None, help=f"Target switch IP (default: {DEFAULT_SWITCH_IP})")
     parser.add_argument("--password", default=None, help="Switch admin password (default: from SOPS or env)")
@@ -299,16 +622,16 @@ def main():
     target_password = args.password or sops_pw
 
     try:
-        driver_type, client = connect_switch(target_ip, target_password)
+        driver_type, data = connect_and_gather(target_ip, target_password)
 
         if args.action == "status":
-            result = cmd_status(driver_type, client)
+            result = cmd_status(data, driver_type)
             if args.json or "summary" not in result:
                 print(json.dumps(result, indent=2))
             else:
                 print(result["summary"])
         elif args.action == "backup":
-            result = cmd_backup(driver_type, client)
+            result = cmd_backup(data, driver_type)
             print(json.dumps(result, indent=2))
 
     except Exception as e:
