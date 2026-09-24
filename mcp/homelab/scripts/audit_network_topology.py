@@ -113,7 +113,7 @@ def main():
         topology_report.append(vm_route if vm_route else "Could not retrieve VM routes.\n")
         topology_report.append("```\n\n")
 
-    out_path = "docs/network-topology-map.md"
+    out_path = "docs/architecture/network-interfaces-map.md"
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w") as f:
         f.write("\n".join(topology_report))

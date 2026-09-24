@@ -6,7 +6,7 @@ This repository holds the absolute source of truth for our three isolated standa
 
 ## 🛜 Network Subnet & Routing Topology Map
 
-Full empirical topology map generated in [`infrastructure/docs/network-topology-map.md`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docs/network-topology-map.md):
+Full empirical topology map generated in [`docs/architecture/network-interfaces-map.md`](file:///home/agentsvc/repos/homelab-infrastructure/docs/architecture/network-interfaces-map.md) and architectural blueprint in [`docs/architecture/network-topology.md`](file:///home/agentsvc/repos/homelab-infrastructure/docs/architecture/network-topology.md):
 
 * **1. Primary Management & Service LAN (`192.168.1.0/24`)**:
   - `pve`: `192.168.1.250` (`vmbr0`)
@@ -76,11 +76,13 @@ homelab-infrastructure/
 ├── AGENTS.md                       # Permanent workspace rules & empirical host matrix
 ├── .gitignore                      # Security rules (ignoring .key, .venv, .agents, .db)
 ├── .sops.yaml                      # SOPS single master age public key encryption rules
+├── docs/                           # Master documentation library (architecture, runbooks, specs, roadmaps)
+│   ├── README.md                   # Master documentation catalog & navigation index
+│   ├── architecture/               # Network topology, 8-VLAN matrix, interface maps
+│   ├── runbooks/                   # Network automation (NSDP/Wireshark), bare-metal recovery, secrets
+│   ├── specifications/             # Netgear GS108Ev2 NSDP protocol specification
+│   └── roadmaps/                   # Network implementation plan & status tracking
 ├── infrastructure/
-│   ├── docs/                       # Architectural guides, maps, and recovery playbooks
-│   │   ├── network-topology-map.md # Multi-subnet (192.168.1.x, 10.25.25.x, VLAN 40/50) topology
-│   │   ├── recovery-walkthrough.md # Bare-metal disaster recovery sequence
-│   │   └── security-backup-guide.md# SOPS + age secret encryption standards
 │   ├── docker-stacks/              # 83 versioned Portainer stacks & deploy metadata
 │   │   ├── STACK-INDEX.md          # Master catalog mapping stack IDs to services & ports
 │   │   ├── discovery-server/       # 24 stacks (VPN download gateway, autoheal, qbittorrent)
