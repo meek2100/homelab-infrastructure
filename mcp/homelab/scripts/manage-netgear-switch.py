@@ -683,7 +683,7 @@ time.sleep(0.2)
 seq = (seq + 1) & 0xFFFF
 read_hdr = struct.pack('>BBHI6s6sHH4s4s', 0x01, 0x01, 0, 0, mgr_mac, sw_mac, 0, seq, b'NSDP', b'\\x00'*4)
 read_body = bytearray()
-for t in [0x0001, 0x0006, 0x0C00, 0x2000, 0x2800, 0x2900, 0x6800, 0x9000]:
+for t in [0x0001, 0x0006, 0x0C00, 0x2000, 0x2800, 0x2900, 0x9000]:
     read_body += struct.pack('>HH', t, 0)
 read_body += bytes.fromhex('ffff0000')
 
@@ -974,13 +974,9 @@ def cmd_set_vlan(target_ip, password, vid, tagged_ports, untagged_ports, pvid_po
             port_mask[p - 1] = 2
 
     # Assemble TLVs:
-    # - TLV 0x6800: VLAN Mode (Advanced 802.1Q)
     # - TLV 0x2800: VLAN Membership entry (10 bytes: uint16 vid + 8 bytes ports)
     # - TLV 0x2900: Port PVIDs (16 bytes: 8 x uint16)
     mutation_body = bytearray()
-    
-    # 0x6800: Advanced 802.1Q VLAN Mode (length 6: 0001 0002 0000)
-    mutation_body += struct.pack(">HH", 0x6800, 6) + bytes.fromhex("000100020000")
 
     # 0x2800: VLAN Membership definition
     vlan_entry = struct.pack(">H8B", vid, *port_mask)
