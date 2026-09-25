@@ -973,14 +973,24 @@ def cmd_set_vlan(target_ip, password, vid, tagged_ports, untagged_ports, pvid_po
         if 1 <= p <= 8:
             port_mask[p - 1] = 2
 
-    # Assemble TLVs:
-    # - TLV 0x2800: VLAN Membership entry (10 bytes: uint16 vid + 8 bytes ports)
-    # - TLV 0x2900: Port PVIDs (16 bytes: 8 x uint16)
+    # Preserve other active VLANs and compute VLAN 1 mask
+    vlan_map = {}
+    for existing in current_data.get("vlans", []):
+        existing_vid = existing.get("vid")
+        if existing_vid and existing_vid != vid and existing_vid != 1:
+            vlan_map[existing_vid] = list(existing.get("ports", [0] * 8))
+
+    vlan1_mask = [(2 if updated_pvids.get(p, 1) == 1 else 0) for p in range(1, 9)]
+    vlan_map[1] = vlan1_mask
+    vlan_map[vid] = port_mask
+
     mutation_body = bytearray()
 
-    # 0x2800: VLAN Membership definition
-    vlan_entry = struct.pack(">H8B", vid, *port_mask)
-    mutation_body += struct.pack(">HH", 0x2800, len(vlan_entry)) + vlan_entry
+    # 0x2800: Full VLAN Membership table
+    vlan_payload = bytearray()
+    for v_id in sorted(vlan_map.keys()):
+        vlan_payload += struct.pack(">H8B", v_id, *vlan_map[v_id])
+    mutation_body += struct.pack(">HH", 0x2800, len(vlan_payload)) + vlan_payload
 
     # 0x2900: PVID map (16 bytes)
     pvid_list = [updated_pvids.get(i, 1) for i in range(1, 9)]
