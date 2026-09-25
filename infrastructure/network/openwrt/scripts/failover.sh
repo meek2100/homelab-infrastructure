@@ -296,16 +296,16 @@ activate_p3() {
     ip link set "$BR_IF" mtu 1500
     # Inform VM 107
     ssh -y -i /root/.ssh/id_ed25519 meek2100@"$VXLAN_SERVER_IP" 'sudo /usr/local/bin/vxlan-nm -p3' >/dev/null 2>&1 &
-    # Remove br-lan upstream routes — br-lan has no upstream in P3,
-    # so wl1-sta0 (metric 100) must handle gateway/internet traffic
+    # Remove br-lan default route so wl1-sta0 (metric 100) handles gateway/internet traffic
     ip route del default via 192.168.1.1 dev "$BR_IF" metric 10 2>/dev/null
-    ip route del 192.168.1.0/24 dev "$BR_IF" metric 10 2>/dev/null
+    # Ensure local connected subnet route on br-lan remains active for switch clients (PC, switch UI)
+    ip route add 192.168.1.0/24 dev "$BR_IF" proto static scope link src 192.168.1.226 metric 10 2>/dev/null
     # ARP Storm Prevention: flush stale entries after topology change
     ip neigh flush all >/dev/null 2>&1
     if ! /etc/init.d/relayd status | grep -q "running"; then
         /etc/init.d/relayd start >/dev/null 2>&1
     fi
-    log_msg "Priority 3 Active."
+    log_msg "Priority 3 Active (Relayd running for VLAN 1)."
 }
 
 run_monitor() {
