@@ -18,6 +18,14 @@ log_msg() {
     logger -t failover -- "$1"
 }
 
+ensure_policy_routing() {
+    ip rule show 2>/dev/null | grep -q "from 192.168.1.225" || ip rule add from 192.168.1.225 table 100 2>/dev/null
+    ip route show table 100 2>/dev/null | grep -q "dev wl1-sta0" || {
+        ip route add 192.168.1.0/24 dev wl1-sta0 table 100 2>/dev/null
+        ip route add default via 192.168.1.1 dev wl1-sta0 table 100 2>/dev/null
+    }
+}
+
 # --- Status Functions (from CLI) ---
 
 get_stp_status() {
@@ -218,7 +226,8 @@ activate_p1() {
     ip route add 192.168.1.0/24 dev "$BR_IF" proto static scope link src 192.168.1.226 metric 10 2>/dev/null
     ip route add default via 192.168.1.1 dev "$BR_IF" proto static metric 10 2>/dev/null
     # Inform VM 107
-    ssh -y -i /root/.ssh/id_ed25519 meek2100@"$VXLAN_SERVER_IP" 'sudo /usr/local/bin/vxlan-nm -p1' >/dev/null 2>&1 &
+    ensure_policy_routing
+    ssh -y -i /root/.ssh/id_ed25519 -b 192.168.1.225 meek2100@"$VXLAN_SERVER_IP" 'sudo /usr/local/bin/vxlan-nm -p1' >/dev/null 2>&1 &
     # ARP Storm Prevention: flush stale entries after topology change
     ip neigh flush all >/dev/null 2>&1
     set_fail_count 0
@@ -237,6 +246,8 @@ activate_p2() {
     ip route add default via 192.168.1.1 dev "$BR_IF" proto static metric 10 2>/dev/null
     # Set bridge and tunnel MTU to 1450 (1500 Physical - 50 VXLAN Overhead)
     ip link set "$BR_IF" mtu 1450
+    # Ensure source-based policy routing for wl1-sta0 underlay
+    ensure_policy_routing
     # Dynamically repoint vxlan150 to wl1-sta0 (192.168.1.225)
     ip link set dev "$VXLAN_IF" type vxlan local 192.168.1.225 dev wl1-sta0 remote "$VXLAN_SERVER_IP" 2>/dev/null || {
         ip link del "$VXLAN_IF" 2>/dev/null
@@ -255,7 +266,22 @@ activate_p2() {
     bridge vlan add dev "$VXLAN_IF" vid 1 pvid untagged
     touch /tmp/failover_p2_active
     # Inform VM 107
-    ssh -y -i /root/.ssh/id_ed25519 meek2100@"$VXLAN_SERVER_IP" 'sudo /usr/local/bin/vxlan-nm -p2' >/dev/null 2>&1 &
+    ssh -y -i /root/.ssh/id_ed25519 -b 192.168.1.225 meek2100@"$VXLAN_SERVER_IP" 'sudo /usr/local/bin/vxlan-nm -p2' >/dev/null 2>&1 &
+    # ARP Storm Prevention: flush stale entries after topology change
+    ip neigh flush all >/dev/null 2>&1
+    log_msg "Priority 2 Active (Failover: VLAN 1 added to VXLAN via wl1-sta0)."
+}
+
+activate_p3() {
+    log_msg "Activating Priority 3 (Relayd)..."
+    # Disable both P1 and P2 paths for VLAN 1
+    ip link set "$P1_IF" down
+    bridge vlan del dev "$VXLAN_IF" vid 1 >/dev/null 2>&1
+    rm -f /tmp/failover_p2_active
+    ip link set "$BR_IF" mtu 1500
+    # Inform VM 107
+    ensure_policy_routing
+    ssh -y -i /root/.ssh/id_ed25519 -b 192.168.1.225 meek2100@"$VXLAN_SERVER_IP" 'sudo /usr/local/bin/vxlan-nm -p3' >/dev/null 2>&1 &
     # ARP Storm Prevention: flush stale entries after topology change
     ip neigh flush all >/dev/null 2>&1
     log_msg "Priority 2 Active (Failover: VLAN 1 added to VXLAN via wl1-sta0)."
