@@ -12,6 +12,8 @@ This runbook contains single-click copy/paste commands for managing the Netgear 
 | [`mcp/homelab/scripts/inspect-nsdp-live.sh`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/inspect-nsdp-live.sh) | Parse live NSDP frames recorded from Windows ProSAFE in Wireshark tmpfs | `personal-ai` | Queries VM 102 via `pve` |
 | [`mcp/homelab/scripts/manage-netgear-switch.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/manage-netgear-switch.py) | Full switch status, port link matrix, CRC error stats, and JSON backup export | `personal-ai` / `pve` | Native / L2 SSH Relay |
 | [`mcp/homelab/scripts/get-wireshark-status.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/get-wireshark-status.py) | Inspect ens19 SPAN counters, Wireshark container, and NAS archive | `personal-ai` | Queries VM 102 via `pve` |
+| [`infrastructure/network/openwrt/scripts/failover.sh`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/network/openwrt/scripts/failover.sh) | 3-Priority failover monitor, state transitions (P1/P2/P3), and diagnostics | OpenWrt (`192.168.1.226`) | Local router shell |
+| `/usr/local/bin/vxlan-nm` | State-aware VXLAN receiver daemon, mutual exclusion VLAN 1 filter | VM 107 (`192.168.1.150`) | Systemd daemon on `pve` |
 
 ---
 
@@ -149,6 +151,32 @@ Restores the Netgear switch configuration directly from the official ProSAFE `.c
 
 ```bash
 python3 mcp/homelab/scripts/manage-netgear-switch.py restore --file infrastructure/network/configs/netgear-gs108e-backup.cfg --confirm
+```
+
+---
+
+### 14. Query 3-Priority Failover System Status
+Displays live link states, MTU, carrier health, and bridge VLAN membership on OpenWrt and VM 107.
+
+```bash
+# Query OpenWrt Router (192.168.1.226)
+ssh root@192.168.1.226 "/etc/scripts/failover.sh -s"
+
+# Query VM 107 (vxlan-server via Proxmox pve)
+ssh root@192.168.1.250 "qm guest exec 107 -- /usr/local/bin/vxlan-nm -s"
+```
+
+---
+
+### 15. Run Failover Diagnostic & Benchmark Test Suite
+Runs the comprehensive Python-based failover test suite from OpenWrt, evaluating ICMP latency, ARP transparency, path MTU sweep (1500/1450/1446), and iperf3 bandwidth.
+
+```bash
+# Run full test suite
+ssh root@192.168.1.226 "/etc/scripts/failover.sh --test --all"
+
+# Run bandwidth and jitter tests only
+ssh root@192.168.1.226 "/etc/scripts/failover.sh --test --iperf --udp"
 ```
 
 ---

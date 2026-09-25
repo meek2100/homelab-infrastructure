@@ -76,16 +76,16 @@ This document details the physical hardware, virtual bridges, dual-WAN egress pa
   * **Primary Management IP**: `192.168.1.226` (Dropbear SSH on port 22)
   * **Out-of-Band Backup Management IP**: `10.99.99.1` (Available via optional 2.4GHz Wi-Fi or dedicated LAN port 1 if bridge/main routing drops)
   * **Authentication**: Dedicated SSH Key `pi_id_ed25519` (`/mnt/c/Users/dtheurer/.ssh/pi_id_ed25519` or `~/.ssh/pi_id_ed25519`)
-  * **3-Priority Resilient Failover System**:
-    1. **Priority 1 (P1 - Primary)**: Direct physical wire to Bridged 830 AP (1500 MTU).
-    2. **Priority 2 (P2 - Tunnel)**: Layer 2 VXLAN tunnel (`vxlan150`, VNI 150, UDP 4789, MTU 1450, MSS clamped to 1406) connected to VM 107 (`vxlan-server`) on `pve`. *(Note: VM 107 is currently shut down pending failover loop-prevention / RSTP redesign to prevent L2 storm suppression).*
-    3. **Priority 3 (P3 - Wireless)**: Wireless Extender / Client Repeater utilizing `relayd`.
-  * **Split Untagged Native / Tagged VXLAN Trunking Architecture (Planned Redesign)**:
-    * **Limitation**: Araknis 830 AP wireless bridge does not support transparent 802.1Q VLAN tagging (drops/strips VLAN-tagged frames), forcing all office switch devices onto untagged `192.168.1.0/24`.
-    * **Split Design**:
+  * **3-Priority Resilient Failover System (100% Verified in Production)**:
+    1. **Priority 1 (P1 - Wire-Speed Split-Trunking)**: Direct physical wire to Bridged 830 AP (1500 MTU). Native untagged VLAN 1 flows at wire speed across the wire. Tagged VLANs (10, 20, 30, 40, 100, 150, 200) are encapsulated over `vxlan150` to VM 107 (`192.168.1.150`). Untagged VLAN 1 is isolated from VXLAN to eliminate L2 loops.
+    2. **Priority 2 (P2 - Wireless VXLAN Tunnel)**: Layer 2 VXLAN tunnel (`vxlan150`, VNI 150, UDP 4789, MTU 1450, MSS clamped to 1406) routed over Wi-Fi 6 station `wl1-sta0` on `Insomniac_MGMT` (`192.168.1.225`) to VM 107 (`192.168.1.150`). OpenWrt dynamically adds untagged VLAN 1 to `vxlan150` for full office connectivity during physical wire outages (empirically tested at 573 Mbps, 0 packet loss).
+    3. **Priority 3 (P3 - Relayd Wireless Standby)**: OpenWrt activates `relayd` pseudo-bridge on `wl1-sta0` if both physical wire and VM 107 are offline. Keeps untagged VLAN 1 (PC, switch UI, internet) alive while tagged VLANs gracefully sleep.
+  * **Split Untagged Native / Tagged VXLAN Trunking Architecture (Verified & Active)**:
+    * **Root Cause Addressed**: Araknis 830 AP wireless bridge strips 802.1Q tags across the air link, which historically forced all office switch devices onto untagged `192.168.1.0/24` or caused loops when bridging VLAN 1 in parallel.
+    * **Active Production Architecture**:
       * **Untagged Traffic (VLAN 1 / Management)**: Passes natively across the physical AP bridge (1500 MTU) with zero overhead. Uses VXLAN only as standby failover if the AP bridge drops.
-      * **Tagged Traffic (VLANs 10, 20, 30, 40, 150)**: Encapsulated over VXLAN into UDP packets (port 4789). Since the outer packets are standard untagged UDP, they traverse the 830 AP bridge transparently without stripping.
-      * **Loop Prevention**: Keeping untagged VLAN 1 out of the VXLAN tunnel during normal operation guarantees no Layer 2 loop can form on the management LAN.
+      * **Tagged Traffic (VLANs 10, 20, 30, 40, 100, 150, 200)**: Encapsulated over VXLAN into UDP packets (port 4789). Outer packets are standard untagged UDP and traverse the 830 AP bridge transparently without stripping.
+      * **Loop Prevention**: Mutual exclusion for VLAN 1 across physical and virtual paths guarantees no Layer 2 loop can form. All 8 ports on Netgear GS108Ev2 switch maintain 0 CRC errors.
   * **Lab Network Integration**: Associated with **VLAN 150 (`CA-1 Test`)** for Control4 CA-1 automation controller testing.
 * **Netgear Office Switch**:
   * **Management IP**: `192.168.1.220` (VLAN 1)

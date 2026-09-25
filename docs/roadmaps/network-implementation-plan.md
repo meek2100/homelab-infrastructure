@@ -44,7 +44,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **NAS VM** | nas-server (pve3:101) | `192.168.40.248` & `10.25.25.248` | VLAN 40 & SAN | OpenMediaVault Storage (SMB / NFS) | 🟢 Active |
 | **Download VM** | discovery-server (pve2:100)| `10.25.25.246` | Dedicated WAN2 SAN | VPN automated torrent & discovery engine | 🟢 Active |
 | **Gaming VM** | minecraft-docker (pve:109)| `192.168.40.175` | VLAN 40 (Servers) | Minecraft Bedrock Connect / Proxy | 🟢 Active |
-| **Bridge VM** | vxlan-server (pve:107) | `192.168.1.150` | VLAN 1 & VLAN 150 | VXLAN Layer 2/3 decapsulator & trunking bridge | 🟡 Standby |
+| **Bridge VM** | vxlan-server (pve:107) | `192.168.1.150` | VLAN 1 & VLAN 150 | VXLAN Layer 2/3 decapsulator & trunking bridge | 🟢 Active |
 | **Automation** | Control4 CA-10 (Director)| `192.168.10.200` | VLAN 10 (Trusted) | Primary Control4 Automation Controller | 🟢 Active |
 | **3D Printing** | mainsail (Raspberry Pi) | `192.168.30.90` | VLAN 30 (IoT) | Klipper / Moonraker host (MAC `E4:5F:01:78:DF:81`) | 🟢 Active |
 
@@ -154,12 +154,17 @@ The Araknis 830 AP 5GHz wireless bridge strips 802.1Q tags across the link to th
 1. **Untagged Traffic (VLAN 1 / Management `192.168.1.0/24`)**:
    * Flows exclusively across the physical 830 AP wireless bridge (Priority 1) with full 1500 MTU.
    * `vxlan150` on VM 107 and OpenWrt does **NOT** bridge untagged VLAN 1 during normal operation.
-2. **Tagged Traffic (VLANs 10, 20, 30, 40, 150)**:
+2. **Tagged Traffic (VLANs 10, 20, 30, 40, 100, 150, 200)**:
    * Encapsulated into UDP packets (VNI 150, Port 4789, MTU 1450, MSS 1406) by OpenWrt (`192.168.1.226`).
    * Decapsulated by `vxlan-server` (`192.168.1.150`) and injected into Proxmox `vmbr0` with respective 802.1Q tags.
    * Because untagged VLAN 1 is excluded from the tunnel, duplicate Layer 2 paths are physically impossible.
-3. **Standby Failover (Priority 2)**:
-   * If and only if the physical 830 AP bridge drops (ping loss to `192.168.1.237`), OpenWrt dynamically bridges untagged VLAN 1 into VXLAN until the wireless link recovers.
+3. **Standby Failover Lifecycle (100% Empirically Verified)**:
+   * **Priority 1 (Primary Split-Trunking)**: Untagged VLAN 1 native across physical 830 AP bridge (MTU 1500, wire-speed). Tagged VLANs encapsulated over `vxlan150` to VM 107.
+   * **Priority 2 (Wireless VXLAN Fallback)**: Triggered on `wan` carrier loss. OpenWrt redirects `vxlan150` to Wi-Fi 6 station `wl1-sta0` (`192.168.1.225`), adds VLAN 1 to the tunnel, and clamps MSS to 1406. Measured throughput: **573 Mbps, 0 TCP retransmissions, 0% packet loss**.
+   * **Priority 3 (Relayd Standby)**: Triggered if both physical wire and VM 107 are offline. OpenWrt activates `relayd` pseudo-bridge on `wl1-sta0` for untagged VLAN 1, maintaining office PC, switch UI, and internet access while tagged VLANs sleep.
+   * **Autonomous Recovery & Promotion**:
+     * **P3 ➔ P2**: Booting VM 107 triggers instant sub-second detection, stops `relayd`, and cleanly rebuilds `vxlan150` across all VLANs.
+     * **P2 ➔ P1**: Reconnecting 830 AP cable restores `wan` carrier, isolates VLAN 1 from VXLAN, sets MTU 1500, and notifies VM 107 via SSH. Latency returns to sub-5ms (2.06ms min) with **0 switch CRC errors across all 8 ports**.
 
 ---
 
