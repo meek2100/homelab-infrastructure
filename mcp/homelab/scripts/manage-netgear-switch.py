@@ -390,15 +390,9 @@ class NativeNSDPClient:
 
 def query_via_l2_ssh(relay_host="192.168.1.226", switch_ip=DEFAULT_SWITCH_IP, password=None, timeout=15):
     """Execute native NSDP client query directly on an L2 adjacent host (OpenWrt or PVE on VLAN 1) via SSH."""
-    auth_hex = ""
-    if password:
-        enc_pw = encrypt_nsdp_password(password)
-        auth_hex = enc_pw.hex()
-
     py_code = f"""import socket, struct, json, os, sys, time
 
 switch_ip = sys.argv[1] if len(sys.argv) > 1 else "{switch_ip}"
-auth_hex = "{auth_hex}"
 
 mgr_mac = bytes.fromhex('a029198f5d45')
 sw_mac = bytes.fromhex('841b5e98f1f4')
@@ -430,15 +424,10 @@ header = struct.pack(
 tags = [
     0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008,
     0x000B, 0x000C, 0x000D, 0x000E, 0x000F, 0x7400, 0x0C00, 0x1000,
-    0x6000, 0x7800
+    0x6000, 0x7800, 0x2000, 0x2800, 0x2900, 0x5400, 0x6800, 0x9000
 ]
 
 body = bytearray()
-if auth_hex:
-    enc_pw = bytes.fromhex(auth_hex)
-    body += struct.pack('>HH', 0x000A, len(enc_pw)) + enc_pw
-    tags.extend([0x2000, 0x2800, 0x2900, 0x5400, 0x6800, 0x9000])
-
 for t in tags:
     body += struct.pack('>HH', t, 0)
 body += bytes.fromhex('ffff0000')
@@ -670,7 +659,6 @@ time.sleep(0.2)
 seq = (seq + 1) & 0xFFFF
 read_hdr = struct.pack('>BBHI6s6sHH4s4s', 0x01, 0x01, 0, 0, mgr_mac, sw_mac, 0, seq, b'NSDP', b'\\x00'*4)
 read_body = bytearray()
-read_body += struct.pack('>HH', 0x000A, len(enc_pw)) + enc_pw
 for t in [0x0001, 0x0006, 0x0C00, 0x2000, 0x2800, 0x2900, 0x6800, 0x9000]:
     read_body += struct.pack('>HH', t, 0)
 read_body += bytes.fromhex('ffff0000')
