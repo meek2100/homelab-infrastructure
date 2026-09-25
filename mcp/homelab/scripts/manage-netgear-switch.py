@@ -289,6 +289,10 @@ class NativeNSDPClient:
                 port_links_raw.append(val)
             elif tag == self.TAG_PORT_STATS:
                 port_stats_raw.append(val)
+            elif tag == self.TAG_PVID:
+                port_pvids_raw.append(val)
+            elif tag == self.TAG_VLAN_MEMBERSHIP:
+                port_vlans_raw.append(val)
             else:
                 tlvs[tag] = val
             offset += length
@@ -362,18 +366,35 @@ class NativeNSDPClient:
         stats.sort(key=lambda s: s["port"])
         parsed["port_statistics"] = stats
 
-        if self.TAG_PVID in tlvs and len(tlvs[self.TAG_PVID]) >= 16:
+        pvids = {}
+        for pd in port_pvids_raw:
+            if len(pd) == 3:
+                pid, pvid = struct.unpack(">BH", pd)
+                pvids[pid] = pvid
+        if pvids:
+            parsed["pvids"] = pvids
+        elif self.TAG_PVID in tlvs and len(tlvs[self.TAG_PVID]) >= 16:
             pvids = list(struct.unpack(">8H", tlvs[self.TAG_PVID][:16]))
             parsed["pvids"] = {i + 1: pvids[i] for i in range(len(pvids))}
 
-        if self.TAG_VLAN_MEMBERSHIP in tlvs:
-            vd = tlvs[self.TAG_VLAN_MEMBERSHIP]
-            vlans = []
-            for i in range(0, len(vd), 10):
-                if i + 10 <= len(vd):
-                    vid = struct.unpack_from(">H", vd, i)[0]
-                    ports_member = list(vd[i+2 : i+10])
-                    vlans.append({"vid": vid, "ports": ports_member})
+        vlans = []
+        for vd in port_vlans_raw:
+            if len(vd) == 4:
+                vid, mem, tagd = struct.unpack(">HBB", vd)
+                ports_list = []
+                for p in range(1, 9):
+                    bit = 8 - p
+                    in_vlan = bool((mem >> bit) & 1)
+                    is_tag = bool((tagd >> bit) & 1)
+                    ports_list.append(1 if (in_vlan and is_tag) else (2 if in_vlan else 0))
+                vlans.append({"vid": vid, "ports": ports_list})
+            elif len(vd) >= 10:
+                for i in range(0, len(vd), 10):
+                    if i + 10 <= len(vd):
+                        vid = struct.unpack_from(">H", vd, i)[0]
+                        ports_member = list(vd[i+2 : i+10])
+                        vlans.append({"vid": vid, "ports": ports_member})
+        if vlans:
             parsed["vlans"] = vlans
 
         if self.TAG_VLAN_MODE in tlvs:
@@ -488,6 +509,20 @@ if not resp or len(resp) < 32 or resp[24:28] != b"NSDP":
     except Exception:
         pass
 
+vlan_resp = None
+try:
+    vlan_seq = (seq + 2) & 0xFFFF
+    vlan_hdr = struct.pack(
+        '>BBHI6s6sHH4s4s',
+        0x01, 0x01, 0, 0, mgr_mac, sw_mac, 0, vlan_seq, b'NSDP', b'\\x00'*4
+    )
+    vlan_body = struct.pack('>HH', 0x0001, 0) + struct.pack('>HH', 0x2800, 0) + bytes.fromhex('ffff0000')
+    sock.settimeout(2.0)
+    sock.sendto(bytes(vlan_hdr + vlan_body), (switch_ip, 63322))
+    vlan_resp, _ = sock.recvfrom(4096)
+except Exception:
+    pass
+
 sock.close()
 
 if not resp or len(resp) < 32 or resp[24:28] != b"NSDP":
@@ -500,6 +535,7 @@ tlvs = {{}}
 port_links_raw = []
 port_stats_raw = []
 port_pvids_raw = []
+port_vlans_raw = []
 while offset + 4 <= len(resp):
     tag, length = struct.unpack_from(">HH", resp, offset)
     offset += 4
@@ -512,9 +548,23 @@ while offset + 4 <= len(resp):
         port_stats_raw.append(val)
     elif tag == 0x3000:
         port_pvids_raw.append(val)
+    elif tag == 0x2800:
+        port_vlans_raw.append(val)
     else:
         tlvs[tag] = val
     offset += length
+
+if vlan_resp and len(vlan_resp) >= 32 and vlan_resp[24:28] == b"NSDP":
+    v_off = 32
+    while v_off + 4 <= len(vlan_resp):
+        v_tag, v_len = struct.unpack_from(">HH", vlan_resp, v_off)
+        v_off += 4
+        if v_tag == 0xFFFF or v_off + v_len > len(vlan_resp):
+            break
+        v_val = vlan_resp[v_off : v_off + v_len]
+        if v_tag == 0x2800:
+            port_vlans_raw.append(v_val)
+        v_off += v_len
 
 out = {{"mac": resp_mac, "ip": switch_ip, "raw_hex": resp.hex(), "parsed_tags": [hex(k) for k in tlvs.keys()]}}
 if 0x0001 in tlvs: out["model"] = tlvs[0x0001].decode("ascii", "ignore").rstrip("\\x00")
@@ -588,14 +638,24 @@ elif 0x2900 in tlvs and len(tlvs[0x2900]) >= 16:
     pv = list(struct.unpack(">8H", tlvs[0x2900][:16]))
     out["pvids"] = {{i + 1: pv[i] for i in range(len(pv))}}
 
-if 0x2800 in tlvs:
-    vd = tlvs[0x2800]
-    vlans = []
-    for i in range(0, len(vd), 10):
-        if i + 10 <= len(vd):
-            vid = struct.unpack_from(">H", vd, i)[0]
-            ports_member = list(vd[i+2 : i+10])
-            vlans.append({{"vid": vid, "ports": ports_member}})
+vlans = []
+for vd in port_vlans_raw:
+    if len(vd) == 4:
+        vid, mem, tagd = struct.unpack(">HBB", vd)
+        ports_status = []
+        for p in range(1, 9):
+            bit = 8 - p
+            in_vlan = bool((mem >> bit) & 1)
+            is_tag = bool((tagd >> bit) & 1)
+            ports_status.append(1 if (in_vlan and is_tag) else (2 if in_vlan else 0))
+        vlans.append({{"vid": vid, "ports": ports_status}})
+    elif len(vd) >= 10:
+        for i in range(0, len(vd), 10):
+            if i + 10 <= len(vd):
+                vid = struct.unpack_from(">H", vd, i)[0]
+                ports_member = list(vd[i+2 : i+10])
+                vlans.append({{"vid": vid, "ports": ports_member}})
+if vlans:
     out["vlans"] = vlans
 
 print(json.dumps(out))
@@ -1270,6 +1330,26 @@ def cmd_verify(target_ip, password, baseline_file=None):
         if s.get("crc_errors", 0) > 0:
             crc_clean = False
     checks.append({"item": "0 CRC Drops", "baseline": "0 CRC across all ports", "live": "Clean" if crc_clean else "Errors detected", "match": crc_clean})
+
+    # 5. 802.1Q VLAN Table check
+    b_vlans = baseline.get("vlans", [])
+    l_vlans = live_data.get("vlans", [])
+    vlan_match = True
+    b_vmap = {v.get("vid"): v.get("ports") for v in b_vlans}
+    l_vmap = {v.get("vid"): v.get("ports") for v in l_vlans}
+    if set(b_vmap.keys()) != set(l_vmap.keys()):
+        vlan_match = False
+    else:
+        for vid in b_vmap:
+            if b_vmap[vid] != l_vmap[vid]:
+                vlan_match = False
+                break
+    checks.append({
+        "item": "802.1Q VLAN Table",
+        "baseline": f"{len(b_vlans)} VLANs configured",
+        "live": f"{len(l_vlans)} VLANs active",
+        "match": vlan_match
+    })
 
     all_match = all(c["match"] for c in checks)
     summary_lines = [

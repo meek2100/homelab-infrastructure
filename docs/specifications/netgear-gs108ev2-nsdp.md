@@ -204,12 +204,11 @@ Complex switch operations rely on binary layouts packed inside the TLV payload:
   * Bytes 0x10–0x13: Ingress CRC / Checksum Frame Errors.  
   * Bytes 0x14–0x17: Collision and Ingress Frame Drop Count.  
 * **Port PVID Assignment Register (0x3000)**: Repeated sequence of 3-byte TLVs per port (`0x3000`, length 3). Byte 0 is physical Port (1-8), Bytes 1-2 are uint16 big-endian PVID (e.g., `01 0001` for Port 1 PVID 1).  
-* **802.1Q VLAN Membership Register (0x2800)**: Encodes VLAN definitions as contiguous blocks. Each entry spans 10 bytes:  
-  * Bytes 0x00–0x01: 16-bit VLAN ID (uint16, e.g., 0x000A for VLAN 10).  
-  * Bytes 0x02–0x09: 8 distinct port membership bytes (indices 0 through 7 corresponding to physical ports 1 through 8):  
-    * 0x00: Non-member / Excluded.  
-    * 0x01: Tagged Member (T).  
-    * 0x02: Untagged Member (U).
+* **802.1Q VLAN Membership Register (0x2800)**: On GS108Ev2 firmware 1.00.12, the switch returns a sequence of repeated 4-byte TLVs (one TLV per configured VLAN):
+  * Bytes 0x00–0x01: 16-bit VLAN ID (`uint16` big-endian, e.g., `0x000A` for VLAN 10).
+  * Byte 0x02: Port Membership Bitmask (`uint8`, bit 7 = Port 1, bit 6 = Port 2, ..., bit 0 = Port 8). 1 = Member, 0 = Excluded.
+  * Byte 0x03: Port Tagged Bitmask (`uint8`, bit 7 = Port 1, bit 6 = Port 2, ..., bit 0 = Port 8). 1 = Tagged (T), 0 = Untagged (U).
+  *(Note: Certain legacy/alternate firmware variants employ a 10-byte format with 1 byte per port; both formats are supported by `manage-netgear-switch.py`).*
 
 ### **Cryptographic and Challenge-Response Authentication Handshake**
 
