@@ -395,23 +395,31 @@ def query_via_l2_ssh(relay_host="192.168.1.226", switch_ip=DEFAULT_SWITCH_IP, pa
 switch_ip = sys.argv[1] if len(sys.argv) > 1 else "{switch_ip}"
 
 mgr_mac = bytes.fromhex('a029198f5d45')
-sw_mac = bytes.fromhex('841b5e98f1f4')
+for iface in ['vmbr0', 'br-lan', 'lan0', 'eth0']:
+    p = f'/sys/class/net/{{iface}}/address'
+    if os.path.exists(p):
+        mgr_mac = bytes(int(b, 16) for b in open(p).read().strip().split(':'))
+        break
 
-for candidate in ['br-lan', 'vmbr0', 'eth0', 'eth1', 'lan']:
-    mac_path = f"/sys/class/net/{{candidate}}/address"
-    if os.path.exists(mac_path):
-        try:
-            with open(mac_path, 'r') as f:
-                mgr_mac = bytes.fromhex(f.read().strip().replace(':', ''))
+sw_mac = bytes.fromhex('841b5e98f1f4')
+if os.path.exists('/proc/net/arp'):
+    for line in open('/proc/net/arp'):
+        parts = line.split()
+        if len(parts) >= 4 and parts[0] == switch_ip:
+            if parts[3] != '00:00:00:00:00:00':
+                sw_mac = bytes(int(b, 16) for b in parts[3].split(':'))
                 break
-        except Exception:
-            pass
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 try:
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.setsockopt(socket.SOL_SOCKET, getattr(socket, 'SO_REUSEPORT', socket.SO_REUSEADDR), 1)
-    sock.bind(('', 63321))
+except Exception:
+    pass
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+
+try:
+    sock.bind(("", 63321))
 except Exception:
     pass
 
@@ -422,9 +430,24 @@ header = struct.pack(
     0x01, 0x01, 0, 0, mgr_mac, sw_mac, 0, seq, b'NSDP', b'\\x00'*4
 )
 tags = [
-    0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008,
-    0x000B, 0x000C, 0x000D, 0x000E, 0x000F, 0x7400, 0x0C00, 0x1000,
-    0x6000, 0x7800, 0x2000, 0x2800, 0x2900, 0x5400, 0x6800, 0x9000
+    0x0001,  # Model name
+    0x0002,  # Code2
+    0x0003,  # Device name
+    0x0004,  # Switch MAC
+    0x0005,  # Location
+    0x0006,  # IP
+    0x0007,  # Netmask
+    0x0008,  # Gateway
+    0x000B,  # DHCP mode
+    0x000C,  # Code0C
+    0x000D,  # Firmware 1
+    0x000E,  # Firmware 2
+    0x000F,  # Active Slot
+    0x7400,  # Capability mask
+    0x0C00,  # Port status / speed / duplex
+    0x1000,  # Port statistics
+    0x6000,  # Port count
+    0x7800,  # System status / serial
 ]
 
 body = bytearray()
@@ -464,7 +487,7 @@ if not resp or len(resp) < 32 or resp[24:28] != b"NSDP":
 sock.close()
 
 if not resp or len(resp) < 32 or resp[24:28] != b"NSDP":
-    print(json.dumps({{"error": "Invalid or missing NSDP response", "raw_len": len(resp) if resp else 0}}))
+    print(json.dumps({{"error": "Invalid or missing NSDP response", "raw_len": len(resp) if resp else 0}}), file=sys.stderr)
     sys.exit(1)
 
 resp_mac = ":".join(f"{{b:02x}}" for b in resp[14:20])
@@ -574,7 +597,8 @@ print(json.dumps(out))
 
     res = subprocess.run(ssh_args, input=py_code, capture_output=True, text=True, timeout=timeout, check=False)
     if res.returncode != 0:
-        raise RuntimeError(f"L2 Relay ({relay_host}) SSH NSDP execution failed (rc {res.returncode}): {res.stderr.strip()}")
+        err_msg = res.stderr.strip() or res.stdout.strip()
+        raise RuntimeError(f"L2 Relay ({relay_host}) SSH NSDP execution failed (rc {res.returncode}): {err_msg}")
 
     return json.loads(res.stdout.strip())
 
@@ -717,7 +741,8 @@ print(json.dumps({{
 
     res = subprocess.run(ssh_args, input=py_code, capture_output=True, text=True, timeout=timeout, check=False)
     if res.returncode != 0:
-        raise RuntimeError(f"L2 Mutation Relay ({relay_host}) failed (rc {res.returncode}): {res.stderr.strip()}")
+        err_msg = res.stderr.strip() or res.stdout.strip()
+        raise RuntimeError(f"L2 Mutation Relay ({relay_host}) failed (rc {res.returncode}): {err_msg}")
 
     return json.loads(res.stdout.strip())
 
