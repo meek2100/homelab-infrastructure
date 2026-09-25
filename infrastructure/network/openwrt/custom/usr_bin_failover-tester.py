@@ -149,11 +149,10 @@ def teardown_vlan_test_env():
     iface_base = CONFIG.get("BRIDGE_IF", "br-lan") if is_openwrt() else "br0"
     for vid in [40]:
         run_command(["ip", "link", "del", f"{iface_base}.{vid}"], suppress_output=True)
-        # Remove bridge VLAN filter entries added during setup (OpenWrt DSA only)
+        # Remove diagnostic bridge VLAN filter entries added during setup (OpenWrt DSA only)
         if is_openwrt():
             run_command(["bridge", "vlan", "del", "dev", iface_base, "vid", str(vid), "self"], suppress_output=True)
             run_command(["bridge", "vlan", "del", "dev", "wan", "vid", str(vid)], suppress_output=True)
-            run_command(["bridge", "vlan", "del", "dev", CONFIG.get("VXLAN_IF", "vxlan150"), "vid", str(vid)], suppress_output=True)
     log_debug("Cleaned up diagnostic VLAN interfaces")
 
 # -------------------- Handlers --------------------
@@ -564,17 +563,16 @@ def vlan_test(active_priority):
             setup_vlan_interface(iface_base, vlan_id, active_priority)
             time.sleep(2) # Allow for kernel/STP convergence
 
-            # Verify L2 VLAN transparency via ARP resolution.
-            # Ping may fail if the gateway firewall blocks ICMP from unknown hosts,
-            # but a successful ARP reply proves tagged frames traverse the bridge.
-            run_command(["ping", "-c", "1", "-W", "2", "-I", vlan_iface, target_ip], suppress_output=True)
+            # Verify L2 VLAN transparency via ping and ARP resolution.
+            run_command(["arping", "-c", "2", "-w", "3", "-I", vlan_iface, target_ip], suppress_output=True)
+            ping_ok, ping_out = run_command(["ping", "-c", "3", "-W", "3", "-I", vlan_iface, target_ip], suppress_output=True)
             success, arp_out = run_command(["ip", "neigh", "show", target_ip, "dev", vlan_iface])
-            if success and arp_out.strip() and ("REACHABLE" in arp_out.upper() or "lladdr" in arp_out):
-                mac = arp_out.strip().split("lladdr")[1].split()[0] if "lladdr" in arp_out else "?"
-                print_ok(f"VLAN {vlan_id} L2 transparent (ARP: {target_ip} → {mac})")
+            if ping_ok or (success and arp_out.strip() and ("REACHABLE" in arp_out.upper() or "DELAY" in arp_out.upper() or "lladdr" in arp_out)):
+                mac = arp_out.strip().split("lladdr")[1].split()[0] if "lladdr" in arp_out else "responded"
+                print_ok(f"VLAN {vlan_id} L2 transparent (Target: {target_ip}, MAC: {mac})")
                 overall_details.append(f"V{vlan_id}:OK")
             else:
-                print_fail(f"VLAN {vlan_id} failed to reach Gateway.")
+                print_fail(f"VLAN {vlan_id} failed to reach Gateway. (ping_ok={ping_ok}, arp={arp_out.strip()})")
                 overall_details.append(f"V{vlan_id}:FAIL")
                 overall_status = "FAIL"
         except Exception as e:
@@ -605,18 +603,17 @@ def setup_vlan_interface(base, vlan_id, active_priority="P1"):
 
     run_command(["ip", "link", "set", iface, "up"])
 
-    # Assign local test IP for the subnet (we'll use .254 as a safe probe address)
+    # Assign local test IP for the subnet using /32 to avoid hijacking runner's subnet routing
     my_ip = CONFIG.get("LOCAL_VLAN_IP", "192.168.40.254")
-    run_command(["ip", "addr", "add", f"{my_ip}/24", "dev", iface])
+    target_ip = CONFIG.get("REMOTE_VLAN_IP", "192.168.40.1")
+    run_command(["ip", "addr", "add", f"{my_ip}/32", "dev", iface])
+    run_command(["ip", "route", "add", f"{target_ip}/32", "dev", iface, "scope", "link"], suppress_output=True)
 
     # Add VLAN to bridge filter table so tagged frames pass through
     if is_openwrt():
         run_command(["bridge", "vlan", "add", "dev", base, "vid", str(vlan_id), "self"], suppress_output=True)
-        # Add to the active port so frames egress correctly
-        if active_priority == "P1":
-            run_command(["bridge", "vlan", "add", "dev", "wan", "vid", str(vlan_id)], suppress_output=True)
-        else:
-            run_command(["bridge", "vlan", "add", "dev", CONFIG.get("VXLAN_IF", "vxlan150"), "vid", str(vlan_id)], suppress_output=True)
+        # Split-Trunking: Tagged VLANs always egress across VXLAN tunnel (vxlan150)
+        run_command(["bridge", "vlan", "add", "dev", CONFIG.get("VXLAN_IF", "vxlan150"), "vid", str(vlan_id)], suppress_output=True)
 
 def arp_test():
     """Verify ARP transparency — remote device MAC visible, not the bridge's MAC."""

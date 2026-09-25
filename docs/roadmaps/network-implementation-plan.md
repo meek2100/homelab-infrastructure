@@ -4,7 +4,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 
 ---
 
-## 📈 Progress Summary — Last Updated 2026-09-24
+## 📈 Progress Summary — Last Updated 2026-09-25
 
 | Part | Title | Status |
 | :--- | :--- | :---: |
@@ -12,7 +12,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Part 2** | End-to-End Verification & Testing Runbook (5 tests) | ✅ 100% Verified |
 | **Part 2.5** | Multicast & Discovery Architecture (Native Bonjour/IGMP) | ✅ Settled |
 | **Part 2.6** | WAN2 & Storage SAN Isolation (untagged vmbr1) | ✅ Settled |
-| **Part 2.7** | vxlan-server Split Trunking Architecture (VM 107) | ✅ Designed — `vxlan-server` on standby, tested |
+| **Part 2.7** | vxlan-server Split Trunking Architecture (VM 107) | 🟢 Complete — Wire-speed untagged VLAN 1 via AP bridge, isolated tagged VLANs (10, 20, 30, 40, 100, 150, 200) encapsulated over VXLAN 150; STP TCN loops eliminated, PMTU 1500 preserved |
 | **Part 2.8** | Netgear GS108Ev2 Office Switch GitOps & Backup | 🟢 Complete — Native NSDP packet driver, L2 relay, and binary/JSON backups verified |
 | **Part 2.9** | Wireshark Headless SPAN Sniffer & Storage Engine (Stack 48) | 🟢 Hardened — 500M tmpfs, 50MB chunks, watchdog, continuous 24h FIFO |
 | **Part 3** | Unified Monitoring, SNMP & Observability (Grafana stack) | ⏳ Pending — not yet deployed |

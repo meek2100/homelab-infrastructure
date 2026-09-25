@@ -37,81 +37,88 @@ FAIL_COUNT=0
 # Delete any existing VXLAN (may have stale parameters from previous version)
 ip link del "$VXLAN_IF" 2>/dev/null
 
-# Force VXLAN underlay traffic through ens18 directly, bypassing br0.
-# Without this host route, encapsulated UDP packets route through br0
-# (which owns LOCAL_IP / 192.168.1.0/24), causing TX recursion:
-#   br0 → vxlan150 → encap → route → br0 → "Dead loop on virtual device br0"
-# The /32 host route has higher priority than br0's /24 connected route,
-# so outer packets go: ens18 → wire (no br0 re-entry, no recursion).
-ip route replace "$REMOTE_IP/32" dev "$PHYSICAL_IF" 2>/dev/null
-
-# Create VXLAN Tunnel (ready but NOT bridged — monitoring loop decides when)
+# Create VXLAN Tunnel
 ip link add "$VXLAN_IF" type vxlan id "$VXLAN_VNI" \
-    dev "$PHYSICAL_IF" local "$LOCAL_IP" remote "$REMOTE_IP" dstport "$DST_PORT"
+    local "$LOCAL_IP" remote "$REMOTE_IP" dstport "$DST_PORT" 2>/dev/null || true
 
 ip link set "$VXLAN_IF" mtu "$VXLAN_MTU"
 ip link set "$VXLAN_IF" up
 
-# TCP MSS Clamping for P2 (harmless when vxlan150 not bridged — no traffic hits it)
+# Split-Trunking: Enable VLAN filtering on bridge
+ip link set dev "$BRIDGE_IF" type bridge vlan_filtering 1
+
+# Ensure vxlan150 is permanently enslaved to br0 for tagged VLANs
+bridge link | grep -q "$VXLAN_IF" || ip link set "$VXLAN_IF" master "$BRIDGE_IF"
+
+# Ensure host CPU bridge interface has VID 1 untagged
+bridge vlan add dev "$BRIDGE_IF" vid 1 pvid untagged self 2>/dev/null || true
+bridge vlan add dev "$PHYSICAL_IF" vid 1 pvid untagged 2>/dev/null || true
+
+# Provision Tagged VLANs on both physical trunk (ens18) and VXLAN tunnel (vxlan150)
+for vid in 10 20 30 40 100 150 200; do
+    bridge vlan add dev "$PHYSICAL_IF" vid "$vid" 2>/dev/null || true
+    bridge vlan add dev "$VXLAN_IF" vid "$vid" 2>/dev/null || true
+done
+
+# Ensure VLAN 1 is initially NOT on vxlan150 (prevent loop during P1)
+bridge vlan del dev "$VXLAN_IF" vid 1 2>/dev/null || true
+
+# TCP MSS Clamping for P2
 nft add table bridge vxlan_mss 2>/dev/null || true
 nft add chain bridge vxlan_mss forward '{ type filter hook forward priority filter; policy accept; }' 2>/dev/null || true
 nft add rule bridge vxlan_mss forward tcp flags syn tcp option maxseg size set 1406 2>/dev/null || true
 
-log_msg "VXLAN tunnel $VXLAN_IF created and UP (not bridged). MTU=$VXLAN_MTU. Monitoring $WIFI_BRIDGE_AP for state."
+log_msg "VXLAN tunnel $VXLAN_IF created with Split-Trunking (Tagged VLANs active, VLAN 1 isolated). Monitoring $WIFI_BRIDGE_AP for state."
 
 # --- State Transition Functions ---
 
 activate_p2() {
-    log_msg "STATE → P2: Bridging $VXLAN_IF into $BRIDGE_IF (WiFi bridge down)"
-    # Add vxlan150 to bridge
-    bridge link | grep -q "$VXLAN_IF" || ip link set "$VXLAN_IF" master "$BRIDGE_IF"
+    log_msg "STATE → P2: Adding VLAN 1 to $VXLAN_IF (WiFi bridge down)"
+    # Add VLAN 1 to vxlan150 for failover
+    bridge vlan add dev "$VXLAN_IF" vid 1 pvid untagged
     # Set P2 MTUs
-    ip link set "$VXLAN_IF" mtu "$VXLAN_MTU"
     ip link set "$BRIDGE_IF" mtu "$VXLAN_MTU"
     # Flush stale ARP/MAC after topology change
     ip neigh flush all >/dev/null 2>&1
     CURRENT_STATE="P2"
-    log_msg "P2 Active: $VXLAN_IF bridged, MTU=$VXLAN_MTU"
+    log_msg "P2 Active: VLAN 1 bridged via $VXLAN_IF, MTU=$VXLAN_MTU"
 }
 
 activate_p1() {
-    log_msg "STATE → P1: Unbridging $VXLAN_IF from $BRIDGE_IF (WiFi bridge recovered)"
-    # Remove vxlan150 from bridge (keep tunnel UP for fast re-bridge)
-    bridge link | grep -q "$VXLAN_IF" && ip link set "$VXLAN_IF" nomaster
+    log_msg "STATE → P1: Removing VLAN 1 from $VXLAN_IF (WiFi bridge recovered)"
+    # Remove VLAN 1 from vxlan150 (keep tunnel bridged for tagged VLANs)
+    bridge vlan del dev "$VXLAN_IF" vid 1 2>/dev/null || true
     # Restore P1 MTU
     ip link set "$BRIDGE_IF" mtu 1500
     # Flush stale ARP/MAC after topology change
     ip neigh flush all >/dev/null 2>&1
     CURRENT_STATE="P1"
     FAIL_COUNT=0
-    log_msg "P1 Active: $VXLAN_IF unbridged, br0 MTU=1500"
+    log_msg "P1 Active: VLAN 1 unbridged from $VXLAN_IF (tagged VLANs remain active), br0 MTU=1500"
 }
 
 activate_p3() {
-    log_msg "STATE → P3: Unbridging $VXLAN_IF (VTEP $REMOTE_IP unreachable — tunnel dead)"
-    # Remove vxlan150 from bridge — tunnel is useless without the remote VTEP
-    bridge link | grep -q "$VXLAN_IF" && ip link set "$VXLAN_IF" nomaster
-    # Restore full MTU — no VXLAN constraining the bridge
+    log_msg "STATE → P3: Removing VLAN 1 from $VXLAN_IF (VTEP $REMOTE_IP unreachable — tunnel dead)"
+    bridge vlan del dev "$VXLAN_IF" vid 1 2>/dev/null || true
+    # Restore full MTU
     ip link set "$BRIDGE_IF" mtu 1500
     # Flush stale ARP/MAC after topology change
     ip neigh flush all >/dev/null 2>&1
     CURRENT_STATE="P3"
-    log_msg "P3 Active: $VXLAN_IF unbridged, br0 MTU=1500 (awaiting VTEP recovery)"
+    log_msg "P3 Active: VLAN 1 unbridged, br0 MTU=1500 (awaiting VTEP recovery)"
 }
 
 # --- 2. Initial State Determination ---
 # P1 healthy = WiFi bridge AP reachable (only possible when WiFi bridge is up)
-# NOTE: Do NOT check OPENWRT_BRLAN_IP here — once vxlan150 is bridged, br-lan
-# becomes reachable through the tunnel itself, creating a false "P1 recovered" loop.
 if ping -c 2 -W 3 "$WIFI_BRIDGE_AP" >/dev/null 2>&1; then
-    log_msg "Startup: AP reachable — assuming P1"
-    CURRENT_STATE="P1"
+    log_msg "Startup: AP reachable — activating P1 (Split-Trunking)"
+    activate_p1
 elif ping -c 2 -W 3 "$REMOTE_IP" >/dev/null 2>&1; then
     log_msg "Startup: P1 check failed, VTEP $REMOTE_IP reachable — activating P2"
     activate_p2
 else
     log_msg "Startup: P1 check failed, VTEP $REMOTE_IP unreachable — assuming P3"
-    CURRENT_STATE="P3"
+    activate_p3
 fi
 
 # --- 3. Monitoring Loop ---

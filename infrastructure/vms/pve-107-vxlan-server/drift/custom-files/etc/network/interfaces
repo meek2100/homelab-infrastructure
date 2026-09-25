@@ -11,15 +11,15 @@ iface lo inet loopback
 auto ens18
 iface ens18 inet manual
 
-# Bridge interface configuration (dumb bridge, no VLAN filtering)
+# Bridge interface configuration (VLAN filtering enabled for split trunking)
 auto br0
 iface br0 inet static
     address 192.168.1.150
     netmask 255.255.255.0
     gateway 192.168.1.1
     bridge_ports ens18
-    bridge_stp on
-    bridge_vlan_aware no
+    bridge_stp off
+    bridge_vlan_aware yes
 
 # VXLAN Interface - Will be managed by systemd
 #auto vxlan150
