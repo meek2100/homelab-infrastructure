@@ -368,6 +368,71 @@ def get_netgear_switch_status(ip: str = "192.168.1.220") -> str:
         args.extend(["--ip", ip])
     return run_script("manage-netgear-switch.py", args)
 
+@mcp.tool()
+def set_netgear_vlan(vid: int, tagged_ports: str = "", untagged_ports: str = "", pvid_ports: str = "", force_uplink: bool = False, ip: str = "192.168.1.220") -> str:
+    """Atomically provisions an 802.1Q VLAN and assigns member ports and PVIDs on the Netgear GS108Ev2.
+
+    Safety: Port 8 (uplink) is protected against management lockout; use force_uplink=True if intentional.
+    """
+    args = ["set-vlan", "--vid", str(vid)]
+    if tagged_ports: args.extend(["--tagged", tagged_ports])
+    if untagged_ports: args.extend(["--untagged", untagged_ports])
+    if pvid_ports: args.extend(["--pvid", pvid_ports])
+    if force_uplink: args.append("--force-uplink")
+    if ip != "192.168.1.220": args.extend(["--ip", ip])
+    return run_script("manage-netgear-switch.py", args)
+
+@mcp.tool()
+def delete_netgear_vlan(vid: int, ip: str = "192.168.1.220") -> str:
+    """Deletes an 802.1Q VLAN from the Netgear switch and reverts affected PVIDs to 1 (VLAN 1 is protected)."""
+    args = ["delete-vlan", "--vid", str(vid)]
+    if ip != "192.168.1.220": args.extend(["--ip", ip])
+    return run_script("manage-netgear-switch.py", args)
+
+@mcp.tool()
+def set_netgear_pvid(port: int, pvid: int, force_uplink: bool = False, ip: str = "192.168.1.220") -> str:
+    """Sets the default Port VLAN ID (PVID) for a specific physical port on the Netgear GS108Ev2."""
+    args = ["set-pvid", "--port", str(port), "--pvid", str(pvid)]
+    if force_uplink: args.append("--force-uplink")
+    if ip != "192.168.1.220": args.extend(["--ip", ip])
+    return run_script("manage-netgear-switch.py", args)
+
+@mcp.tool()
+def set_netgear_port(port: int, admin: str = "enable", speed: str = "auto", force_uplink: bool = False, ip: str = "192.168.1.220") -> str:
+    """Configures port administrative state (enable/disable) and speed (auto/10h/10f/100h/100f/1000f) on the Netgear switch."""
+    args = ["set-port", "--port", str(port)]
+    if admin: args.extend(["--admin", admin])
+    if speed: args.extend(["--speed", speed])
+    if force_uplink: args.append("--force-uplink")
+    if ip != "192.168.1.220": args.extend(["--ip", ip])
+    return run_script("manage-netgear-switch.py", args)
+
+@mcp.tool()
+def set_netgear_features(igmp: str = None, loop_detection: str = None, ip: str = "192.168.1.220") -> str:
+    """Configures hardware features (IGMP snooping, loop detection) on the Netgear GS108Ev2."""
+    args = ["set-feature"]
+    if igmp: args.extend(["--igmp", igmp])
+    if loop_detection: args.extend(["--loop-detection", loop_detection])
+    if ip != "192.168.1.220": args.extend(["--ip", ip])
+    return run_script("manage-netgear-switch.py", args)
+
+@mcp.tool()
+def restore_netgear_switch(config_file: str = "", confirm: bool = False, ip: str = "192.168.1.220") -> str:
+    """Restores Netgear switch configuration from official ProSAFE .cfg binary or JSON backup."""
+    args = ["restore"]
+    if config_file: args.extend(["--file", config_file])
+    if confirm: args.append("--confirm")
+    if ip != "192.168.1.220": args.extend(["--ip", ip])
+    return run_script("manage-netgear-switch.py", args)
+
+@mcp.tool()
+def verify_netgear_switch(baseline_file: str = "", ip: str = "192.168.1.220") -> str:
+    """Verifies live Netgear switch state against GitOps baseline backup and reports drift."""
+    args = ["verify"]
+    if baseline_file: args.extend(["--file", baseline_file])
+    if ip != "192.168.1.220": args.extend(["--ip", ip])
+    return run_script("manage-netgear-switch.py", args)
+
 if __name__ == "__main__":
     mcp.run()
 

@@ -73,7 +73,82 @@ Parses the active in-memory pcapng file inside the `wireshark` container on `lun
 Queries `luna-server` (VM 102) to inspect the SPAN capture interface (`ens19`), container state, and recent archive files on the NAS.
 
 ```bash
-python3 mcp/homelab/scripts/get-wireshark-status.py
+python3 mcp/homelab/scripts/manage-netgear-switch.py status
+```
+
+---
+
+### 7. Provision 802.1Q VLAN & Assign Port PVIDs
+Atomically configures 802.1Q VLAN membership (Tagged `T`, Untagged `U`) and assigns Port VLAN IDs.
+*Port 8 (uplink) is automatically protected against management lockout.*
+
+```bash
+python3 mcp/homelab/scripts/manage-netgear-switch.py set-vlan --vid 10 --tagged 8 --untagged 1,2 --pvid 1,2
+```
+
+*(Example for IoT VLAN 30 on ports 3 and 4 with trunk uplink on port 8:)*
+```bash
+python3 mcp/homelab/scripts/manage-netgear-switch.py set-vlan --vid 30 --tagged 8 --untagged 3,4 --pvid 3,4
+```
+
+---
+
+### 8. Delete an 802.1Q VLAN
+Deletes a secondary VLAN and reverts any ports assigned to it back to PVID 1. *(VLAN 1 is protected and cannot be deleted.)*
+
+```bash
+python3 mcp/homelab/scripts/manage-netgear-switch.py delete-vlan --vid 10
+```
+
+---
+
+### 9. Configure Port Default VLAN ID (PVID)
+Updates the ingress untagged VLAN classification (PVID) for a specific physical port.
+
+```bash
+python3 mcp/homelab/scripts/manage-netgear-switch.py set-pvid --port 2 --pvid 10
+```
+
+---
+
+### 10. Configure Port Administrative State & Speed
+Enables or disables a physical port, or locks speed and duplex negotiation (`auto`, `10h`, `10f`, `100h`, `100f`, `1000f`).
+*Port 8 (uplink) cannot be disabled without `--force-uplink`.*
+
+```bash
+python3 mcp/homelab/scripts/manage-netgear-switch.py set-port --port 2 --admin disable
+```
+
+*(To re-enable and set to Auto-negotiation:)*
+```bash
+python3 mcp/homelab/scripts/manage-netgear-switch.py set-port --port 2 --admin enable --speed auto
+```
+
+---
+
+### 11. Configure Hardware Features (IGMP & Loop Detection)
+Enables or disables hardware IGMP snooping (`0x2000`) and loop detection (`0x9000`).
+
+```bash
+python3 mcp/homelab/scripts/manage-netgear-switch.py set-feature --igmp enable --loop-detection enable
+```
+
+---
+
+### 12. Verify Live Switch State Against GitOps Baseline
+Performs an audit comparing live switch hardware state against `infrastructure/network/configs/netgear-gs108e-backup.json` to detect any configuration drift.
+
+```bash
+python3 mcp/homelab/scripts/manage-netgear-switch.py verify
+```
+
+---
+
+### 13. Restore Configuration from Backup
+Restores the Netgear switch configuration directly from the official ProSAFE `.cfg` binary backup or JSON snapshot.
+
+```bash
+python3 mcp/homelab/scripts/manage-netgear-switch.py restore --file infrastructure/network/configs/netgear-gs108e-backup.cfg --confirm
 ```
 
 ---
