@@ -448,6 +448,10 @@ tags = [
     0x1000,  # Port statistics
     0x6000,  # Port count
     0x7800,  # System status / serial
+    0x6800,  # VLAN Mode
+    0x2000,  # IGMP snooping / VLAN engine
+    0x9000,  # Loop detection
+    0x3000,  # PVIDs
 ]
 
 body = bytearray()
@@ -495,6 +499,7 @@ offset = 32
 tlvs = {{}}
 port_links_raw = []
 port_stats_raw = []
+port_pvids_raw = []
 while offset + 4 <= len(resp):
     tag, length = struct.unpack_from(">HH", resp, offset)
     offset += 4
@@ -505,6 +510,8 @@ while offset + 4 <= len(resp):
         port_links_raw.append(val)
     elif tag == 0x1000:
         port_stats_raw.append(val)
+    elif tag == 0x3000:
+        port_pvids_raw.append(val)
     else:
         tlvs[tag] = val
     offset += length
@@ -570,9 +577,16 @@ for sd in port_stats_raw:
 stats.sort(key=lambda s: s["port"])
 out["port_statistics"] = stats
 
-if 0x2900 in tlvs and len(tlvs[0x2900]) >= 16:
-    pvids = list(struct.unpack(">8H", tlvs[0x2900][:16]))
-    out["pvids"] = {{i + 1: pvids[i] for i in range(len(pvids))}}
+pvids = {{}}
+for pd in port_pvids_raw:
+    if len(pd) == 3:
+        pid, pvid = struct.unpack(">BH", pd)
+        pvids[pid] = pvid
+if pvids:
+    out["pvids"] = pvids
+elif 0x2900 in tlvs and len(tlvs[0x2900]) >= 16:
+    pv = list(struct.unpack(">8H", tlvs[0x2900][:16]))
+    out["pvids"] = {{i + 1: pv[i] for i in range(len(pv))}}
 
 if 0x2800 in tlvs:
     vd = tlvs[0x2800]
@@ -675,7 +689,7 @@ if not resp or len(resp) < 32 or resp[24:28] != b"NSDP":
 res_code, fail_tlv = struct.unpack_from(">HI", resp, 2)
 if res_code != 0:
     sock.close()
-    print(json.dumps({{"status": "error", "error": f"Switch rejected write with status code 0x{{res_code:04X}}", "result_code": res_code, "failure_tlv": hex(fail_tlv)}}))
+    print(json.dumps({{"status": "error", "error": f"Switch rejected write with status code 0x{{res_code:04X}}", "result_code": res_code, "failure_tlv": hex(fail_tlv), "raw_header": resp[:32].hex()}}))
     sys.exit(1)
 
 # Verification Read (Opcode 0x01)
@@ -683,7 +697,7 @@ time.sleep(0.2)
 seq = (seq + 1) & 0xFFFF
 read_hdr = struct.pack('>BBHI6s6sHH4s4s', 0x01, 0x01, 0, 0, mgr_mac, sw_mac, 0, seq, b'NSDP', b'\\x00'*4)
 read_body = bytearray()
-for t in [0x0001, 0x0006, 0x0C00, 0x2000, 0x2800, 0x2900, 0x9000]:
+for t in [0x0001, 0x0006, 0x0C00, 0x2000, 0x3000, 0x6800, 0x9000]:
     read_body += struct.pack('>HH', t, 0)
 read_body += bytes.fromhex('ffff0000')
 
@@ -699,16 +713,25 @@ sock.close()
 tlvs = {{}}
 if v_resp and len(v_resp) >= 32:
     offset = 32
+    port_pvids_v = []
     while offset + 4 <= len(v_resp):
         tag, length = struct.unpack_from(">HH", v_resp, offset)
         offset += 4
         if tag == 0xFFFF or offset + length > len(v_resp):
             break
-        tlvs[tag] = v_resp[offset : offset + length]
+        val = v_resp[offset : offset + length]
+        if tag == 0x3000:
+            port_pvids_v.append(val)
+        else:
+            tlvs[tag] = val
         offset += length
 
 pvids = {{}}
-if 0x2900 in tlvs and len(tlvs[0x2900]) >= 16:
+for pd in port_pvids_v:
+    if len(pd) == 3:
+        pid, pvid = struct.unpack(">BH", pd)
+        pvids[pid] = pvid
+if not pvids and 0x2900 in tlvs and len(tlvs[0x2900]) >= 16:
     pv = list(struct.unpack(">8H", tlvs[0x2900][:16]))
     pvids = {{i + 1: pv[i] for i in range(len(pv))}}
 
@@ -992,10 +1015,12 @@ def cmd_set_vlan(target_ip, password, vid, tagged_ports, untagged_ports, pvid_po
         vlan_payload += struct.pack(">H8B", v_id, *vlan_map[v_id])
     mutation_body += struct.pack(">HH", 0x2800, len(vlan_payload)) + vlan_payload
 
-    # 0x2900: PVID map (16 bytes)
-    pvid_list = [updated_pvids.get(i, 1) for i in range(1, 9)]
-    pvid_bytes = struct.pack(">8H", *pvid_list)
-    mutation_body += struct.pack(">HH", 0x2900, 16) + pvid_bytes
+    # 0x3000: PVID map (3 bytes per port: uint8 port, uint16 pvid)
+    for p in range(1, 9):
+        mutation_body += struct.pack(">HHBH", 0x3000, 3, p, updated_pvids.get(p, 1))
+
+    # 0x6800: IGMP Snooping VLAN
+    mutation_body += struct.pack(">HH", 0x6800, 4) + bytes.fromhex("00010001")
 
     # 4. Dispatch mutation
     driver, result = connect_and_mutate(target_ip, password, bytes(mutation_body))
@@ -1004,6 +1029,7 @@ def cmd_set_vlan(target_ip, password, vid, tagged_ports, untagged_ports, pvid_po
     _, updated_data = connect_and_gather(target_ip, password)
     cmd_backup(updated_data, driver)
 
+    pvid_list = [updated_pvids.get(i, 1) for i in range(1, 9)]
     return {
         "status": "success",
         "action": "set_vlan",
@@ -1030,14 +1056,16 @@ def cmd_delete_vlan(target_ip, password, vid):
     # 0x2C00: Delete VLAN (2 bytes: uint16 vid)
     mutation_body += struct.pack(">HHH", 0x2C00, 2, vid)
 
-    # 0x2900: Revert PVIDs
-    pvid_list = [updated_pvids.get(i, 1) for i in range(1, 9)]
-    mutation_body += struct.pack(">HH", 0x2900, 16) + struct.pack(">8H", *pvid_list)
+    # 0x3000: Revert PVIDs
+    for p in range(1, 9):
+        if current_pvids.get(p) == vid:
+            mutation_body += struct.pack(">HHBH", 0x3000, 3, p, 1)
 
     driver, result = connect_and_mutate(target_ip, password, bytes(mutation_body))
     _, updated_data = connect_and_gather(target_ip, password)
     cmd_backup(updated_data, driver)
 
+    pvid_list = [updated_pvids.get(i, 1) for i in range(1, 9)]
     return {
         "status": "success",
         "action": "delete_vlan",
@@ -1065,7 +1093,7 @@ def cmd_set_pvid(target_ip, password, port, pvid, force_uplink=False):
     current_pvids[port] = pvid
 
     pvid_list = [current_pvids.get(i, 1) for i in range(1, 9)]
-    mutation_body = struct.pack(">HH", 0x2900, 16) + struct.pack(">8H", *pvid_list)
+    mutation_body = struct.pack(">HHBH", 0x3000, 3, port, pvid)
 
     driver, result = connect_and_mutate(target_ip, password, mutation_body)
     _, updated_data = connect_and_gather(target_ip, password)
@@ -1079,6 +1107,7 @@ def cmd_set_pvid(target_ip, password, port, pvid, force_uplink=False):
         "driver": driver,
         "all_pvids": pvid_list,
     }
+
 
 
 def cmd_set_port(target_ip, password, port, admin=None, speed=None, force_uplink=False):

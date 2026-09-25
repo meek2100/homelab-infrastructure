@@ -184,7 +184,7 @@ The primary TLVs governing the GS108Ev2 switch are detailed below:
 | 0x0C00 | Port Physical Link Matrix | Variable | Read / Write | Multi-byte array defining physical link state, link speed (10M/100M/1000M), duplex mode, and administrative shutdown state across ports 1–81. |
 | 0x1000 | Port Performance Counters | 192 bytes | Read-Only | Contiguous array of counters per port detailing ingress/egress bytes, frame counts, broadcast/multicast distributions, and CRC error totals1. |
 | 0x2800 | 802.1Q VLAN Membership | Variable | Read / Write | Multi-byte bitmask map registering active VLAN IDs alongside per-port egress tagging properties (Tagged, Untagged, or Excluded)4. |
-| 0x2900 | Port PVID Assignment | 16 bytes | Read / Write | Array of eight 16-bit big-endian integers allocating the default Port VLAN ID for ports 1 through 8\. |
+| 0x3000 | Port PVID Assignment | 3 bytes per port | Read / Write | 3-byte TLV per port consisting of 1 byte port ID (1-8) and 16-bit big-endian integer PVID. |
 | 0x2C00 | VLAN Deletion Directive | 2 bytes | Write-Only | Purges a specific 16-bit VLAN ID entry from active switch memory4. |
 
 #### **Detailed Internal Payload Layouts**
@@ -203,7 +203,7 @@ Complex switch operations rely on binary layouts packed inside the TLV payload:
   * Bytes 0x0C–0x0F: Egress Frame Count (Tx Packets).  
   * Bytes 0x10–0x13: Ingress CRC / Checksum Frame Errors.  
   * Bytes 0x14–0x17: Collision and Ingress Frame Drop Count.  
-* **Port PVID Assignment Register (0x2900)**: Exactly 16 bytes consisting of eight consecutive 16-bit big-endian unsigned integers. Bytes 0x00–0x01 represent the PVID for Port 1, bytes 0x02–0x03 for Port 2, continuing sequentially through Port 8\.  
+* **Port PVID Assignment Register (0x3000)**: Repeated sequence of 3-byte TLVs per port (`0x3000`, length 3). Byte 0 is physical Port (1-8), Bytes 1-2 are uint16 big-endian PVID (e.g., `01 0001` for Port 1 PVID 1).  
 * **802.1Q VLAN Membership Register (0x2800)**: Encodes VLAN definitions as contiguous blocks. Each entry spans 10 bytes:  
   * Bytes 0x00–0x01: 16-bit VLAN ID (uint16, e.g., 0x000A for VLAN 10).  
   * Bytes 0x02–0x09: 8 distinct port membership bytes (indices 0 through 7 corresponding to physical ports 1 through 8):  
