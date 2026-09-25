@@ -7,11 +7,11 @@ CONF_FILE="/etc/vxlan-nm.conf"
 [ -f "$CONF_FILE" ] && . "$CONF_FILE"
 
 # Defaults
-: "${PHYSICAL_IF:=wl1-sta0}"
+: "${PHYSICAL_IF:=wan}"
 : "${VXLAN_IF:=vxlan150}"
 : "${VXLAN_VNI:=150}"
 : "${DST_PORT:=4789}"
-: "${LOCAL_IP:=192.168.1.225}"
+: "${LOCAL_IP:=192.168.1.226}"
 : "${REMOTE_IP:=192.168.1.150}"
 : "${CHECK_INTERVAL:=15}"
 : "${FAIL_THRESHOLD:=3}"
@@ -34,11 +34,30 @@ create_vxlan() {
         ip link set "$VXLAN_IF" mtu "$MTU"
         ip link set "$VXLAN_IF" up
     fi
+    # Ensure bridge vlan filtering is enabled
+    ip link set dev br-lan type bridge vlan_filtering 1 2>/dev/null || true
+    # Enslave vxlan150 to br-lan for split trunking
+    if ! bridge link | grep -q "$VXLAN_IF"; then
+        ip link set dev "$VXLAN_IF" master br-lan
+    fi
+    # Always maintain br-lan at MTU 1500 during P1 so native VLAN 1 never stalls
+    if [ ! -f /tmp/failover_p2_active ]; then
+        ip link set dev br-lan mtu 1500 2>/dev/null || true
+    fi
+    # Ensure VID 1 is NOT on vxlan150 unless P2 is active (failover.sh manages VID 1)
+    if [ ! -f /tmp/failover_p2_active ]; then
+        bridge vlan del dev "$VXLAN_IF" vid 1 2>/dev/null || true
+    fi
+    # Ensure tagged VLANs are on vxlan150 and lan4
+    for vid in 10 20 30 40 100 150 200; do
+        bridge vlan add dev "$VXLAN_IF" vid "$vid" 2>/dev/null || true
+        bridge vlan add dev lan4 vid "$vid" 2>/dev/null || true
+    done
 }
 
 check_health() {
-    # Verify tunnel endpoint is reachable over the backhaul (wl1-sta0)
-    if ping -c 1 -W 2 "$REMOTE_IP" >/dev/null 2>&1; then
+    # Verify tunnel endpoint is reachable over the bridge (wan)
+    if ping -c 2 -W 2 -I br-lan "$REMOTE_IP" >/dev/null 2>&1; then
         return 0
     else
         return 1
@@ -50,6 +69,11 @@ main_loop() {
     FAILS=0
 
     while :; do
+        if [ -f /tmp/failover_p2_active ]; then
+            sleep "$CHECK_INTERVAL"
+            continue
+        fi
+
         create_vxlan
 
         if check_health; then

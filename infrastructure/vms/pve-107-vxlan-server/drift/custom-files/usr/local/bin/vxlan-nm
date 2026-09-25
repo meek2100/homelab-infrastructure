@@ -11,12 +11,18 @@ CONFIG_FILE="/etc/network/vxlan-nm.conf"
 [ -f "$CONFIG_FILE" ] && . "$CONFIG_FILE" || { echo "Missing config: $CONFIG_FILE" >&2; exit 1; }
 
 LOG_FILE="${LOG_FILE:-/var/log/vxlan-nm.log}"
-CHECK_INTERVAL="${CHECK_INTERVAL:-60}"
+CHECK_INTERVAL="${CHECK_INTERVAL:-15}"
 DEBUG="${DEBUG:-0}"
-WIFI_BRIDGE_AP="${WIFI_BRIDGE_AP:-192.168.1.237}"
+REMOTE_IP="${REMOTE_IP:-192.168.1.226}"
+REMOTE_WIRELESS_IP="${REMOTE_WIRELESS_IP:-192.168.1.225}"
 FAIL_THRESHOLD="${FAIL_THRESHOLD:-3}"
 VXLAN_MTU="${VXLAN_MTU:-1450}"
 PHYSICAL_IF="${PHYSICAL_IF:-ens18}"
+BRIDGE_IF="${BRIDGE_IF:-br0}"
+VXLAN_IF="${VXLAN_IF:-vxlan150}"
+VXLAN_VNI="${VXLAN_VNI:-150}"
+DST_PORT="${DST_PORT:-4789}"
+LOCAL_IP="${LOCAL_IP:-192.168.1.150}"
 
 mkdir -p "$(dirname "$LOG_FILE")"; touch "$LOG_FILE"; chmod 644 "$LOG_FILE"
 
@@ -33,47 +39,60 @@ log_msg "---- Starting State-Aware VXLAN Receiver ----"
 CURRENT_STATE="INIT"
 FAIL_COUNT=0
 
-# --- 1. Interface Setup ---
-# Delete any existing VXLAN (may have stale parameters from previous version)
-ip link del "$VXLAN_IF" 2>/dev/null
+# --- Interface Setup ---
+setup_interfaces() {
+    # Delete any existing VXLAN (may have stale parameters from previous version)
+    ip link del "$VXLAN_IF" 2>/dev/null
 
-# Create VXLAN Tunnel
-ip link add "$VXLAN_IF" type vxlan id "$VXLAN_VNI" \
-    local "$LOCAL_IP" remote "$REMOTE_IP" dstport "$DST_PORT" 2>/dev/null || true
+    # Create VXLAN Tunnel
+    ip link add "$VXLAN_IF" type vxlan id "$VXLAN_VNI" \
+        local "$LOCAL_IP" remote "$REMOTE_IP" dstport "$DST_PORT" 2>/dev/null || true
 
-ip link set "$VXLAN_IF" mtu "$VXLAN_MTU"
-ip link set "$VXLAN_IF" up
+    ip link set "$VXLAN_IF" mtu "$VXLAN_MTU"
+    ip link set "$VXLAN_IF" up
 
-# Split-Trunking: Enable VLAN filtering on bridge
-ip link set dev "$BRIDGE_IF" type bridge vlan_filtering 1
+    # Split-Trunking: Enable VLAN filtering on bridge
+    ip link set dev "$BRIDGE_IF" type bridge vlan_filtering 1
 
-# Ensure vxlan150 is permanently enslaved to br0 for tagged VLANs
-bridge link | grep -q "$VXLAN_IF" || ip link set "$VXLAN_IF" master "$BRIDGE_IF"
+    # Ensure vxlan150 is permanently enslaved to br0 for tagged VLANs
+    bridge link | grep -q "$VXLAN_IF" || ip link set "$VXLAN_IF" master "$BRIDGE_IF"
 
-# Ensure host CPU bridge interface has VID 1 untagged
-bridge vlan add dev "$BRIDGE_IF" vid 1 pvid untagged self 2>/dev/null || true
-bridge vlan add dev "$PHYSICAL_IF" vid 1 pvid untagged 2>/dev/null || true
+    # Ensure host CPU bridge interface has VID 1 untagged
+    bridge vlan add dev "$BRIDGE_IF" vid 1 pvid untagged self 2>/dev/null || true
+    bridge vlan add dev "$PHYSICAL_IF" vid 1 pvid untagged 2>/dev/null || true
 
-# Provision Tagged VLANs on both physical trunk (ens18) and VXLAN tunnel (vxlan150)
-for vid in 10 20 30 40 100 150 200; do
-    bridge vlan add dev "$PHYSICAL_IF" vid "$vid" 2>/dev/null || true
-    bridge vlan add dev "$VXLAN_IF" vid "$vid" 2>/dev/null || true
-done
+    # Provision Tagged VLANs on both physical trunk (ens18) and VXLAN tunnel (vxlan150)
+    for vid in 10 20 30 40 100 150 200; do
+        bridge vlan add dev "$PHYSICAL_IF" vid "$vid" 2>/dev/null || true
+        bridge vlan add dev "$VXLAN_IF" vid "$vid" 2>/dev/null || true
+    done
 
-# Ensure VLAN 1 is initially NOT on vxlan150 (prevent loop during P1)
-bridge vlan del dev "$VXLAN_IF" vid 1 2>/dev/null || true
+    # Ensure VLAN 1 is initially NOT on vxlan150 (prevent loop during P1)
+    bridge vlan del dev "$VXLAN_IF" vid 1 2>/dev/null || true
 
-# TCP MSS Clamping for P2
-nft add table bridge vxlan_mss 2>/dev/null || true
-nft add chain bridge vxlan_mss forward '{ type filter hook forward priority filter; policy accept; }' 2>/dev/null || true
-nft add rule bridge vxlan_mss forward tcp flags syn tcp option maxseg size set 1406 2>/dev/null || true
+    # TCP MSS Clamping for P2
+    nft add table bridge vxlan_mss 2>/dev/null || true
+    nft add chain bridge vxlan_mss forward '{ type filter hook forward priority filter; policy accept; }' 2>/dev/null || true
+    nft add rule bridge vxlan_mss forward tcp flags syn tcp option maxseg size set 1406 2>/dev/null || true
 
-log_msg "VXLAN tunnel $VXLAN_IF created with Split-Trunking (Tagged VLANs active, VLAN 1 isolated). Monitoring $WIFI_BRIDGE_AP for state."
+    log_msg "VXLAN tunnel $VXLAN_IF created with Split-Trunking (Tagged VLANs active, VLAN 1 isolated). P1 peer=$REMOTE_IP, P2 peer=$REMOTE_WIRELESS_IP."
+}
 
 # --- State Transition Functions ---
 
 activate_p2() {
-    log_msg "STATE → P2: Adding VLAN 1 to $VXLAN_IF (WiFi bridge down)"
+    log_msg "STATE → P2: Adding VLAN 1 to $VXLAN_IF (remote $REMOTE_WIRELESS_IP)"
+    # Repoint VTEP remote to OpenWrt's wireless IP
+    ip link set dev "$VXLAN_IF" type vxlan remote "$REMOTE_WIRELESS_IP" 2>/dev/null || {
+        ip link del "$VXLAN_IF" 2>/dev/null
+        ip link add "$VXLAN_IF" type vxlan id "$VXLAN_VNI" \
+            local "$LOCAL_IP" remote "$REMOTE_WIRELESS_IP" dstport "$DST_PORT" 2>/dev/null || true
+        ip link set "$VXLAN_IF" mtu "$VXLAN_MTU"
+        ip link set "$VXLAN_IF" up master "$BRIDGE_IF"
+        for vid in 10 20 30 40 100 150 200; do
+            bridge vlan add dev "$VXLAN_IF" vid "$vid" 2>/dev/null || true
+        done
+    }
     # Add VLAN 1 to vxlan150 for failover
     bridge vlan add dev "$VXLAN_IF" vid 1 pvid untagged
     # Set P2 MTUs
@@ -81,11 +100,23 @@ activate_p2() {
     # Flush stale ARP/MAC after topology change
     ip neigh flush all >/dev/null 2>&1
     CURRENT_STATE="P2"
-    log_msg "P2 Active: VLAN 1 bridged via $VXLAN_IF, MTU=$VXLAN_MTU"
+    echo "P2" > /tmp/vxlan_state
+    log_msg "P2 Active: VLAN 1 bridged via $VXLAN_IF (remote $REMOTE_WIRELESS_IP), MTU=$VXLAN_MTU"
 }
 
 activate_p1() {
-    log_msg "STATE → P1: Removing VLAN 1 from $VXLAN_IF (WiFi bridge recovered)"
+    log_msg "STATE → P1: Removing VLAN 1 from $VXLAN_IF (remote $REMOTE_IP)"
+    # Repoint VTEP remote back to OpenWrt's wired IP
+    ip link set dev "$VXLAN_IF" type vxlan remote "$REMOTE_IP" 2>/dev/null || {
+        ip link del "$VXLAN_IF" 2>/dev/null
+        ip link add "$VXLAN_IF" type vxlan id "$VXLAN_VNI" \
+            local "$LOCAL_IP" remote "$REMOTE_IP" dstport "$DST_PORT" 2>/dev/null || true
+        ip link set "$VXLAN_IF" mtu "$VXLAN_MTU"
+        ip link set "$VXLAN_IF" up master "$BRIDGE_IF"
+        for vid in 10 20 30 40 100 150 200; do
+            bridge vlan add dev "$VXLAN_IF" vid "$vid" 2>/dev/null || true
+        done
+    }
     # Remove VLAN 1 from vxlan150 (keep tunnel bridged for tagged VLANs)
     bridge vlan del dev "$VXLAN_IF" vid 1 2>/dev/null || true
     # Restore P1 MTU
@@ -94,80 +125,140 @@ activate_p1() {
     ip neigh flush all >/dev/null 2>&1
     CURRENT_STATE="P1"
     FAIL_COUNT=0
-    log_msg "P1 Active: VLAN 1 unbridged from $VXLAN_IF (tagged VLANs remain active), br0 MTU=1500"
+    echo "P1" > /tmp/vxlan_state
+    log_msg "P1 Active: VLAN 1 unbridged from $VXLAN_IF (tagged VLANs remain active, remote $REMOTE_IP), br0 MTU=1500"
 }
 
 activate_p3() {
-    log_msg "STATE → P3: Removing VLAN 1 from $VXLAN_IF (VTEP $REMOTE_IP unreachable — tunnel dead)"
+    log_msg "STATE → P3: Removing VLAN 1 from $VXLAN_IF (VTEP unreachable)"
     bridge vlan del dev "$VXLAN_IF" vid 1 2>/dev/null || true
-    # Restore full MTU
     ip link set "$BRIDGE_IF" mtu 1500
-    # Flush stale ARP/MAC after topology change
     ip neigh flush all >/dev/null 2>&1
     CURRENT_STATE="P3"
-    log_msg "P3 Active: VLAN 1 unbridged, br0 MTU=1500 (awaiting VTEP recovery)"
+    echo "P3" > /tmp/vxlan_state
+    log_msg "P3 Active: VLAN 1 unbridged, br0 MTU=1500"
 }
 
-# --- 2. Initial State Determination ---
-# P1 healthy = WiFi bridge AP reachable (only possible when WiFi bridge is up)
-if ping -c 2 -W 3 "$WIFI_BRIDGE_AP" >/dev/null 2>&1; then
-    log_msg "Startup: AP reachable — activating P1 (Split-Trunking)"
-    activate_p1
-elif ping -c 2 -W 3 "$REMOTE_IP" >/dev/null 2>&1; then
-    log_msg "Startup: P1 check failed, VTEP $REMOTE_IP reachable — activating P2"
-    activate_p2
-else
-    log_msg "Startup: P1 check failed, VTEP $REMOTE_IP unreachable — assuming P3"
-    activate_p3
-fi
+show_status() {
+    echo "=== VM 107 VXLAN Receiver Status ==="
+    [ -f /tmp/vxlan_state ] && echo "Recorded State: $(cat /tmp/vxlan_state)"
+    echo "VTEP Parameters:"
+    ip -d link show "$VXLAN_IF" 2>/dev/null | grep -E "vxlan id|mtu"
+    echo "Bridge VLAN Membership ($VXLAN_IF):"
+    bridge vlan show dev "$VXLAN_IF" 2>/dev/null
+    echo "Bridge MTU: $(cat "/sys/class/net/$BRIDGE_IF/mtu" 2>/dev/null)"
+}
 
-# --- 3. Monitoring Loop ---
-while true; do
-    sleep "$CHECK_INTERVAL"
+# --- Monitoring Loop ---
+monitor_loop() {
+    while true; do
+        sleep "$CHECK_INTERVAL"
 
-    # Ensure vxlan150 interface is UP (regardless of bridge membership)
-    ip link show "$VXLAN_IF" | grep -q "UP" || {
-        log_msg "WARNING: $VXLAN_IF went down — bringing back up"
-        ip link set "$VXLAN_IF" up
-    }
-
-    # Health check: P1 = WiFi bridge AP reachable
-    # Only the AP is a reliable P1 signal. br-lan is reachable through the
-    # VXLAN tunnel in P2, which would falsely trigger "P1 recovered".
-    AP_OK=0
-    ping -c 2 -W 3 "$WIFI_BRIDGE_AP" >/dev/null 2>&1 && AP_OK=1
-
-    if [ $AP_OK -eq 1 ]; then
-        # AP reachable → P1 is working
-        if [ "$FAIL_COUNT" -gt 0 ]; then
-            log_msg "P1 recovered (was at $FAIL_COUNT/$FAIL_THRESHOLD)"
-        fi
-        FAIL_COUNT=0
-        if [ "$CURRENT_STATE" != "P1" ]; then
-            activate_p1
-        fi
-    else
-        # AP unreachable — P1 down
-        if [ "$FAIL_COUNT" -lt "$FAIL_THRESHOLD" ]; then
-            FAIL_COUNT=$((FAIL_COUNT + 1))
-            log_msg "P1 check failed: AP unreachable ($FAIL_COUNT/$FAIL_THRESHOLD)"
+        # Check if state was updated externally (via CLI/SSH)
+        if [ -f /tmp/vxlan_state ]; then
+            FILE_STATE=$(cat /tmp/vxlan_state 2>/dev/null)
+            if [ -n "$FILE_STATE" ] && [ "$FILE_STATE" != "$CURRENT_STATE" ]; then
+                CURRENT_STATE="$FILE_STATE"
+            fi
         fi
 
-        if [ "$FAIL_COUNT" -ge "$FAIL_THRESHOLD" ]; then
-            # P1 down — check if tunnel is viable
-            if ping -c 2 -W 3 "$REMOTE_IP" >/dev/null 2>&1; then
-                # VTEP reachable → P2
-                if [ "$CURRENT_STATE" != "P2" ]; then
-                    activate_p2
-                fi
+        # Ensure vxlan150 interface is UP
+        ip link show "$VXLAN_IF" 2>/dev/null | grep -q "UP" || {
+            log_msg "WARNING: $VXLAN_IF went down — bringing back up"
+            ip link set "$VXLAN_IF" up
+        }
+
+        if [ "$CURRENT_STATE" = "P2" ]; then
+            # In P2, check if OpenWrt's physical port (wan) has recovered.
+            # Carrier check directly over SSH to OpenWrt's wireless IP (192.168.1.225)
+            P1_RECOVERED=0
+            CARRIER=$(ssh -o BatchMode=yes -o ConnectTimeout=2 -o StrictHostKeyChecking=no root@"$REMOTE_WIRELESS_IP" "cat /sys/class/net/wan/carrier" 2>/dev/null)
+            if [ "$CARRIER" = "1" ]; then
+                P1_RECOVERED=1
+            fi
+
+            if [ $P1_RECOVERED -eq 1 ]; then
+                log_msg "P1 physical carrier recovered on OpenWrt (wan carrier=1) — restoring P1"
+                activate_p1
             else
-                # VTEP also unreachable → P3
-                if [ "$CURRENT_STATE" != "P3" ]; then
+                # Still in P2: ensure OpenWrt wireless VTEP is still alive
+                if ! ping -c 2 -W 2 "$REMOTE_WIRELESS_IP" >/dev/null 2>&1; then
+                    log_msg "Wireless VTEP $REMOTE_WIRELESS_IP unreachable while in P2 — falling back to P3"
                     activate_p3
                 fi
             fi
+        elif [ "$CURRENT_STATE" = "P3" ]; then
+            # In P3, check if P1 recovered or wireless VTEP recovered
+            CARRIER=$(ssh -o BatchMode=yes -o ConnectTimeout=2 -o StrictHostKeyChecking=no root@"$REMOTE_WIRELESS_IP" "cat /sys/class/net/wan/carrier" 2>/dev/null)
+            if [ "$CARRIER" = "1" ]; then
+                log_msg "P1 physical carrier recovered — restoring P1"
+                activate_p1
+            elif ping -c 2 -W 2 "$REMOTE_WIRELESS_IP" >/dev/null 2>&1; then
+                log_msg "Wireless VTEP $REMOTE_WIRELESS_IP recovered — activating P2"
+                activate_p2
+            fi
+        else
+            # CURRENT_STATE is P1
+            # In P1, ping OpenWrt's wired IP. In P1, VLAN 1 is NOT on vxlan150,
+            # so this ping only succeeds over the physical wire.
+            if ping -c 2 -W 2 "$REMOTE_IP" >/dev/null 2>&1; then
+                if [ "$FAIL_COUNT" -gt 0 ]; then
+                    log_msg "P1 recovered (was at $FAIL_COUNT/$FAIL_THRESHOLD)"
+                fi
+                FAIL_COUNT=0
+            else
+                FAIL_COUNT=$((FAIL_COUNT + 1))
+                log_msg "P1 check failed: OpenWrt wired IP $REMOTE_IP unreachable ($FAIL_COUNT/$FAIL_THRESHOLD)"
+                if [ "$FAIL_COUNT" -ge "$FAIL_THRESHOLD" ]; then
+                    if ping -c 2 -W 2 "$REMOTE_WIRELESS_IP" >/dev/null 2>&1; then
+                        activate_p2
+                    else
+                        activate_p3
+                    fi
+                fi
+            fi
         fi
-    fi
 
-    [ "$DEBUG" = "1" ] && log_msg "State=$CURRENT_STATE Fails=$FAIL_COUNT/$FAIL_THRESHOLD"
-done
+        [ "$DEBUG" = "1" ] && log_msg "State=$CURRENT_STATE Fails=$FAIL_COUNT/$FAIL_THRESHOLD"
+    done
+}
+
+# --- CLI Dispatcher ---
+case "$1" in
+    -p1|--p1)
+        activate_p1
+        exit 0
+        ;;
+    -p2|--p2)
+        activate_p2
+        exit 0
+        ;;
+    -p3|--p3)
+        activate_p3
+        exit 0
+        ;;
+    -s|--status)
+        show_status
+        exit 0
+        ;;
+    -m|--monitor|"")
+        log_msg "---- Starting State-Aware VXLAN Receiver Daemon ----"
+        setup_interfaces
+        # Initial state determination
+        if ping -c 2 -W 2 "$REMOTE_IP" >/dev/null 2>&1; then
+            log_msg "Startup: Wired VTEP $REMOTE_IP reachable — activating P1 (Split-Trunking)"
+            activate_p1
+        elif ping -c 2 -W 2 "$REMOTE_WIRELESS_IP" >/dev/null 2>&1; then
+            log_msg "Startup: P1 unreachable, Wireless VTEP $REMOTE_WIRELESS_IP reachable — activating P2"
+            activate_p2
+        else
+            log_msg "Startup: Neither VTEP reachable — assuming P3"
+            activate_p3
+        fi
+        monitor_loop
+        ;;
+    *)
+        echo "Usage: $0 [-p1|-p2|-p3|-s|-m]"
+        exit 1
+        ;;
+esac

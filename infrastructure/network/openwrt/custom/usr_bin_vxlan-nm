@@ -69,6 +69,11 @@ main_loop() {
     FAILS=0
 
     while :; do
+        if [ -f /tmp/failover_p2_active ]; then
+            sleep "$CHECK_INTERVAL"
+            continue
+        fi
+
         create_vxlan
 
         if check_health; then

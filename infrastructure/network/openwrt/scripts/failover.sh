@@ -194,6 +194,15 @@ activate_p1() {
     # Remove VLAN 1 from VXLAN (Mutual Exclusion for VLAN 1, keep tagged VLANs active)
     bridge vlan del dev "$VXLAN_IF" vid 1 >/dev/null 2>&1
     rm -f /tmp/failover_p2_active
+    # Repoint vxlan150 back to wired local 192.168.1.226 dev wan
+    ip link set dev "$VXLAN_IF" type vxlan local 192.168.1.226 dev "$P1_IF" remote "$VXLAN_SERVER_IP" 2>/dev/null || {
+        ip link del "$VXLAN_IF" 2>/dev/null
+        ip link add "$VXLAN_IF" type vxlan id 150 dstport 4789 remote "$VXLAN_SERVER_IP" local 192.168.1.226
+        ip link set "$VXLAN_IF" master "$BR_IF"
+        for vid in 10 20 30 40 100 150 200; do
+            bridge vlan add dev "$VXLAN_IF" vid "$vid" 2>/dev/null
+        done
+    }
     # wan stays in bridge (managed by netifd), just bring it UP
     ip link set "$P1_IF" up
     # DSA PVID Restoration
@@ -208,6 +217,8 @@ activate_p1() {
     # Connected route first — kernel needs it to validate the gateway next-hop
     ip route add 192.168.1.0/24 dev "$BR_IF" proto static scope link src 192.168.1.226 metric 10 2>/dev/null
     ip route add default via 192.168.1.1 dev "$BR_IF" proto static metric 10 2>/dev/null
+    # Inform VM 107
+    ssh -y -i /root/.ssh/id_ed25519 meek2100@"$VXLAN_SERVER_IP" 'sudo /usr/local/bin/vxlan-nm -p1' >/dev/null 2>&1 &
     # ARP Storm Prevention: flush stale entries after topology change
     ip neigh flush all >/dev/null 2>&1
     set_fail_count 0
@@ -226,9 +237,15 @@ activate_p2() {
     ip route add default via 192.168.1.1 dev "$BR_IF" proto static metric 10 2>/dev/null
     # Set bridge and tunnel MTU to 1450 (1500 Physical - 50 VXLAN Overhead)
     ip link set "$BR_IF" mtu 1450
-    if ! ip link show "$VXLAN_IF" >/dev/null 2>&1; then
+    # Dynamically repoint vxlan150 to wl1-sta0 (192.168.1.225)
+    ip link set dev "$VXLAN_IF" type vxlan local 192.168.1.225 dev wl1-sta0 remote "$VXLAN_SERVER_IP" 2>/dev/null || {
+        ip link del "$VXLAN_IF" 2>/dev/null
         ip link add "$VXLAN_IF" type vxlan id 150 dev wl1-sta0 dstport 4789 remote "$VXLAN_SERVER_IP" local 192.168.1.225
-    fi
+        ip link set dev "$VXLAN_IF" master "$BR_IF"
+        for vid in 10 20 30 40 100 150 200; do
+            bridge vlan add dev "$VXLAN_IF" vid "$vid" 2>/dev/null
+        done
+    }
     ip link set "$VXLAN_IF" mtu 1450
     ip link set "$VXLAN_IF" up
     if ! bridge link | grep -q "$VXLAN_IF"; then
@@ -237,9 +254,11 @@ activate_p2() {
     # Add VLAN 1 to vxlan150 for failover
     bridge vlan add dev "$VXLAN_IF" vid 1 pvid untagged
     touch /tmp/failover_p2_active
+    # Inform VM 107
+    ssh -y -i /root/.ssh/id_ed25519 meek2100@"$VXLAN_SERVER_IP" 'sudo /usr/local/bin/vxlan-nm -p2' >/dev/null 2>&1 &
     # ARP Storm Prevention: flush stale entries after topology change
     ip neigh flush all >/dev/null 2>&1
-    log_msg "Priority 2 Active (Failover: VLAN 1 added to VXLAN)."
+    log_msg "Priority 2 Active (Failover: VLAN 1 added to VXLAN via wl1-sta0)."
 }
 
 activate_p3() {
@@ -249,6 +268,8 @@ activate_p3() {
     bridge vlan del dev "$VXLAN_IF" vid 1 >/dev/null 2>&1
     rm -f /tmp/failover_p2_active
     ip link set "$BR_IF" mtu 1500
+    # Inform VM 107
+    ssh -y -i /root/.ssh/id_ed25519 meek2100@"$VXLAN_SERVER_IP" 'sudo /usr/local/bin/vxlan-nm -p3' >/dev/null 2>&1 &
     # Remove br-lan upstream routes — br-lan has no upstream in P3,
     # so wl1-sta0 (metric 100) must handle gateway/internet traffic
     ip route del default via 192.168.1.1 dev "$BR_IF" metric 10 2>/dev/null
@@ -296,7 +317,7 @@ run_monitor() {
     fi
 
     # Threshold reached - failover
-    if ping -c 3 -W 2 "$VXLAN_SERVER_IP" >/dev/null 2>&1; then
+    if ping -c 3 -W 2 -I wl1-sta0 "$VXLAN_SERVER_IP" >/dev/null 2>&1; then
         rm -f "$P2_DOWN_SINCE_FILE"
         if [ ! -f /tmp/failover_p2_active ]; then
             activate_p2
