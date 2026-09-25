@@ -261,6 +261,16 @@ def backup_vm_vzdump(node: str, vmid: int, storage: str = None) -> str:
     return run_script("manage-vm-snapshots.py", args)
 
 @mcp.tool()
+def start_vm(node: str, vmid: int) -> str:
+    """Powers on a Proxmox virtual machine (QEMU) or LXC container."""
+    return run_script("manage-vm-snapshots.py", ["--node", node, "--vmid", str(vmid), "--action", "start"])
+
+@mcp.tool()
+def stop_vm(node: str, vmid: int) -> str:
+    """Gracefully shuts down or stops a Proxmox virtual machine (QEMU) or LXC container."""
+    return run_script("manage-vm-snapshots.py", ["--node", node, "--vmid", str(vmid), "--action", "stop"])
+
+@mcp.tool()
 def backup_openwrt(ip: str = "192.168.1.226", user: str = "root") -> str:
     """Backs up OpenWrt router /etc/config/, custom scripts, daemons, and encrypts sensitive modules via SOPS."""
     return run_script("backup-openwrt-config.py", ["--ip", ip, "--user", user])

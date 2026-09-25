@@ -146,11 +146,41 @@ def vzdump_backup(node, vmid, storage=None, mode="snapshot"):
         return f"✅ Full vzdump backup successfully completed for VM {vmid} on {node}.\n{stdout.strip()}"
     return f"❌ vzdump backup failed for VM {vmid} on {node}:\n{stderr.strip()}\n{stdout.strip()}"
 
+def start_vm(node, vmid):
+    ip = get_node_ip(node)
+    if not ip:
+        return f"Error: Node {node} IP not found."
+
+    tool = get_guest_tool(ip, vmid)
+    label = "VM" if tool == "qm" else "LXC"
+
+    cmd = f"{tool} start {vmid}"
+    print(f"🚀 Starting {label} {vmid} on {node} ({ip})...")
+    code, stdout, stderr = run_ssh(ip, cmd, timeout=60)
+    if code == 0:
+        return f"✅ Successfully started {label} {vmid} on {node}.\n{stdout.strip()}"
+    return f"❌ Failed to start {label} {vmid} on {node}:\n{stderr.strip()}\n{stdout.strip()}"
+
+def stop_vm(node, vmid):
+    ip = get_node_ip(node)
+    if not ip:
+        return f"Error: Node {node} IP not found."
+
+    tool = get_guest_tool(ip, vmid)
+    label = "VM" if tool == "qm" else "LXC"
+
+    cmd = f"{tool} shutdown {vmid} || {tool} stop {vmid}"
+    print(f"🛑 Stopping {label} {vmid} on {node} ({ip})...")
+    code, stdout, stderr = run_ssh(ip, cmd, timeout=60)
+    if code == 0:
+        return f"✅ Successfully stopped {label} {vmid} on {node}.\n{stdout.strip()}"
+    return f"❌ Failed to stop {label} {vmid} on {node}:\n{stderr.strip()}\n{stdout.strip()}"
+
 def main():
     parser = argparse.ArgumentParser(description="Proxmox Hypervisor VM Snapshot & Backup Tool")
     parser.add_argument("--node", required=True, help="Node name (pve, pve2, pve3)")
     parser.add_argument("--vmid", type=int, required=True, help="Target VM ID")
-    parser.add_argument("--action", required=True, choices=["create", "list", "rollback", "delete", "vzdump"], help="Snapshot action")
+    parser.add_argument("--action", required=True, choices=["create", "list", "rollback", "delete", "vzdump", "start", "stop"], help="Snapshot or VM power action")
     parser.add_argument("--name", help="Snapshot name (required for create, rollback, delete)")
     parser.add_argument("--desc", default="", help="Description for snapshot")
     parser.add_argument("--include-ram", action="store_true", help="Include RAM in snapshot (--vmstate 1)")
@@ -171,6 +201,10 @@ def main():
         res = delete_snapshot(args.node, args.vmid, args.name)
     elif args.action == "vzdump":
         res = vzdump_backup(args.node, args.vmid, storage=args.storage)
+    elif args.action == "start":
+        res = start_vm(args.node, args.vmid)
+    elif args.action == "stop":
+        res = stop_vm(args.node, args.vmid)
     else:
         res = f"Invalid action {args.action}"
 
