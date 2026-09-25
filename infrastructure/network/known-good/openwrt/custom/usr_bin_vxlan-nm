@@ -30,7 +30,7 @@ delete_vxlan() {
 create_vxlan() {
     if ! ip link show "$VXLAN_IF" >/dev/null 2>&1; then
         log "Creating VXLAN $VXLAN_IF (VNI $VXLAN_VNI) on $PHYSICAL_IF"
-        ip link add "$VXLAN_IF" type vxlan id "$VXLAN_VNI" dev "$PHYSICAL_IF" dstport "$DST_PORT" local "$LOCAL_IP" remote "$REMOTE_IP"
+        ip link add "$VXLAN_IF" type vxlan id "$VXLAN_VNI" dstport "$DST_PORT" local "$LOCAL_IP" remote "$REMOTE_IP"
         ip link set "$VXLAN_IF" mtu "$MTU"
         ip link set "$VXLAN_IF" up
     fi
