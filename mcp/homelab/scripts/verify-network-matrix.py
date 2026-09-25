@@ -16,13 +16,13 @@ TARGETS = [
     {"name": "pve2 (AK34Pro Mini PC)", "ip": "192.168.1.240", "tcp": [22, 8006], "category": "Hypervisor"},
     {"name": "pve3 (HP EliteDesk)", "ip": "192.168.1.245", "tcp": [22, 8006], "category": "Hypervisor"},
 
-    # Core Network Hardware (VLAN 1 / VLAN 10)
-    {"name": "Araknis 520 Core Router", "ip": "192.168.10.1", "tcp": [80], "category": "Network Infrastructure"},
+    # Core Network Hardware (VLAN 1 / VLAN 40)
+    {"name": "Araknis 520 Core Router", "ip": "192.168.40.1", "tcp": [80], "category": "Network Infrastructure"},
     {"name": "Araknis 920 Switch", "ip": "192.168.1.215", "tcp": [80, 443], "category": "Network Infrastructure"},
     {"name": "Araknis 830 AP 1 (Master)", "ip": "192.168.1.231", "tcp": [80, 443], "category": "Wireless Infrastructure"},
     {"name": "Araknis 830 AP 2 (Core)", "ip": "192.168.1.236", "tcp": [80, 443], "category": "Wireless Infrastructure"},
     {"name": "Araknis 830 AP 3 (Bridge)", "ip": "192.168.1.237", "tcp": [80, 443], "category": "Wireless Infrastructure"},
-    {"name": "Netgear Office Switch", "ip": "192.168.1.220", "tcp": [80], "category": "Network Infrastructure"},
+    {"name": "Netgear Office Switch", "ip": "192.168.1.220", "tcp": [], "category": "Network Infrastructure"},
 
     # Office & WAN2 Routers
     {"name": "OpenWrt Belkin AX3200", "ip": "192.168.1.226", "tcp": [22], "category": "Edge Router"},
