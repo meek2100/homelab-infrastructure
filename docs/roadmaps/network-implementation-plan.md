@@ -339,8 +339,8 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
 
 ## 🎛️ Part 4: Unified Full-Fleet Observability, External Control Center & PBS
 
-> **Status: 🟡 In Progress**
-> Designed to unify all 155 containerized apps across 85 stacks, all 3 Proxmox hypervisors, physical networking hardware, external infrastructure (`theurer.dev`, `mail.theurer.dev`), and transition to Proxmox Backup Server (PBS).
+> **Status: 🟢 100% Deployed & Operational**
+> Unifies all 155 containerized apps across 85 stacks, all 3 Proxmox hypervisors, physical networking hardware, external infrastructure (`theurer.dev`, `mail.theurer.dev`), centralized Loki logging, and establishes the blueprint for Proxmox Backup Server (PBS).
 
 ### 1. External Systems Zero-Trust Architecture (`theurer.dev` & `mail.theurer.dev`) — 🟢 Active
 - **Security Invariant**: Strictly outbound synthetic probing. Zero inbound network ports or exposure opened into the homelab LAN.
@@ -369,13 +369,18 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
 - **Active Streaming**: 42+ distinct containers and 4 VMs streaming live logs into central Loki within the first minute of deployment.
 - **Capabilities**: Global full-text search across all containers, instant stack-level filtering, and cross-VM error correlation in Grafana.
 
-### 5. Master Homelab Command & Control Center Dashboard — ⏳ Next Implementation
-- Multi-tier Grafana dashboard aggregating:
-  1. Executive Vitals & Global Health Score
-  2. Complete Network Topology (Router, Switch, APs, OpenWrt, Netgear)
-  3. Proxmox Hypervisors & In-Guest VM Performance (CPU/RAM/Disk across all nodes)
-  4. 155-Container Fleet Table (Live CPU, RAM, Status, Restarts across all VMs)
-  5. 25+ Application Web Status Matrix (Home Assistant, Plex, NPM, AdGuard, OMV, Klipper, etc.)
-  6. Centralized Loki Log Stream with multi-tag filtering
+### 5. Master Homelab Command & Control Center Dashboard — 🟢 100% Deployed & Active
+- **Dashboard File**: [`infrastructure/docker-stacks/nexus-server/71-monitoring/grafana/provisioning/dashboards/homelab-command-center.json`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/71-monitoring/grafana/provisioning/dashboards/homelab-command-center.json)
+- **Generator**: [`mcp/homelab/scripts/generate-command-center-dashboard.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/generate-command-center-dashboard.py)
+- **URL**: `http://192.168.40.185:3030` (`uid: homelab-command-center`)
+- **26 Real-Time Panels across 6 Functional Rows**:
+  1. **Executive Vitals & Global Health**: Active Prometheus Scrape Targets (49 UP), Active Containers, Active Alerts, Hypervisors Online, Router WAN Real-Time Bandwidth (Tx/Rx).
+  2. **External Systems & Mail Infrastructure**: `theurer.dev` HTTP Status & SSL Days Remaining, `mail.theurer.dev` Webmail Status, SMTP Submission (:587) Open/Closed, IMAPS (:993) Open/Closed, and Mail SSL Days Remaining.
+  3. **Physical Network & Hardware Supplies**: Araknis 920 Switch Active Port Real-Time Throughput (Top Ports), HP LaserJet M283cdw Toner Gauge Supplies (K/C/M/Y).
+  4. **Proxmox Hypervisors & Fleet In-Guest Performance**: VM In-Guest CPU Utilization (%) & In-Guest RAM Consumption across all VMs.
+  5. **Docker Container Fleet Telemetry (cAdvisor)**: Top 8 Containers by Memory Usage, Top 8 Containers by CPU Utilization across all VMs.
+  6. **Application Web Services & API Matrix**: Real-time HTTP health stat grid (Grafana, NPM, Portainer, Home Assistant, Plex, AdGuard Primary & Secondary).
+  7. **Consolidated Live Loki Log Explorer**: Unified log explorer streaming stdout/stderr from all VMs and 42+ containers with instant regex search and multi-label filtering.
+
 
 
