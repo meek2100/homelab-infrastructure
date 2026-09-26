@@ -272,24 +272,30 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
 
 ## 📊 Part 3: Unified Monitoring, SNMP & Observability Roadmap
 
-> **Status: 🚀 In Progress (Host Selected & All 5 Araknis SNMP Agents Live)**
-> Prerequisite: VXLAN loop resolved; all 5 Araknis devices configured with `homelab-metrics` and verified responding over UDP 161.
+> **Status: 🟢 100% Deployed & Active (Stack 71 on `nexus-server`)**
+> Deployed 2026-09-25. Central TSDB, SNMP telemetry, host metrics, and container analytics active with auto-provisioned Grafana dashboards.
 
 * **Target Host**: `nexus-server` (`192.168.40.185` / VM 100 on `pve`)
   * *Selection Rationale*: Dedicated to core networking/ingress (NPM, Tailscale, Cloudflared). Eliminates severe I/O competition on `luna-server` (which runs continuous Wireshark SPAN captures in Stack 48 and Home Assistant event logging). Enables direct local ingress without cross-VM hairpinned proxying.
-* **Network SNMP Fleet Status (Configured & Verified 2026-09-25)**:
-  * **Araknis 520 Core Router** (`192.168.1.1`): Configured via REST API (`/api/cgi-bin/v1/config/snmp`). SNMPv2c Read-Only `homelab-metrics`. 🟢 **PASS**
-  * **Araknis 920 Switch** (`192.168.1.215`): Configured via FASTPATH CLI (`snmp-server community "homelab-metrics" ro`), saved to NVRAM. 🟢 **PASS**
-  * **Araknis 830 AP 1** (`192.168.1.231` - House Front): Configured via REST API (`/api/gui/sys/snmpv2` + `/api/gui/sys/apply`). 🟢 **PASS**
-  * **Araknis 830 AP 2** (`192.168.1.236` - House Back): Configured via REST API (`/api/gui/sys/snmpv2` + `/api/gui/sys/apply`). 🟢 **PASS**
-  * **Araknis 830 AP 3** (`192.168.1.237` - Office Bridge): Configured via REST API (`/api/gui/sys/snmpv2` + `/api/gui/sys/apply`). 🟢 **PASS**
-  * *Secrets*: Stored in GitOps blueprint [`infrastructure/secrets/snmp.enc.yaml`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/secrets/snmp.enc.yaml).
-* **Planned Observability Architecture**:
-  * `snmp-exporter`: Scrapes Araknis 520 router, Araknis 920 switch, and Araknis 830 APs.
-  * `node-exporter`: Hypervisors (`pve`, `pve2`, `pve3`).
-  * `cadvisor`: Containers across all 83 Portainer stacks.
-  * `pve-exporter`: Proxmox QEMU VM and LXC storage/CPU metrics.
-  * `prometheus`: Central TSDB (30-day retention, persistent volume).
-  * `grafana`: Unified homelab dashboard exposed via NPM and Tailscale.
+  * *Blueprint*: [`infrastructure/docker-stacks/nexus-server/71-monitoring/`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/71-monitoring/)
+* **Live Service & Port Matrix**:
+  * **Grafana**: Port `3030:3000` (Web UI at `http://192.168.40.185:3030` or reverse-proxied via NPM / Tailscale `http://100.70.65.45:3030`)
+  * **Prometheus TSDB**: Port `9090:9090` (30-day persistent retention in `/home/meek2100/docker/monitoring/prometheus/data`)
+  * **SNMP Exporter**: Port `9116:9116` (Scrapes Araknis router, switch, and AP fleet via community `homelab-metrics`)
+  * **Node Exporter**: Port `9100:9100` (Host OS, CPU, RAM, disk, load averages)
+  * **cAdvisor**: Port `8088:8080` (Container-level CPU, RAM, and network I/O)
+* **Active Target Inventory (8/8 🟢 UP)**:
+  * 🟢 `192.168.1.1`: Araknis 520 Core Router (`snmp_infrastructure`, `if_mib`)
+  * 🟢 `192.168.1.215`: Araknis 920 Switch (`snmp_infrastructure`, `if_mib` - 24 ports + SFP+)
+  * 🟢 `192.168.1.231`: Araknis 830 AP 1 House Front (`snmp_access_points`, `ap_system`)
+  * 🟢 `192.168.1.236`: Araknis 830 AP 2 House Back (`snmp_access_points`, `ap_system`)
+  * 🟢 `192.168.1.237`: Araknis 830 AP 3 Office Bridge (`snmp_access_points`, `ap_system`)
+  * 🟢 `node-exporter:9100`: Local `nexus-server` host metrics
+  * 🟢 `cadvisor:8080`: Docker container metrics
+  * 🟢 `localhost:9090`: Prometheus self-monitoring
+* **Pre-Provisioned Dashboards**:
+  * **Homelab Network Overview (Araknis Fleet)**: UID `homelab-network-overview` under folder `Homelab Network`. Displays real-time device health stat cards, router WAN bandwidth, switch top-active port throughput, and interface error rates.
+* **Management Tooling**:
+  * [`mcp/homelab/scripts/deploy-monitoring-stack.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/deploy-monitoring-stack.py): Programmatic lifecycle control (`deploy`, `status`, `stop`).
 
 
