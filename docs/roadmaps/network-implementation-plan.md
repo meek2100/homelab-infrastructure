@@ -278,16 +278,18 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
 * **Target Host**: `nexus-server` (`192.168.40.185` / VM 100 on `pve`)
   * *Selection Rationale*: Dedicated to core networking/ingress (NPM, Tailscale, Cloudflared). Eliminates I/O competition on `luna-server` (which runs continuous Wireshark SPAN captures in Stack 48). Enables direct local ingress without cross-VM hairpinned proxying.
   * *Blueprint*: [`infrastructure/docker-stacks/nexus-server/71-monitoring/`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/71-monitoring/)
-* **Live Service & Port Matrix (8 Containers)**:
+* **Live Service & Port Matrix (10 Containers)**:
   * **Grafana (`11.1.0`)**: Port `3030:3000` (Web UI at `http://192.168.40.185:3030` or reverse-proxied via NPM / Tailscale `http://100.70.65.45:3030`)
-  * **Prometheus TSDB (`v2.53.1`)**: Port `9090:9090` (30-day persistent retention in `/home/meek2100/docker/monitoring/prometheus/data`)
+  * **Prometheus TSDB (`v2.53.1`)**: Port `9090:9090` (30-day persistent retention, active alerting rules engine)
+  * **Alertmanager (`v0.27.0`)**: Port `9093:9093` (Pushover mobile priority alerts & SMTP notification routing)
+  * **Blackbox Exporter (`v0.25.0`)**: Port `9115:9115` (HTTP/HTTPS, DNS UDP, TCP, and TLS SSL cert expiration probing)
   * **Grafana Loki (`3.0.0`)**: Port `3100:3100` (High-efficiency log aggregation engine with `v13` TSDB index schema)
   * **Promtail Agent (`3.0.0`)**: Internal (Direct Docker socket integration dynamically discovering 20 containers and host syslogs)
   * **PVE Exporter (`latest`)**: Port `9221:9221` (Scrapes Proxmox hypervisors `pve`, `pve2`, `pve3` via read-only `monitoring@pve` API tokens)
   * **SNMP Exporter (`v0.26.0`)**: Port `9116:9116` (Scrapes Araknis router, switch, AP fleet, and office printers)
   * **Node Exporter (`v1.8.2`)**: Port `9100:9100` (Host OS, CPU, RAM, disk, load averages)
   * **cAdvisor (`v0.49.1`)**: Port `8088:8080` (Container-level CPU, RAM, and network I/O)
-* **Active Target Inventory (13/13 🟢 UP)**:
+* **Active Target Inventory (23/23 🟢 UP)**:
   * 🟢 `192.168.1.1`: Araknis 520 Core Router (`snmp_infrastructure`, `if_mib` via community `homelab-metrics`)
   * 🟢 `192.168.1.215`: Araknis 920 Switch (`snmp_infrastructure`, `if_mib` - 24 ports + SFP+)
   * 🟢 `192.168.1.231`: Araknis 830 AP 1 House Front (`snmp_access_points`, `ap_system`)
@@ -298,9 +300,29 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
   * 🟢 `192.168.1.250`: Proxmox Node 1 `pve` (`proxmox_pve` - Dell Precision 5520, VMs 100, 102, 103, 107, 109)
   * 🟢 `10.25.25.240`: Proxmox Node 2 `pve2` (`proxmox_pve2` - Awow AK34Pro, VM 100 discovery-server)
   * 🟢 `192.168.1.245`: Proxmox Node 3 `pve3` (`proxmox_pve3` - HP EliteDesk, VMs 100 nexus-server2, 101 nas-server)
+  * 🟢 `http://192.168.40.185:3030`: Grafana web frontend (`blackbox_http`)
+  * 🟢 `http://192.168.40.185:81`: Nginx Proxy Manager admin UI (`blackbox_http`)
+  * 🟢 `http://192.168.40.249:8123`: Home Assistant UI (`blackbox_http`)
+  * 🟢 `http://192.168.40.247:32400/identity`: Plex Media Server identity API (`blackbox_http`)
+  * 🟢 `https://192.168.40.185:9443`: Portainer management UI (`blackbox_http`)
+  * 🟢 `https://192.168.40.185:9443`: Portainer TLS certificate expiration tracker (`blackbox_ssl`)
+  * 🟢 `192.168.40.185:53`: AdGuard Home Primary DNS probe (`blackbox_dns`)
+  * 🟢 `192.168.40.186:53`: AdGuard Home Secondary DNS probe (`blackbox_dns`)
+  * 🟢 `alertmanager:9093`: Alertmanager self-telemetry
+  * 🟢 `blackbox-exporter:9115`: Blackbox Exporter self-telemetry
   * 🟢 `node-exporter:9100`: Local `nexus-server` host metrics
   * 🟢 `cadvisor:8080`: Docker container metrics
   * 🟢 `localhost:9090`: Prometheus self-monitoring
+* **Active Prometheus Alerting Rules (9 Production Rules)**:
+  * `TargetDown`: Triggers if any scrape target is unreachable for > 2m (Severity: Critical)
+  * `BlackboxProbeFailed`: Triggers if any HTTP service or DNS probe fails (Severity: Critical)
+  * `DNSResolutionFailed`: Triggers if AdGuard Home fails resolving queries (Severity: Critical)
+  * `SSLCertExpiringSoon`: Triggers if TLS cert expires in < 14 days (Severity: Warning)
+  * `SwitchPortLinkDown`: Triggers if core trunks 1/0/1–1/0/4 go down (Severity: Warning)
+  * `SwitchPortCRCErrors`: Triggers on frame corruption or ingress CRC errors (Severity: Warning)
+  * `PrinterSupplyLow`: Triggers if printer toner or labels drop below 15% (Severity: Warning)
+  * `NodeHighCPU`: Triggers if host CPU exceeds 90% for 5m (Severity: Warning)
+  * `NodeLowDiskSpace`: Triggers if host disk available space drops below 15% (Severity: Warning)
 * **Pre-Provisioned Dashboards**:
   * **Homelab Network & Infrastructure Overview (v4)**: UID `homelab-network-overview` under folder `Homelab Network`. Displays real-time device health stat cards, router WAN bandwidth, switch top-active port throughput, printer toner levels (K/C/M/Y gauges), Proxmox node online states, VM CPU/RAM utilization graphs, and live interactive Loki log streams.
 * **Management Tooling**:

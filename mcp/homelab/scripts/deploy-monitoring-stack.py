@@ -137,8 +137,9 @@ def deploy():
     extract_cmd = (
         f"mkdir -p {REMOTE_BASE} && "
         f"echo '{b64_payload}' | base64 -d | tar -xzf - -C {REMOTE_BASE} && "
-        f"mkdir -p {REMOTE_BASE}/prometheus/data {REMOTE_BASE}/grafana/data {REMOTE_BASE}/loki/data && "
+        f"mkdir -p {REMOTE_BASE}/prometheus/data {REMOTE_BASE}/grafana/data {REMOTE_BASE}/loki/data {REMOTE_BASE}/alertmanager/data && "
         f"chown -R 65534:65534 {REMOTE_BASE}/prometheus/data && "
+        f"chown -R 65534:65534 {REMOTE_BASE}/alertmanager/data && "
         f"chown -R 472:472 {REMOTE_BASE}/grafana/data && "
         f"chown -R 10001:10001 {REMOTE_BASE}/loki/data && "
         f"chmod -R 755 {REMOTE_BASE}"
@@ -157,7 +158,7 @@ def deploy():
         print(f"  ⚠️ Warning: {pve_msg}")
 
     # 4. Pull images and launch compose
-    launch_cmd = f"cd {REMOTE_BASE} && docker compose up -d && docker compose restart prometheus snmp-exporter pve-exporter loki promtail grafana"
+    launch_cmd = f"cd {REMOTE_BASE} && docker compose up -d && docker compose restart prometheus alertmanager blackbox-exporter snmp-exporter pve-exporter loki promtail grafana"
     print("  ⏳ Pulling images and launching containers...")
     ok, out = qm_exec(launch_cmd, timeout=180)
     if not ok:
@@ -166,7 +167,7 @@ def deploy():
     print(f"  ✓ Containers launched/reloaded:\n{out.strip()}")
 
     # 5. Wait for services to initialize
-    print("  ⏳ Waiting 10s for Prometheus, Grafana, and Loki initialization...")
+    print("  ⏳ Waiting 10s for Prometheus, Grafana, Loki, Alertmanager, and Blackbox initialization...")
     time.sleep(10)
 
     # 6. Health checks
@@ -176,6 +177,14 @@ def deploy():
     # Test Prometheus
     prom_ok, prom_out = qm_exec("curl -s http://localhost:9090/-/ready || echo 'Not ready'")
     print(f"\nPrometheus Readiness: {'🟢 ' + prom_out.strip() if prom_ok else '🔴 ' + prom_out.strip()}")
+
+    # Test Alertmanager
+    alert_ok, alert_out = qm_exec("curl -s http://localhost:9093/-/ready || echo 'Not ready'")
+    print(f"Alertmanager Readiness: {'🟢 ' + alert_out.strip() if alert_ok else '🔴 ' + alert_out.strip()}")
+
+    # Test Blackbox Exporter probe
+    bb_ok, bb_out = qm_exec("curl -s 'http://localhost:9115/probe?target=http://192.168.40.185:3030&module=http_2xx' | grep -E '^probe_success' || echo 'Failed'")
+    print(f"Blackbox Probe Test (Grafana :3030): {'🟢 ' + bb_out.strip() if 'probe_success 1' in bb_out else '🔴 ' + bb_out.strip()}")
 
     # Test Grafana
     graf_ok, graf_out = qm_exec("curl -s http://localhost:3000/api/health || echo 'Not ready'")

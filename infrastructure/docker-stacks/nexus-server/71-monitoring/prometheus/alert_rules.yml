@@ -1,0 +1,83 @@
+groups:
+  - name: homelab_alerts
+    rules:
+      - alert: TargetDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Target {{ $labels.instance }} is DOWN"
+          description: "Scrape target {{ $labels.instance }} (job: {{ $labels.job }}) has been unreachable for more than 2 minutes."
+
+      - alert: BlackboxProbeFailed
+        expr: probe_success == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service Endpoint {{ $labels.instance }} FAILED"
+          description: "Blackbox probe to {{ $labels.instance }} (module: {{ $labels.job }}) failed."
+
+      - alert: DNSResolutionFailed
+        expr: probe_success{job="blackbox_dns"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "DNS Resolver {{ $labels.instance }} FAILED"
+          description: "DNS probe to {{ $labels.instance }} failed to resolve test domain."
+
+      - alert: SSLCertExpiringSoon
+        expr: (probe_ssl_earliest_cert_expiry - time()) < (86400 * 14)
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "SSL Certificate for {{ $labels.instance }} expiring soon"
+          description: "The SSL/TLS certificate for {{ $labels.instance }} will expire in less than 14 days."
+
+      - alert: SwitchPortLinkDown
+        expr: ifOperStatus{job="snmp_infrastructure", device_type="switch", ifIndex=~"1|2|3|4"} == 2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Switch Port {{ $labels.ifDescr }} is DOWN"
+          description: "Araknis 920 switch port {{ $labels.ifDescr }} link state changed to DOWN."
+
+      - alert: SwitchPortCRCErrors
+        expr: rate(ifInErrors{job="snmp_infrastructure"}[5m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CRC Frame Errors on {{ $labels.instance }}"
+          description: "Interface {{ $labels.ifDescr }} on {{ $labels.instance }} is reporting inbound CRC frame errors."
+
+      - alert: PrinterSupplyLow
+        expr: (prtMarkerSuppliesLevel{job="snmp_printers"} / prtMarkerSuppliesMaxCapacity{job="snmp_printers"}) * 100 < 15 and prtMarkerSuppliesLevel > 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Printer Supply Low on {{ $labels.instance }}"
+          description: "Supply marker index {{ $labels.prtMarkerSuppliesIndex }} is below 15% capacity."
+
+      - alert: NodeHighCPU
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU utilization has exceeded 90% for more than 5 minutes."
+
+      - alert: NodeLowDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low Disk Space on {{ $labels.instance }}"
+          description: "Root partition free space on {{ $labels.instance }} is below 15%."

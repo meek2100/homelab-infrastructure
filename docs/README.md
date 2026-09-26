@@ -17,6 +17,7 @@ docs/
 │
 ├── runbooks/                              # Operational Runbooks & Disaster Recovery Playbooks
 │   ├── network-automation.md              # 1-click Netgear NSDP commands, L2 relay execution, live Wireshark sniffer ops
+│   ├── proxmox-backup-server.md           # PBS installation, 10.25.25.0/24 SAN transport, CBT incremental backups
 │   ├── recovery-walkthrough.md            # Bare-metal host and VM restoration sequencing via homelab MCP tools
 │   └── security-backup-guide.md           # SOPS + age encryption standards, key management, and secrets hygiene
 │
