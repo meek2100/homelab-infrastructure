@@ -68,6 +68,63 @@ def package_stack():
     buf.seek(0)
     return buf.read()
 
+def provision_pve_exporter_config():
+    """Dynamically read monitoring@pve token secrets and build pve.yml securely."""
+    nodes = {
+        "pve": "192.168.1.250",
+        "pve2": "10.25.25.240",
+        "pve3": "192.168.1.245",
+    }
+    key = get_ssh_key()
+    tokens = {}
+    for node, ip in nodes.items():
+        cmd = ["ssh", "-o", "StrictHostKeyChecking=accept-new", "-o", "BatchMode=yes", "-o", "ConnectTimeout=4"]
+        if key:
+            cmd.extend(["-i", key])
+        cmd.extend([f"root@{ip}", "cat /etc/pve/priv/token.cfg"])
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            if res.returncode == 0:
+                for line in res.stdout.strip().splitlines():
+                    parts = line.strip().split()
+                    if len(parts) >= 2 and parts[0] == "monitoring@pve!pve-exporter":
+                        tokens[node] = parts[1]
+                        break
+        except Exception:
+            pass
+
+    if not tokens:
+        return False, "Failed to retrieve monitoring tokens from Proxmox nodes"
+
+    default_token = tokens.get("pve", list(tokens.values())[0])
+    lines = [
+        "default:",
+        "  user: \"monitoring@pve\"",
+        "  token_name: \"pve-exporter\"",
+        f"  token_value: \"{default_token}\"",
+        "  verify_ssl: false",
+        ""
+    ]
+    for node, tok in tokens.items():
+        lines.extend([
+            f"{node}:",
+            "  user: \"monitoring@pve\"",
+            "  token_name: \"pve-exporter\"",
+            f"  token_value: \"{tok}\"",
+            "  verify_ssl: false",
+            ""
+        ])
+
+    cfg_str = "\n".join(lines)
+    b64_cfg = base64.b64encode(cfg_str.encode("utf-8")).decode("ascii")
+    write_cmd = (
+        f"mkdir -p {REMOTE_BASE}/pve_exporter && "
+        f"echo '{b64_cfg}' | base64 -d > {REMOTE_BASE}/pve_exporter/pve.yml && "
+        f"chmod 644 {REMOTE_BASE}/pve_exporter/pve.yml"
+    )
+    ok, out = qm_exec(write_cmd)
+    return ok, f"Configured {len(tokens)} PVE nodes in pve.yml"
+
 def deploy():
     print(f"🚀 Deploying Observability Stack to nexus-server (VM {VMID} on {PVE_IP})...")
     
@@ -91,8 +148,15 @@ def deploy():
         return False
     print(f"  ✓ Files unpacked and directory permissions initialized at {REMOTE_BASE}")
 
-    # 3. Pull images and launch compose
-    launch_cmd = f"cd {REMOTE_BASE} && docker compose up -d && docker compose restart prometheus snmp-exporter grafana"
+    # 3. Securely provision PVE exporter tokens
+    pve_ok, pve_msg = provision_pve_exporter_config()
+    if pve_ok:
+        print(f"  ✓ {pve_msg}")
+    else:
+        print(f"  ⚠️ Warning: {pve_msg}")
+
+    # 4. Pull images and launch compose
+    launch_cmd = f"cd {REMOTE_BASE} && docker compose up -d && docker compose restart prometheus snmp-exporter pve-exporter grafana"
     print("  ⏳ Pulling images and launching containers...")
     ok, out = qm_exec(launch_cmd, timeout=180)
     if not ok:
@@ -100,11 +164,11 @@ def deploy():
         return False
     print(f"  ✓ Containers launched/reloaded:\n{out.strip()}")
 
-    # 4. Wait for services to initialize
+    # 5. Wait for services to initialize
     print("  ⏳ Waiting 10s for Prometheus and Grafana initialization...")
     time.sleep(10)
 
-    # 5. Health checks
+    # 6. Health checks
     ps_ok, ps_out = qm_exec(f"cd {REMOTE_BASE} && docker compose ps")
     print(f"\n📊 Active Monitoring Containers:\n{ps_out.strip()}")
 
@@ -121,8 +185,12 @@ def deploy():
     print(f"\nSNMP Scrape Sample (Araknis Router):\n{snmp_out.strip() if snmp_ok else 'Failed'}")
 
     # Test SNMP Exporter on HP Printer
-    printer_ok, printer_out = qm_exec("curl -s 'http://localhost:9116/snmp?target=192.168.10.195&module=printer_mib&auth=public' | grep -E 'prtMarker' | head -n 6")
+    printer_ok, printer_out = qm_exec("curl -s 'http://localhost:9116/snmp?target=192.168.10.195&module=printer_mib&auth=public' | grep -E 'prtMarker' | head -n 4")
     print(f"\nSNMP Scrape Sample (HP LaserJet):\n{printer_out.strip() if printer_ok else 'Failed'}")
+
+    # Test PVE Exporter on Proxmox Node 1
+    pve_exp_ok, pve_exp_out = qm_exec("curl -s 'http://localhost:9221/pve?target=192.168.1.250&module=pve' | grep -E '^pve_up|^pve_node_info' | head -n 4")
+    print(f"\nPVE Exporter Scrape Sample (Node pve):\n{pve_exp_out.strip() if pve_exp_ok else 'Failed'}")
 
     return True
 

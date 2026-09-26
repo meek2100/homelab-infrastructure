@@ -265,13 +265,107 @@
       "title": "Brother QL-1110NWB Labels Printed",
       "type": "stat",
       "targets": [{ "expr": "prtMarkerLifeCount{instance=\"192.168.10.196\"}", "legendFormat": "Total Labels" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 38 },
+      "id": 104,
+      "title": "Proxmox Hypervisor Fleet & Virtual Machines",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "OFFLINE" }, "1": { "color": "green", "text": "ONLINE" } }, "type": "value" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        }
+      },
+      "gridPos": { "h": 5, "w": 8, "x": 0, "y": 39 },
+      "id": 13,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Node pve (Dell Precision 5520)",
+      "type": "stat",
+      "targets": [{ "expr": "pve_up{id=\"node/pve\"}", "legendFormat": "Status" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "OFFLINE" }, "1": { "color": "green", "text": "ONLINE" } }, "type": "value" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        }
+      },
+      "gridPos": { "h": 5, "w": 8, "x": 8, "y": 39 },
+      "id": 14,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Node pve2 (Awow AK34Pro)",
+      "type": "stat",
+      "targets": [{ "expr": "pve_up{id=\"node/pve2\"}", "legendFormat": "Status" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "OFFLINE" }, "1": { "color": "green", "text": "ONLINE" } }, "type": "value" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        }
+      },
+      "gridPos": { "h": 5, "w": 8, "x": 16, "y": 39 },
+      "id": 15,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Node pve3 (HP EliteDesk)",
+      "type": "stat",
+      "targets": [{ "expr": "pve_up{id=\"node/pve3\"}", "legendFormat": "Status" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth" },
+          "unit": "percent",
+          "min": 0
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 44 },
+      "id": 16,
+      "title": "Virtual Machine CPU Utilization (%)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "pve_cpu_usage_ratio{type=\"qemu\"} * 100", "legendFormat": "{{id}} ({{node}})" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth" },
+          "unit": "bytes"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 44 },
+      "id": 17,
+      "title": "Virtual Machine Memory Usage",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "pve_memory_usage_bytes{type=\"qemu\"}", "legendFormat": "{{id}} ({{node}})" }
+      ]
     }
   ],
   "refresh": "10s",
   "schemaVersion": 39,
-  "tags": ["homelab", "araknis", "snmp", "network", "printers"],
+  "tags": ["homelab", "araknis", "snmp", "network", "printers", "proxmox"],
   "time": { "from": "now-1h", "to": "now" },
   "title": "Homelab Network & Infrastructure Overview",
   "uid": "homelab-network-overview",
-  "version": 2
+  "version": 3
 }

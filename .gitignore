@@ -29,6 +29,7 @@ master-age-key.txt
 
 
 # Unencrypted sensitive drift and credential files
+**/pve.yml
 **/cloudflare.ini
 **/shadow
 **/shadow-

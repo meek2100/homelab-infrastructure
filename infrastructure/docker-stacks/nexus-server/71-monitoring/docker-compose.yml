@@ -18,6 +18,16 @@ services:
       - snmp-exporter
       - node-exporter
       - cadvisor
+      - pve-exporter
+
+  pve-exporter:
+    image: prompve/prometheus-pve-exporter:latest
+    container_name: pve-exporter
+    restart: unless-stopped
+    volumes:
+      - ./pve_exporter/pve.yml:/etc/prometheus/pve.yml:ro
+    ports:
+      - "9221:9221"
 
   snmp-exporter:
     image: prom/snmp-exporter:v0.26.0

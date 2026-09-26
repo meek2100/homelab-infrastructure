@@ -1,0 +1,26 @@
+# Proxmox VE Exporter Configuration Template
+# Live secrets are dynamically generated during deployment and excluded from git via .gitignore
+
+default:
+  user: "monitoring@pve"
+  token_name: "pve-exporter"
+  token_value: "00000000-0000-0000-0000-000000000000"
+  verify_ssl: false
+
+pve:
+  user: "monitoring@pve"
+  token_name: "pve-exporter"
+  token_value: "00000000-0000-0000-0000-000000000000"
+  verify_ssl: false
+
+pve2:
+  user: "monitoring@pve"
+  token_name: "pve-exporter"
+  token_value: "00000000-0000-0000-0000-000000000000"
+  verify_ssl: false
+
+pve3:
+  user: "monitoring@pve"
+  token_name: "pve-exporter"
+  token_value: "00000000-0000-0000-0000-000000000000"
+  verify_ssl: false
