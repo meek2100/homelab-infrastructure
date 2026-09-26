@@ -12,10 +12,11 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Part 2** | End-to-End Verification & Testing Runbook (5 tests) | ✅ 100% Verified |
 | **Part 2.5** | Multicast & Discovery Architecture (Native Bonjour/IGMP) | ✅ Settled |
 | **Part 2.6** | WAN2 & Storage SAN Isolation (untagged vmbr1) | ✅ Settled |
-| **Part 2.7** | vxlan-server Split Trunking Architecture (VM 107) | 🟢 Complete — Wire-speed untagged VLAN 1 via AP bridge, isolated tagged VLANs (10, 20, 30, 40, 100, 150, 200) encapsulated over VXLAN 150; STP TCN loops eliminated, PMTU 1500 preserved |
+| **Part 2.7** | vxlan-server Split Trunking Architecture (VM 107) | 🟢 Complete — Wire-speed untagged VLAN 1 via AP bridge, isolated tagged VLANs encapsulated over VXLAN 150 |
 | **Part 2.8** | Netgear GS108Ev2 Office Switch GitOps & Backup | 🟢 Complete — Native NSDP packet driver, L2 relay, and binary/JSON backups verified |
 | **Part 2.9** | Wireshark Headless SPAN Sniffer & Storage Engine (Stack 48) | 🟢 Hardened — 500M tmpfs, 50MB chunks, watchdog, continuous 24h FIFO |
-| **Part 3** | Unified Monitoring, SNMP, Proxmox & Observability (Grafana LGTM Stack) | ✅ 100% Deployed & Verified (13/13 Prometheus targets UP, Loki log engine active, 8 containers) |
+| **Part 3** | Observability Engine & Synthetic Probing (Stack 71) | ✅ 100% Deployed & Active (10 containers, 29/29 targets UP, Alertmanager + Blackbox) |
+| **Part 4** | Unified Full-Fleet Control Center, External Systems & PBS | 🟡 In Progress — External zero-trust tools active, PBS runbook ready, fleet agent pods planned |
 
 ### Key Protocol Constraints & Architecture Settled
 - **Netgear GS108Ev2** — No HTTP REST API. Uses **NSDP** (Layer 2 UDP, ports 63321/63322). The `backup_netgear_switch` / `get_netgear_switch_status` MCP tools execute via pure Python NSDP using an automated Layer 2 adjacent relay hierarchy: primary OpenWrt router (`192.168.1.226` on `br-lan`) with fallback to Proxmox `pve` (`192.168.1.250` on `vmbr0`). Live telemetry and synchronized dual JSON/binary GitOps backups are 100% verified.
@@ -306,6 +307,12 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
   * 🟢 `http://192.168.40.247:32400/identity`: Plex Media Server identity API (`blackbox_http`)
   * 🟢 `https://192.168.40.185:9443`: Portainer management UI (`blackbox_http`)
   * 🟢 `https://192.168.40.185:9443`: Portainer TLS certificate expiration tracker (`blackbox_ssl`)
+  * 🟢 `https://theurer.dev`: External Web Server frontend HTTP 200 (`blackbox_http`)
+  * 🟢 `https://theurer.dev`: External Web Server SSL expiration tracker (`blackbox_ssl`)
+  * 🟢 `https://mail.theurer.dev`: External Mail Server webmail HTTP 200 (`blackbox_http`)
+  * 🟢 `https://mail.theurer.dev`: External Mail Server SSL expiration tracker (`blackbox_ssl`)
+  * 🟢 `mail.theurer.dev:587`: External Mail SMTP Submission port probe (`blackbox_tcp`)
+  * 🟢 `mail.theurer.dev:993`: External Mail IMAPS secure retrieval probe (`blackbox_tcp`)
   * 🟢 `192.168.40.185:53`: AdGuard Home Primary DNS probe (`blackbox_dns`)
   * 🟢 `192.168.40.186:53`: AdGuard Home Secondary DNS probe (`blackbox_dns`)
   * 🟢 `alertmanager:9093`: Alertmanager self-telemetry
@@ -327,5 +334,48 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
   * **Homelab Network & Infrastructure Overview (v4)**: UID `homelab-network-overview` under folder `Homelab Network`. Displays real-time device health stat cards, router WAN bandwidth, switch top-active port throughput, printer toner levels (K/C/M/Y gauges), Proxmox node online states, VM CPU/RAM utilization graphs, and live interactive Loki log streams.
 * **Management Tooling**:
   * [`mcp/homelab/scripts/deploy-monitoring-stack.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/deploy-monitoring-stack.py): Programmatic lifecycle control (`deploy`, `status`, `stop`) with automated Proxmox API token generation, permissions hardening, and container health verification.
+
+---
+
+## 🎛️ Part 4: Unified Full-Fleet Observability, External Control Center & PBS
+
+> **Status: 🟡 In Progress**
+> Designed to unify all 155 containerized apps across 85 stacks, all 3 Proxmox hypervisors, physical networking hardware, external infrastructure (`theurer.dev`, `mail.theurer.dev`), and transition to Proxmox Backup Server (PBS).
+
+### 1. External Systems Zero-Trust Architecture (`theurer.dev` & `mail.theurer.dev`) — 🟢 Active
+- **Security Invariant**: Strictly outbound synthetic probing. Zero inbound network ports or exposure opened into the homelab LAN.
+- **Scrape Targets**:
+  - `theurer.dev`: Continuous HTTP 200 validation and SSL certificate lifecycle tracking (currently expires in 59 days).
+  - `mail.theurer.dev`: Webmail HTTP 200, SMTP Submission port 587 TCP connect & banner verification, IMAPS port 993, and TLS certificate lifecycle tracking (currently expires in 59 days).
+- **Dedicated MCP Tool**:
+  - [`mcp/homelab/scripts/manage-external-services.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/manage-external-services.py): Non-intrusive status, SSL lifecycle inspection, mail pipeline health check, and public DNS (SPF/DKIM/DMARC) resolution audit.
+
+### 2. Proxmox Backup Server (PBS) Centralization — 📄 Runbook Ready
+- **Goal**: Retire legacy per-node `vzdump` full dumps and replace with fast, deduplicated incremental backups over the dedicated `10.25.25.0/24` SAN network (`vmbr1`).
+- **Runbook**: [`docs/runbooks/proxmox-backup-server.md`](file:///home/agentsvc/repos/homelab-infrastructure/docs/runbooks/proxmox-backup-server.md)
+- **Status**: Complete step-by-step instructions documented in [`MANUAL-SETUP-TODOS.md`](file:///home/agentsvc/repos/homelab-infrastructure/MANUAL-SETUP-TODOS.md) for installation on `pve3` and client registration across `pve`, `pve2`, and `pve3`.
+
+### 3. Distributed Fleet Telemetry Pods (Full In-Guest & Container Visibility) — ⏳ Next Implementation
+- **Current State**: `node-exporter` and `cAdvisor` only run on `nexus-server` (VM 100).
+- **Target State**: Standardized lightweight telemetry agent pod deployed across all remaining Docker hosts:
+  - `luna-server` (VM 102 — Smart Home & SPAN sniffer, 33 stacks)
+  - `media-server` (VM 103 — Plex, Media transcode, 9 stacks)
+  - `discovery-server` (VM 100 on `pve2` — Download & VPN, 24 stacks)
+  - `nexus-server2` (VM 100 on `pve3` — Secondary DNS, 7 stacks)
+  - `minecraft-docker` (VM 109 — Gaming)
+
+### 4. Consolidated Fleet Logging (Loki 3.0 + Promtail DaemonSets) — ⏳ Next Implementation
+- **Current State**: Promtail on `nexus-server` ingests 20 local containers and syslogs.
+- **Target State**: Promtail deployed on every Docker VM streaming all 155 container stdout/stderr streams into central Loki (`http://192.168.40.185:3100/loki/api/v1/push`).
+- **Capabilities**: Global full-text search across all containers, instant stack-level filtering, and cross-VM error correlation in Grafana.
+
+### 5. Master Homelab Command & Control Center Dashboard — ⏳ Next Implementation
+- Multi-tier Grafana dashboard aggregating:
+  1. Executive Vitals & Global Health Score
+  2. Complete Network Topology (Router, Switch, APs, OpenWrt, Netgear)
+  3. Proxmox Hypervisors & In-Guest VM Performance
+  4. 155-Container Fleet Table (CPU, RAM, Status, Restarts)
+  5. 25+ Application Web Status Matrix
+  6. Centralized Loki Log Stream with multi-tag filtering
 
 

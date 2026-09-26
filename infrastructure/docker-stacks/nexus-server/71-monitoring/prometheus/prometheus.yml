@@ -204,6 +204,16 @@ scrape_configs:
         - https://192.168.40.185:9443
         labels:
           service: 'portainer'
+      - targets:
+        - https://theurer.dev
+        labels:
+          service: 'theurer-dev-web'
+          environment: 'external'
+      - targets:
+        - https://mail.theurer.dev
+        labels:
+          service: 'mail-theurer-dev-web'
+          environment: 'external'
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
@@ -242,6 +252,37 @@ scrape_configs:
         - https://192.168.40.185:9443
         labels:
           endpoint: 'portainer-tls'
+      - targets:
+        - https://theurer.dev
+        labels:
+          endpoint: 'theurer-dev-ssl'
+      - targets:
+        - https://mail.theurer.dev
+        labels:
+          endpoint: 'mail-theurer-dev-ssl'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  - job_name: 'blackbox_tcp'
+    metrics_path: /probe
+    params:
+      module: [tcp_connect]
+    static_configs:
+      - targets:
+        - mail.theurer.dev:587
+        labels:
+          service: 'mail-smtp-submission'
+          environment: 'external'
+      - targets:
+        - mail.theurer.dev:993
+        labels:
+          service: 'mail-imaps'
+          environment: 'external'
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
