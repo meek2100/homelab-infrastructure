@@ -1,18 +1,9 @@
 services:
   vpn-proxy:
-    image: ghcr.io/meek2100/gp-proxy:web_gui
+    image: ghcr.io/meek2100/gp-proxy:main
     container_name: gp-proxy
-    # OPTIONAL: Limit memory usage
-    #mem_limit: 128m
-    #memswap_limit: 128m
     cap_add:
       - NET_ADMIN
-    #sysctls:
-      #- net.ipv4.ip_forward=1
-      # OPTIONAL: Keep connections alive at Kernel level
-      #- net.ipv4.tcp_keepalive_time=60
-      #- net.ipv4.tcp_keepalive_intvl=10
-      #- net.ipv4.tcp_keepalive_probes=3
     devices:
       - /dev/net/tun:/dev/net/tun
     environment:
@@ -29,18 +20,6 @@ services:
       - VPN_DOMAINS=wirepathsystems.local,snapav.com,control4.com,nxc.local,resideo.com,adiglobal.com,adi-dist.net,ds.resideo.com,control4.dev,workbench.control4.dev
       - LOG_LEVEL=debug
       - LOCAL_DNS=192.168.40.185,192.168.40.186
-      
-      ### Example values for testing ###
-      #- VPN_PORTAL=uwmadison.vpn.wisc.edu
-      #- PROXY_MODE=socks5
-    #tmpfs:
-    #  - /tmp:size=64M,mode=1777
-    #ports:
-      #- 8001:8001
-      #- 1080:1080
-    #volumes:
-      #- ${NFS_MOUNT_POINT}/globalprotect-vpn/entrypoint.sh:/entrypoint2.sh:rw
-      #- ${NFS_MOUNT_POINT}/globalprotect-vpn/html/:/var/www/html2/:rw
     networks:
       gp_network:
         ipv4_address: 192.168.40.155
@@ -56,3 +35,17 @@ networks:
       config:
         - subnet: 192.168.40.0/24
           gateway: 192.168.40.1
+
+
+############### Development & Testing Info ###############
+      ### Example values for testing ###
+      #- VPN_PORTAL=uwmadison.vpn.wisc.edu
+      #- PROXY_MODE=socks5
+    #tmpfs:
+    #  - /tmp:size=64M,mode=1777
+    #ports:
+      #- 8001:8001
+      #- 1080:1080
+    #volumes:
+      #- ${NFS_MOUNT_POINT}/globalprotect-vpn/entrypoint.sh:/entrypoint2.sh:rw
+      #- ${NFS_MOUNT_POINT}/globalprotect-vpn/html/:/var/www/html2/:rw

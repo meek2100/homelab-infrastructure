@@ -7,4 +7,4 @@ services:
       - API_KEY=${CF_API_KEY}
       - ZONE=theurer.dev
       - SUBDOMAIN=vpn
-      - PROXIED=true
+      - PROXIED=false

@@ -3,8 +3,8 @@
 This document provides a searchable, friendly service catalog mapping every Portainer stack ID across all virtual machines to its application name, container images, exposed ports, host node, and SOPS secret encryption status.
 
 ## Summary Metrics
-- **Total Stacks Cataloged**: 83
-- **Total Docker Services Defined**: 146
+- **Total Stacks Cataloged**: 85
+- **Total Docker Services Defined**: 155
 - **Stacks with Encrypted Secrets (`secrets.enc.yaml`)**: 68
 - **Host Virtual Machines**: 6 (`discovery-server`, `luna-server`, `media-server`, `minecraft-docker`, `nexus-server`, `nexus-server2`)
 
@@ -43,7 +43,7 @@ Total Stacks: **24**
 ---
 
 ## VM: `luna-server` (Node: `pve`, VMID: `102`)
-Total Stacks: **32**
+Total Stacks: **33**
 
 | Stack ID | Primary Services | Container Images | Exposed Ports | Encrypted Secrets | Blueprint Path |
 | :--- | :--- | :--- | :--- | :---: | :--- |
@@ -68,7 +68,7 @@ Total Stacks: **32**
 | **81** | `gitwatch` | `ghcr.io/gitwatch/gitwatch:latest` | `Internal / Host` | 🔒 Yes | [luna-server/81](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/luna-server/81) |
 | **82** | `gitwatch` | `ghcr.io/meek2100/gitwatch:refactor-robust-and-portable` | `Internal / Host` | 🔒 Yes | [luna-server/82](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/luna-server/82) |
 | **83** | `webserver` | `httpd:alpine` | `8080:80` | 🔒 Yes | [luna-server/83](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/luna-server/83) |
-| **87** | `vpn-proxy` | `ghcr.io/meek2100/gp-proxy:web_gui` | `Internal / Host` | 🔒 Yes | [luna-server/87](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/luna-server/87) |
+| **87** | `vpn-proxy` | `ghcr.io/meek2100/gp-proxy:main` | `Internal / Host` | 🔒 Yes | [luna-server/87](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/luna-server/87) |
 | **91** | `vpn-proxy` | `ghcr.io/meek2100/gp-proxy:web_gui_codereview` | `8001:8001, 32800:32800/udp, 1080:1080, 1084:1084, 1085:1085, 8080:8080, 8443:8443, 8388:8388, 8388:8388/udp` | 🔒 Yes | [luna-server/91](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/luna-server/91) |
 | **92** | `vpn-proxy` | `ghcr.io/meek2100/gp-proxy:web_gui_codereview` | `Internal / Host` | 🔒 Yes | [luna-server/92](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/luna-server/92) |
 | **93** | `gitwatch` | `ghcr.io/gitwatch/gitwatch:latest` | `Internal / Host` | 🔒 Yes | [luna-server/93](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/luna-server/93) |
@@ -79,6 +79,7 @@ Total Stacks: **32**
 | **98** | `grafana` | `grafana/grafana:latest` | `3000:3000` | 🔒 Yes | [luna-server/98](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/luna-server/98) |
 | **102** | `prometheus` | `prom/prometheus:latest` | `9090:9090` | 🔒 Yes | [luna-server/102](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/luna-server/102) |
 | **104** | `octoeverywhere` | `octoeverywhere/octoeverywhere:latest` | `Internal / Host` | 🔒 Yes | [luna-server/104](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/luna-server/104) |
+| **105** | `multicast-relay` | `ghcr.io/scyto/multicast-relay:latest` | `Internal / Host` | — None | [luna-server/105](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/luna-server/105) |
 
 ---
 
@@ -110,7 +111,7 @@ Total Stacks: **2**
 ---
 
 ## VM: `nexus-server` (Node: `pve`, VMID: `100`)
-Total Stacks: **9**
+Total Stacks: **10**
 
 | Stack ID | Primary Services | Container Images | Exposed Ports | Encrypted Secrets | Blueprint Path |
 | :--- | :--- | :--- | :--- | :---: | :--- |
@@ -123,6 +124,7 @@ Total Stacks: **9**
 | **68** | `hbbs`<br>`hbbr` | `rustdesk/rustdesk-server:latest`<br>`rustdesk/rustdesk-server:latest` | `Internal / Host`<br>`Internal / Host` | 🔒 Yes | [nexus-server/68](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/68) |
 | **69** | `tailscale` | `tailscale/tailscale:latest` | `Internal / Host` | 🔒 Yes | [nexus-server/69](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/69) |
 | **70** | `openspeedtest` | `openspeedtest/latest` | `8082:3000` | 🔒 Yes | [nexus-server/70](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/70) |
+| **71-monitoring** | `prometheus`<br>`pve-exporter`<br>`snmp-exporter`<br>`node-exporter`<br>`cadvisor`<br>`grafana`<br>`loki`<br>`promtail` | `prom/prometheus:v2.53.1`<br>`prompve/prometheus-pve-exporter:latest`<br>`prom/snmp-exporter:v0.26.0`<br>`prom/node-exporter:v1.8.2`<br>`gcr.io/cadvisor/cadvisor:v0.49.1`<br>`grafana/grafana:11.1.0`<br>`grafana/loki:3.0.0`<br>`grafana/promtail:3.0.0` | `9090:9090`<br>`9221:9221`<br>`9116:9116`<br>`9100:9100`<br>`8088:8080`<br>`3030:3000`<br>`3100:3100`<br>`Internal / Host` | — None | [nexus-server/71-monitoring](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/71-monitoring) |
 
 ---
 

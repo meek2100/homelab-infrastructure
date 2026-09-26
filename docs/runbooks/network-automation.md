@@ -75,7 +75,7 @@ Parses the active in-memory pcapng file inside the `wireshark` container on `lun
 Queries `luna-server` (VM 102) to inspect the SPAN capture interface (`ens19`), container state, and recent archive files on the NAS.
 
 ```bash
-python3 mcp/homelab/scripts/manage-netgear-switch.py status
+python3 mcp/homelab/scripts/get-wireshark-status.py
 ```
 
 ---
@@ -175,8 +175,20 @@ Runs the comprehensive Python-based failover test suite from OpenWrt, evaluating
 # Run full test suite
 ssh root@192.168.1.226 "/etc/scripts/failover.sh --test --all"
 
-# Run bandwidth and jitter tests only
-ssh root@192.168.1.226 "/etc/scripts/failover.sh --test --iperf --udp"
+---
+
+### 16. Homelab Observability & Monitoring Stack (Stack 71 on nexus-server)
+Manages the LGTM & SNMP observability stack on `nexus-server` (VM 100 on `pve`), including Prometheus (`:9090`), Grafana (`:3030`), Loki (`:3100`), Promtail, and SNMP/PVE/Node/cAdvisor exporters.
+
+```bash
+# Check status of all 8 monitoring containers and scrape endpoints
+python3 mcp/homelab/scripts/deploy-monitoring-stack.py status
+
+# Deploy or update stack configuration
+python3 mcp/homelab/scripts/deploy-monitoring-stack.py deploy
+
+# Stop monitoring stack
+python3 mcp/homelab/scripts/deploy-monitoring-stack.py stop
 ```
 
 ---

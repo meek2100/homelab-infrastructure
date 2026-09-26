@@ -134,7 +134,7 @@ def generate_index():
         lines.append("| Stack ID | Primary Services | Container Images | Exposed Ports | Encrypted Secrets | Blueprint Path |")
         lines.append("| :--- | :--- | :--- | :--- | :---: | :--- |")
 
-        for s in sorted(stacks, key=lambda x: int(x["stack_id"]) if x["stack_id"].isdigit() else x["stack_id"]):
+        for s in sorted(stacks, key=lambda x: (0, int(x["stack_id"])) if x["stack_id"].isdigit() else (1, str(x["stack_id"]))):
             s_id = s["stack_id"]
             svc_names = "<br>".join(f"`{x['service']}`" for x in s["services"]) if s["services"] else "`custom`"
             images = "<br>".join(f"`{x['image']}`" for x in s["services"]) if s["services"] else "`unknown`"

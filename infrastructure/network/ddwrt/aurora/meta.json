@@ -1,10 +1,6 @@
 {
-  "router": "aurora-router",
-  "model": "Asus RT-N66U",
-  "firmware": "DD-WRT v3.0-r58070",
+  "router": "aurora",
   "ip": "10.25.25.1",
   "user": "root",
-  "role": "WAN2 Isolation & Discovery Network Gateway",
-  "backup_file": "aurora-router-asus-rt-n66u.enc.bin",
-  "restore_method": "DD-WRT Web GUI -> Administration -> Backup / Restore -> Select decrypted .bin -> Restore, or mcp restore_ddwrt"
+  "role": "WAN2 Isolation & Discovery Network Gateway"
 }

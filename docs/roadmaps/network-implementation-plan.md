@@ -4,7 +4,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 
 ---
 
-## 📈 Progress Summary — Last Updated 2026-09-25
+## 📈 Progress Summary — Last Updated 2026-09-26
 
 | Part | Title | Status |
 | :--- | :--- | :---: |
@@ -15,7 +15,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Part 2.7** | vxlan-server Split Trunking Architecture (VM 107) | 🟢 Complete — Wire-speed untagged VLAN 1 via AP bridge, isolated tagged VLANs (10, 20, 30, 40, 100, 150, 200) encapsulated over VXLAN 150; STP TCN loops eliminated, PMTU 1500 preserved |
 | **Part 2.8** | Netgear GS108Ev2 Office Switch GitOps & Backup | 🟢 Complete — Native NSDP packet driver, L2 relay, and binary/JSON backups verified |
 | **Part 2.9** | Wireshark Headless SPAN Sniffer & Storage Engine (Stack 48) | 🟢 Hardened — 500M tmpfs, 50MB chunks, watchdog, continuous 24h FIFO |
-| **Part 3** | Unified Monitoring, SNMP & Observability (Grafana stack) | ⏳ Pending — not yet deployed |
+| **Part 3** | Unified Monitoring, SNMP, Proxmox & Observability (Grafana LGTM Stack) | ✅ 100% Deployed & Verified (13/13 Prometheus targets UP, Loki log engine active, 8 containers) |
 
 ### Key Protocol Constraints & Architecture Settled
 - **Netgear GS108Ev2** — No HTTP REST API. Uses **NSDP** (Layer 2 UDP, ports 63321/63322). The `backup_netgear_switch` / `get_netgear_switch_status` MCP tools execute via pure Python NSDP using an automated Layer 2 adjacent relay hierarchy: primary OpenWrt router (`192.168.1.226` on `br-lan`) with fallback to Proxmox `pve` (`192.168.1.250` on `vmbr0`). Live telemetry and synchronized dual JSON/binary GitOps backups are 100% verified.
@@ -270,32 +270,40 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
 
 ---
 
-## 📊 Part 3: Unified Monitoring, SNMP & Observability Roadmap
+## 📊 Part 3: Unified Monitoring, SNMP, Proxmox & Observability (Grafana LGTM Stack)
 
 > **Status: 🟢 100% Deployed & Active (Stack 71 on `nexus-server`)**
-> Deployed 2026-09-25. Central TSDB, SNMP telemetry, host metrics, and container analytics active with auto-provisioned Grafana dashboards.
+> Deployed and verified 2026-09-26. Central TSDB, SNMP telemetry, Proxmox hypervisor API exporter, host metrics, container analytics, and Grafana Loki log engine active with auto-provisioned Grafana dashboards.
 
 * **Target Host**: `nexus-server` (`192.168.40.185` / VM 100 on `pve`)
-  * *Selection Rationale*: Dedicated to core networking/ingress (NPM, Tailscale, Cloudflared). Eliminates severe I/O competition on `luna-server` (which runs continuous Wireshark SPAN captures in Stack 48 and Home Assistant event logging). Enables direct local ingress without cross-VM hairpinned proxying.
+  * *Selection Rationale*: Dedicated to core networking/ingress (NPM, Tailscale, Cloudflared). Eliminates I/O competition on `luna-server` (which runs continuous Wireshark SPAN captures in Stack 48). Enables direct local ingress without cross-VM hairpinned proxying.
   * *Blueprint*: [`infrastructure/docker-stacks/nexus-server/71-monitoring/`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/71-monitoring/)
-* **Live Service & Port Matrix**:
-  * **Grafana**: Port `3030:3000` (Web UI at `http://192.168.40.185:3030` or reverse-proxied via NPM / Tailscale `http://100.70.65.45:3030`)
-  * **Prometheus TSDB**: Port `9090:9090` (30-day persistent retention in `/home/meek2100/docker/monitoring/prometheus/data`)
-  * **SNMP Exporter**: Port `9116:9116` (Scrapes Araknis router, switch, and AP fleet via community `homelab-metrics`)
-  * **Node Exporter**: Port `9100:9100` (Host OS, CPU, RAM, disk, load averages)
-  * **cAdvisor**: Port `8088:8080` (Container-level CPU, RAM, and network I/O)
-* **Active Target Inventory (8/8 🟢 UP)**:
-  * 🟢 `192.168.1.1`: Araknis 520 Core Router (`snmp_infrastructure`, `if_mib`)
+* **Live Service & Port Matrix (8 Containers)**:
+  * **Grafana (`11.1.0`)**: Port `3030:3000` (Web UI at `http://192.168.40.185:3030` or reverse-proxied via NPM / Tailscale `http://100.70.65.45:3030`)
+  * **Prometheus TSDB (`v2.53.1`)**: Port `9090:9090` (30-day persistent retention in `/home/meek2100/docker/monitoring/prometheus/data`)
+  * **Grafana Loki (`3.0.0`)**: Port `3100:3100` (High-efficiency log aggregation engine with `v13` TSDB index schema)
+  * **Promtail Agent (`3.0.0`)**: Internal (Direct Docker socket integration dynamically discovering 20 containers and host syslogs)
+  * **PVE Exporter (`latest`)**: Port `9221:9221` (Scrapes Proxmox hypervisors `pve`, `pve2`, `pve3` via read-only `monitoring@pve` API tokens)
+  * **SNMP Exporter (`v0.26.0`)**: Port `9116:9116` (Scrapes Araknis router, switch, AP fleet, and office printers)
+  * **Node Exporter (`v1.8.2`)**: Port `9100:9100` (Host OS, CPU, RAM, disk, load averages)
+  * **cAdvisor (`v0.49.1`)**: Port `8088:8080` (Container-level CPU, RAM, and network I/O)
+* **Active Target Inventory (13/13 🟢 UP)**:
+  * 🟢 `192.168.1.1`: Araknis 520 Core Router (`snmp_infrastructure`, `if_mib` via community `homelab-metrics`)
   * 🟢 `192.168.1.215`: Araknis 920 Switch (`snmp_infrastructure`, `if_mib` - 24 ports + SFP+)
   * 🟢 `192.168.1.231`: Araknis 830 AP 1 House Front (`snmp_access_points`, `ap_system`)
   * 🟢 `192.168.1.236`: Araknis 830 AP 2 House Back (`snmp_access_points`, `ap_system`)
   * 🟢 `192.168.1.237`: Araknis 830 AP 3 Office Bridge (`snmp_access_points`, `ap_system`)
+  * 🟢 `192.168.10.195`: HP Color LaserJet MFP M283cdw (`snmp_printers`, `printer_mib` - 4 toners, 1,739 lifetime pages)
+  * 🟢 `192.168.10.196`: Brother QL-1110NWB (`snmp_printers`, `printer_mib` - 1,399 labels, console state `READY`)
+  * 🟢 `192.168.1.250`: Proxmox Node 1 `pve` (`proxmox_pve` - Dell Precision 5520, VMs 100, 102, 103, 107, 109)
+  * 🟢 `10.25.25.240`: Proxmox Node 2 `pve2` (`proxmox_pve2` - Awow AK34Pro, VM 100 discovery-server)
+  * 🟢 `192.168.1.245`: Proxmox Node 3 `pve3` (`proxmox_pve3` - HP EliteDesk, VMs 100 nexus-server2, 101 nas-server)
   * 🟢 `node-exporter:9100`: Local `nexus-server` host metrics
   * 🟢 `cadvisor:8080`: Docker container metrics
   * 🟢 `localhost:9090`: Prometheus self-monitoring
 * **Pre-Provisioned Dashboards**:
-  * **Homelab Network Overview (Araknis Fleet)**: UID `homelab-network-overview` under folder `Homelab Network`. Displays real-time device health stat cards, router WAN bandwidth, switch top-active port throughput, and interface error rates.
+  * **Homelab Network & Infrastructure Overview (v4)**: UID `homelab-network-overview` under folder `Homelab Network`. Displays real-time device health stat cards, router WAN bandwidth, switch top-active port throughput, printer toner levels (K/C/M/Y gauges), Proxmox node online states, VM CPU/RAM utilization graphs, and live interactive Loki log streams.
 * **Management Tooling**:
-  * [`mcp/homelab/scripts/deploy-monitoring-stack.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/deploy-monitoring-stack.py): Programmatic lifecycle control (`deploy`, `status`, `stop`).
+  * [`mcp/homelab/scripts/deploy-monitoring-stack.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/deploy-monitoring-stack.py): Programmatic lifecycle control (`deploy`, `status`, `stop`) with automated Proxmox API token generation, permissions hardening, and container health verification.
 
 

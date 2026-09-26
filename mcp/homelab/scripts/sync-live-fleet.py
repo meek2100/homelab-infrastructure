@@ -24,7 +24,7 @@ DEFAULT_STAGING = os.path.join(REPO_ROOT, ".live-staging")
 
 NODES = [
     {"node": "pve", "ip": "192.168.1.250"},
-    {"node": "pve2", "ip": "192.168.1.240"},
+    {"node": "pve2", "ip": "10.25.25.240"},
     {"node": "pve3", "ip": "192.168.1.245"},
 ]
 

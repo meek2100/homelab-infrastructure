@@ -35,7 +35,7 @@
   - NVIDIA Quadro M1200 4GB (`[10de:13b6]` / `01:00.0`): Currently **100% unmapped / idle** on host `pve`.
 - **Lid & Power Fixes**: Proxmox systemd `HandleLidSwitch=ignore`; ACPI lid script `/etc/acpi/lid-backlight.sh` toggles Intel panel backlight to 0 on close, 400 on open.
 - **Active Virtual Machines**:
-  - `VM 100` (`nexus-server` Ingress VM): **9 Portainer Stacks** (`nginx-proxy-manager`, `cloudflared`, `adguardhome` secondary, `adguardhome-sync`, `wg-easy`, `rustdesk`, `tailscale` subnet router Stack 69, `openspeedtest` Stack 70, etc.)
+  - `VM 100` (`nexus-server` Ingress VM): **9 Portainer Stacks + Stack 71 Observability Stack** (`nginx-proxy-manager`, `cloudflared`, `adguardhome` secondary, `adguardhome-sync`, `wg-easy`, `rustdesk`, `tailscale` subnet router Stack 69, `openspeedtest` Stack 70, `prometheus`, `grafana` :3030, `loki` :3100, `promtail`, `pve-exporter` :9221, `snmp-exporter` :9116, `node-exporter` :9100, `cadvisor` :8088)
   - `VM 102` (`luna-server` Smart Home VM): **32 Portainer Stacks** (`homeassistant`, `homebridge`, `syncthing`, `spoolman`, `gitwatch`, etc.)
   - `VM 103` (`media-server` Media VM): **9 Portainer Stacks** (`plex`, `audiobookshelf`, `homarr`, `overseerr`, `calibre-web`, `filebrowser`, etc.)
   - `VM 107` (`vxlan-server` Network Bridge VM): `vxlan-nm.service` daemon on IP `192.168.1.150` (bridging interface `vxlan150`).
