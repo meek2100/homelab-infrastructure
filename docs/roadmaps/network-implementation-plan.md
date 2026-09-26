@@ -15,8 +15,8 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Part 2.7** | vxlan-server Split Trunking Architecture (VM 107) | 🟢 Complete — Wire-speed untagged VLAN 1 via AP bridge, isolated tagged VLANs encapsulated over VXLAN 150 |
 | **Part 2.8** | Netgear GS108Ev2 Office Switch GitOps & Backup | 🟢 Complete — Native NSDP packet driver, L2 relay, and binary/JSON backups verified |
 | **Part 2.9** | Wireshark Headless SPAN Sniffer & Storage Engine (Stack 48) | 🟢 Hardened — 500M tmpfs, 50MB chunks, watchdog, continuous 24h FIFO |
-| **Part 3** | Observability Engine & Synthetic Probing (Stack 71) | ✅ 100% Deployed & Active (10 containers, 29/29 targets UP, Alertmanager + Blackbox) |
-| **Part 4** | Unified Full-Fleet Control Center, External Systems & PBS | 🟡 In Progress — External zero-trust tools active, PBS runbook ready, fleet agent pods planned |
+| **Part 3** | Observability Engine & Synthetic Probing (Stack 71) | ✅ 100% Deployed & Active (10 containers, Alertmanager, Blackbox, external targets) |
+| **Part 4** | Unified Full-Fleet Control Center, External Systems & PBS | 🟢 Active — 49/49 targets UP, distributed agent pods active on 4 VMs, Loki streaming all containers |
 
 ### Key Protocol Constraints & Architecture Settled
 - **Netgear GS108Ev2** — No HTTP REST API. Uses **NSDP** (Layer 2 UDP, ports 63321/63322). The `backup_netgear_switch` / `get_netgear_switch_status` MCP tools execute via pure Python NSDP using an automated Layer 2 adjacent relay hierarchy: primary OpenWrt router (`192.168.1.226` on `br-lan`) with fallback to Proxmox `pve` (`192.168.1.250` on `vmbr0`). Live telemetry and synchronized dual JSON/binary GitOps backups are 100% verified.
@@ -355,27 +355,27 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
 - **Runbook**: [`docs/runbooks/proxmox-backup-server.md`](file:///home/agentsvc/repos/homelab-infrastructure/docs/runbooks/proxmox-backup-server.md)
 - **Status**: Complete step-by-step instructions documented in [`MANUAL-SETUP-TODOS.md`](file:///home/agentsvc/repos/homelab-infrastructure/MANUAL-SETUP-TODOS.md) for installation on `pve3` and client registration across `pve`, `pve2`, and `pve3`.
 
-### 3. Distributed Fleet Telemetry Pods (Full In-Guest & Container Visibility) — ⏳ Next Implementation
-- **Current State**: `node-exporter` and `cAdvisor` only run on `nexus-server` (VM 100).
-- **Target State**: Standardized lightweight telemetry agent pod deployed across all remaining Docker hosts:
-  - `luna-server` (VM 102 — Smart Home & SPAN sniffer, 33 stacks)
-  - `media-server` (VM 103 — Plex, Media transcode, 9 stacks)
-  - `discovery-server` (VM 100 on `pve2` — Download & VPN, 24 stacks)
-  - `nexus-server2` (VM 100 on `pve3` — Secondary DNS, 7 stacks)
-  - `minecraft-docker` (VM 109 — Gaming)
+### 3. Distributed Fleet Telemetry Pods (Full In-Guest & Container Visibility) — 🟢 100% Deployed & Active
+- **Deployed Fleet**: Standardized lightweight telemetry agent pods (`node-exporter` :9100 + `cAdvisor` :8088) deployed across all Docker VMs via `mcp/homelab/scripts/deploy-telemetry-fleet.py`:
+  - 🟢 `luna-server` (VM 102 — Smart Home & SPAN sniffer, 33 stacks)
+  - 🟢 `media-server` (VM 103 — Plex, Media transcode, 9 stacks)
+  - 🟢 `nexus-server2` (VM 100 on `pve3` — Secondary DNS, 7 stacks)
+  - 🟢 `minecraft-docker` (VM 109 — Gaming)
+  - 🟢 `nexus-server` (VM 100 — Ingress, Stack 71)
+- **Scrape Status**: 5/5 Node Exporters and 5/5 cAdvisors 🟢 UP in Prometheus (Total active scrape targets: **49/49 UP**).
 
-### 4. Consolidated Fleet Logging (Loki 3.0 + Promtail DaemonSets) — ⏳ Next Implementation
-- **Current State**: Promtail on `nexus-server` ingests 20 local containers and syslogs.
-- **Target State**: Promtail deployed on every Docker VM streaming all 155 container stdout/stderr streams into central Loki (`http://192.168.40.185:3100/loki/api/v1/push`).
+### 4. Consolidated Fleet Logging (Loki 3.0 + Promtail DaemonSets) — 🟢 100% Deployed & Active
+- **Architecture**: Distributed Promtail instances dynamically scraping Docker container logs (`/var/run/docker.sock`) and host syslogs, tagging with `vm`, `container`, and `stream`, pushing to `http://192.168.40.185:3100/loki/api/v1/push`.
+- **Active Streaming**: 42+ distinct containers and 4 VMs streaming live logs into central Loki within the first minute of deployment.
 - **Capabilities**: Global full-text search across all containers, instant stack-level filtering, and cross-VM error correlation in Grafana.
 
 ### 5. Master Homelab Command & Control Center Dashboard — ⏳ Next Implementation
 - Multi-tier Grafana dashboard aggregating:
   1. Executive Vitals & Global Health Score
   2. Complete Network Topology (Router, Switch, APs, OpenWrt, Netgear)
-  3. Proxmox Hypervisors & In-Guest VM Performance
-  4. 155-Container Fleet Table (CPU, RAM, Status, Restarts)
-  5. 25+ Application Web Status Matrix
+  3. Proxmox Hypervisors & In-Guest VM Performance (CPU/RAM/Disk across all nodes)
+  4. 155-Container Fleet Table (Live CPU, RAM, Status, Restarts across all VMs)
+  5. 25+ Application Web Status Matrix (Home Assistant, Plex, NPM, AdGuard, OMV, Klipper, etc.)
   6. Centralized Loki Log Stream with multi-tag filtering
 
 

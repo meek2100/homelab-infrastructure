@@ -86,12 +86,36 @@ scrape_configs:
       - targets: ['node-exporter:9100']
         labels:
           instance_name: 'nexus-server'
+      - targets: ['192.168.40.249:9100']
+        labels:
+          instance_name: 'luna-server'
+      - targets: ['192.168.40.247:9100']
+        labels:
+          instance_name: 'media-server'
+      - targets: ['192.168.40.186:9100']
+        labels:
+          instance_name: 'nexus-server2'
+      - targets: ['192.168.40.175:9100']
+        labels:
+          instance_name: 'minecraft-docker'
 
   - job_name: 'cadvisor'
     static_configs:
       - targets: ['cadvisor:8080']
         labels:
           instance_name: 'nexus-server'
+      - targets: ['192.168.40.249:8088']
+        labels:
+          instance_name: 'luna-server'
+      - targets: ['192.168.40.247:8088']
+        labels:
+          instance_name: 'media-server'
+      - targets: ['192.168.40.186:8088']
+        labels:
+          instance_name: 'nexus-server2'
+      - targets: ['192.168.40.175:8088']
+        labels:
+          instance_name: 'minecraft-docker'
 
   - job_name: 'snmp_printers'
     static_configs:
@@ -204,6 +228,54 @@ scrape_configs:
         - https://192.168.40.185:9443
         labels:
           service: 'portainer'
+      - targets:
+        - http://192.168.40.249:8581
+        labels:
+          service: 'homebridge'
+      - targets:
+        - http://192.168.40.249:7912
+        labels:
+          service: 'spoolman'
+      - targets:
+        - http://192.168.40.247:13378
+        labels:
+          service: 'audiobookshelf'
+      - targets:
+        - http://192.168.40.247:7575
+        labels:
+          service: 'homarr'
+      - targets:
+        - http://192.168.40.247:5055
+        labels:
+          service: 'overseerr'
+      - targets:
+        - http://192.168.40.247:8083
+        labels:
+          service: 'calibre-web'
+      - targets:
+        - http://192.168.40.247:8080
+        labels:
+          service: 'filebrowser'
+      - targets:
+        - http://192.168.40.186:80
+        labels:
+          service: 'adguard-secondary-ui'
+      - targets:
+        - http://192.168.40.248:80
+        labels:
+          service: 'openmediavault-nas'
+      - targets:
+        - http://192.168.30.90
+        labels:
+          service: 'mainsail-klipper'
+      - targets:
+        - http://192.168.10.195
+        labels:
+          service: 'hp-laserjet-web'
+      - targets:
+        - http://192.168.10.196
+        labels:
+          service: 'brother-printer-web'
       - targets:
         - https://theurer.dev
         labels:
