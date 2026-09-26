@@ -170,13 +170,108 @@
         { "expr": "rate(ifInErrors{instance=\"192.168.1.215\"}[1m])", "legendFormat": "{{ifDescr}} In Errors" },
         { "expr": "rate(ifOutErrors{instance=\"192.168.1.215\"}[1m])", "legendFormat": "{{ifDescr}} Out Errors" }
       ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 31 },
+      "id": 103,
+      "title": "Homelab Printers & Office Peripherals",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" }, "1": { "color": "green", "text": "ONLINE" } }, "type": "value" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        }
+      },
+      "gridPos": { "h": 6, "w": 4, "x": 0, "y": 32 },
+      "id": 9,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "HP Color LaserJet (M283cdw)",
+      "type": "stat",
+      "targets": [{ "expr": "up{job=\"snmp_printers\", instance=\"192.168.10.195\"}", "legendFormat": "Status" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 15 },
+              { "color": "yellow", "value": 25 },
+              { "color": "green", "value": 40 }
+            ]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 4, "y": 32 },
+      "id": 10,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "title": "HP LaserJet Toner Levels (%)",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "clamp_max((prtMarkerSuppliesLevel{instance=\"192.168.10.195\"} / prtMarkerSuppliesMaxCapacity{instance=\"192.168.10.195\"}) * 100, 100)",
+          "legendFormat": "{{prtMarkerSuppliesDescription}}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] },
+          "unit": "locale"
+        }
+      },
+      "gridPos": { "h": 6, "w": 4, "x": 16, "y": 32 },
+      "id": 11,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "HP Lifetime Pages Printed",
+      "type": "stat",
+      "targets": [{ "expr": "prtMarkerLifeCount{instance=\"192.168.10.195\"}", "legendFormat": "Total Pages" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "purple", "value": null }] },
+          "unit": "locale"
+        }
+      },
+      "gridPos": { "h": 6, "w": 4, "x": 20, "y": 32 },
+      "id": 12,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Brother QL-1110NWB Labels Printed",
+      "type": "stat",
+      "targets": [{ "expr": "prtMarkerLifeCount{instance=\"192.168.10.196\"}", "legendFormat": "Total Labels" }]
     }
   ],
   "refresh": "10s",
   "schemaVersion": 39,
-  "tags": ["homelab", "araknis", "snmp", "network"],
+  "tags": ["homelab", "araknis", "snmp", "network", "printers"],
   "time": { "from": "now-1h", "to": "now" },
-  "title": "Homelab Network Overview (Araknis Fleet)",
+  "title": "Homelab Network & Infrastructure Overview",
   "uid": "homelab-network-overview",
-  "version": 1
+  "version": 2
 }

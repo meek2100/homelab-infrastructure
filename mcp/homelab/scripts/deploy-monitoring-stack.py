@@ -92,13 +92,13 @@ def deploy():
     print(f"  ✓ Files unpacked and directory permissions initialized at {REMOTE_BASE}")
 
     # 3. Pull images and launch compose
-    launch_cmd = f"cd {REMOTE_BASE} && docker compose up -d"
+    launch_cmd = f"cd {REMOTE_BASE} && docker compose up -d && docker compose restart prometheus snmp-exporter grafana"
     print("  ⏳ Pulling images and launching containers...")
     ok, out = qm_exec(launch_cmd, timeout=180)
     if not ok:
         print(f"  ❌ Failed starting containers: {out}")
         return False
-    print(f"  ✓ Containers launched:\n{out.strip()}")
+    print(f"  ✓ Containers launched/reloaded:\n{out.strip()}")
 
     # 4. Wait for services to initialize
     print("  ⏳ Waiting 10s for Prometheus and Grafana initialization...")
@@ -117,8 +117,12 @@ def deploy():
     print(f"Grafana Health: {'🟢 ' + graf_out.strip() if graf_ok else '🔴 ' + graf_out.strip()}")
 
     # Test SNMP Exporter on Araknis router
-    snmp_ok, snmp_out = qm_exec("curl -s 'http://localhost:9116/snmp?target=192.168.1.1&module=if_mib' | grep -E '^sysUpTime|^ifNumber' | head -n 4")
+    snmp_ok, snmp_out = qm_exec("curl -s 'http://localhost:9116/snmp?target=192.168.1.1&module=if_mib&auth=public_v2' | grep -E '^sysUpTime|^ifNumber' | head -n 4")
     print(f"\nSNMP Scrape Sample (Araknis Router):\n{snmp_out.strip() if snmp_ok else 'Failed'}")
+
+    # Test SNMP Exporter on HP Printer
+    printer_ok, printer_out = qm_exec("curl -s 'http://localhost:9116/snmp?target=192.168.10.195&module=printer_mib&auth=public' | grep -E 'prtMarker' | head -n 6")
+    print(f"\nSNMP Scrape Sample (HP LaserJet):\n{printer_out.strip() if printer_ok else 'Failed'}")
 
     return True
 

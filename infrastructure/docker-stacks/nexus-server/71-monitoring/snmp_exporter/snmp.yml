@@ -4,6 +4,9 @@ auths:
   public_v2:
     version: 2
     community: homelab-metrics
+  public:
+    version: 2
+    community: public
 
 modules:
   if_mib:
@@ -149,3 +152,80 @@ modules:
         oid: 1.3.6.1.2.1.1.5
         type: DisplayString
         help: An administratively-assigned name for this managed node - 1.3.6.1.2.1.1.5
+
+  printer_mib:
+    walk:
+      - 1.3.6.1.2.1.1.1 # sysDescr
+      - 1.3.6.1.2.1.1.3 # sysUpTime
+      - 1.3.6.1.2.1.1.5 # sysName
+      - 1.3.6.1.2.1.43.10.2.1.4 # prtMarkerLifeCount
+      - 1.3.6.1.2.1.43.11.1.1.6 # prtMarkerSuppliesDescription
+      - 1.3.6.1.2.1.43.11.1.1.8 # prtMarkerSuppliesMaxCapacity
+      - 1.3.6.1.2.1.43.11.1.1.9 # prtMarkerSuppliesLevel
+      - 1.3.6.1.2.1.43.16.5.1.2 # prtConsoleDisplayBufferText
+    metrics:
+      - name: sysDescr
+        oid: 1.3.6.1.2.1.1.1
+        type: DisplayString
+        help: A textual description of the entity - 1.3.6.1.2.1.1.1
+      - name: sysUpTime
+        oid: 1.3.6.1.2.1.1.3
+        type: gauge
+        help: The time since the network management portion of the system was last re-initialized - 1.3.6.1.2.1.1.3
+      - name: sysName
+        oid: 1.3.6.1.2.1.1.5
+        type: DisplayString
+        help: An administratively-assigned name for this managed node - 1.3.6.1.2.1.1.5
+      - name: prtMarkerLifeCount
+        oid: 1.3.6.1.2.1.43.10.2.1.4
+        type: counter
+        help: The count of pages produced by this printer - 1.3.6.1.2.1.43.10.2.1.4
+        indexes:
+          - labelname: hrDeviceIndex
+            type: gauge
+          - labelname: prtMarkerIndex
+            type: gauge
+      - name: prtMarkerSuppliesDescription
+        oid: 1.3.6.1.2.1.43.11.1.1.6
+        type: DisplayString
+        help: The description of this supply unit (e.g. Black Cartridge) - 1.3.6.1.2.1.43.11.1.1.6
+        indexes:
+          - labelname: hrDeviceIndex
+            type: gauge
+          - labelname: prtMarkerSuppliesIndex
+            type: gauge
+      - name: prtMarkerSuppliesMaxCapacity
+        oid: 1.3.6.1.2.1.43.11.1.1.8
+        type: gauge
+        help: The maximum capacity of this supply container - 1.3.6.1.2.1.43.11.1.1.8
+        indexes:
+          - labelname: hrDeviceIndex
+            type: gauge
+          - labelname: prtMarkerSuppliesIndex
+            type: gauge
+      - name: prtMarkerSuppliesLevel
+        oid: 1.3.6.1.2.1.43.11.1.1.9
+        type: gauge
+        help: The current level if this supply container - 1.3.6.1.2.1.43.11.1.1.9
+        indexes:
+          - labelname: hrDeviceIndex
+            type: gauge
+          - labelname: prtMarkerSuppliesIndex
+            type: gauge
+        lookups:
+          - labels:
+              - hrDeviceIndex
+              - prtMarkerSuppliesIndex
+            labelname: prtMarkerSuppliesDescription
+            oid: 1.3.6.1.2.1.43.11.1.1.6
+            type: DisplayString
+      - name: prtConsoleDisplayBufferText
+        oid: 1.3.6.1.2.1.43.16.5.1.2
+        type: DisplayString
+        help: The message currently displayed on the operator console - 1.3.6.1.2.1.43.16.5.1.2
+        indexes:
+          - labelname: hrDeviceIndex
+            type: gauge
+          - labelname: prtConsoleDisplayBufferIndex
+            type: gauge
+

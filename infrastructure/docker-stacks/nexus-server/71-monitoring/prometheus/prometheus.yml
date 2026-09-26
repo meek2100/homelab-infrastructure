@@ -76,3 +76,29 @@ scrape_configs:
       - targets: ['cadvisor:8080']
         labels:
           instance_name: 'nexus-server'
+
+  - job_name: 'snmp_printers'
+    static_configs:
+      - targets:
+        - 192.168.10.195
+        labels:
+          device_name: 'hp-color-laserjet-m283cdw'
+          device_type: 'printer'
+          model: 'HP Color LaserJet MFP M283cdw'
+      - targets:
+        - 192.168.10.196
+        labels:
+          device_name: 'brother-ql-1110nwb'
+          device_type: 'label_printer'
+          model: 'Brother QL-1110NWB'
+    metrics_path: /snmp
+    params:
+      module: [printer_mib]
+      auth: [public]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: snmp-exporter:9116
