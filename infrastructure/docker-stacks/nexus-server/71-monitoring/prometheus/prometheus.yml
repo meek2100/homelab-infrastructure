@@ -1,0 +1,78 @@
+# Prometheus Core Configuration - Nexus Server (Homelab Ingress VM 100)
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'snmp_infrastructure'
+    static_configs:
+      - targets:
+        - 192.168.1.1
+        labels:
+          device_name: 'araknis-520-router'
+          device_type: 'router'
+      - targets:
+        - 192.168.1.215
+        labels:
+          device_name: 'araknis-920-switch'
+          device_type: 'switch'
+    metrics_path: /snmp
+    params:
+      module: [if_mib]
+      auth: [public_v2]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: snmp-exporter:9116
+
+  - job_name: 'snmp_access_points'
+    static_configs:
+      - targets:
+        - 192.168.1.231
+        labels:
+          device_name: 'araknis-830-ap1'
+          device_type: 'ap'
+          location: 'House Front'
+      - targets:
+        - 192.168.1.236
+        labels:
+          device_name: 'araknis-830-ap2'
+          device_type: 'ap'
+          location: 'House Back'
+      - targets:
+        - 192.168.1.237
+        labels:
+          device_name: 'araknis-830-ap3'
+          device_type: 'ap'
+          location: 'Office Bridge'
+    metrics_path: /snmp
+    params:
+      module: [ap_system]
+      auth: [public_v2]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: snmp-exporter:9116
+
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          instance_name: 'nexus-server'
+
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          instance_name: 'nexus-server'

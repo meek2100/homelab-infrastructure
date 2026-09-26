@@ -1,0 +1,6 @@
+{
+  "node": "pve",
+  "vmid": 100,
+  "stack_name": "homelab-monitoring",
+  "remote_dir": "/home/meek2100/docker/monitoring"
+}

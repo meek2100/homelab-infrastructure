@@ -1,0 +1,182 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "Araknis Fleet Health Status",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" }, "1": { "color": "green", "text": "UP" } }, "type": "value" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Araknis 520 Router",
+      "type": "stat",
+      "targets": [{ "expr": "up{job=\"snmp_araknis\", instance=\"192.168.1.1\"}", "legendFormat": "Router" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" }, "1": { "color": "green", "text": "UP" } }, "type": "value" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        }
+      },
+      "gridPos": { "h": 4, "w": 5, "x": 4, "y": 1 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Araknis 920 Switch",
+      "type": "stat",
+      "targets": [{ "expr": "up{job=\"snmp_araknis\", instance=\"192.168.1.215\"}", "legendFormat": "Switch" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" }, "1": { "color": "green", "text": "UP" } }, "type": "value" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        }
+      },
+      "gridPos": { "h": 4, "w": 5, "x": 9, "y": 1 },
+      "id": 3,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "AP 1 (House Front)",
+      "type": "stat",
+      "targets": [{ "expr": "up{job=\"snmp_araknis\", instance=\"192.168.1.231\"}", "legendFormat": "AP1" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" }, "1": { "color": "green", "text": "UP" } }, "type": "value" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        }
+      },
+      "gridPos": { "h": 4, "w": 5, "x": 14, "y": 1 },
+      "id": 4,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "AP 2 (House Back)",
+      "type": "stat",
+      "targets": [{ "expr": "up{job=\"snmp_araknis\", instance=\"192.168.1.236\"}", "legendFormat": "AP2" }]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            { "options": { "0": { "color": "red", "text": "DOWN" }, "1": { "color": "green", "text": "UP" } }, "type": "value" }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        }
+      },
+      "gridPos": { "h": 4, "w": 5, "x": 19, "y": 1 },
+      "id": 5,
+      "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "AP 3 (Office Bridge)",
+      "type": "stat",
+      "targets": [{ "expr": "up{job=\"snmp_araknis\", instance=\"192.168.1.237\"}", "legendFormat": "AP3" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "title": "Araknis 520 Core Router Traffic",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth" },
+          "unit": "bps"
+        }
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 6 },
+      "id": 6,
+      "title": "Router Interface Throughput (In / Out)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "rate(ifHCInOctets{instance=\"192.168.1.1\"}[1m]) * 8", "legendFormat": "{{ifDescr}} (RX)" },
+        { "expr": "rate(ifHCOutOctets{instance=\"192.168.1.1\"}[1m]) * 8", "legendFormat": "{{ifDescr}} (TX)" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 102,
+      "title": "Araknis 920 Switch Traffic & Performance",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth" },
+          "unit": "bps"
+        }
+      },
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 15 },
+      "id": 7,
+      "title": "Switch Top Active Ports Throughput",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "topk(6, rate(ifHCInOctets{instance=\"192.168.1.215\"}[1m]) * 8)", "legendFormat": "{{ifAlias}} [{{ifDescr}}] RX" },
+        { "expr": "topk(6, rate(ifHCOutOctets{instance=\"192.168.1.215\"}[1m]) * 8)", "legendFormat": "{{ifAlias}} [{{ifDescr}}] TX" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "Prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "bars" },
+          "unit": "pps"
+        }
+      },
+      "gridPos": { "h": 7, "w": 24, "x": 0, "y": 24 },
+      "id": 8,
+      "title": "Switch Interface Packet Errors (Discards & Errors)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "rate(ifInErrors{instance=\"192.168.1.215\"}[1m])", "legendFormat": "{{ifDescr}} In Errors" },
+        { "expr": "rate(ifOutErrors{instance=\"192.168.1.215\"}[1m])", "legendFormat": "{{ifDescr}} Out Errors" }
+      ]
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["homelab", "araknis", "snmp", "network"],
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "Homelab Network Overview (Araknis Fleet)",
+  "uid": "homelab-network-overview",
+  "version": 1
+}
