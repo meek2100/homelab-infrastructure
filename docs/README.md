@@ -2,6 +2,9 @@
 
 This directory serves as the centralized, authoritative documentation library for all physical hosts, virtual machines, networking hardware, and automated GitOps tooling across the homelab infrastructure.
 
+## 🚀 Action Items & Checklists
+- [MANUAL-SETUP-TODOS.md](../MANUAL-SETUP-TODOS.md): Step-by-step manual setup checklist for Alertmanager notification secrets (Pushover & SMTP) and Proxmox Backup Server (PBS) deployment on `pve3`.
+
 ---
 
 ## 📂 Documentation Catalog
