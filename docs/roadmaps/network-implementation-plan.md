@@ -272,16 +272,18 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
 
 ## 📊 Part 3: Unified Monitoring, SNMP & Observability Roadmap
 
-> **Status: ⏳ Paused / Pre-flight Ready (Host Selected & SNMP Audited)**
-> Prerequisite: Resolve VXLAN/OpenWrt failover loop stability first; configure SNMP on Araknis fleet before launching stack.
+> **Status: 🚀 In Progress (Host Selected & All 5 Araknis SNMP Agents Live)**
+> Prerequisite: VXLAN loop resolved; all 5 Araknis devices configured with `homelab-metrics` and verified responding over UDP 161.
 
 * **Target Host**: `nexus-server` (`192.168.40.185` / VM 100 on `pve`)
   * *Selection Rationale*: Dedicated to core networking/ingress (NPM, Tailscale, Cloudflared). Eliminates severe I/O competition on `luna-server` (which runs continuous Wireshark SPAN captures in Stack 48 and Home Assistant event logging). Enables direct local ingress without cross-VM hairpinned proxying.
-* **Network SNMP Readiness Audit (Screenshots Inspected 2026-09-25)**:
-  * **Araknis 520 Core Router** (`192.168.1.1`): `Enable SNMP v1/v2` is currently **OFF**, SNMPv3 is **OFF**.
-  * **Araknis 920 Switch** (`192.168.1.215`): SNMP Community list has **No Data** (needs read-only community defined under Server Configuration).
-  * **Araknis 830 APs** (`192.168.1.231`, `.236`, `.237`): `SNMPv2 Status` is currently **OFF**, SNMPv3 is **OFF**.
-  * *Next Action for Part 3*: Configure read-only SNMPv2c/v3 community across all 5 Araknis devices, store community secret in SOPS (`infrastructure/secrets/`), verify UDP 161 reachability from `nexus-server`, then deploy the unified compose stack.
+* **Network SNMP Fleet Status (Configured & Verified 2026-09-25)**:
+  * **Araknis 520 Core Router** (`192.168.1.1`): Configured via REST API (`/api/cgi-bin/v1/config/snmp`). SNMPv2c Read-Only `homelab-metrics`. 🟢 **PASS**
+  * **Araknis 920 Switch** (`192.168.1.215`): Configured via FASTPATH CLI (`snmp-server community "homelab-metrics" ro`), saved to NVRAM. 🟢 **PASS**
+  * **Araknis 830 AP 1** (`192.168.1.231` - House Front): Configured via REST API (`/api/gui/sys/snmpv2` + `/api/gui/sys/apply`). 🟢 **PASS**
+  * **Araknis 830 AP 2** (`192.168.1.236` - House Back): Configured via REST API (`/api/gui/sys/snmpv2` + `/api/gui/sys/apply`). 🟢 **PASS**
+  * **Araknis 830 AP 3** (`192.168.1.237` - Office Bridge): Configured via REST API (`/api/gui/sys/snmpv2` + `/api/gui/sys/apply`). 🟢 **PASS**
+  * *Secrets*: Stored in GitOps blueprint [`infrastructure/secrets/snmp.enc.yaml`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/secrets/snmp.enc.yaml).
 * **Planned Observability Architecture**:
   * `snmp-exporter`: Scrapes Araknis 520 router, Araknis 920 switch, and Araknis 830 APs.
   * `node-exporter`: Hypervisors (`pve`, `pve2`, `pve3`).
