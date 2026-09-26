@@ -359,13 +359,45 @@
       "targets": [
         { "expr": "pve_memory_usage_bytes{type=\"qemu\"}", "legendFormat": "{{id}} ({{node}})" }
       ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 52 },
+      "id": 105,
+      "title": "System & Container Live Log Stream (Loki)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "Loki" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 53 },
+      "id": 18,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "title": "Live Container & Host Syslogs",
+      "type": "logs",
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "Loki" },
+          "editorMode": "builder",
+          "expr": "{host=\"nexus-server\"}",
+          "queryType": "range"
+        }
+      ]
     }
   ],
   "refresh": "10s",
   "schemaVersion": 39,
-  "tags": ["homelab", "araknis", "snmp", "network", "printers", "proxmox"],
+  "tags": ["homelab", "araknis", "snmp", "network", "printers", "proxmox", "loki", "logs"],
   "time": { "from": "now-1h", "to": "now" },
   "title": "Homelab Network & Infrastructure Overview",
   "uid": "homelab-network-overview",
-  "version": 3
+  "version": 4
 }

@@ -137,9 +137,10 @@ def deploy():
     extract_cmd = (
         f"mkdir -p {REMOTE_BASE} && "
         f"echo '{b64_payload}' | base64 -d | tar -xzf - -C {REMOTE_BASE} && "
-        f"mkdir -p {REMOTE_BASE}/prometheus/data {REMOTE_BASE}/grafana/data && "
+        f"mkdir -p {REMOTE_BASE}/prometheus/data {REMOTE_BASE}/grafana/data {REMOTE_BASE}/loki/data && "
         f"chown -R 65534:65534 {REMOTE_BASE}/prometheus/data && "
         f"chown -R 472:472 {REMOTE_BASE}/grafana/data && "
+        f"chown -R 10001:10001 {REMOTE_BASE}/loki/data && "
         f"chmod -R 755 {REMOTE_BASE}"
     )
     ok, out = qm_exec(extract_cmd)
@@ -156,7 +157,7 @@ def deploy():
         print(f"  ⚠️ Warning: {pve_msg}")
 
     # 4. Pull images and launch compose
-    launch_cmd = f"cd {REMOTE_BASE} && docker compose up -d && docker compose restart prometheus snmp-exporter pve-exporter grafana"
+    launch_cmd = f"cd {REMOTE_BASE} && docker compose up -d && docker compose restart prometheus snmp-exporter pve-exporter loki promtail grafana"
     print("  ⏳ Pulling images and launching containers...")
     ok, out = qm_exec(launch_cmd, timeout=180)
     if not ok:
@@ -165,7 +166,7 @@ def deploy():
     print(f"  ✓ Containers launched/reloaded:\n{out.strip()}")
 
     # 5. Wait for services to initialize
-    print("  ⏳ Waiting 10s for Prometheus and Grafana initialization...")
+    print("  ⏳ Waiting 10s for Prometheus, Grafana, and Loki initialization...")
     time.sleep(10)
 
     # 6. Health checks
@@ -179,6 +180,14 @@ def deploy():
     # Test Grafana
     graf_ok, graf_out = qm_exec("curl -s http://localhost:3000/api/health || echo 'Not ready'")
     print(f"Grafana Health: {'🟢 ' + graf_out.strip() if graf_ok else '🔴 ' + graf_out.strip()}")
+
+    # Test Loki
+    loki_ok, loki_out = qm_exec("curl -s http://localhost:3100/ready || echo 'Not ready'")
+    print(f"Loki Readiness: {'🟢 ' + loki_out.strip() if loki_ok else '🔴 ' + loki_out.strip()}")
+
+    # Test Promtail
+    promtail_ok, promtail_out = qm_exec("curl -s http://localhost:9080/ready || echo 'Not ready'")
+    print(f"Promtail Readiness: {'🟢 ' + promtail_out.strip() if promtail_ok else '🔴 ' + promtail_out.strip()}")
 
     # Test SNMP Exporter on Araknis router
     snmp_ok, snmp_out = qm_exec("curl -s 'http://localhost:9116/snmp?target=192.168.1.1&module=if_mib&auth=public_v2' | grep -E '^sysUpTime|^ifNumber' | head -n 4")
