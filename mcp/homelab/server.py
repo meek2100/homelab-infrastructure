@@ -283,6 +283,10 @@ def restore_openwrt(ip: str = "192.168.1.226", user: str = "root", dry_run: bool
     return run_script("restore-openwrt-config.py", args)
 
 @mcp.tool()
+def deploy_vxlan_hardening() -> str:
+    """Deploys hardened failover scripts to OpenWrt and passive responder to VM 107, locking P1 split-trunking."""
+    return run_script("deploy-vxlan-hardening.py", [])
+
 def backup_ddwrt(router: str = "all") -> str:
     """Backs up DD-WRT routers (aurora: 10.25.25.1, luna: 10.20.20.1) NVRAM configs and scripts encrypted via SOPS."""
     return run_script("backup-ddwrt-config.py", ["--router", router])

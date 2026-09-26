@@ -42,10 +42,10 @@ def run_ssh(host_ip, cmd, user="root", timeout=30):
 
 def get_wireshark_status(node_ip="192.168.1.250", vmid=102):
     # Remote script on pve executing inside VM 102 via QGA
-    script = f"""import subprocess, json
+    script = """import subprocess, json
 
 def qm_exec(cmd):
-    res = subprocess.run(["qm", "guest", "exec", "{vmid}", "--", "sh", "-c", cmd], capture_output=True, text=True)
+    res = subprocess.run(["qm", "guest", "exec", \"""" + str(vmid) + """\", "--", "sh", "-c", cmd], capture_output=True, text=True)
     if res.returncode == 0:
         try:
             data = json.loads(res.stdout)
@@ -62,8 +62,25 @@ print(qm_exec("docker ps -a --filter name=wireshark 2>/dev/null || docker ps"))
 
 print("=== 3. Recent PCAP Capture Files on NAS ===")
 print(qm_exec("docker exec wireshark ls -lh /nas-storage/ 2>/dev/null | tail -n 10 || echo 'No captures found'"))
+
+print("=== 4. Active In-Flight Chunks in tmpfs /captures ===")
+print(qm_exec("docker exec wireshark ls -lh /captures/ 2>/dev/null || echo 'No active tmpfs captures'"))
+
+print("=== 5. In-Flight & Recent Capture Analysis ===")
+latest_pcap = qm_exec("ls -t /mnt/media/wireshark-captures/*.pcapng 2>/dev/null | head -1").strip()
+if latest_pcap:
+    print(f"Analyzing {latest_pcap}...")
+    print("--- Top ARP Requests (Rate & Targets) ---")
+    print(qm_exec("head -c 15M " + latest_pcap + " | tcpdump -c 200 -nn -e -r - 'arp' 2>/dev/null | awk '{print $NF}' | sort | uniq -c | sort -nr | head -n 6"))
+    print("--- STP Topology / Spanning Tree Activity ---")
+    print(qm_exec("head -c 15M " + latest_pcap + " | tcpdump -c 20 -nn -r - 'stp' 2>/dev/null | head -n 4"))
+    print("--- ICMP Traffic (Ping Probes & Gateways) ---")
+    print(qm_exec("head -c 15M " + latest_pcap + " | tcpdump -c 100 -nn -r - 'icmp' 2>/dev/null | awk '{print $3, $4, $5}' | sort | uniq -c | sort -nr | head -n 6"))
 """
+
     b64_payload = base64.b64encode(script.encode("utf-8")).decode("ascii")
+
+
     remote_cmd = f"echo '{b64_payload}' | base64 -d | python3"
 
     code, out, err = run_ssh(node_ip, remote_cmd)
@@ -77,3 +94,4 @@ if __name__ == "__main__":
     parser.add_argument("--vmid", type=int, default=102, help="VM ID of luna-server")
     args = parser.parse_args()
     print(get_wireshark_status(node_ip=args.node_ip, vmid=args.vmid))
+

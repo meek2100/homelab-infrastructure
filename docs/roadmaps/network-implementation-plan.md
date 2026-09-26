@@ -136,7 +136,7 @@ The Araknis 830 AP 5GHz wireless bridge strips 802.1Q tags across the link to th
              ├─────────────────────── Araknis 830 AP Bridge ─────────────┤
              │                       (Priority 1: Wire Speed)            │
              │                                                           │
-             │ [Tagged VLANs: 10, 20, 30, 40, 150]                       │
+             │ [Tagged VLANs: 10, 20, 30, 40, 150, 200]                  │
              └─────── Encapsulated into VXLAN UDP Port 4789 ─────────────┘
                                      │
                                      ▼
@@ -272,15 +272,22 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
 
 ## 📊 Part 3: Unified Monitoring, SNMP & Observability Roadmap
 
-> **Status: ⏳ Pending — not yet deployed.**
-> Prerequisite: All Part 2.x backup & GitOps tasks should be settled before standing up the observability stack to avoid configuration drift.
+> **Status: ⏳ Paused / Pre-flight Ready (Host Selected & SNMP Audited)**
+> Prerequisite: Resolve VXLAN/OpenWrt failover loop stability first; configure SNMP on Araknis fleet before launching stack.
 
-* **Host**: `nexus-server` (`192.168.40.185`).
-* **Components**:
+* **Target Host**: `nexus-server` (`192.168.40.185` / VM 100 on `pve`)
+  * *Selection Rationale*: Dedicated to core networking/ingress (NPM, Tailscale, Cloudflared). Eliminates severe I/O competition on `luna-server` (which runs continuous Wireshark SPAN captures in Stack 48 and Home Assistant event logging). Enables direct local ingress without cross-VM hairpinned proxying.
+* **Network SNMP Readiness Audit (Screenshots Inspected 2026-09-25)**:
+  * **Araknis 520 Core Router** (`192.168.1.1`): `Enable SNMP v1/v2` is currently **OFF**, SNMPv3 is **OFF**.
+  * **Araknis 920 Switch** (`192.168.1.215`): SNMP Community list has **No Data** (needs read-only community defined under Server Configuration).
+  * **Araknis 830 APs** (`192.168.1.231`, `.236`, `.237`): `SNMPv2 Status` is currently **OFF**, SNMPv3 is **OFF**.
+  * *Next Action for Part 3*: Configure read-only SNMPv2c/v3 community across all 5 Araknis devices, store community secret in SOPS (`infrastructure/secrets/`), verify UDP 161 reachability from `nexus-server`, then deploy the unified compose stack.
+* **Planned Observability Architecture**:
   * `snmp-exporter`: Scrapes Araknis 520 router, Araknis 920 switch, and Araknis 830 APs.
   * `node-exporter`: Hypervisors (`pve`, `pve2`, `pve3`).
   * `cadvisor`: Containers across all 83 Portainer stacks.
   * `pve-exporter`: Proxmox QEMU VM and LXC storage/CPU metrics.
-  * `prometheus`: Central TSDB (30-day retention).
-  * `grafana`: Unified homelab dashboard.
+  * `prometheus`: Central TSDB (30-day retention, persistent volume).
+  * `grafana`: Unified homelab dashboard exposed via NPM and Tailscale.
+
 

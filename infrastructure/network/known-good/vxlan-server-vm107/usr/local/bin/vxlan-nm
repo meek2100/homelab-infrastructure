@@ -149,8 +149,11 @@ show_status() {
     echo "Bridge MTU: $(cat "/sys/class/net/$BRIDGE_IF/mtu" 2>/dev/null)"
 }
 
-# --- Monitoring Loop ---
+# --- Passive Monitoring Loop ---
+# VM 107 is a pure responder. It does NOT autonomously trigger failovers.
+# All state transitions (P1 <-> P2 <-> P3) are commanded exclusively by OpenWrt.
 monitor_loop() {
+    log_msg "Passive receiver loop running (OpenWrt is sole failover authority)."
     while true; do
         sleep "$CHECK_INTERVAL"
 
@@ -168,58 +171,15 @@ monitor_loop() {
             ip link set "$VXLAN_IF" up
         }
 
-        if [ "$CURRENT_STATE" = "P2" ]; then
-            # In P2, check if OpenWrt's physical port (wan) has recovered.
-            # Carrier check directly over SSH to OpenWrt's wireless IP (192.168.1.225)
-            P1_RECOVERED=0
-            CARRIER=$(ssh -o BatchMode=yes -o ConnectTimeout=2 -o StrictHostKeyChecking=no root@"$REMOTE_WIRELESS_IP" "cat /sys/class/net/wan/carrier" 2>/dev/null)
-            if [ "$CARRIER" = "1" ]; then
-                P1_RECOVERED=1
-            fi
-
-            if [ $P1_RECOVERED -eq 1 ]; then
-                log_msg "P1 physical carrier recovered on OpenWrt (wan carrier=1) — restoring P1"
-                activate_p1
-            else
-                # Still in P2: ensure OpenWrt wireless VTEP is still alive
-                if ! ping -c 2 -W 2 "$REMOTE_WIRELESS_IP" >/dev/null 2>&1; then
-                    log_msg "Wireless VTEP $REMOTE_WIRELESS_IP unreachable while in P2 — falling back to P3"
-                    activate_p3
-                fi
-            fi
-        elif [ "$CURRENT_STATE" = "P3" ]; then
-            # In P3, check if P1 recovered or wireless VTEP recovered
-            CARRIER=$(ssh -o BatchMode=yes -o ConnectTimeout=2 -o StrictHostKeyChecking=no root@"$REMOTE_WIRELESS_IP" "cat /sys/class/net/wan/carrier" 2>/dev/null)
-            if [ "$CARRIER" = "1" ]; then
-                log_msg "P1 physical carrier recovered — restoring P1"
-                activate_p1
-            elif ping -c 2 -W 2 "$REMOTE_WIRELESS_IP" >/dev/null 2>&1; then
-                log_msg "Wireless VTEP $REMOTE_WIRELESS_IP recovered — activating P2"
-                activate_p2
-            fi
-        else
-            # CURRENT_STATE is P1
-            # In P1, ping OpenWrt's wired IP. In P1, VLAN 1 is NOT on vxlan150,
-            # so this ping only succeeds over the physical wire.
-            if ping -c 2 -W 2 "$REMOTE_IP" >/dev/null 2>&1; then
-                if [ "$FAIL_COUNT" -gt 0 ]; then
-                    log_msg "P1 recovered (was at $FAIL_COUNT/$FAIL_THRESHOLD)"
-                fi
-                FAIL_COUNT=0
-            else
-                FAIL_COUNT=$((FAIL_COUNT + 1))
-                log_msg "P1 check failed: OpenWrt wired IP $REMOTE_IP unreachable ($FAIL_COUNT/$FAIL_THRESHOLD)"
-                if [ "$FAIL_COUNT" -ge "$FAIL_THRESHOLD" ]; then
-                    if ping -c 2 -W 2 "$REMOTE_WIRELESS_IP" >/dev/null 2>&1; then
-                        activate_p2
-                    else
-                        activate_p3
-                    fi
-                fi
+        # Guard invariant: If in P1, ensure VLAN 1 is NEVER on vxlan150
+        if [ "$CURRENT_STATE" = "P1" ]; then
+            if bridge vlan show dev "$VXLAN_IF" 2>/dev/null | grep -q " 1 "; then
+                log_msg "SAFETY VIOLATION: VLAN 1 detected on $VXLAN_IF during P1! Removing immediately..."
+                bridge vlan del dev "$VXLAN_IF" vid 1 2>/dev/null || true
             fi
         fi
 
-        [ "$DEBUG" = "1" ] && log_msg "State=$CURRENT_STATE Fails=$FAIL_COUNT/$FAIL_THRESHOLD"
+        [ "$DEBUG" = "1" ] && log_msg "State=$CURRENT_STATE (passive mode)"
     done
 }
 
@@ -242,19 +202,9 @@ case "$1" in
         exit 0
         ;;
     -m|--monitor|"")
-        log_msg "---- Starting State-Aware VXLAN Receiver Daemon ----"
+        log_msg "---- Starting State-Aware VXLAN Receiver Daemon (Passive Mode) ----"
         setup_interfaces
-        # Initial state determination
-        if ping -c 2 -W 2 "$REMOTE_IP" >/dev/null 2>&1; then
-            log_msg "Startup: Wired VTEP $REMOTE_IP reachable — activating P1 (Split-Trunking)"
-            activate_p1
-        elif ping -c 2 -W 2 "$REMOTE_WIRELESS_IP" >/dev/null 2>&1; then
-            log_msg "Startup: P1 unreachable, Wireless VTEP $REMOTE_WIRELESS_IP reachable — activating P2"
-            activate_p2
-        else
-            log_msg "Startup: Neither VTEP reachable — assuming P3"
-            activate_p3
-        fi
+        activate_p1
         monitor_loop
         ;;
     *)
@@ -262,3 +212,4 @@ case "$1" in
         exit 1
         ;;
 esac
+

@@ -48,9 +48,14 @@ ps | grep -E "failover.sh|vxlan-nm" | grep -v grep || echo "No failover daemons 
 echo "=== NETWORK INTERFACES & IPS ==="
 ip -br addr show
 
-echo "=== VXLAN 150 STATUS ==="
-ip -d link show vxlan150 2>/dev/null || echo "vxlan150 interface down or unconfigured"
+echo "=== VXLAN 150 & BRIDGE STATUS ==="
+bridge vlan show dev wan 2>/dev/null
+bridge vlan show dev vxlan150 2>/dev/null
 """
+
+
+
+
     code, out, err = run_ssh(ip, query_cmd, user=user)
     if code != 0:
         return f"❌ Error querying OpenWrt at {ip}: {err.strip()}"

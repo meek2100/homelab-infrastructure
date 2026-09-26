@@ -161,48 +161,45 @@ set_fail_count() {
 }
 
 check_p1() {
-    # wan always stays in bridge (managed by netifd)
-    # Check if wan is UP and forwarding
-    WAN_LINK=$(ip link show "$P1_IF" 2>/dev/null | head -1)
-    if echo "$WAN_LINK" | grep -q "state UP"; then
-        # wan is UP - check STP convergence
+    # Check physical carrier first (0 = disconnected, 1 = link present)
+    CARRIER=$(cat /sys/class/net/$P1_IF/carrier 2>/dev/null || echo 0)
+    [ "$CARRIER" = "0" ] && return 1
+
+    # In normal P1 mode (neither P2 nor P3 active), verify end-to-end ping to track IP
+    if [ ! -f /tmp/failover_p2_active ] && ! /etc/init.d/relayd status 2>/dev/null | grep -q "running"; then
+        # Check STP convergence if available
         STP_STATE=$(brctl showstp "$BR_IF" 2>/dev/null | grep -A3 "$P1_IF" | grep "state" | awk '{print $NF}')
-        if [ "$STP_STATE" != "forwarding" ]; then
+        if [ -n "$STP_STATE" ] && [ "$STP_STATE" != "forwarding" ]; then
             log_msg "P1 STP state: $STP_STATE (waiting for convergence)"
             return 0
         fi
-        ping -c 5 -W 3 -I 192.168.1.226 "$TRACK_IP" >/dev/null 2>&1
+        ping -c 3 -W 2 -I 192.168.1.226 "$TRACK_IP" >/dev/null 2>&1
         return $?
-    fi
-
-    # wan is DOWN - check if physical link is present (carrier)
-    # Cannot arping here: STP puts the bridge port in listening state for ~30s,
-    # which blocks L2 data frames. Carrier check is sufficient to trigger recovery;
-    # the normal UP-path ping validates end-to-end after STP converges.
-    ip link set "$P1_IF" up
-    for i in $(seq 1 5); do
-        if ip link show "$P1_IF" | grep -q "LOWER_UP"; then
-            break
+    else
+        # In P2 or P3 failover mode:
+        # wan has carrier=1. Verify if the upstream wireless bridge link has recovered
+        # using an isolated Layer 2 ARP query directly on wan (does not touch br-lan or loop)
+        if command -v arping >/dev/null 2>&1; then
+            arping -c 2 -w 2 -I "$P1_IF" "$TRACK_IP" >/dev/null 2>&1
+            return $?
+        else
+            return 0
         fi
-        sleep 1
-    done
-
-    CARRIER=$(cat /sys/class/net/$P1_IF/carrier 2>/dev/null || echo 0)
-
-    # Bring wan back DOWN if P2/P3 is currently active
-    if [ -f /tmp/failover_p2_active ] || /etc/init.d/relayd status 2>/dev/null | grep -q "running"; then
-        ip link set "$P1_IF" down
     fi
-    [ "$CARRIER" = "1" ] && return 0 || return 1
 }
 
 activate_p1() {
     log_msg "Activating Priority 1 (Wifi 7 Bridge)..."
     /etc/init.d/relayd stop >/dev/null 2>&1
-    # Remove VLAN 1 from VXLAN (Mutual Exclusion for VLAN 1, keep tagged VLANs active)
+    # 1. Remove VLAN 1 from VXLAN first to guarantee mutual exclusion
     bridge vlan del dev "$VXLAN_IF" vid 1 >/dev/null 2>&1
     rm -f /tmp/failover_p2_active
-    # Recreate vxlan150 bound to wired local 192.168.1.226
+
+    # 2. Inform VM 107 to remove VLAN 1 from its end
+    ensure_policy_routing
+    ssh -y -i /root/.ssh/id_ed25519 -o ConnectTimeout=3 -b 192.168.1.225 meek2100@"$VXLAN_SERVER_IP" 'sudo /usr/local/bin/vxlan-nm -p1' >/dev/null 2>&1
+
+    # 3. Recreate vxlan150 bound to wired local 192.168.1.226
     ip link del "$VXLAN_IF" 2>/dev/null
     ip link add "$VXLAN_IF" type vxlan id 150 dstport 4789 remote "$VXLAN_SERVER_IP" local 192.168.1.226
     ip link set "$VXLAN_IF" mtu 1450
@@ -211,20 +208,18 @@ activate_p1() {
     for vid in 10 20 30 40 100 150 200; do
         bridge vlan add dev "$VXLAN_IF" vid "$vid" 2>/dev/null
     done
-    # wan stays in bridge (managed by netifd), just bring it UP
-    ip link set "$P1_IF" up
-    # DSA PVID Restoration
+    bridge vlan del dev "$VXLAN_IF" vid 1 2>/dev/null || true
+
+    # 4. Restore VLAN 1 on wan without bouncing interface
     bridge vlan add dev "$P1_IF" vid 1 pvid untagged master >/dev/null 2>&1
     bridge vlan del dev "$P1_IF" vid 40 master >/dev/null 2>&1
     ip link set "$BR_IF" mtu 1500
-    # Restore br-lan routes (removed during P3 for wl1-sta0 upstream)
-    # Connected route first — kernel needs it to validate the gateway next-hop
+
+    # 5. Restore br-lan routes
     ip route add 192.168.1.0/24 dev "$BR_IF" proto static scope link src 192.168.1.226 metric 10 2>/dev/null
     ip route add default via 192.168.1.1 dev "$BR_IF" proto static metric 10 2>/dev/null
-    # Inform VM 107
-    ensure_policy_routing
-    ssh -y -i /root/.ssh/id_ed25519 -b 192.168.1.225 meek2100@"$VXLAN_SERVER_IP" 'sudo /usr/local/bin/vxlan-nm -p1' >/dev/null 2>&1 &
-    # ARP Storm Prevention: flush stale entries after topology change
+
+    # 6. Flush ARP/MAC entries after topology change
     ip neigh flush all >/dev/null 2>&1
     set_fail_count 0
     rm -f "$P1_DOWN_SINCE_FILE" "$P2_DOWN_SINCE_FILE"
@@ -234,17 +229,21 @@ activate_p1() {
 activate_p2() {
     log_msg "Activating Priority 2 (VXLAN Tunnel)..."
     /etc/init.d/relayd stop >/dev/null 2>&1
-    # Disable wan by bringing it DOWN (stays in bridge but STP disabled, no loops)
-    ip link set "$P1_IF" down
-    # Restore br-lan routes (removed during P3 for wl1-sta0 upstream)
-    # Connected route first — kernel needs it to validate the gateway next-hop
+
+    # 1. Remove VLAN 1 from wan port FIRST (Do not bring interface down, just remove VID 1)
+    bridge vlan del dev "$P1_IF" vid 1 master >/dev/null 2>&1
+
+    # 2. Restore br-lan routes
     ip route add 192.168.1.0/24 dev "$BR_IF" proto static scope link src 192.168.1.226 metric 10 2>/dev/null
     ip route add default via 192.168.1.1 dev "$BR_IF" proto static metric 10 2>/dev/null
-    # Set bridge and tunnel MTU to 1450 (1500 Physical - 50 VXLAN Overhead)
+
+    # 3. Set bridge and tunnel MTU to 1450
     ip link set "$BR_IF" mtu 1450
-    # Ensure source-based policy routing for wl1-sta0 underlay
+
+    # 4. Ensure source-based policy routing for wl1-sta0 underlay
     ensure_policy_routing
-    # Dynamically recreate vxlan150 bound to wl1-sta0 (192.168.1.225)
+
+    # 5. Dynamically recreate vxlan150 bound to wl1-sta0 (192.168.1.225)
     ip link del "$VXLAN_IF" 2>/dev/null
     ip link add "$VXLAN_IF" type vxlan id 150 dev wl1-sta0 dstport 4789 remote "$VXLAN_SERVER_IP" local 192.168.1.225
     ip link set "$VXLAN_IF" mtu 1450
@@ -253,31 +252,35 @@ activate_p2() {
     for vid in 10 20 30 40 100 150 200; do
         bridge vlan add dev "$VXLAN_IF" vid "$vid" 2>/dev/null
     done
-    # Add VLAN 1 to vxlan150 for failover
+
+    # 6. Inform VM 107 via SSH to bridge VLAN 1
+    ssh -y -i /root/.ssh/id_ed25519 -o ConnectTimeout=3 -b 192.168.1.225 meek2100@"$VXLAN_SERVER_IP" 'sudo /usr/local/bin/vxlan-nm -p2' >/dev/null 2>&1
+
+    # 7. Add VLAN 1 to vxlan150 locally
     bridge vlan add dev "$VXLAN_IF" vid 1 pvid untagged
     touch /tmp/failover_p2_active
-    # Inform VM 107
-    ssh -y -i /root/.ssh/id_ed25519 -b 192.168.1.225 meek2100@"$VXLAN_SERVER_IP" 'sudo /usr/local/bin/vxlan-nm -p2' >/dev/null 2>&1 &
-    # ARP Storm Prevention: flush stale entries after topology change
+
+    # 8. Flush ARP/MAC entries
     ip neigh flush all >/dev/null 2>&1
     log_msg "Priority 2 Active (Failover: VLAN 1 added to VXLAN via wl1-sta0)."
 }
 
 activate_p3() {
     log_msg "Activating Priority 3 (Relayd)..."
-    # Disable both P1 and P2 paths for VLAN 1
-    ip link set "$P1_IF" down
+    # Remove VLAN 1 from both P1 and P2
+    bridge vlan del dev "$P1_IF" vid 1 master >/dev/null 2>&1
     bridge vlan del dev "$VXLAN_IF" vid 1 >/dev/null 2>&1
     rm -f /tmp/failover_p2_active
     ip link set "$BR_IF" mtu 1500
+
     # Inform VM 107
     ensure_policy_routing
-    ssh -y -i /root/.ssh/id_ed25519 -b 192.168.1.225 meek2100@"$VXLAN_SERVER_IP" 'sudo /usr/local/bin/vxlan-nm -p3' >/dev/null 2>&1 &
-    # Remove br-lan default route so wl1-sta0 (metric 100) handles gateway/internet traffic
+    ssh -y -i /root/.ssh/id_ed25519 -o ConnectTimeout=3 -b 192.168.1.225 meek2100@"$VXLAN_SERVER_IP" 'sudo /usr/local/bin/vxlan-nm -p3' >/dev/null 2>&1 &
+
+    # Remove default route on br-lan so wl1-sta0 handles gateway
     ip route del default via 192.168.1.1 dev "$BR_IF" metric 10 2>/dev/null
-    # Ensure local connected subnet route on br-lan remains active for switch clients (PC, switch UI)
     ip route add 192.168.1.0/24 dev "$BR_IF" proto static scope link src 192.168.1.226 metric 10 2>/dev/null
-    # ARP Storm Prevention: flush stale entries after topology change
+
     ip neigh flush all >/dev/null 2>&1
     if ! /etc/init.d/relayd status 2>/dev/null | grep -q "running"; then
         /etc/init.d/relayd start >/dev/null 2>&1
@@ -293,15 +296,19 @@ run_monitor() {
         fi
         set_fail_count 0
         rm -f "$P1_DOWN_SINCE_FILE" "$P2_DOWN_SINCE_FILE"
-        # Ensure wan is UP and vxlan does not have VLAN 1
-        WAN_STATE=$(ip link show "$P1_IF" 2>/dev/null | head -1)
-        if echo "$WAN_STATE" | grep -qv "state UP"; then
+
+        # Check if we need to restore P1 (if P2/P3 active or VID 1 missing from wan or VID 1 on vxlan)
+        if [ -f /tmp/failover_p2_active ] || /etc/init.d/relayd status 2>/dev/null | grep -q "running"; then
+            log_msg "P1 detected healthy while failover was active — restoring P1"
+            activate_p1
+        elif ! bridge vlan show dev "$P1_IF" 2>/dev/null | grep -q " 1 "; then
             activate_p1
         elif bridge vlan show dev "$VXLAN_IF" 2>/dev/null | grep -q " 1 "; then
             activate_p1
         fi
         exit 0
     fi
+
 
     # P1 check failed - increment and check threshold
     FAILS=$(get_fail_count)
