@@ -7,7 +7,7 @@ This document tracks all manual setup tasks required to activate your notificati
 ## 📋 Task Summary
 
 - [x] **Task 1**: [Configure Alertmanager Secrets (Pushover & SMTP)](#task-1-configure-alertmanager-secrets-pushover--smtp) — 🟢 **Active & Configured**
-- [ ] **Task 2**: [Install Proxmox Backup Server (PBS) on Node 3 (`pve3`)](#task-2-install-proxmox-backup-server-on-pve3)
+- [ ] **Task 2**: [Install Proxmox Backup Server (Debian 12 LXC on `pve3`)](#task-2-install-proxmox-backup-server-debian-12-lxc-container-on-pve3)
 - [ ] **Task 3**: [Initialize PBS Datastore & Generate API Token](#task-3-initialize-pbs-datastore--generate-api-token)
 - [ ] **Task 4**: [Register PBS Storage on `pve`, `pve2`, and `pve3`](#task-4-register-pbs-storage-on-all-nodes)
 - [ ] **Task 5**: [Transition Backup Schedule from Legacy vzdump to PBS](#task-5-transition-backup-schedule-to-pbs)
@@ -52,39 +52,87 @@ Stack 71 on `nexus-server` is actively monitoring 49 targets and evaluating 9 al
 
 ---
 
-## Task 2: Install Proxmox Backup Server on `pve3`
+## Task 2: Install Proxmox Backup Server (Debian 12 LXC Container on `pve3`)
 
-Installs PBS natively on Node 3 (HP EliteDesk, `192.168.1.245` / `10.25.25.245`) alongside Proxmox VE.
+Because `pve3` host runs Debian 13 (Trixie), PBS (built for Debian 12 Bookworm) is deployed inside a dedicated, lightweight Debian 12 LXC container (CT 105). This gives bare-metal speed with 0% host library conflicts.
 
-### Commands to run as `root` on `pve3`:
+### Step 2.1: Download Debian 12 Template on `pve3`
+Run on `root@pve3`:
 ```bash
-# 1. Add the PBS No-Subscription repository
+# Update template catalogue
+pveam update
+
+# Download the latest Debian 12 standard template
+TEMPLATE=$(pveam available | grep -o 'debian-12-standard_[^ ]*' | head -n 1)
+pveam download local "$TEMPLATE"
+```
+
+### Step 2.2: Provision the PBS LXC Container (CT 105)
+Run on `root@pve3`:
+```bash
+TEMPLATE=$(pveam list local | grep -o 'debian-12-standard_[^ ]*' | head -n 1)
+
+# Create container with dual-NIC (Management LAN + Private SAN)
+pct create 105 "local:vztmpl/$TEMPLATE" \
+  --hostname pbs-server \
+  --ostype debian \
+  --cores 2 \
+  --memory 2048 \
+  --swap 1024 \
+  --storage local-lvm \
+  --rootfs local-lvm:16 \
+  --net0 name=eth0,bridge=vmbr0,ip=192.168.1.244/24,gw=192.168.1.1 \
+  --net1 name=eth1,bridge=vmbr1,ip=10.25.25.244/24 \
+  --nameserver "192.168.1.1 1.1.1.1" \
+  --onboot 1 \
+  --unprivileged 0 \
+  --features nesting=1
+
+# Bind mount the host backup disk /mnt/pve/backup into /backup in the container
+mkdir -p /mnt/pve/backup/pbs-datastore
+pct set 105 -mp0 /mnt/pve/backup,mp=/backup
+
+# Start the container
+pct start 105
+```
+
+### Step 2.3: Install PBS Inside Container CT 105
+Enter the container shell:
+```bash
+pct enter 105
+```
+
+Inside the container (`root@pbs-server:~#`), run:
+```bash
+# 1. Add PBS No-Subscription repository
 echo "deb http://download.proxmox.com/debian/pbs bookworm pbs-no-subscription" > /etc/apt/sources.list.d/pbs-no-subscription.list
 
-# 2. Update and install Proxmox Backup Server packages
+# 2. Add Proxmox repository key
+wget https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg -O /etc/apt/trusted.gpg.d/proxmox-release-bookworm.gpg
+
+# 3. Install Proxmox Backup Server
 apt update && apt install -y proxmox-backup-server
 
-# 3. Confirm PBS services are active
+# 4. Verify services are running
 systemctl status proxmox-backup proxmox-backup-proxy
 ```
 
-*PBS Web UI will now be available at:* `https://10.25.25.245:8007` (or `https://192.168.1.245:8007`).
+*PBS Web UI is now available at:* `https://192.168.1.244:8007` (and `https://10.25.25.244:8007`).
 
 ---
 
 ## Task 3: Initialize PBS Datastore & Generate API Token
 
-Sets up the deduplicated backup pool and generates a secure API token for hypervisor authentication.
+Sets up the deduplicated backup pool on `/backup/pbs-datastore` and generates a secure API token.
 
-### Commands to run as `root` on `pve3`:
+### Commands to run inside CT 105 (`pct enter 105`):
 ```bash
-# 1. Create the backup directory and datastore
-mkdir -p /mnt/pve/backup-datastore
-chown -R backup:backup /mnt/pve/backup-datastore
-proxmox-backup-manager datastore create homelab-datastore /mnt/pve/backup-datastore
+# 1. Set permissions and create datastore
+chown -R backup:backup /backup/pbs-datastore
+proxmox-backup-manager datastore create homelab-datastore /backup/pbs-datastore
 
 # 2. Create the backup user and API token
-proxmox-backup-manager user create pve-backup@pbs --comment "PVE Backup Agent"
+proxmox-backup-manager user create pve-backup@pbs --comment "PVE Hypervisor Backup Agent"
 proxmox-backup-manager user generate-token pve-backup@pbs backup-token
 
 # 3. Assign backup permissions to the token
@@ -101,12 +149,12 @@ proxmox-backup-manager cert info | grep Fingerprint
 
 ## Task 4: Register PBS Storage on All Nodes
 
-Adds PBS as a native storage target across all 3 nodes over the private `10.25.25.0/24` SAN network (`vmbr1`).
+Adds PBS as a native storage target across all 3 nodes over the private `10.25.25.0/24` SAN network (`vmbr1` connecting to `10.25.25.244`).
 
 ### Commands to run on `pve` (`192.168.1.250`), `pve2` (`10.25.25.240`), and `pve3` (`192.168.1.245`):
 ```bash
 pvesm add pbs pbs-backup \
-    --server 10.25.25.245 \
+    --server 10.25.25.244 \
     --datastore homelab-datastore \
     --username pve-backup@pbs!backup-token \
     --password "<TOKEN_SECRET_FROM_TASK_3>" \
@@ -114,6 +162,7 @@ pvesm add pbs pbs-backup \
     --encryption-key autogen \
     --prune-backups keep-last=7,keep-daily=7,keep-weekly=4,keep-monthly=12
 ```
+
 
 ---
 
