@@ -447,6 +447,21 @@ def verify_netgear_switch(baseline_file: str = "", ip: str = "192.168.1.220") ->
     if ip != "192.168.1.220": args.extend(["--ip", ip])
     return run_script("manage-netgear-switch.py", args)
 
+@mcp.tool()
+def get_external_services_status() -> str:
+    """Zero-trust synthetic health audit for theurer.dev web and mail.theurer.dev mail infrastructure."""
+    return run_script("manage-external-services.py", ["status"])
+
+@mcp.tool()
+def check_ssl_certificates() -> str:
+    """Audits TLS/SSL certificate lifecycles and days remaining for theurer.dev and mail.theurer.dev."""
+    return run_script("manage-external-services.py", ["ssl"])
+
+@mcp.tool()
+def audit_email_pipeline() -> str:
+    """Audits email submission (SMTP :587), IMAPS (:993), and webmail health for mail.theurer.dev."""
+    return run_script("manage-external-services.py", ["mail"])
+
 if __name__ == "__main__":
     mcp.run()
 

@@ -342,13 +342,35 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
 > **Status: 🟢 100% Deployed & Operational**
 > Unifies all 155 containerized apps across 85 stacks, all 3 Proxmox hypervisors, physical networking hardware, external infrastructure (`theurer.dev`, `mail.theurer.dev`), centralized Loki logging, and establishes the blueprint for Proxmox Backup Server (PBS).
 
-### 1. External Systems Zero-Trust Architecture (`theurer.dev` & `mail.theurer.dev`) — 🟢 Active
-- **Security Invariant**: Strictly outbound synthetic probing. Zero inbound network ports or exposure opened into the homelab LAN.
-- **Scrape Targets**:
-  - `theurer.dev`: Continuous HTTP 200 validation and SSL certificate lifecycle tracking (currently expires in 59 days).
-  - `mail.theurer.dev`: Webmail HTTP 200, SMTP Submission port 587 TCP connect & banner verification, IMAPS port 993, and TLS certificate lifecycle tracking (currently expires in 59 days).
-- **Dedicated MCP Tool**:
-  - [`mcp/homelab/scripts/manage-external-services.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/manage-external-services.py): Non-intrusive status, SSL lifecycle inspection, mail pipeline health check, and public DNS (SPF/DKIM/DMARC) resolution audit.
+### 1. External Systems Architecture (`theurer.dev` & `mail.theurer.dev`) — 🟢 100% Integrated
+
+A comprehensive external telemetry, diagnostic, and log ingestion framework protecting critical web and email infrastructure without compromising internal LAN security boundaries:
+
+- **Security Invariants**:
+  - Outbound synthetic probes and secure VPN log shipping.
+  - Zero inbound ports opened on the residential/homelab router.
+  - All public metrics collected non-intrusively from the monitoring stack.
+
+- **Suite of FastMCP Tools** (Integrated in [`mcp/homelab/server.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/server.py)):
+  - `get_external_services_status`: Executes full health audit across web (`theurer.dev`), mail (`mail.theurer.dev`), SSL certificates, and public DNS records.
+  - `check_ssl_certificates`: Continuous tracking of TLS/SSL certificate expiration dates and days remaining for HTTPS (443) and IMAPS (993).
+  - `audit_email_pipeline`: In-depth mail diagnostic testing Postfix submission handshake on port 587, IMAPS retrieval on port 993, and Roundcube webmail HTTP response.
+
+- **Continuous 24/7 Synthetic Prometheus Monitoring**:
+  - `https://theurer.dev`: HTTP 200 validation and SSL expiration countdown (`blackbox_http` & `blackbox_ssl`).
+  - `https://mail.theurer.dev`: Webmail HTTP 200 validation (`blackbox_http`).
+  - `mail.theurer.dev:587`: TCP connect, latency, and banner check (`220 mail.theurer.dev ESMTP Postfix`) (`blackbox_tcp`).
+  - `mail.theurer.dev:993`: IMAPS TLS port check (`blackbox_tcp` & `blackbox_ssl`).
+  - **Alerting Rules**: `ExternalServiceDown` (P1 Critical, Pushover siren) and `ExternalSSLCertExpiringSoon` (Warning if < 14 days).
+
+- **Consolidated External Log Ingestion Pipeline (Loki 3.0)**:
+  - **Architecture**: Distributed Promtail daemon instances installed on the external Ubuntu web and mail hosts.
+  - **Transport**: Secured via private Tailscale mesh (or WireGuard client connecting to Stack 20 `wg-easy`) forwarding directly to `http://100.x.y.z:3100/loki/api/v1/push`.
+  - **Log Streams Captured**:
+    - Nginx Web Server: `/var/log/nginx/access.log` and `/var/log/nginx/error.log` (labeled `service="theurer.dev-web"`).
+    - Postfix & Dovecot Mail Server: `/var/log/mail.log` and `/var/log/mail.err` (labeled `service="theurer.dev-mail"`).
+    - Host Security / SSH: `/var/log/auth.log` (monitoring for failed external SSH attempts).
+  - **Unified Log Explorer**: Live streams, full-text regex search, and security auditing fully unified inside the **Homelab Command & Control Center** Grafana dashboard.
 
 ### 2. Proxmox Backup Server (PBS) Centralization — 📄 Runbook Ready
 - **Goal**: Retire legacy per-node `vzdump` full dumps and replace with fast, deduplicated incremental backups over the dedicated `10.25.25.0/24` SAN network (`vmbr1`).
