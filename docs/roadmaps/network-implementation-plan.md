@@ -375,7 +375,7 @@ A comprehensive external telemetry, diagnostic, and log ingestion framework prot
 ### 2. Proxmox Backup Server (PBS) Centralization — 📄 Runbook Ready
 - **Goal**: Retire legacy per-node `vzdump` full dumps and replace with fast, deduplicated incremental backups over the dedicated `10.25.25.0/24` SAN network (`vmbr1`).
 - **Runbook**: [`docs/runbooks/proxmox-backup-server.md`](file:///home/agentsvc/repos/homelab-infrastructure/docs/runbooks/proxmox-backup-server.md)
-- **Status**: Complete step-by-step instructions documented in [`MANUAL-SETUP-TODOS.md`](file:///home/agentsvc/repos/homelab-infrastructure/MANUAL-SETUP-TODOS.md) for installation on `pve3` and client registration across `pve`, `pve2`, and `pve3`.
+- **Status**: Complete step-by-step instructions documented in [`.agents/MANUAL-SETUP-TODOS.md`](file:///home/agentsvc/repos/homelab-infrastructure/.agents/MANUAL-SETUP-TODOS.md) for installation on `pve3` and client registration across `pve`, `pve2`, and `pve3`.
 
 ### 3. Distributed Fleet Telemetry Pods (Full In-Guest & Container Visibility) — 🟢 100% Deployed & Active
 - **Deployed Fleet**: Standardized lightweight telemetry agent pods (`node-exporter` :9100 + `cAdvisor` :8088) deployed across all Docker VMs via `mcp/homelab/scripts/deploy-telemetry-fleet.py`:
