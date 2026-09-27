@@ -7,7 +7,7 @@ This document tracks all manual setup tasks required to activate your notificati
 ## 📋 Task Summary
 
 - [x] **Task 1**: [Configure Alertmanager Secrets (Pushover & SMTP)](#task-1-configure-alertmanager-secrets-pushover--smtp) — 🟢 **Active & Configured**
-- [ ] **Task 2**: [Install Proxmox Backup Server (Debian 12 LXC on `pve3`)](#task-2-install-proxmox-backup-server-debian-12-lxc-container-on-pve3)
+- [x] **Task 2**: [Install Proxmox Backup Server (Debian 12 LXC on `pve3`)](#task-2-install-proxmox-backup-server-debian-12-lxc-container-on-pve3) — 🟢 **Installed & Running (CT 105)**
 - [ ] **Task 3**: [Initialize PBS Datastore & Generate API Token](#task-3-initialize-pbs-datastore--generate-api-token)
 - [ ] **Task 4**: [Register PBS Storage on `pve`, `pve2`, and `pve3`](#task-4-register-pbs-storage-on-all-nodes)
 - [ ] **Task 5**: [Transition Backup Schedule from Legacy vzdump to PBS](#task-5-transition-backup-schedule-to-pbs)
@@ -52,12 +52,11 @@ Stack 71 on `nexus-server` is actively monitoring 49 targets and evaluating 9 al
 
 ---
 
-## Task 2: Install Proxmox Backup Server (Debian 12 LXC Container on `pve3`)
+## Task 2: Install Proxmox Backup Server (Debian 12 LXC Container on `pve3`) — 🟢 Completed
 
-Because `pve3` host runs Debian 13 (Trixie), PBS (built for Debian 12 Bookworm) is deployed inside a dedicated, lightweight Debian 12 LXC container (CT 105). This gives bare-metal speed with 0% host library conflicts.
+PBS is successfully installed and running inside dedicated Debian 12 LXC Container CT 105 (`pbs-server`) with services `proxmox-backup` and `proxmox-backup-proxy` active. Web management is listening at `https://192.168.1.244:8007` and `https://10.25.25.244:8007`.
 
-### Step 2.1: Download Debian 12 Template on `pve3`
-Run on `root@pve3`:
+### Deployed Configuration Reference:
 ```bash
 # Update template catalogue
 pveam update
