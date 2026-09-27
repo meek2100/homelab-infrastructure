@@ -4,7 +4,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 
 ---
 
-## 📈 Progress Summary — Last Updated 2026-09-26
+## 📈 Progress Summary — Last Updated 2026-09-27
 
 | Part | Title | Status |
 | :--- | :--- | :---: |
@@ -15,8 +15,10 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Part 2.7** | vxlan-server Split Trunking Architecture (VM 107) | 🟢 Complete — Wire-speed untagged VLAN 1 via AP bridge, isolated tagged VLANs encapsulated over VXLAN 150 |
 | **Part 2.8** | Netgear GS108Ev2 Office Switch GitOps & Backup | 🟢 Complete — Native NSDP packet driver, L2 relay, and binary/JSON backups verified |
 | **Part 2.9** | Wireshark Headless SPAN Sniffer & Storage Engine (Stack 48) | 🟢 Hardened — 500M tmpfs, 50MB chunks, watchdog, continuous 24h FIFO |
-| **Part 3** | Observability Engine & Synthetic Probing (Stack 71) | ✅ 100% Deployed & Active (10 containers, Alertmanager, Blackbox, external targets) |
-| **Part 4** | Unified Full-Fleet Control Center, External Systems & PBS | 🟢 Active — 49/49 targets UP, distributed agent pods active on 4 VMs, Loki streaming all containers |
+| **Part 3** | Observability Engine & Synthetic Probing (Stack 71) | 🟢 100% Deployed & Active (10 containers, Alertmanager, Blackbox, external targets) |
+| **Part 4** | Unified Full-Fleet Control Center, External Systems & PBS Foundation | 🟢 100% Deployed & Active (49/49 targets UP, distributed agent pods active on 4 VMs, Loki streaming all containers) |
+| **Part 5** | Production Operationalization, PBS Migration & Hardening (Remaining Roadmap) | 🟡 Actionable Roadmap (PBS Storage, Schedule Transition, pve2 Routing Parity, Alert Verification, Log Shipping) |
+| **Part 6** | Comprehensive Architectural Learnings & Production Gotchas | 📚 Documented & Enforced Across Fleet |
 
 ### Key Protocol Constraints & Architecture Settled
 - **Netgear GS108Ev2** — No HTTP REST API. Uses **NSDP** (Layer 2 UDP, ports 63321/63322). The `backup_netgear_switch` / `get_netgear_switch_status` MCP tools execute via pure Python NSDP using an automated Layer 2 adjacent relay hierarchy: primary OpenWrt router (`192.168.1.226` on `br-lan`) with fallback to Proxmox `pve` (`192.168.1.250` on `vmbr0`). Live telemetry and synchronized dual JSON/binary GitOps backups are 100% verified.
@@ -403,6 +405,160 @@ A comprehensive external telemetry, diagnostic, and log ingestion framework prot
   5. **Docker Container Fleet Telemetry (cAdvisor)**: Top 8 Containers by Memory Usage, Top 8 Containers by CPU Utilization across all VMs.
   6. **Application Web Services & API Matrix**: Real-time HTTP health stat grid (Grafana, NPM, Portainer, Home Assistant, Plex, AdGuard Primary & Secondary).
   7. **Consolidated Live Loki Log Explorer**: Unified log explorer streaming stdout/stderr from all VMs and 42+ containers with instant regex search and multi-label filtering.
+
+---
+
+## 🚀 Part 5: Production Operationalization, PBS Migration & Hardening (Remaining Roadmap)
+
+> **Status: 🟡 Active Implementation Phase**
+> This part bridges completed Phase 1 read-only audits and monitoring into full production operationalization across backup pipelines, cluster-wide storage registration, symmetrical routing remediation, and alert routing validation.
+
+### 5.1: Hypervisor Symmetrical Routing Remediation (`pve2` Asymmetric Blackhole Fix)
+- **Problem Statement**:
+  `pve2` has two invalid sub-interfaces in `/etc/network/interfaces` (`vmbr0.40` on `192.168.40.240/24` and `vmbr0.50` on `192.168.50.240/24`). Because the physical port is an untagged access port, `pve2`'s kernel drops incoming inter-VLAN packets from `nexus-server` (`192.168.40.185`) via Linux Strict Reverse Path Filtering (`rp_filter=1`) or tries to reply out `vmbr0.40` with 802.1Q tags. This completely breaks NPM reverse proxying to `https://pve2.secure.theurer.dev/` and Tailscale remote access to `192.168.1.240`.
+- **Target Architecture**:
+  Bring `pve2` into exact parity with `pve` (`192.168.1.250`) and `pve3` (`192.168.1.245`). Hypervisors belong strictly on VLAN 1 (`192.168.1.0/24`) with default gateway `192.168.1.1` on `vmbr0`, and dedicated SAN storage on `vmbr1` (`10.25.25.0/24`).
+- **Action Items**:
+  1. Back up `/etc/network/interfaces` on `pve2` and strip `vmbr0.40` and `vmbr0.50`.
+  2. Execute `ifreload -a` on `root@pve2` (or delete virtual links via `ip link delete vmbr0.40`).
+  3. Verify `ip route show` has only `default via 192.168.1.1 dev vmbr0`, `192.168.1.0/24 dev vmbr0`, and `10.25.25.0/24 dev vmbr1`.
+  4. Test NPM proxy host `pve2.secure.theurer.dev` ➔ `https://192.168.1.240:8006` with WebSockets enabled, confirming HTTP 200.
+  5. Realign Prometheus Stack 71 scrape target for `proxmox_pve2` from workaround `10.25.25.240` back to standard management IP `192.168.1.240`.
+  6. Confirm full isolation: `10.25.25.0/24` on `vmbr1` is used exclusively for wire-speed storage and PBS backups; management traffic remains on `192.168.1.0/24`.
+
+### 5.2: Proxmox Backup Server (PBS) Cluster-Wide Storage Activation
+- **Current State**: 🟢 CT 105 (`pbs-server`) is running on `pve3` with services `proxmox-backup` and `proxmox-backup-proxy` active. Storage `/backup/pbs-datastore` bind-mounted to `/mnt/pve/backup/pbs-datastore`. Web UI active at `https://192.168.1.244:8007` and `https://10.25.25.244:8007`.
+- **Root Cause of Storage Registration Failure**:
+  PBS evaluates `Effective Permissions = User_Permissions ∩ Token_Permissions`. Token `pve-backup@pbs!backup-token` was created, but parent user `pve-backup@pbs` had no ACLs, causing `Cannot find datastore 'homelab-datastore', check permissions and existence!` during `pvesm add pbs`.
+- **Action Items**:
+  1. Inside CT 105 (`pct enter 105` on `pve3`), grant parent user ACLs:
+     ```bash
+     proxmox-backup-manager acl update /datastore DatastoreAdmin --auth-id 'pve-backup@pbs'
+     proxmox-backup-manager acl update / DatastoreAudit --auth-id 'pve-backup@pbs'
+     ```
+  2. Register `pbs-backup` storage pool on all 3 Proxmox nodes (`pve`, `pve2`, `pve3`):
+     ```bash
+     pvesm add pbs pbs-backup \
+         --server 10.25.25.244 \
+         --datastore homelab-datastore \
+         --username 'pve-backup@pbs!backup-token' \
+         --password "fa169883-ef90-4dd9-b307-4a16f94e354c" \
+         --fingerprint "02:9a:df:82:ab:b9:d4:f9:cf:d5:0a:9a:da:56:00:42:01:23:3c:9c:8d:8f:6f:cf:18:5e:9a:23:6e:f7:52:ff" \
+         --encryption-key autogen \
+         --prune-backups keep-last=7,keep-daily=7,keep-weekly=4,keep-monthly=12
+     ```
+  3. Verify cluster storage status across all nodes:
+     ```bash
+     pvesm status --storage pbs-backup
+     ```
+
+### 5.3: Transition Backup Schedules (Legacy vzdump ➔ PBS Daily Incremental CBT)
+- **Goal**: Decommission uncompressed full-disk `vzdump` jobs that cause heavy I/O and long backup windows, replacing them with daily deduplicated chunk-based incremental backups over the `10.25.25.0/24` SAN bridge.
+- **Action Items**:
+  1. In Proxmox Web GUI (Datacenter ➔ Backup): Delete or disable existing weekly `vzdump` backup jobs.
+  2. Create unified daily PBS backup schedule:
+     - **Selection**: All Guests across all 3 nodes (`pve`, `pve2`, `pve3`).
+     - **Storage Target**: `pbs-backup` (`10.25.25.244`).
+     - **Schedule**: Daily at `02:00` UTC.
+     - **Mode**: Snapshot with client-side encryption.
+     - **Pruning**: Retention enforced via PBS (`keep-last=7, keep-daily=7, keep-weekly=4, keep-monthly=12`).
+  3. Execute baseline initial backup on a test guest (e.g. `nexus-server2` VM 100 on `pve3`) to seed the deduplication datastore.
+  4. Trigger immediate second backup and verify QEMU Changed Block Tracking (CBT) completes in **under 30 seconds** with zero guest downtime.
+
+### 5.4: End-to-End Alerting Pipeline Validation & Routing Verification
+- **Current State**: Alertmanager Stack 71 is configured with decrypted SOPS credentials (`secrets.enc.yaml`) routing to Pushover and SMTP.
+- **Action Items**:
+  1. Fire synthetic test alert to Alertmanager:
+     ```bash
+     curl -H "Content-Type: application/json" -d '[{
+       "labels": {
+         "alertname": "TestAlert",
+         "severity": "critical",
+         "instance": "test-box"
+       },
+       "annotations": {
+         "summary": "Homelab Alertmanager Verification Test",
+         "description": "Verifying Pushover siren priority and SMTP email delivery."
+       }
+     }]' http://192.168.40.185:9093/api/v2/alerts
+     ```
+  2. Verify receipt on mobile device via Pushover app (confirming high-priority emergency siren sound).
+  3. Verify receipt in email inbox (`dave@theurer.dev`).
+  4. Review threshold calibrations across all 9 production alert rules:
+     - `SwitchPortLinkDown` (Warning on core trunks 1/0/1–1/0/4)
+     - `SwitchPortCRCErrors` (Warning on corrupted frames)
+     - `PrinterSupplyLow` (Warning when toner or label capacity drops below 15%)
+     - `SSLCertExpiringSoon` (Warning when internal or external SSL cert has < 14 days remaining)
+     - `TargetDown` / `BlackboxProbeFailed` (Critical P1 alert)
+
+### 5.5: External Host Tailscale Onboarding & Zero-Trust Promtail Log Shipping
+- **Goal**: Ingest live Nginx access/error logs from `theurer.dev` and Postfix/Dovecot/auth logs from `mail.theurer.dev` into central Loki 3.0 on `nexus-server` (`192.168.40.185:3100`) without opening inbound firewall ports.
+- **Action Items**:
+  1. On `theurer.dev` and `mail.theurer.dev`, install and connect Tailscale:
+     ```bash
+     curl -fsSL https://tailscale.com/install.sh | sh
+     tailscale up
+     ```
+  2. Install Promtail daemon on both external hosts.
+  3. Deploy Promtail configuration forwarding to `http://192.168.40.185:3100/loki/api/v1/push` (or Tailscale IP `http://100.70.65.45:3100/loki/api/v1/push` via subnet router Stack 69).
+  4. Verify log streams labeled `host="theurer.dev"` (`/var/log/nginx/*log`) and `host="mail.theurer.dev"` (`/var/log/mail.log`, `/var/log/auth.log`) appear dynamically in the Grafana **Homelab Command & Control Center** Consolidated Log Explorer.
+
+### 5.6: Phase 2 Automation, Scheduled Snapshots & GitOps Drills
+- **Action Items**:
+  1. Programmatic VM/LXC snapshot scheduling using native FastMCP tool `manage-vm-snapshots.py` prior to container or guest OS upgrades.
+  2. GitOps auto-sync for Netgear switch NSDP state and Araknis switch/router backups.
+  3. Semi-annual secret rotation drill: Re-encrypting `secrets.enc.yaml` files with updated age recipient keys.
+
+---
+
+## 🧠 Part 6: Comprehensive Architectural Learnings & Production Gotchas
+
+This section records empirical hard-won discoveries and architectural invariants established during homelab hardening.
+
+### 1. Proxmox Backup Server (PBS) Token Permission Intersection
+- **The Gotcha**: Proxmox Backup Server evaluates API token permissions using an intersection rule:
+  $$\text{Effective Permissions} = \text{User Permissions} \cap \text{Token Permissions}$$
+- **The Failure Mode**: Creating an API token `pve-backup@pbs!backup-token` and granting it `DatastoreBackup` on `/datastore/homelab-datastore` while the parent user `pve-backup@pbs` has no permissions results in an empty permission set. When PVE nodes run `pvesm add pbs`, PBS rejects the connection with:
+  `create storage failed: pbs-backup: Cannot find datastore 'homelab-datastore', check permissions and existence!`
+- **The Invariant**: Always grant parent user permissions (`DatastoreAdmin` on `/datastore` and `DatastoreAudit` on `/`) or assign permissions directly to the user identity before generating backup tokens.
+
+### 2. Debian 13 (Trixie) 64-bit time_t Drift vs. Debian 12 LXC Isolation
+- **The Gotcha**: Host `pve3` runs Debian 13 (Trixie testing) which underwent the Debian 64-bit `time_t` ABI transition (e.g. `libapt-pkg6.0t64`, `libsgutils2-1.48t64`). Upstream Proxmox Backup Server packages are currently compiled strictly for Debian 12 (Bookworm) (`libapt-pkg6.0`, `libsgutils2-2`). Installing PBS directly on bare-metal `pve3` breaks APT package resolution with unresolvable dependencies.
+- **The Solution**: Provisioning a lightweight Debian 12 LXC container (`CT 105`) on `pve3` with nesting enabled and bind-mounting the host backup disk (`/mnt/pve/backup` ➔ `/backup`) completely isolates the host OS from Debian library drift, allowing PBS to install official packages cleanly in under 2 minutes.
+
+### 3. Hypervisor Multi-Homing & Asymmetric Routing (`rp_filter` Blackhole)
+- **The Gotcha**: Assigning IP addresses to VLAN sub-interfaces (e.g. `vmbr0.40` on `192.168.40.240/24`) on a hypervisor whose physical uplink port is an untagged access port creates silent packet loss.
+- **The Failure Mode**: When an inter-VLAN request arrives from `nexus-server` (`192.168.40.185`) on `vmbr0`, Linux kernel Strict Reverse Path Filtering (`rp_filter=1`) checks the routing table. Because the route for `192.168.40.0/24` points to `vmbr0.40`, the kernel drops the packet as spoofed. Even if accepted, replies are transmitted with 802.1Q tags onto an untagged switch port, breaking NPM reverse proxying and Tailscale routing.
+- **The Invariant**: Hypervisors must maintain a single management IP on VLAN 1 (`192.168.1.0/24`) with default gateway `192.168.1.1` on `vmbr0`, and an isolated SAN IP on `vmbr1` (`10.25.25.0/24`). Never configure host IPs on VM VLANs (`vmbr0.40`, `vmbr0.50`).
+
+### 4. QEMU Guest Agent (QGA) Binary Base64 Corruption & Stdin Hangs
+- **The Gotcha**: Using `qm guest exec` to extract files from guest VMs returns standard output wrapped in a JSON envelope (`{"out-data": "..."}`). Piping this output directly to a host file irreversibly corrupts binary formats (SQLite databases, compressed tarballs).
+- **The Invariant**: All binary data extracted via QGA must be base64-encoded inside the guest (`base64 -w 0 <file>`), parsed from JSON, and decoded using `base64.b64decode()` in Python. Conversely, passing raw text via stdin with `--pass-stdin 1` hangs indefinitely without a TTY; files written into guests must be base64-encoded on the host and decoded inside the VM via `echo '<b64>' | base64 -d > <target>`.
+
+### 5. Docker Compose Container Name Collisions on Redeployment
+- **The Gotcha**: When deploying or re-deploying Docker Compose stacks with explicit container names (`container_name: ...`), pre-existing stopped or exited containers cause Docker Compose to abort with `Conflict. The container name "..." is already in use`.
+- **The Invariant**: Deployment scripts (`deploy-monitoring-stack.py`, `restore-docker-stacks.py`) must inspect container lifecycle states, removing exited containers prior to invoking `docker compose up -d`.
+
+### 6. File Metadata & UID/GID Preservation Gap
+- **The Gotcha**: Extracting configuration files or databases from containers via `cat` or QGA completely strips Linux file permissions (`chmod`) and ownership (`chown`). Restoring a container database as `root:root` (0:0) instead of the required application UID (e.g. UID 1000 for Home Assistant or NPM) triggers immediate container crash loops with `Permission Denied`.
+- **The Invariant**: File extraction scripts must record file metadata using `stat -c '%a:%u:%g'` alongside content and re-apply permissions upon restoration.
+
+### 7. Multicast Forwarding Loops & Permanent Retirement of Software Relays
+- **The Gotcha**: Containerized software relays (such as `multicast-relay` or `avahi-daemon` bridging multiple Docker networks) forward multicast packets across interfaces in userspace. When running in a network with hardware mDNS repeaters, software relays create duplicate forwarders, causing severe broadcast storms, switch port damping, and FDB MAC flapping.
+- **The Invariant**: Multicast discovery across VLANs must be handled exclusively by native hardware: the Araknis 520 Bonjour mDNS repeater and Araknis 920 IGMP Snooping Querier. Software multicast bridges are permanently retired.
+
+### 8. Wireless Point-to-Point Bridge 802.1Q Tag Stripping & Split Trunking
+- **The Gotcha**: The Araknis 830 AP 5GHz wireless backhaul strips 802.1Q VLAN tags across the link to the office. Bridging untagged VLAN 1 in parallel with a virtual tunnel causes instant Layer 2 broadcast loops and switch port shutdown.
+- **The Invariant**: Split Trunking architecture: Untagged VLAN 1 (Management) traverses the physical wireless bridge natively at wire speed (1500 MTU). All tagged VLANs (10, 20, 30, 40, 100, 150, 200) are encapsulated into VXLAN UDP packets (Port 4789, MTU 1450, MSS 1406) terminated by `vxlan-server` (VM 107). Mutual exclusion prevents Layer 2 loops while providing transparent multi-VLAN trunking.
+
+### 9. Headless Switch NSDP Layer 2 Broadcast Boundaries
+- **The Gotcha**: The Netgear GS108Ev2 switch has no HTTP web interface, SSH server, or SNMP agent. Management relies entirely on the proprietary Netgear Switch Discovery Protocol (NSDP) over UDP (ports 63321/63322). Because NSDP frames are Layer 2 broadcast/unicast, management scripts cannot cross Layer 3 subnets.
+- **The Invariant**: NSDP commands must execute either on an adjacent Layer 2 proxy (OpenWrt `192.168.1.226` on `br-lan`) or directly on a local hypervisor (`pve` `192.168.1.250` on `vmbr0`). Furthermore, all writes commit immediately to SPI NOR flash with no volatile staging, requiring atomic batching and pre-flight validation.
+
+### 10. Laptop Hypervisor Power & Backlight Management
+- **The Gotcha**: Proxmox installed on a laptop (`pve` Dell Precision 5520) defaults to suspending the system when the lid is closed, and keeps the high-brightness panel backlight active even when unattended.
+- **The Invariant**: Systemd logind configured with `HandleLidSwitch=ignore`, and an ACPI event script (`/etc/acpi/lid-backlight.sh`) toggles the Intel panel backlight to 0 on lid close and 400 on open, saving power and preventing thermal throttling without interrupting hypervisor operations.
+
 
 
 
