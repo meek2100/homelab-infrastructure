@@ -439,7 +439,7 @@ A comprehensive external telemetry, diagnostic, and log ingestion framework prot
   2. Register `pbs-backup` storage pool on all 3 Proxmox nodes (`pve`, `pve2`, `pve3`):
      ```bash
      pvesm add pbs pbs-backup \
-         --server 10.25.25.244 \
+         --server 192.168.1.244 \
          --datastore homelab-datastore \
          --username 'pve-backup@pbs!backup-token' \
          --password "fa169883-ef90-4dd9-b307-4a16f94e354c" \
@@ -453,12 +453,12 @@ A comprehensive external telemetry, diagnostic, and log ingestion framework prot
      ```
 
 ### 5.3: Transition Backup Schedules (Legacy vzdump ➔ PBS Daily Incremental CBT)
-- **Goal**: Decommission uncompressed full-disk `vzdump` jobs that cause heavy I/O and long backup windows, replacing them with daily deduplicated chunk-based incremental backups over the `10.25.25.0/24` SAN bridge.
+- **Goal**: Decommission uncompressed full-disk `vzdump` jobs that cause heavy I/O and long backup windows, replacing them with daily deduplicated chunk-based incremental backups over the `192.168.1.0/24` management LAN.
 - **Action Items**:
   1. In Proxmox Web GUI (Datacenter ➔ Backup): Delete or disable existing weekly `vzdump` backup jobs.
   2. Create unified daily PBS backup schedule:
      - **Selection**: All Guests across all 3 nodes (`pve`, `pve2`, `pve3`).
-     - **Storage Target**: `pbs-backup` (`10.25.25.244`).
+     - **Storage Target**: `pbs-backup` (`192.168.1.244`).
      - **Schedule**: Daily at `02:00` UTC.
      - **Mode**: Snapshot with client-side encryption.
      - **Pruning**: Retention enforced via PBS (`keep-last=7, keep-daily=7, keep-weekly=4, keep-monthly=12`).
