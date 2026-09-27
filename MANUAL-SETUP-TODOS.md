@@ -6,7 +6,7 @@ This document tracks all manual setup tasks required to activate your notificati
 
 ## 📋 Task Summary
 
-- [ ] **Task 1**: [Configure Alertmanager Secrets (Pushover & SMTP)](#task-1-configure-alertmanager-secrets-pushover--smtp)
+- [x] **Task 1**: [Configure Alertmanager Secrets (Pushover & SMTP)](#task-1-configure-alertmanager-secrets-pushover--smtp) — 🟢 **Active & Configured**
 - [ ] **Task 2**: [Install Proxmox Backup Server (PBS) on Node 3 (`pve3`)](#task-2-install-proxmox-backup-server-on-pve3)
 - [ ] **Task 3**: [Initialize PBS Datastore & Generate API Token](#task-3-initialize-pbs-datastore--generate-api-token)
 - [ ] **Task 4**: [Register PBS Storage on `pve`, `pve2`, and `pve3`](#task-4-register-pbs-storage-on-all-nodes)
@@ -15,9 +15,9 @@ This document tracks all manual setup tasks required to activate your notificati
 
 ---
 
-## Task 1: Configure Alertmanager Secrets (Pushover & SMTP)
+## Task 1: Configure Alertmanager Secrets (Pushover & SMTP) — 🟢 Completed
 
-Stack 71 on `nexus-server` is actively monitoring 23 targets and evaluating 9 alerting rules. It currently routes to a safe local default receiver until your credentials are encrypted into SOPS.
+Stack 71 on `nexus-server` is actively monitoring 49 targets and evaluating 9 alerting rules. Alertmanager now has decrypted SOPS credentials and routes directly to Pushover (`pushover-default`, `pushover-critical` siren) and SMTP email (`email-critical`, `email-warning`).
 
 ### Steps:
 1. **Copy the example secrets file**:

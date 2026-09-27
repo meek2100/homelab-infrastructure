@@ -21,6 +21,18 @@ PVE_IP = "192.168.1.250"
 VMID = 100
 REMOTE_BASE = "/home/meek2100/docker/monitoring"
 
+def get_age_key_path():
+    candidates = [
+        os.path.join(REPO_ROOT, "homelab-infrastructure.key"),
+        os.path.join(REPO_ROOT, "master-age-key.txt"),
+        os.path.expanduser("~/.config/sops/age/keys.txt"),
+        "/home/dtheurer/.config/sops/age/keys.txt",
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return None
+
 def get_ssh_key():
     for candidate in [
         "/home/dtheurer/.ssh/proxmox_ed25519",
@@ -125,6 +137,54 @@ def provision_pve_exporter_config():
     ok, out = qm_exec(write_cmd)
     return ok, f"Configured {len(tokens)} PVE nodes in pve.yml"
 
+def provision_alertmanager_config():
+    """Decrypt secrets.enc.yaml using SOPS and render alertmanager.yml securely."""
+    enc_path = os.path.join(STACK_DIR, "secrets.enc.yaml")
+    template_path = os.path.join(STACK_DIR, "alertmanager", "alertmanager.yml.template")
+
+    if not os.path.exists(enc_path) or not os.path.exists(template_path):
+        return True, "No secrets.enc.yaml found, keeping existing Alertmanager configuration"
+
+    key_file = get_age_key_path()
+    env = os.environ.copy()
+    if key_file:
+        env["SOPS_AGE_KEY_FILE"] = key_file
+
+    try:
+        res = subprocess.run(
+            ["sops", "-d", enc_path],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env
+        )
+        if res.returncode != 0:
+            return False, f"SOPS decryption failed: {res.stderr.strip()}"
+
+        import yaml
+        secrets = yaml.safe_load(res.stdout)
+        if not isinstance(secrets, dict):
+            return False, "Decrypted secrets is not a YAML dictionary"
+
+        with open(template_path, "r", encoding="utf-8") as f:
+            template = f.read()
+
+        for k, v in secrets.items():
+            template = template.replace(f"${{{k}}}", str(v))
+
+        b64_cfg = base64.b64encode(template.encode("utf-8")).decode("ascii")
+        write_cmd = (
+            f"mkdir -p {REMOTE_BASE}/alertmanager && "
+            f"echo '{b64_cfg}' | base64 -d > {REMOTE_BASE}/alertmanager/alertmanager.yml && "
+            f"chmod 644 {REMOTE_BASE}/alertmanager/alertmanager.yml"
+        )
+        ok, out = qm_exec(write_cmd)
+        if not ok:
+            return False, f"Failed writing alertmanager.yml on VM: {out}"
+        return True, "Alertmanager credentials (Pushover & SMTP) decrypted and configured"
+    except Exception as e:
+        return False, f"Error provisioning Alertmanager: {e}"
+
 def deploy():
     print(f"🚀 Deploying Observability Stack to nexus-server (VM {VMID} on {PVE_IP})...")
     
@@ -157,7 +217,14 @@ def deploy():
     else:
         print(f"  ⚠️ Warning: {pve_msg}")
 
-    # 4. Pull images and launch compose
+    # 4. Securely provision Alertmanager secrets (Pushover & SMTP)
+    am_ok, am_msg = provision_alertmanager_config()
+    if am_ok:
+        print(f"  ✓ {am_msg}")
+    else:
+        print(f"  ⚠️ Warning: {am_msg}")
+
+    # 5. Pull images and launch compose
     launch_cmd = f"cd {REMOTE_BASE} && docker compose up -d && docker compose restart prometheus alertmanager blackbox-exporter snmp-exporter pve-exporter loki promtail grafana"
     print("  ⏳ Pulling images and launching containers...")
     ok, out = qm_exec(launch_cmd, timeout=180)
