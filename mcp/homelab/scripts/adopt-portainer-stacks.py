@@ -188,7 +188,7 @@ def main():
     parser.add_argument("--url", help="Target Portainer base URL (e.g. https://media.secure.theurer.dev)")
     parser.add_argument("--stack", help="Stack name to adopt (e.g. telemetry-agent or 71-monitoring)")
     parser.add_argument("--all", action="store_true", help="Adopt telemetry-agent across all fleet Portainer instances")
-    parser.add_argument("-u", "--user", default="admin", help="Portainer admin username (default: admin)")
+    parser.add_argument("-u", "--user", default="meek2100", help="Portainer admin username (default: meek2100)")
     parser.add_argument("-p", "--password", help="Portainer admin password (or prompt if omitted)")
 
     args = parser.parse_args()
