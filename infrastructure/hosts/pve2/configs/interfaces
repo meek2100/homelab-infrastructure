@@ -35,12 +35,4 @@ iface vmbr1 inet static
 	bridge-stp off
 	bridge-fd 0
 
-auto vmbr0.40
-iface vmbr0.40 inet static
-	address 192.168.40.240/24
-
-auto vmbr0.50
-iface vmbr0.50 inet static
-	address 192.168.50.240/24
-
 source /etc/network/interfaces.d/*
