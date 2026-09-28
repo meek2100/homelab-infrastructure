@@ -485,6 +485,11 @@ def deploy_external_promtail(host: str = "all", url: str = "https://logs.theurer
         args.append("--dry-run")
     return run_script("deploy-external-promtail.py", args)
 
+@mcp.tool()
+def whitelist_external_ip(ip: str = "24.22.108.194", host: str = "all") -> str:
+    """Whitelists an IP address in Fail2Ban ignoreip across external cloud hosts (web, email, or all)."""
+    return run_script("manage-external-hosts.py", ["whitelist", "--host", host, "--ip", ip])
+
 if __name__ == "__main__":
     mcp.run()
 

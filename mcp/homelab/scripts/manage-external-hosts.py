@@ -148,20 +148,23 @@ def get_security_status(target: str) -> dict:
     for t in targets:
         p = HOST_PROFILES[t]
         cmd = """
-        echo "=== FAIL2BAN ==="
+        echo "=== FAIL2BAN GLOBAL STATUS ==="
         if command -v fail2ban-client >/dev/null 2>&1; then
-            fail2ban-client status 2>/dev/null || echo "Fail2ban not running or requires permissions"
-            for jail in $(fail2ban-client status 2>/dev/null | grep "Jail list:" | sed 's/.*Jail list://' | tr -d ',' | tr '\t' ' '); do
+            sudo fail2ban-client status 2>/dev/null || echo "Fail2ban not running"
+            for jail in $(sudo fail2ban-client status 2>/dev/null | grep "Jail list:" | sed 's/.*Jail list://' | tr -d ',' | tr '\t' ' '); do
                 echo "--- Jail: $jail ---"
-                fail2ban-client status "$jail" 2>/dev/null || true
+                sudo fail2ban-client status "$jail" 2>/dev/null || true
             done
         else
             echo "Fail2Ban not installed"
         fi
 
+        echo "=== FAIL2BAN WHITELIST (IGNOREIP) ==="
+        grep -rnE "^[# ]*ignoreip" /etc/fail2ban/jail.local /etc/fail2ban/jail.conf /etc/fail2ban/jail.d/ 2>/dev/null || true
+
         echo "=== UFW FIREWALL ==="
         if command -v ufw >/dev/null 2>&1; then
-            ufw status verbose 2>/dev/null || echo "UFW requires root or inactive"
+            sudo ufw status verbose 2>/dev/null || echo "UFW requires root or inactive"
         fi
 
         echo "=== LISTENING PUBLIC PORTS ==="
@@ -232,10 +235,37 @@ def backup_host_configs(target: str) -> dict:
 
     return results
 
+def whitelist_ip_fail2ban(target: str, ip: str) -> dict:
+    targets = [target] if target in HOST_PROFILES else ["web", "email"]
+    results = {}
+    for t in targets:
+        p = HOST_PROFILES[t]
+        cmd = f"""
+        if [ -f /etc/fail2ban/jail.local ]; then
+            if ! grep -q "{ip}" /etc/fail2ban/jail.local; then
+                sudo sed -i '/^ignoreip =/ s/$/ {ip}/' /etc/fail2ban/jail.local
+                sudo fail2ban-client reload >/dev/null 2>&1 || true
+                echo "Added {ip} to ignoreip in /etc/fail2ban/jail.local and reloaded"
+            else
+                echo "{ip} already present in /etc/fail2ban/jail.local"
+            fi
+            grep "^ignoreip =" /etc/fail2ban/jail.local
+        else
+            echo "/etc/fail2ban/jail.local not found"
+        fi
+        """
+        code, out, err = run_remote_ssh(p, cmd)
+        results[p["name"]] = {
+            "status": "success" if code == 0 else "error",
+            "output": out.strip() if code == 0 else err.strip()
+        }
+    return results
+
 def main():
     parser = argparse.ArgumentParser(description="External Cloud Hosts Lifecycle Manager")
-    parser.add_argument("action", choices=["audit", "backup", "security", "status"], help="Action to perform")
+    parser.add_argument("action", choices=["audit", "backup", "security", "status", "whitelist"], help="Action to perform")
     parser.add_argument("--host", choices=["web", "email", "all"], default="all", help="Target host")
+    parser.add_argument("--ip", default="24.22.108.194", help="IP address to whitelist in Fail2Ban")
     parser.add_argument("--json", action="store_true", help="Output JSON format")
     args = parser.parse_args()
 
@@ -247,6 +277,8 @@ def main():
         res = get_security_status(args.host)
     elif args.action == "status":
         res = get_security_status(args.host)
+    elif args.action == "whitelist":
+        res = whitelist_ip_fail2ban(args.host, args.ip)
 
     if args.json:
         print(json.dumps(res, indent=2))
