@@ -186,16 +186,14 @@ def deploy_host(target: str, push_url: str, tenant_id: str = "external-cloud-vps
     echo "📦 Checking Promtail installation on {p['fqdn']}..."
     if ! command -v promtail >/dev/null 2>&1; then
         echo "⬇️ Downloading Promtail v{PROMTAIL_VERSION}..."
-        curl -fsSL -o /tmp/promtail.gz "https://github.com/grafana/loki/releases/download/v{PROMTAIL_VERSION}/promtail-linux-amd64.zip" 2>/dev/null || \\
-        curl -fsSL -o /tmp/promtail.gz "https://github.com/grafana/loki/releases/download/v{PROMTAIL_VERSION}/promtail-linux-amd64.gz"
-        if [ -f /tmp/promtail.gz ]; then
-            if file /tmp/promtail.gz | grep -q "Zip archive"; then
-                unzip -o /tmp/promtail.gz -d /tmp/
-                sudo mv /tmp/promtail-linux-amd64 /usr/local/bin/promtail
+        curl -fsSL -o /tmp/promtail.zip "https://github.com/grafana/loki/releases/download/v{PROMTAIL_VERSION}/promtail-linux-amd64.zip"
+        if [ -f /tmp/promtail.zip ]; then
+            if command -v unzip >/dev/null 2>&1; then
+                unzip -o /tmp/promtail.zip -d /tmp/
             else
-                gunzip -f /tmp/promtail.gz
-                sudo mv /tmp/promtail /usr/local/bin/promtail
+                python3 -m zipfile -e /tmp/promtail.zip /tmp/
             fi
+            sudo mv /tmp/promtail-linux-amd64 /usr/local/bin/promtail
             sudo chmod +x /usr/local/bin/promtail
             rm -f /tmp/promtail*
         fi
