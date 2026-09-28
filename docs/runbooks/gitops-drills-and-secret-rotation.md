@@ -144,27 +144,36 @@ Because Loki in Stack 71 runs in single-tenant mode (`auth_enabled: false`), exp
    * **Type**: `HTTP`
    * **URL**: `localhost:3100` (or `192.168.40.185:3100`)
 
-### Cloudflare WAF Custom Rules (Mandatory Lockdown)
-Navigate to **Cloudflare Dashboard** -> `theurer.dev` -> **Security** -> **WAF** -> **Custom Rules**:
+### Cloudflare Zero Trust Lockdown Setup
 
-1. **Rule 1: External VPS IP Whitelist (Drop All Others)**
-   * **Expression**:
-     ```
-     (http.host eq "logs.theurer.dev" and not ip.src in {146.235.203.133 35.212.229.212})
-     ```
-   * **Action**: `Block`
-   * *Effect*: Only Oracle Cloud (`web-server`) and Google Cloud (`email-server`) can connect. The rest of the Internet is instantly dropped at Cloudflare edge.
+Because this service is exposed via Cloudflare Tunnel, the lockdown is managed directly in **Cloudflare Zero Trust** (`one.dash.cloudflare.com`), NOT classic Zone WAF rules:
 
-2. **Rule 2: Push-Only Path and Method Enforcement**
-   * **Expression**:
-     ```
-     (http.host eq "logs.theurer.dev" and (http.request.method ne "POST" or not http.request.uri.path matches "^/loki/api/v1/push"))
-     ```
-   * **Action**: `Block`
-   * *Effect*: Completely blocks all read/query APIs (`/loki/api/v1/query*`, `/loki/api/v1/labels`, `/ready`, `/metrics`). External VPS nodes cannot query historical homelab logs.
+#### 1. Public Hostname in Cloudflare Tunnel
+1. Go to **Cloudflare Zero Trust** (`one.dash.cloudflare.com`) → **Networks** → **Tunnels**.
+2. Select the `nexus-server` tunnel (Stack 46).
+3. Under **Public Hostname**, click **Add a public hostname**:
+   * **Subdomain**: `logs`
+   * **Domain**: `theurer.dev`
+   * **Path**: `loki/api/v1/push` *(restricts tunnel ingress strictly to the push endpoint)*
+   * **Service Type**: `HTTP`
+   * **URL**: `localhost:3100` *(or `192.168.40.185:3100`)*
 
-3. **Rule 3: Ingestion Rate Limiting**
-   * Navigate to **Security** -> **WAF** -> **Rate Limiting Rules**.
-   * Target: `http.host eq "logs.theurer.dev" and http.request.uri.path matches "^/loki/api/v1/push"`
-   * Rate: 100 requests per 10 seconds per IP -> Action: `Block` (Mitigates ingestion flood attacks).
+#### 2. Cloudflare Access Application (Zero Trust Policy)
+1. In Zero Trust, navigate to **Access** → **Applications** → **Add an application**.
+2. Choose **Self-hosted**.
+3. **Application Configuration**:
+   * **Application Name**: `Loki Log Ingress`
+   * **Application Domain**: `logs.theurer.dev`
+   * **Path**: `loki/api/v1/push`
+4. **Policy Configuration**:
+   * **Policy Name**: `Allow VPS Promtail Ingestion`
+   * **Action**: `Bypass` *(or `Service Auth` with Service Tokens)*
+   * **Assign a rule**:
+     * **Selector**: `IP ranges`
+     * **Value**:
+       * `146.235.203.133/32` (Oracle Cloud `theurer.dev`)
+       * `35.212.229.212/32` (Google Cloud `mail.theurer.dev`)
+5. Save Application.
+*All traffic originating from any IP other than these two cloud hosts is blocked at the Cloudflare edge before reaching the tunnel or Loki.*
+
 
