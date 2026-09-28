@@ -128,3 +128,43 @@ Always execute the three core diagnostic tools following any restore drill:
 1. `python3 mcp/homelab/scripts/verify-network-matrix.py` (Assert 21/21 targets UP with <10ms latency).
 2. `python3 mcp/homelab/scripts/manage-external-services.py status` (Assert Web HTTP 200, SMTP :587, IMAPS :993, and TLS certs valid).
 3. Check Prometheus Web UI (`http://192.168.40.185:9090/targets`) to confirm **49/49 targets UP**.
+
+---
+
+## 4. External Cloud Log Ingress Lockdown (`logs.theurer.dev`)
+
+Because Loki in Stack 71 runs in single-tenant mode (`auth_enabled: false`), exposing `logs.theurer.dev` without strict Zero Trust lockdown creates serious risks of log reading or denial-of-service ingestion spam.
+
+### Cloudflare Zero Trust Tunnel Setup
+1. Open **Cloudflare Zero Trust Dashboard** -> **Networks** -> **Tunnels**.
+2. Select the active `nexus-server` tunnel (Stack 46).
+3. Under **Public Hostname**, add:
+   * **Subdomain**: `logs`
+   * **Domain**: `theurer.dev`
+   * **Type**: `HTTP`
+   * **URL**: `localhost:3100` (or `192.168.40.185:3100`)
+
+### Cloudflare WAF Custom Rules (Mandatory Lockdown)
+Navigate to **Cloudflare Dashboard** -> `theurer.dev` -> **Security** -> **WAF** -> **Custom Rules**:
+
+1. **Rule 1: External VPS IP Whitelist (Drop All Others)**
+   * **Expression**:
+     ```
+     (http.host eq "logs.theurer.dev" and not ip.src in {146.235.203.133 35.212.229.212})
+     ```
+   * **Action**: `Block`
+   * *Effect*: Only Oracle Cloud (`web-server`) and Google Cloud (`email-server`) can connect. The rest of the Internet is instantly dropped at Cloudflare edge.
+
+2. **Rule 2: Push-Only Path and Method Enforcement**
+   * **Expression**:
+     ```
+     (http.host eq "logs.theurer.dev" and (http.request.method ne "POST" or not http.request.uri.path matches "^/loki/api/v1/push"))
+     ```
+   * **Action**: `Block`
+   * *Effect*: Completely blocks all read/query APIs (`/loki/api/v1/query*`, `/loki/api/v1/labels`, `/ready`, `/metrics`). External VPS nodes cannot query historical homelab logs.
+
+3. **Rule 3: Ingestion Rate Limiting**
+   * Navigate to **Security** -> **WAF** -> **Rate Limiting Rules**.
+   * Target: `http.host eq "logs.theurer.dev" and http.request.uri.path matches "^/loki/api/v1/push"`
+   * Rate: 100 requests per 10 seconds per IP -> Action: `Block` (Mitigates ingestion flood attacks).
+
