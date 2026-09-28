@@ -1,0 +1,1 @@
+Linux theurer-dev 7.0.0-1011-oracle #11~24.04.1-Ubuntu SMP PREEMPT Sun Aug 23 02:13:46 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
