@@ -46,7 +46,7 @@ KNOWN_PORTAINER_INSTANCES = [
         "name": "nexus-server",
         "url": "https://nexus.secure.theurer.dev",
         "local_ip": "192.168.40.185",
-        "stacks": ["71-monitoring"]
+        "stacks": ["monitoring"]
     },
 ]
 
@@ -54,7 +54,7 @@ def get_compose_content(stack_name):
     """Retrieve compose file content from repository for the stack."""
     if stack_name == "telemetry-agent":
         compose_path = os.path.join(REPO_ROOT, "infrastructure", "docker-stacks", "_shared", "telemetry-pod", "docker-compose.yml")
-    elif stack_name == "71-monitoring":
+    elif stack_name in ("monitoring", "71-monitoring"):
         compose_path = os.path.join(REPO_ROOT, "infrastructure", "docker-stacks", "nexus-server", "71-monitoring", "docker-compose.yml")
     else:
         raise ValueError(f"Unknown stack name: {stack_name}")
@@ -65,9 +65,11 @@ def get_compose_content(stack_name):
     with open(compose_path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    # For telemetry-agent, ensure absolute path is used for promtail config so Portainer resolves it
+    # Ensure absolute paths so Portainer's internal compose directory resolves them
     if stack_name == "telemetry-agent":
         content = content.replace("./promtail.yml:", "/home/meek2100/docker/telemetry-agent/promtail.yml:")
+    elif stack_name in ("monitoring", "71-monitoring"):
+        content = content.replace("./", "/home/meek2100/docker/monitoring/")
 
     return content
 
