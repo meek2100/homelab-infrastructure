@@ -462,7 +462,7 @@ A comprehensive external telemetry, diagnostic, and log ingestion framework prot
      }]' http://192.168.40.185:9093/api/v2/alerts
      ```
   2. Verify receipt on mobile device via Pushover app (confirming high-priority emergency siren sound).
-  3. Verify receipt in email inbox (`dave@theurer.dev`).
+  3. Verify receipt in email inbox (`darin@theurer.dev`).
   4. Review threshold calibrations across all 9 production alert rules:
      - `SwitchPortLinkDown` (Warning on core trunks 1/0/1–1/0/4)
      - `SwitchPortCRCErrors` (Warning on corrupted frames)
