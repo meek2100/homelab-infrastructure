@@ -11,7 +11,7 @@ set -euo pipefail
 HOSTNAME=$(hostname -s)
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 AUDIT_DIR="/tmp/audit_${HOSTNAME}_${TIMESTAMP}"
-mkdir -p "${AUDIT_DIR}"/{system,network,packages,services,configs,web,mail}
+mkdir -p "${AUDIT_DIR}"/{system,network,packages,services,configs,web,mail,security}
 
 echo "🔍 Starting Non-Destructive External Host Audit on: ${HOSTNAME} (${TIMESTAMP})"
 
@@ -91,12 +91,36 @@ if [ -d /var/vmail ]; then
     ls -la /var/vmail > "${AUDIT_DIR}/mail/var-vmail-inventory.txt" 2>&1 || true
 fi
 
-# 7. Scheduled Tasks & Crons
-echo "  ↳ Checking cron schedules..."
+# 7. Fail2Ban & Intrusion Defense
+echo "  ↳ Archiving Fail2Ban and security configurations..."
+if [ -d /etc/fail2ban ]; then
+    cp -r /etc/fail2ban "${AUDIT_DIR}/security/fail2ban" 2>/dev/null || true
+fi
+if command -v fail2ban-client >/dev/null 2>&1; then
+    fail2ban-client status > "${AUDIT_DIR}/security/fail2ban-status.txt" 2>&1 || true
+    for jail in $(fail2ban-client status 2>/dev/null | grep "Jail list:" | sed 's/.*Jail list://' | tr -d ',' | tr '\t' ' '); do
+        fail2ban-client status "$jail" > "${AUDIT_DIR}/security/fail2ban-jail-${jail}.txt" 2>&1 || true
+    done
+fi
+if [ -d /etc/spamassassin ]; then
+    cp -r /etc/spamassassin "${AUDIT_DIR}/mail/spamassassin" 2>/dev/null || true
+fi
+if [ -d /etc/rspamd ]; then
+    cp -r /etc/rspamd "${AUDIT_DIR}/mail/rspamd" 2>/dev/null || true
+fi
+if [ -d /etc/roundcube ]; then
+    cp -r /etc/roundcube "${AUDIT_DIR}/mail/roundcube" 2>/dev/null || true
+fi
+
+# 8. Scheduled Tasks, Crons & Logrotate
+echo "  ↳ Checking cron schedules and log rotation..."
 crontab -l > "${AUDIT_DIR}/configs/root-crontab.txt" 2>&1 || true
 ls -la /etc/cron* > "${AUDIT_DIR}/configs/system-cron-inventory.txt" 2>&1 || true
+if [ -d /etc/logrotate.d ]; then
+    cp -r /etc/logrotate.d "${AUDIT_DIR}/configs/logrotate.d" 2>/dev/null || true
+fi
 
-# 8. Package Into Bundle
+# 9. Package Into Bundle
 ARCHIVE="/tmp/audit_${HOSTNAME}_${TIMESTAMP}.tar.gz"
 tar -czf "${ARCHIVE}" -C /tmp "audit_${HOSTNAME}_${TIMESTAMP}"
 rm -rf "${AUDIT_DIR}"
