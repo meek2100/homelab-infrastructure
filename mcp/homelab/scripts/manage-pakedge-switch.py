@@ -178,24 +178,51 @@ def cmd_backup(host: str = DEFAULT_SWITCH_IP) -> dict:
         }
 
     session = requests.Session()
+    session.cookies.set("usa_Pakedge_user", f"{user}|0", domain=host, path="/")
+
     login_url = f"http://{host}/cgi/set.cgi?cmd=home_loginAuth"
     status_url = f"http://{host}/cgi/get.cgi?cmd=home_loginStatus"
-    data = {"login_username": user, "login_password": password}
+    data = {
+        "_ds": "1",
+        "username": user,
+        "password": password,
+        "_de": "1"
+    }
 
     try:
         r = session.post(login_url, data=data, timeout=5)
+        time.sleep(0.5)
         sr = session.get(status_url, timeout=5)
-        if "loginSuccess" not in r.text and "loginSuccess" not in sr.text:
+        
+        status_data = sr.json().get("data", {}) if sr.status_code == 200 else {}
+        if status_data.get("status") != "ok":
+            fail_reason = status_data.get("failReason", r.text.strip())
             return {
                 "status": "error",
-                "error": f"Login failed for user '{user}': {r.text.strip() or sr.text.strip()}"
+                "error": f"Login failed for user '{user}': {fail_reason}"
             }
 
-        # Trigger file backup and pull config
-        session.post(f"http://{host}/cgi/set.cgi?cmd=file_backup", timeout=5)
-        time.sleep(1)
-        cfg_res = session.get(f"http://{host}/cgi/get.cgi?cmd=file_cfg", timeout=10)
+        # Trigger HTTP file backup
+        backup_payload = {
+            "_ds": "1",
+            "cfg_action": "backup",
+            "method": "http",
+            "fileType": "running",
+            "_de": "1"
+        }
+        b_resp = session.post(f"http://{host}/cgi/set.cgi?cmd=file_backup", data=backup_payload, timeout=5)
+        b_data = b_resp.json() if b_resp.status_code == 200 else {}
 
+        if b_data.get("status") != "ok" or "filename" not in b_data:
+            return {
+                "status": "error",
+                "error": f"Failed to generate backup: {b_resp.text.strip()}"
+            }
+
+        remote_filename = b_data["filename"]
+        download_url = f"http://{host}/{remote_filename}" if not remote_filename.startswith("http") else remote_filename
+
+        cfg_res = session.get(download_url, timeout=10)
         if cfg_res.status_code == 200 and len(cfg_res.content) > 0:
             os.makedirs(os.path.dirname(CONFIG_TARGET_FILE), exist_ok=True)
             with open(CONFIG_TARGET_FILE, "wb") as f:
