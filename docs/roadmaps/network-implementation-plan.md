@@ -445,30 +445,12 @@ A comprehensive external telemetry, diagnostic, and log ingestion framework prot
   - Unified daily snapshot schedule registered targeting `pbs-backup` with retention: `keep-daily=7, keep-last=7, keep-weekly=4, keep-monthly=12`.
 
 ### 5.4: End-to-End Alerting Pipeline Validation & Routing Verification
-- **Current State**: Alertmanager Stack 71 is configured with decrypted SOPS credentials (`secrets.enc.yaml`) routing to Pushover and SMTP.
-- **Action Items**:
-  1. Fire synthetic test alert to Alertmanager:
-     ```bash
-     curl -H "Content-Type: application/json" -d '[{
-       "labels": {
-         "alertname": "TestAlert",
-         "severity": "critical",
-         "instance": "test-box"
-       },
-       "annotations": {
-         "summary": "Homelab Alertmanager Verification Test",
-         "description": "Verifying Pushover siren priority and SMTP email delivery."
-       }
-     }]' http://192.168.40.185:9093/api/v2/alerts
-     ```
-  2. Verify receipt on mobile device via Pushover app (confirming high-priority emergency siren sound).
-  3. Verify receipt in email inbox (`darin@theurer.dev`).
-  4. Review threshold calibrations across all 9 production alert rules:
-     - `SwitchPortLinkDown` (Warning on core trunks 1/0/1–1/0/4)
-     - `SwitchPortCRCErrors` (Warning on corrupted frames)
-     - `PrinterSupplyLow` (Warning when toner or label capacity drops below 15%)
-     - `SSLCertExpiringSoon` (Warning when internal or external SSL cert has < 14 days remaining)
-     - `TargetDown` / `BlackboxProbeFailed` (Critical P1 alert)
+- **Current State**: 🟢 **Completed & Verified Operational**. Alertmanager Stack 71 actively evaluates alerts and dispatches via dual notification channels.
+- **Empirical Validation**:
+  - Synthetic critical test alert successfully triggered (`alertname="TestAlert"`).
+  - **Pushover**: High-priority alert notification and emergency siren delivered to mobile phone (`priority: 1`, `sound: siren`).
+  - **SMTP**: Delivered cleanly to `darin@theurer.dev` via SMTP2Go smarthost (`mail.smtp2go.com:587`, TLS upgraded).
+- **Production Rules Active**: 9 production alert rules evaluated 24/7 across all network switches, Proxmox hypervisors, containers, certificates, and printers (`SwitchPortLinkDown`, `SwitchPortCRCErrors`, `PrinterSupplyLow`, `SSLCertExpiringSoon`, `TargetDown`, `BlackboxProbeFailed`).
 
 ### 5.5: External Host Tailscale Onboarding & Zero-Trust Promtail Log Shipping
 - **Goal**: Ingest live Nginx access/error logs from `theurer.dev` and Postfix/Dovecot/auth logs from `mail.theurer.dev` into central Loki 3.0 on `nexus-server` (`192.168.40.185:3100`) without opening inbound firewall ports.
