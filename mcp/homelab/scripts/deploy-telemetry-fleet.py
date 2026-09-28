@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Deploy and Manage Homelab Telemetry Agent Pods (node-exporter + cadvisor + promtail)
-across all fleet VMs (luna-server, media-server, nexus-server2, minecraft-docker).
+across all fleet VMs (luna-server, media-server, nexus-server2, minecraft-server).
 Consolidates metrics into Prometheus and streams container stdout/stderr into central Loki.
 """
 
@@ -43,7 +43,7 @@ FLEET_VMS = [
         "role": "Secondary DNS & Failover (7 stacks)"
     },
     {
-        "name": "minecraft-docker",
+        "name": "minecraft-server",
         "node": "pve",
         "node_ip": "192.168.1.250",
         "vmid": 109,

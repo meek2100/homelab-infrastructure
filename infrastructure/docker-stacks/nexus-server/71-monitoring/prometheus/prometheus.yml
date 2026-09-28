@@ -97,7 +97,7 @@ scrape_configs:
           instance_name: 'nexus-server2'
       - targets: ['192.168.40.175:9100']
         labels:
-          instance_name: 'minecraft-docker'
+          instance_name: 'minecraft-server'
 
   - job_name: 'cadvisor'
     static_configs:
@@ -115,7 +115,7 @@ scrape_configs:
           instance_name: 'nexus-server2'
       - targets: ['192.168.40.175:8088']
         labels:
-          instance_name: 'minecraft-docker'
+          instance_name: 'minecraft-server'
 
   - job_name: 'snmp_printers'
     static_configs:

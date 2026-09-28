@@ -1,7 +1,7 @@
-# 🖥️ Detailed Container & Service Breakdown: `minecraft-docker` (`pve` VM 109)
+# 🖥️ Detailed Container & Service Breakdown: `minecraft-server` (`pve` VM 109)
 
 * **Host Proxmox Node**: `pve` (`192.168.1.250`)
-* **Target Virtual Machine**: `VM 109` (`minecraft-docker`)
+* **Target Virtual Machine**: `VM 109` (`minecraft-server`)
 
 --- 
 

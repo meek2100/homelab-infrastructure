@@ -6,7 +6,7 @@ This document provides a searchable, friendly service catalog mapping every Port
 - **Total Stacks Cataloged**: 85
 - **Total Docker Services Defined**: 155
 - **Stacks with Encrypted Secrets (`secrets.enc.yaml`)**: 68
-- **Host Virtual Machines**: 6 (`discovery-server`, `luna-server`, `media-server`, `minecraft-docker`, `nexus-server`, `nexus-server2`)
+- **Host Virtual Machines**: 6 (`discovery-server`, `luna-server`, `media-server`, `minecraft-server`, `nexus-server`, `nexus-server2`)
 
 ---
 
@@ -100,13 +100,13 @@ Total Stacks: **9**
 
 ---
 
-## VM: `minecraft-docker` (Node: `pve`, VMID: `109`)
+## VM: `minecraft-server` (Node: `pve`, VMID: `109`)
 Total Stacks: **2**
 
 | Stack ID | Primary Services | Container Images | Exposed Ports | Encrypted Secrets | Blueprint Path |
 | :--- | :--- | :--- | :--- | :---: | :--- |
-| **3** | `mcbd-connect`<br>`mcbd-proxy`<br>`mcbd-family-server`<br>`mcbd-friend-server` | `strausmann/minecraft-bedrock-connect:latest`<br>`ghcr.io/meek2100/mcbd-proxy:develop`<br>`itzg/minecraft-bedrock-server:latest`<br>`itzg/minecraft-bedrock-server:latest` | `19132:19132/udp`<br>`19133:19133/udp, 19134:19134/udp`<br>`Internal / Host`<br>`Internal / Host` | 🔒 Yes | [minecraft-docker/3](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/minecraft-docker/3) |
-| **4** | `watchtower` | `nickfedor/watchtower` | `Internal / Host` | — None | [minecraft-docker/4](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/minecraft-docker/4) |
+| **3** | `mcbd-connect`<br>`mcbd-proxy`<br>`mcbd-family-server`<br>`mcbd-friend-server` | `strausmann/minecraft-bedrock-connect:latest`<br>`ghcr.io/meek2100/mcbd-proxy:develop`<br>`itzg/minecraft-bedrock-server:latest`<br>`itzg/minecraft-bedrock-server:latest` | `19132:19132/udp`<br>`19133:19133/udp, 19134:19134/udp`<br>`Internal / Host`<br>`Internal / Host` | 🔒 Yes | [minecraft-server/3](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/minecraft-server/3) |
+| **4** | `watchtower` | `nickfedor/watchtower` | `Internal / Host` | — None | [minecraft-server/4](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/minecraft-server/4) |
 
 ---
 

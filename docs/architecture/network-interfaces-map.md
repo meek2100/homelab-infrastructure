@@ -325,7 +325,7 @@ default via 192.168.1.1 dev br0 onlink
 ```
 
 
-### Virtual Machine: `minecraft-docker` (`pve` VM 109)
+### Virtual Machine: `minecraft-server` (`pve` VM 109)
 
 
 #### Interfaces & IPs

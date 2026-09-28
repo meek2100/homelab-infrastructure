@@ -33,7 +33,7 @@ VM_NAME_MAPPINGS = {
     ("pve", 102): "luna-server",
     ("pve", 103): "media-server",
     ("pve", 107): "vxlan-server",
-    ("pve", 109): "minecraft-docker",
+    ("pve", 109): "minecraft-server",
     ("pve2", 100): "discovery-server",
     ("pve3", 100): "nexus-server2",
     ("pve3", 101): "nas-server",

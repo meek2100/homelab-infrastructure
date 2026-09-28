@@ -25,7 +25,7 @@ VMS = [
     {"node": "pve", "ip": "192.168.1.250", "vmid": 102, "name": "luna-server"},
     {"node": "pve", "ip": "192.168.1.250", "vmid": 103, "name": "media-server"},
     {"node": "pve", "ip": "192.168.1.250", "vmid": 107, "name": "vxlan-server"},
-    {"node": "pve", "ip": "192.168.1.250", "vmid": 109, "name": "minecraft-docker"},
+    {"node": "pve", "ip": "192.168.1.250", "vmid": 109, "name": "minecraft-server"},
     {"node": "pve2", "ip": "192.168.1.240", "vmid": 100, "name": "discovery-server"},
     {"node": "pve3", "ip": "192.168.1.245", "vmid": 100, "name": "nexus-server2"},
     {"node": "pve3", "ip": "192.168.1.245", "vmid": 101, "name": "nas-server"},

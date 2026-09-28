@@ -46,7 +46,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Media VM** | media-server (pve:103) | `192.168.40.247` | VLAN 40 (Servers) | Plex (:32400 with Intel P630 QuickSync), Audiobookshelf | 🟢 Active |
 | **NAS VM** | nas-server (pve3:101) | `192.168.40.248` & `10.25.25.248` | VLAN 40 & SAN | OpenMediaVault Storage (SMB / NFS) | 🟢 Active |
 | **Download VM** | discovery-server (pve2:100)| `10.25.25.246` | Dedicated WAN2 SAN | VPN automated torrent & discovery engine | 🟢 Active |
-| **Gaming VM** | minecraft-docker (pve:109)| `192.168.40.175` | VLAN 40 (Servers) | Minecraft Bedrock Connect / Proxy | 🟢 Active |
+| **Gaming VM** | minecraft-server (pve:109)| `192.168.40.175` | VLAN 40 (Servers) | Minecraft Bedrock Connect / Proxy | 🟢 Active |
 | **Bridge VM** | vxlan-server (pve:107) | `192.168.1.150` | VLAN 1 & VLAN 150 | VXLAN Layer 2/3 decapsulator & trunking bridge | 🟢 Active |
 | **Automation** | Control4 CA-10 (Director)| `192.168.10.200` | VLAN 10 (Trusted) | Primary Control4 Automation Controller | 🟢 Active |
 | **3D Printing** | mainsail (Raspberry Pi) | `192.168.30.90` | VLAN 30 (IoT) | Klipper / Moonraker host (MAC `E4:5F:01:78:DF:81`) | 🟢 Active |
@@ -384,7 +384,7 @@ A comprehensive external telemetry, diagnostic, and log ingestion framework prot
   - 🟢 `luna-server` (VM 102 — Smart Home & SPAN sniffer, 33 stacks)
   - 🟢 `media-server` (VM 103 — Plex, Media transcode, 9 stacks)
   - 🟢 `nexus-server2` (VM 100 on `pve3` — Secondary DNS, 7 stacks)
-  - 🟢 `minecraft-docker` (VM 109 — Gaming)
+  - 🟢 `minecraft-server` (VM 109 — Gaming)
   - 🟢 `nexus-server` (VM 100 — Ingress, Stack 71)
 - **Scrape Status**: 5/5 Node Exporters and 5/5 cAdvisors 🟢 UP in Prometheus (Total active scrape targets: **49/49 UP**).
 

@@ -5,7 +5,7 @@ Queries Docker Engine via QEMU Guest Agent inside all VMs to generate full, deta
 - VM 100 (nexus-server) on pve
 - VM 102 (luna-server) on pve
 - VM 103 (media-server) on pve
-- VM 109 (minecraft-docker) on pve
+- VM 109 (minecraft-server) on pve
 - VM 100 (discovery-server) on pve2
 - VM 100 (nexus-server2) on pve3
 """
@@ -19,7 +19,7 @@ VMS = [
     {"node": "pve", "ip": "192.168.1.250", "vmid": 100, "name": "nexus-server"},
     {"node": "pve", "ip": "192.168.1.250", "vmid": 102, "name": "luna-server"},
     {"node": "pve", "ip": "192.168.1.250", "vmid": 103, "name": "media-server"},
-    {"node": "pve", "ip": "192.168.1.250", "vmid": 109, "name": "minecraft-docker"},
+    {"node": "pve", "ip": "192.168.1.250", "vmid": 109, "name": "minecraft-server"},
     {"node": "pve2", "ip": "192.168.1.240", "vmid": 100, "name": "discovery-server"},
     {"node": "pve3", "ip": "192.168.1.245", "vmid": 100, "name": "nexus-server2"},
 ]

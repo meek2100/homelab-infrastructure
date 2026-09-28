@@ -39,7 +39,7 @@
   - `VM 102` (`luna-server` Smart Home VM): **32 Portainer Stacks** (`homeassistant`, `homebridge`, `syncthing`, `spoolman`, `gitwatch`, etc.)
   - `VM 103` (`media-server` Media VM): **9 Portainer Stacks** (`plex`, `audiobookshelf`, `homarr`, `overseerr`, `calibre-web`, `filebrowser`, etc.)
   - `VM 107` (`vxlan-server` Network Bridge VM): `vxlan-nm.service` daemon on IP `192.168.1.150` (bridging interface `vxlan150`).
-  - `VM 109` (`minecraft-docker` Gaming VM): **2 Portainer Stacks** (`mcbd-connect`, `mcbd-proxy`, etc.)
+  - `VM 109` (`minecraft-server` Gaming VM): **2 Portainer Stacks** (`mcbd-connect`, `mcbd-proxy`, etc.)
 
 ### Node 2: `pve2` (Awow AK34Pro Mini PC Profile — `192.168.1.240`)
 - **Hardware**: Intel Celeron J3455 (4C/4T), 6GB RAM.

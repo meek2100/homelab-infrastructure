@@ -37,7 +37,7 @@ KNOWN_PORTAINER_INSTANCES = [
         "stacks": ["telemetry-agent"]
     },
     {
-        "name": "minecraft-docker",
+        "name": "minecraft-server",
         "url": "https://minecraftondemand.secure.theurer.dev",
         "local_ip": "192.168.40.175",
         "stacks": ["telemetry-agent"]

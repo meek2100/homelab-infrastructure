@@ -33,7 +33,7 @@ TARGETS = [
     {"name": "AdGuard Home Secondary (nexus2)", "ip": "192.168.40.186", "tcp": [53], "category": "Core Admin Service"},
     {"name": "luna-server (Smart Home VM 102)", "ip": "192.168.40.249", "tcp": [22, 8123, 8581], "category": "Smart Home Admin"},
     {"name": "media-server (Plex VM 103)", "ip": "192.168.40.247", "tcp": [22, 32400], "category": "Media Admin"},
-    {"name": "minecraft-docker (VM 109)", "ip": "192.168.40.175", "tcp": [22], "category": "Gaming VM"},
+    {"name": "minecraft-server (VM 109)", "ip": "192.168.40.175", "tcp": [22], "category": "Gaming VM"},
     {"name": "OpenMediaVault Admin (VM 101)", "ip": "192.168.40.248", "tcp": [80, 443], "category": "Storage Admin"},
 
     # Private Storage Network & Automation Controller
