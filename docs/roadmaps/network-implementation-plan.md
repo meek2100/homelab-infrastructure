@@ -4,7 +4,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 
 ---
 
-## 📈 Progress Summary — Last Updated 2026-09-27
+## 📈 Progress Summary — Last Updated 2026-09-28
 
 | Part | Title | Status |
 | :--- | :--- | :---: |
@@ -16,9 +16,10 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Part 2.8** | Netgear GS108Ev2 Office Switch GitOps & Backup | 🟢 Complete — Native NSDP packet driver, L2 relay, and binary/JSON backups verified |
 | **Part 2.9** | Wireshark Headless SPAN Sniffer & Storage Engine (Stack 48) | 🟢 Hardened — 500M tmpfs, 50MB chunks, watchdog, continuous 24h FIFO |
 | **Part 3** | Observability Engine & Synthetic Probing (Stack 71) | 🟢 100% Deployed & Active (10 containers, Alertmanager, Blackbox, external targets) |
-| **Part 4** | Unified Full-Fleet Control Center, External Systems & PBS Foundation | 🟢 100% Deployed & Active (49/49 targets UP, distributed agent pods active on 4 VMs, Loki streaming all containers) |
-| **Part 5** | Production Operationalization, PBS Migration & Hardening (Remaining Roadmap) | 🟡 Actionable Roadmap (PBS Storage, Schedule Transition, pve2 Routing Parity, Alert Verification, Log Shipping) |
-| **Part 6** | Comprehensive Architectural Learnings & Production Gotchas | 📚 Documented & Enforced Across Fleet |
+| **Part 4** | Unified Full-Fleet Control Center, External Systems & PBS Foundation | 🟢 100% Deployed & Active (49/49 targets UP, distributed agent pods active on 5 VMs, Loki streaming all containers) |
+| **Part 5** | Production Operationalization, PBS Migration & External GitOps | 🟢 100% Operationalized (PBS Active Cluster-Wide, Backups Verified, Alerts Active, External VPS FastMCP Active) |
+| **Part 5.6** | Phase 2 Automation, External Log Shipping & GitOps Drills | 🟡 Active Lifecycle (Promtail External Shipping, Periodic Drills) |
+| **Part 6** | Comprehensive Architectural Learnings & Production Gotchas | 📚 16 Critical Learnings Documented & Fleet-Hardened |
 
 ### Key Protocol Constraints & Architecture Settled
 - **Netgear GS108Ev2** — No HTTP REST API. Uses **NSDP** (Layer 2 UDP, ports 63321/63322). The `backup_netgear_switch` / `get_netgear_switch_status` MCP tools execute via pure Python NSDP using an automated Layer 2 adjacent relay hierarchy: primary OpenWrt router (`192.168.1.226` on `br-lan`) with fallback to Proxmox `pve` (`192.168.1.250` on `vmbr0`). Live telemetry and synchronized dual JSON/binary GitOps backups are 100% verified.
@@ -413,18 +414,12 @@ A comprehensive external telemetry, diagnostic, and log ingestion framework prot
 > **Status: 🟡 Active Implementation Phase**
 > This part bridges completed Phase 1 read-only audits and monitoring into full production operationalization across backup pipelines, cluster-wide storage registration, symmetrical routing remediation, and alert routing validation.
 
-### 5.1: Hypervisor Symmetrical Routing Remediation (`pve2` Asymmetric Blackhole Fix)
-- **Problem Statement**:
-  `pve2` has two invalid sub-interfaces in `/etc/network/interfaces` (`vmbr0.40` on `192.168.40.240/24` and `vmbr0.50` on `192.168.50.240/24`). Because the physical port is an untagged access port, `pve2`'s kernel drops incoming inter-VLAN packets from `nexus-server` (`192.168.40.185`) via Linux Strict Reverse Path Filtering (`rp_filter=1`) or tries to reply out `vmbr0.40` with 802.1Q tags. This completely breaks NPM reverse proxying to `https://pve2.secure.theurer.dev/` and Tailscale remote access to `192.168.1.240`.
-- **Target Architecture**:
-  Bring `pve2` into exact parity with `pve` (`192.168.1.250`) and `pve3` (`192.168.1.245`). Hypervisors belong strictly on VLAN 1 (`192.168.1.0/24`) with default gateway `192.168.1.1` on `vmbr0`, and dedicated SAN storage on `vmbr1` (`10.25.25.0/24`).
-- **Action Items**:
-  1. Back up `/etc/network/interfaces` on `pve2` and strip `vmbr0.40` and `vmbr0.50`.
-  2. Execute `ifreload -a` on `root@pve2` (or delete virtual links via `ip link delete vmbr0.40`).
-  3. Verify `ip route show` has only `default via 192.168.1.1 dev vmbr0`, `192.168.1.0/24 dev vmbr0`, and `10.25.25.0/24 dev vmbr1`.
-  4. Test NPM proxy host `pve2.secure.theurer.dev` ➔ `https://192.168.1.240:8006` with WebSockets enabled, confirming HTTP 200.
-  5. Realign Prometheus Stack 71 scrape target for `proxmox_pve2` from workaround `10.25.25.240` back to standard management IP `192.168.1.240`.
-  6. Confirm full isolation: `10.25.25.0/24` on `vmbr1` is used exclusively for wire-speed storage and PBS backups; management traffic remains on `192.168.1.0/24`.
+### 5.1: Hypervisor Symmetrical Routing Remediation (`pve2` Asymmetric Blackhole Fix) — 🟢 COMPLETE
+- **Current State**: 🟢 **Completed & Operational**.
+- **Resolved Remediation**:
+  1. Prometheus Stack 71 scrape target for `pve2` was realigned to standard management IP `192.168.1.240` (commit `24d7f40`).
+  2. NPM reverse proxy host `pve2.secure.theurer.dev` ➔ `https://192.168.1.240:8006` verified with HTTP 200 and live WebSockets.
+  3. Wire-speed storage network (`vmbr1`, `10.25.25.0/24`) is completely isolated and verified transmitting PBS daily backups at 112.8 MiB/s wire speed without inter-VLAN interference.
 
 ### 5.2: Proxmox Backup Server (PBS) Cluster-Wide Storage Activation
 - **Current State**: 🟢 **Completed & Operational**. CT 105 (`pbs-server`) is running on `pve3` with services `proxmox-backup` and `proxmox-backup-proxy` active. Storage `/backup/pbs-datastore` bind-mounted to `/mnt/pve/backup/pbs-datastore`. Web UI active at `https://192.168.1.244:8007` and `https://10.25.25.244:8007`. Storage pool `pbs-backup` registered and online across all 3 nodes (`pve`, `pve2`, `pve3`).
@@ -470,10 +465,12 @@ A comprehensive external telemetry, diagnostic, and log ingestion framework prot
 
 
 ### 5.6: Phase 2 Automation, Scheduled Snapshots & GitOps Drills
-- **Action Items**:
-  1. Programmatic VM/LXC snapshot scheduling using native FastMCP tool `manage-vm-snapshots.py` prior to container or guest OS upgrades.
-  2. GitOps auto-sync for Netgear switch NSDP state and Araknis switch/router backups.
-  3. Semi-annual secret rotation drill: Re-encrypting `secrets.enc.yaml` files with updated age recipient keys.
+- **Action Items & Current Operational Status**:
+  1. **Programmatic VM/LXC Snapshot Automation**: 🟢 **Operational**. FastMCP tool `manage-vm-snapshots.py` (`snapshot_vm`, `list_vm_snapshots`, `rollback_vm`, `delete_vm_snapshot`, `backup_vm_vzdump`) supports both QEMU VMs (`qm`) and Linux Containers (`pct`), allowing zero-friction snapshot creation prior to any container or guest OS upgrade.
+  2. **Switch & Router GitOps Automation**: 🟢 **Operational**. Dedicated FastMCP tools (`backup_araknis_switch`, `backup_araknis_router`, `backup_netgear_switch`, `backup_openwrt`) programmatically export and version-control live device configurations with drift detection.
+  3. **External Cloud VPS Lifecycle Tools**: 🟢 **Operational**. FastMCP tools (`audit_external_hosts`, `backup_external_host`, `get_external_security_status`) manage `theurer.dev` and `mail.theurer.dev` without manual shell commands.
+  4. **Promtail External Log Ingestion**: 🟡 **Ingress Ready, Shipping Deployment Pending**. Cloudflare Tunnel entry `logs.theurer.dev/loki/api/v1/push` with Bearer auth is provisioned; deploying lightweight Promtail agent on both cloud hosts is the final telemetry link.
+  5. **Periodic GitOps Drills**: 📄 **Runbook Ready**. Documented semi-annual secret rotation drill using SOPS + age (`secrets.enc.yaml`) and disaster recovery restore tests.
 
 ---
 
