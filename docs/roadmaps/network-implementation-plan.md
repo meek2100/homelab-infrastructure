@@ -427,43 +427,22 @@ A comprehensive external telemetry, diagnostic, and log ingestion framework prot
   6. Confirm full isolation: `10.25.25.0/24` on `vmbr1` is used exclusively for wire-speed storage and PBS backups; management traffic remains on `192.168.1.0/24`.
 
 ### 5.2: Proxmox Backup Server (PBS) Cluster-Wide Storage Activation
-- **Current State**: 🟢 CT 105 (`pbs-server`) is running on `pve3` with services `proxmox-backup` and `proxmox-backup-proxy` active. Storage `/backup/pbs-datastore` bind-mounted to `/mnt/pve/backup/pbs-datastore`. Web UI active at `https://192.168.1.244:8007` and `https://10.25.25.244:8007`.
-- **Root Cause of Storage Registration Failure**:
-  PBS evaluates `Effective Permissions = User_Permissions ∩ Token_Permissions`. Token `pve-backup@pbs!backup-token` was created, but parent user `pve-backup@pbs` had no ACLs, causing `Cannot find datastore 'homelab-datastore', check permissions and existence!` during `pvesm add pbs`.
-- **Action Items**:
-  1. Inside CT 105 (`pct enter 105` on `pve3`), grant parent user ACLs:
-     ```bash
-     proxmox-backup-manager acl update /datastore DatastoreAdmin --auth-id 'pve-backup@pbs'
-     proxmox-backup-manager acl update / DatastoreAudit --auth-id 'pve-backup@pbs'
-     ```
-  2. Register `pbs-backup` storage pool on all 3 Proxmox nodes (`pve`, `pve2`, `pve3`):
-     ```bash
-     pvesm add pbs pbs-backup \
-         --server 192.168.1.244 \
-         --datastore homelab-datastore \
-         --username 'pve-backup@pbs!backup-token' \
-         --password "fa169883-ef90-4dd9-b307-4a16f94e354c" \
-         --fingerprint "02:9a:df:82:ab:b9:d4:f9:cf:d5:0a:9a:da:56:00:42:01:23:3c:9c:8d:8f:6f:cf:18:5e:9a:23:6e:f7:52:ff" \
-         --encryption-key autogen \
-         --prune-backups keep-last=7,keep-daily=7,keep-weekly=4,keep-monthly=12
-     ```
-  3. Verify cluster storage status across all nodes:
-     ```bash
-     pvesm status --storage pbs-backup
-     ```
+- **Current State**: 🟢 **Completed & Operational**. CT 105 (`pbs-server`) is running on `pve3` with services `proxmox-backup` and `proxmox-backup-proxy` active. Storage `/backup/pbs-datastore` bind-mounted to `/mnt/pve/backup/pbs-datastore`. Web UI active at `https://192.168.1.244:8007` and `https://10.25.25.244:8007`. Storage pool `pbs-backup` registered and online across all 3 nodes (`pve`, `pve2`, `pve3`).
+- **Resolved Blockers**:
+  1. *Permission Intersection*: Token was upgraded to `DatastorePowerUser` (`proxmox-backup-manager acl update /datastore/homelab-datastore DatastorePowerUser --auth-id 'pve-backup@pbs!backup-token'`) to grant `Datastore.Prune` required by PVE retention routines.
+  2. *Encryption Key Sync across Standalone Nodes*: Standalone PVE nodes do not share `/etc/pve/priv/storage/`. Working key `pbs-backup.enc` was SCP'd from `pve` to `pve2` and `pve3`.
 
 ### 5.3: Transition Backup Schedules (Legacy vzdump ➔ PBS Daily Incremental CBT)
-- **Goal**: Decommission uncompressed full-disk `vzdump` jobs that cause heavy I/O and long backup windows, replacing them with daily deduplicated chunk-based incremental backups over the `192.168.1.0/24` management LAN.
-- **Action Items**:
-  1. In Proxmox Web GUI (Datacenter ➔ Backup): Delete or disable existing weekly `vzdump` backup jobs.
-  2. Create unified daily PBS backup schedule:
-     - **Selection**: All Guests across all 3 nodes (`pve`, `pve2`, `pve3`).
-     - **Storage Target**: `pbs-backup` (`192.168.1.244`).
-     - **Schedule**: Daily at `02:00` UTC.
-     - **Mode**: Snapshot with client-side encryption.
-     - **Pruning**: Retention enforced via PBS (`keep-last=7, keep-daily=7, keep-weekly=4, keep-monthly=12`).
-  3. Execute baseline initial backup on a test guest (e.g. `nexus-server2` VM 100 on `pve3`) to seed the deduplication datastore.
-  4. Trigger immediate second backup and verify QEMU Changed Block Tracking (CBT) completes in **under 30 seconds** with zero guest downtime.
+- **Current State**: 🟢 **Completed & Verified Across All 3 Nodes**.
+- **Empirical Initial Seed Verification (All `TASK OK`)**:
+  - **`pve` (pve1)**: Successfully backed up test VM to `pbs-backup`.
+  - **`pve2`**: VM 100 (`discovery-server`, 50GB disk) completed in **7m 28s** at 112.8 MiB/s wire speed with client encryption `55:67:8b:75...` and clean pruning.
+  - **`pve3`**:
+    - VM 100 (`nexus-server2`, 50GB disk): Completed in **61 seconds** (839 MiB/s, 85% sparse/reused).
+    - VM 101 (`nas-server`, 505GB disks): Completed in **49m 56s** (371 GiB / 73% sparse zero data skipped thanks to pre-backup `fstrim`), CBT dirty-bitmaps established.
+    - CT 105 (`pbs-server` rootfs): Completed in **17 seconds** (909 MiB compressed to 316 MiB, bind-mount `/backup` safely excluded).
+- **Ongoing Automation**:
+  - Unified daily snapshot schedule registered targeting `pbs-backup` with retention: `keep-daily=7, keep-last=7, keep-weekly=4, keep-monthly=12`.
 
 ### 5.4: End-to-End Alerting Pipeline Validation & Routing Verification
 - **Current State**: Alertmanager Stack 71 is configured with decrypted SOPS credentials (`secrets.enc.yaml`) routing to Pushover and SMTP.
