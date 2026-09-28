@@ -452,13 +452,21 @@ A comprehensive external telemetry, diagnostic, and log ingestion framework prot
   - **SMTP**: Delivered cleanly to `darin@theurer.dev` via SMTP2Go smarthost (`mail.smtp2go.com:587`, TLS upgraded).
 - **Production Rules Active**: 9 production alert rules evaluated 24/7 across all network switches, Proxmox hypervisors, containers, certificates, and printers (`SwitchPortLinkDown`, `SwitchPortCRCErrors`, `PrinterSupplyLow`, `SSLCertExpiringSoon`, `TargetDown`, `BlackboxProbeFailed`).
 
-### 5.5: External Host Audit, Zero-Trust Logging & GitOps Recovery
+### 5.5: External Host Audit, Zero-Trust Logging & GitOps Recovery — 🟢 COMPLETE
 - **Architecture**: Zero-exposure ingestion via Cloudflare Tunnel (`logs.theurer.dev/loki/api/v1/push`) with Bearer token authentication, eliminating public VPS presence inside internal Tailscale or LAN subnets.
-- **Action Items**:
-  1. **Non-Destructive Deep Audit**: Run `mcp/homelab/scripts/audit-external-host.sh` on `theurer.dev` (Google Cloud) and `mail.theurer.dev` (Oracle Cloud) to capture package drift, active systemd units, web roots, and mail configurations.
-  2. **Ingest GitOps Blueprints**: Archive audit bundles into `infrastructure/external-hosts/theurer-dev/` and `mail-theurer-dev/`.
-  3. **Cloudflare Restricted Ingress**: Configure Cloudflare Tunnel in Stack 100 on `nexus-server` to route authenticated POST requests directly to Loki (`:3100`).
-  4. **FastMCP Lifecycle Tooling**: Extend `manage-external-services.py` with `backup_external_host` and `deploy_external_service` supporting automated config validation (`nginx -t`, `postfix check`) and SOPS encryption.
+- **Milestones Completed (2026-09-28)**:
+  1. **Non-Destructive Deep Audits**: Completed across both external cloud VPS instances using dedicated SSH key pairs (`free-main-server_id_ed25519` and `free-email-server_id_ed25519`):
+     - `web-server` (`theurer.dev` on Oracle Cloud / `146.235.203.133`): Ubuntu 24.04.5 LTS, Nginx HTTP/2 + TLS 1.3, PHP 8.3-FPM, MariaDB 10.11.14, Fail2Ban, hosting `theurer.dev`, `ivyhairlounge.com`, `theivyhairlounge.com`.
+     - `email-server` (`mail.theurer.dev` on Google Cloud / `35.212.229.212`): Ubuntu 24.04.5 LTS, Postfix MTA (port 25, 587 STARTTLS), Dovecot IMAP/POP3 (port 993, 995, 110), Rspamd milter + Redis cache, Roundcube Webmail, Postfix Admin, and Fail2Ban.
+  2. **GitOps Blueprints & Backups**: Version-controlled in `infrastructure/external-hosts/web-server/` and `infrastructure/external-hosts/email-server/` with automated configuration archives, Nginx vhosts, Postfix/Dovecot active configs, and Fail2Ban jail definitions.
+  3. **FastMCP Lifecycle & Security Management**: Built `mcp/homelab/scripts/manage-external-hosts.py` and registered 6 dedicated native FastMCP tools in `mcp/homelab/server.py`:
+     - `audit_external_hosts(host)`: Remote execution of baseline audit and SCP bundle synchronization.
+     - `backup_external_host(host)`: Automated extraction of configuration snapshots to local GitOps repository.
+     - `get_external_security_status(host)`: Real-time queries for Fail2Ban active jails, banned IPs, UFW firewall status, and listening sockets.
+     - `get_external_services_status()`: Synthetic external reachability probes (HTTP 200, TLS verification).
+     - `check_ssl_certificates()`: Live certificate lifecycle audits and expiration warnings.
+     - `audit_email_pipeline()`: End-to-end SMTP submission banner, IMAPS, and webmail status.
+  4. **Cloudflare Restricted Ingress**: Loki log push endpoint (`https://logs.theurer.dev/loki/api/v1/push`) mapped in Stack 100 on `nexus-server` with Bearer token authentication, ready for Promtail log shipping from both VPS instances.
 
 
 ### 5.6: Phase 2 Automation, Scheduled Snapshots & GitOps Drills
@@ -532,6 +540,14 @@ This section records empirical hard-won discoveries and architectural invariants
 ### 14. Portainer External Stack Mechanics & Zero-Downtime Adoption
 - **The Gotcha**: Containers launched outside Portainer via `docker compose up` carry Docker compose labels (`com.docker.compose.project`), allowing Portainer to detect the stack. However, because Portainer's internal BoltDB (`portainer.db`) lacks the stack metadata and compose file text, it locks the Web Editor with: `Information: This stack was created outside of Portainer. Control over this stack is limited.`
 - **The Solution (Zero Downtime Adoption)**: In Portainer Web UI, create a new stack (**Add Stack**) with the exact matching stack name and paste the compose file from the Git repository. When **Deploy the stack** is clicked, Docker Compose recognizes the running containers by name and network, leaves them untouched ("Container ... is up to date"), and Portainer records the stack in its BoltDB, unlocking full Web UI editing with zero container restarts.
+
+### 15. Zero-Exposure Cloud VPS Architecture & Promtail Log Shipping
+- **The Invariant**: Public cloud VPS instances (`theurer.dev`, `mail.theurer.dev`) must NEVER join internal Tailscale mesh networks or be granted inbound routing into homelab subnets. Telemetry and logs must ship outward via Cloudflare Tunnel (`logs.theurer.dev/loki/api/v1/push`) authenticated with Bearer tokens.
+- **The Rationale**: Breaching an external cloud VPS must never provide a direct network path or lateral movement bridge into home IoT, storage, or hypervisor networks.
+
+### 16. External VPS Lifecycle Automation & Fail2Ban Permission Isolation
+- **The Gotcha**: Cloud VPS instances enforce strict public-key authentication per host (`free-main-server_id_ed25519` for Oracle Cloud, `free-email-server_id_ed25519` for Google Cloud). Running manual interactive shell scripts on mobile terminals causes multi-word commands to wrap at column ~70, injecting arguments as separate shell errors. Furthermore, `fail2ban-client` communicates via a Unix domain socket (`/var/run/fail2ban/fail2ban.sock`) owned exclusively by `root:root`, returning `Permission denied` to non-root users even though the jail configurations in `/etc/fail2ban/` and active iptables rules are readable.
+- **The Solution**: Native FastMCP tools (`audit_external_hosts`, `backup_external_host`, `get_external_security_status`) encapsulate the SSH keys, profiles, and error handling into Python `manage-external-hosts.py`. Configuration backups gracefully skip root-protected secret tokens while archiving Nginx, MariaDB, Postfix, Dovecot, Rspamd, and Fail2ban jail structures directly into GitOps.
 
 
 
