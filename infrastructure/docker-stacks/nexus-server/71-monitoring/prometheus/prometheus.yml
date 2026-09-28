@@ -253,11 +253,11 @@ scrape_configs:
         labels:
           service: 'calibre-web'
       - targets:
-        - http://192.168.40.247:8080
+        - http://192.168.40.247:8084
         labels:
           service: 'filebrowser'
       - targets:
-        - http://192.168.40.186:80
+        - http://192.168.40.186:8081
         labels:
           service: 'adguard-secondary-ui'
       - targets:
@@ -265,17 +265,55 @@ scrape_configs:
         labels:
           service: 'openmediavault-nas'
       - targets:
+        - http://192.168.40.249:8123
+        labels:
+          service: 'home-assistant'
+          category: 'smarthome'
+      - targets:
+        - http://192.168.40.249:8581
+        labels:
+          service: 'homebridge'
+          category: 'smarthome'
+      - targets:
+        - http://192.168.10.200
+        labels:
+          service: 'control4-ca10-director'
+          category: 'control4'
+      - targets:
+        - http://192.168.10.35
+        labels:
+          service: 'control4-core1'
+          category: 'control4'
+      - targets:
+        - http://192.168.10.153
+        labels:
+          service: 'control4-core3'
+          category: 'control4'
+      - targets:
+        - http://192.168.10.201
+        labels:
+          service: 'control4-t5-touchscreen'
+          category: 'control4'
+      - targets:
         - http://192.168.30.90
         labels:
           service: 'mainsail-klipper'
+          category: '3d-printing'
+      - targets:
+        - http://192.168.30.90:7125
+        labels:
+          service: 'moonraker-api'
+          category: '3d-printing'
       - targets:
         - http://192.168.10.195
         labels:
           service: 'hp-laserjet-web'
+          category: 'printer'
       - targets:
         - http://192.168.10.196
         labels:
           service: 'brother-printer-web'
+          category: 'printer'
       - targets:
         - https://theurer.dev
         labels:
