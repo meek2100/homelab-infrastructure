@@ -11,6 +11,7 @@ This runbook contains single-click copy/paste commands for managing the Netgear 
 | [`mcp/homelab/scripts/probe-netgear-l2.sh`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/probe-netgear-l2.sh) | Direct NSDP discovery & telemetry probe via L2 relay | `personal-ai` | Relays via OpenWrt or PVE on VLAN 1 |
 | [`mcp/homelab/scripts/inspect-nsdp-live.sh`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/inspect-nsdp-live.sh) | Parse live NSDP frames recorded from Windows ProSAFE in Wireshark tmpfs | `personal-ai` | Queries VM 102 via `pve` |
 | [`mcp/homelab/scripts/manage-netgear-switch.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/manage-netgear-switch.py) | Full switch status, port link matrix, CRC error stats, and JSON backup export | `personal-ai` / `pve` | Native / L2 SSH Relay |
+| [`mcp/homelab/scripts/manage-pakedge-switch.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/manage-pakedge-switch.py) | Testbench status, learned MACs, config export, and Port 1/0/7 PoE power cycle | `personal-ai` | Native / SW920 Port 1/0/7 |
 | [`mcp/homelab/scripts/get-wireshark-status.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/get-wireshark-status.py) | Inspect ens19 SPAN counters, Wireshark container, and NAS archive | `personal-ai` | Queries VM 102 via `pve` |
 | [`infrastructure/network/openwrt/scripts/failover.sh`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/network/openwrt/scripts/failover.sh) | 3-Priority failover monitor, state transitions (P1/P2/P3), and diagnostics | OpenWrt (`192.168.1.226`) | Local router shell |
 | `/usr/local/bin/vxlan-nm` | State-aware VXLAN receiver daemon, mutual exclusion VLAN 1 filter | VM 107 (`192.168.1.150`) | Systemd daemon on `pve` |
@@ -193,7 +194,44 @@ python3 mcp/homelab/scripts/deploy-monitoring-stack.py stop
 
 ---
 
+### 17. Inspect Pakedge SX-8P Switch & Learned Testbench MACs
+Audits reachability of the Pakedge SX-8P testbench switch (`192.168.1.205`), verifies HTTP/Telnet daemon status, and queries the upstream Araknis 920 switch (Port 1/0/7) for learned MAC addresses across VLAN 1, 150, and 200.
+
+```bash
+python3 mcp/homelab/scripts/manage-pakedge-switch.py status
+```
+
+---
+
+### 18. Power-Cycle Pakedge Switch via Araknis 920 PoE
+Remotely resets or powers on the Pakedge SX-8P testbench switch by cycling PoE power on upstream Araknis 920 Port 1/0/7. Allows full power reboot without visiting the physical test bench.
+
+```bash
+python3 mcp/homelab/scripts/manage-pakedge-switch.py poe-cycle --port 7
+```
+
+---
+
+### 19. Export Pakedge SX-8P Running Configuration (GitOps)
+Connects to the Pakedge web management interface (`Hydra/0.1.8`), triggers a configuration backup, and downloads the running configuration to GitOps.
+
+```bash
+python3 mcp/homelab/scripts/manage-pakedge-switch.py backup
+```
+
+---
+
 ## 🏛️ Ground-Truth Technical Reference
+
+### Pakedge SX-8P Managed Switch Hardware & Protocol Profile
+- **IP Address**: `192.168.1.205` (VLAN 1 Management).
+- **Physical Link**: Port 1/0/7 on Araknis 920 Managed Switch (`192.168.1.215`).
+- **PoE Profile**: Powered/connected via Araknis Port 1/0/7 (`poe high-power 4ptdot3af`).
+- **Trunking**: 802.1Q trunk carrying native VLAN 1, tagged VLAN 150 (`CA-1 Test`), and tagged VLAN 200 (`Core-5 Test`).
+- **Web Server**: `Hydra/0.1.8` web server hosting a Backbone.js SPA.
+- **Ports & Protocols**: HTTP (TCP 80), Telnet CLI (TCP 23).
+- **SLA Policy**: On-Demand Testbench. Kept powered off when not testing; exempt from 24/7 SLA. Synthetic probes tagged `environment: 'testbench-ondemand'`.
+- **FastMCP Tools**: `get_pakedge_switch_status`, `backup_pakedge_switch`, `power_cycle_pakedge_switch`.
 
 ### Netgear GS108Ev2 Hardware & Protocol Invariants
 - **Firmware**: `1.00.12`

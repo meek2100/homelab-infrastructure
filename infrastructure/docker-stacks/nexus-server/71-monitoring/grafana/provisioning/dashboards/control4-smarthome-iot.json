@@ -952,6 +952,150 @@
           "legendFormat": "FileBrowser"
         }
       ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 500,
+      "title": "🧪 Work Automation Lab & Testbench (On-Demand / Offline-Tolerant)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "blue",
+                  "text": "STANDBY / POWERED DOWN"
+                },
+                "1": {
+                  "color": "green",
+                  "text": "ONLINE (ACTIVE)"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 21
+      },
+      "id": 15,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "title": "Pakedge SX-8P Managed Switch (192.168.1.205)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "probe_success{instance=\"http://192.168.1.205\"} or vector(0)",
+          "legendFormat": "Pakedge Status"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "Prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "1": {
+                  "color": "green",
+                  "text": "UP (FORWARDING)"
+                },
+                "2": {
+                  "color": "blue",
+                  "text": "DOWN (STANDBY)"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 12,
+        "y": 21
+      },
+      "id": 16,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "title": "Araknis 920 Port 1/0/7 Uplink & PoE (Testbench Trunk)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "ifOperStatus{job=\"snmp_infrastructure\", ifIndex=\"7\"} or vector(1)",
+          "legendFormat": "Port 1/0/7 Link"
+        }
+      ]
     }
   ],
   "refresh": "10s",

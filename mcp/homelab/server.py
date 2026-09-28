@@ -490,6 +490,21 @@ def whitelist_external_ip(ip: str = "24.22.108.194", host: str = "all") -> str:
     """Whitelists an IP address in Fail2Ban ignoreip across external cloud hosts (web, email, or all)."""
     return run_script("manage-external-hosts.py", ["whitelist", "--host", host, "--ip", ip])
 
+@mcp.tool()
+def get_pakedge_switch_status(host: str = "192.168.1.205") -> str:
+    """Audits Pakedge SX-8P testbench switch status, open services, and Araknis 920 Port 1/0/7 learned MACs."""
+    return run_script("manage-pakedge-switch.py", ["status", "--host", host])
+
+@mcp.tool()
+def backup_pakedge_switch(host: str = "192.168.1.205") -> str:
+    """Exports and backs up the Pakedge SX-8P testbench switch running configuration to GitOps."""
+    return run_script("manage-pakedge-switch.py", ["backup", "--host", host])
+
+@mcp.tool()
+def power_cycle_pakedge_switch(port: int = 7) -> str:
+    """Power-cycles the Pakedge SX-8P testbench switch via upstream Araknis 920 Port 1/0/7 PoE."""
+    return run_script("manage-pakedge-switch.py", ["poe-cycle", "--port", str(port)])
+
 if __name__ == "__main__":
     mcp.run()
 

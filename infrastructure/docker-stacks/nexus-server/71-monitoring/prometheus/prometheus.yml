@@ -324,6 +324,12 @@ scrape_configs:
         labels:
           service: 'mail-theurer-dev-web'
           environment: 'external'
+      - targets:
+        - http://192.168.1.205
+        labels:
+          service: 'pakedge-sx8p-switch'
+          category: 'network'
+          environment: 'testbench-ondemand'
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

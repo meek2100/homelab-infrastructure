@@ -15,6 +15,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Part 2.7** | vxlan-server Split Trunking Architecture (VM 107) | 🟢 Complete — Wire-speed untagged VLAN 1 via AP bridge, isolated tagged VLANs encapsulated over VXLAN 150 |
 | **Part 2.8** | Netgear GS108Ev2 Office Switch GitOps & Backup | 🟢 Complete — Native NSDP packet driver, L2 relay, and binary/JSON backups verified |
 | **Part 2.9** | Wireshark Headless SPAN Sniffer & Storage Engine (Stack 48) | 🟢 Hardened — 500M tmpfs, 50MB chunks, watchdog, continuous 24h FIFO |
+| **Part 2.10**| Pakedge SX-8P Managed Switch & Work Testbench Lifecycle | 🟢 Complete — Araknis Port 1/0/7 PoE automation, FastMCP status/backup/poe-cycle, on-demand monitoring |
 | **Part 3** | Observability Engine & Synthetic Probing (Stack 71) | 🟢 100% Deployed & Active (10 containers, Alertmanager, Blackbox, external targets) |
 | **Part 4** | Unified Full-Fleet Control Center, External Systems & PBS Foundation | 🟢 100% Deployed & Active (49/49 targets UP, distributed agent pods active on 5 VMs, Loki streaming all containers) |
 | **Part 5** | Production Operationalization, PBS Migration & External GitOps | 🟢 100% Operationalized (PBS Active Cluster-Wide, Backups Verified, Alerts Active, External VPS FastMCP Active) |
@@ -23,6 +24,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 
 ### Key Protocol Constraints & Architecture Settled
 - **Netgear GS108Ev2** — No HTTP REST API. Uses **NSDP** (Layer 2 UDP, ports 63321/63322). The `backup_netgear_switch` / `get_netgear_switch_status` MCP tools execute via pure Python NSDP using an automated Layer 2 adjacent relay hierarchy: primary OpenWrt router (`192.168.1.226` on `br-lan`) with fallback to Proxmox `pve` (`192.168.1.250` on `vmbr0`). Live telemetry and synchronized dual JSON/binary GitOps backups are 100% verified.
+- **Pakedge SX-8P Managed Switch** — Embedded `Hydra/0.1.8` web server with Backbone.js SPA (`192.168.1.205`). Connected via 802.1Q trunk (VLAN 1, 150, 200) to Araknis 920 Port 1/0/7 (`poe high-power 4ptdot3af`). Powers work automation lab testbench (Control4 CA-1, Core-3, Core-5, touchscreens). Dedicated on-demand testbench profile: powered down when idle, exempt from 24/7 uptime SLOs, remotely power-cycled via FastMCP `power_cycle_pakedge_switch`, with synthetic probes labeled `environment: 'testbench-ondemand'`.
 
 ---
 
@@ -38,6 +40,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **AP 2 (Core)** | Araknis 830 Wi-Fi 7 | `192.168.1.236` | VLAN 1 (Management) | Broadcasts SSIDs (Ch 1 / 149 / 69) | 🟢 Active |
 | **AP 3 (Bridge)**| Araknis 830 Wi-Fi 7 | `192.168.1.237` | VLAN 1 (Management) | Dedicated Wireless Bridge Client (Insomniac_Bridge) | 🟢 Active |
 | **Office Switch**| Netgear GS108Ev2 | `192.168.1.220` | VLAN 1 (Management) | Desktop distribution switch behind OpenWrt — **No official API/CLI; managed via NSDP (UDP 63321/63322)** | 🟢 Active |
+| **Test Switch**  | Pakedge SX-8P Managed | `192.168.1.205` | VLAN 1 (Trunk 150/200) | Work Automation Lab / Testbench — **Powered down on demand via SW920 Port 1/0/7 PoE** | 🟡 On-Demand |
 | **Office Router**| Belkin AX3200 (OpenWrt) | `192.168.1.226` / `10.99.99.1` | VLAN 1 & VLAN 150 | 3-Priority Failover (Wire, VXLAN 150, Wi-Fi repeater) | 🟢 Active |
 | **WAN2 Router** | Asus RT-N66U (DD-WRT Aurora)| `10.25.25.1` & `10.20.20.2` | WAN2 / `10.25.25.0/24` | Torrent/discovery isolation with PIA VPN auto-watchdog | 🟢 Active |
 | **Upstream GW** | DD-WRT Luna | `10.20.20.1` | `10.20.20.0/24` | Upstream transit gateway (firewalled from WAN) | 🟢 Active |
@@ -271,6 +274,49 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
                                  ▼
                              [nas-server VM 101 Storage Pool]
 ```
+
+---
+
+## 🔌 Part 2.10: Pakedge SX-8P Managed Switch — Work Automation Testbench & Lifecycle Automation
+
+### Current State: 🟢 Resolved & Integrated (On-Demand FastMCP Tooling)
+
+| Item | Status |
+| :--- | :---: |
+| Physical uplink & 802.1Q trunk (Port 1/0/7 on Araknis 920) | ✅ Documented & Active |
+| FastMCP telemetry tool (`get_pakedge_switch_status`) | ✅ Verified Live (11 learned MACs) |
+| FastMCP remote PoE power-cycle tool (`power_cycle_pakedge_switch`) | ✅ Verified Live (Port 7 cycle) |
+| FastMCP config backup tool (`backup_pakedge_switch`) | ✅ Integrated with SOPS credentials |
+| Prometheus synthetic probe & alert suppression | ✅ Configured (`environment: 'testbench-ondemand'`) |
+| Grafana Smart Home & Control4 Dashboard integration | ✅ Provisioned with Standby/Online badge |
+
+---
+
+### 🏛️ Architecture & Hardware Topology
+
+1. **Role & Hardware Profile**:
+   - Model: **Pakedge SX-8P** (8-port Gigabit Managed PoE+ Switch).
+   - Management IP: **`192.168.1.205`** (VLAN 1).
+   - Upstream Switch: **Araknis 920 Managed Switch** (`192.168.1.215`), Interface `1/0/7`.
+   - Upstream PoE Profile: `poe high-power 4ptdot3af` on Araknis Port 1/0/7.
+   - Trunk Configuration: 802.1Q trunk carrying native untagged **VLAN 1** (Management), tagged **VLAN 150** (`CA-1 Test`), and tagged **VLAN 200** (`Core-5 Test`).
+   - Attached Lab Fleet: Control4 CA-1 controllers, Core-3, Core-5, touchscreens (T3/T4/T5), Zigbee/Z-Wave radio modules.
+
+2. **On-Demand Power & SLA Invariant**:
+   - The Pakedge switch and attached test equipment serve strictly as a work automation testbench.
+   - **Powered Down When Idle**: Kept unpowered when active testing is not in progress.
+   - **Exempt from 24/7 SLA**: Alertmanager rules explicitly suppress `TargetDown` and `BlackboxProbeFailed` alerts for targets with `environment: 'testbench-ondemand'`.
+   - **Remote Power Control**: Users and agents can power on, cycle, or reboot the testbench on demand without physical switch access:
+     ```bash
+     python3 mcp/homelab/scripts/manage-pakedge-switch.py poe-cycle --port 7
+     ```
+
+3. **GitOps Backup & Management Tooling**:
+   - Tool script: [`mcp/homelab/scripts/manage-pakedge-switch.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/manage-pakedge-switch.py).
+   - FastMCP Native Tools in [`mcp/homelab/server.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/server.py):
+     - `get_pakedge_switch_status`: Audits switch reachability (HTTP/Telnet) and inspects upstream Araknis Port 1/0/7 MAC table.
+     - `backup_pakedge_switch`: Authenticates to Pakedge Hydra web server, initiates configuration export, and saves backup to `infrastructure/network/configs/pakedge-sx8p-running.cfg`.
+     - `power_cycle_pakedge_switch`: Powers cycles Araknis 920 Port 1/0/7 over FASTPATH SSH CLI.
 
 ---
 

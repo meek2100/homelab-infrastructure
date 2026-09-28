@@ -2,7 +2,7 @@ groups:
   - name: homelab_alerts
     rules:
       - alert: TargetDown
-        expr: up == 0
+        expr: up{environment!="testbench-ondemand"} == 0
         for: 2m
         labels:
           severity: critical
@@ -11,7 +11,7 @@ groups:
           description: "Scrape target {{ $labels.instance }} (job: {{ $labels.job }}) has been unreachable for more than 2 minutes."
 
       - alert: BlackboxProbeFailed
-        expr: probe_success == 0
+        expr: probe_success{environment!="testbench-ondemand"} == 0
         for: 2m
         labels:
           severity: critical

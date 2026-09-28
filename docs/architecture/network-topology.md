@@ -94,6 +94,23 @@ This document details the physical hardware, virtual bridges, dual-WAN egress pa
   * **Protocol**: The ProSAFE utility communicates over a **proprietary Layer 2 protocol — NSDP (Netgear Switch Discovery Protocol)** — using UDP broadcast/unicast on **ports 63321 and 63322**. Standard HTTP/TCP requests cannot reach the switch management interface.
   * **Community Tooling**: The MCP tools (`backup_netgear_switch`, `get_netgear_switch_status`) use the open-source community libraries [`netgear-tool`](https://github.com/s-t-e-f-a-n-o/netgear-tool) and [`py-netgear-plus`](https://github.com/foxey/py-netgear-plus) which reverse-engineer the NSDP protocol. These libraries **must run on the same Layer 2 broadcast domain as the switch** (VLAN 1 / `192.168.1.0/24`) since NSDP does not route across Layer 3 boundaries. Additional candidate tools under investigation include [`nccgroup/nsdp-discover`](https://github.com/nccgroup/nsdp-discover) (protocol discovery & security assessment), [`AlbanBedel/libnsdp`](https://github.com/AlbanBedel/libnsdp) (C library & CLI), and [`yaamai/go-nsdp`](https://github.com/yaamai/go-nsdp) (Go implementation).
 
+### 5. Work Automation Lab Switch: Pakedge SX-8P Managed Switch
+* **Management IP**: `192.168.1.205` (VLAN 1)
+* **Physical Uplink**: Direct 802.1Q trunk from **Araknis 920 Switch (Port 1/0/7)**.
+* **Port Trunking Configuration**:
+  * Native Untagged PVID: **VLAN 1 (`Management`)**.
+  * Tagged Trunks: **VLAN 150 (`CA-1 Test`)** and **VLAN 200 (`Core-5 Test`)**.
+  * Upstream PoE: Araknis 920 Port 1/0/7 operates with `poe high-power 4ptdot3af` enabled.
+* **Hardware & Management Profile**:
+  * Model: Pakedge SX-8P (8-port Gigabit Managed Switch with PoE+).
+  * Web GUI: Embedded `Hydra/0.1.8` web server running a Backbone.js SPA.
+  * Active Listeners: TCP Port 80 (HTTP) and TCP Port 23 (Telnet CLI).
+* **Operational Invariant & Monitoring Policy**:
+  * **On-Demand Testbench**: Powers dedicated work automation hardware (Control4 CA-1 controllers, Core-3, Core-5, touchscreens, test zigbee/zwave bridges).
+  * **Powered Down When Idle**: To conserve power and isolate non-production test gear, the switch and its attached bench are powered down when active testing is not underway.
+  * **Exempt from 24/7 SLA**: Prometheus synthetic probes tag the switch with `environment: 'testbench-ondemand'` to suppress alertmanager down-alerts when unpowered.
+  * **Remote Lifecycle & Power Control**: The switch can be remotely rebooted or power-cycled via FASTPATH CLI `poe-cycle --port 7` using the `power_cycle_pakedge_switch` FastMCP tool.
+  * **GitOps Backup & Telemetry**: Managed via [`mcp/homelab/scripts/manage-pakedge-switch.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/manage-pakedge-switch.py) (`get_pakedge_switch_status` and `backup_pakedge_switch`), synchronizing backups into `infrastructure/network/configs/pakedge-sx8p-running.cfg`.
 
 ---
 

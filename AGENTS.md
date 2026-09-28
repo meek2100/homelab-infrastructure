@@ -73,6 +73,7 @@
   - `docs/specifications/netgear-gs108ev2-nsdp.md`: Comprehensive reverse-engineered NSDP protocol specification and register mapping.
   - `docs/runbooks/network-automation.md`: Authoritative quick-reference runbook for all network automation, Netgear NSDP, and Wireshark capture scripts.
   - `mcp/homelab/scripts/manage-araknis-switch.py`: FastMCP tools `backup_araknis_switch`, `get_araknis_switch_status`, `power_cycle_switch_poe_port` via interactive FASTPATH SSH automation.
+  - `mcp/homelab/scripts/manage-pakedge-switch.py`: FastMCP tools `get_pakedge_switch_status`, `backup_pakedge_switch`, `power_cycle_pakedge_switch` for the work automation lab testbench switch (`192.168.1.205`), attached via Araknis 920 Port 1/0/7 PoE trunk. Exempt from 24/7 SLA.
   - `mcp/homelab/scripts/manage-araknis-router.py`: FastMCP tools `backup_araknis_router`, `get_araknis_router_status`, `restore_araknis_router` via authenticated REST API (`/api/cgi-bin/v1/`).
   - `mcp/homelab/scripts/manage-netgear-switch.py`: FastMCP tools `backup_netgear_switch`, `get_netgear_switch_status` via native headless NSDP protocol driver. Accompanied by helper wrappers `mcp/homelab/scripts/probe-netgear-l2.sh` and `mcp/homelab/scripts/inspect-nsdp-live.sh`. Complete execution guide in `docs/runbooks/network-automation.md`.
   - `mcp/homelab/scripts/backup-openwrt-config.py`: FastMCP tool `backup_openwrt` pulls and SOPS-encrypts OpenWrt `/etc/config/`.
