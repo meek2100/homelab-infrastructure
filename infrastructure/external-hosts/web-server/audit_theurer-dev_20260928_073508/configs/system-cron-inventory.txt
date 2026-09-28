@@ -1,0 +1,14 @@
+/etc/cron.d:
+total 16
+drwxr-xr-x   2 root root 4096 Sep 12  2024 .
+drwxr-xr-x 101 root root 4096 Sep 25 23:42 ..
+-rw-r--r--   1 root root  201 Jan  8  2022 e2scrub_all
+-rw-r--r--   1 root root  712 Jan 28  2022 php
+
+/etc/cron.daily:
+total 20
+drwxr-xr-x   2 root root 4096 Sep 25 23:42 .
+drwxr-xr-x 101 root root 4096 Sep 25 23:42 ..
+-rwxr-xr-x   1 root root  376 Nov 11  2019 apport
+-rwxr-xr-x   1 root root 1478 Apr  8  2022 apt-compat
+-rwxr-xr-x   1 root root  123 Dec  5  2021 dpkg

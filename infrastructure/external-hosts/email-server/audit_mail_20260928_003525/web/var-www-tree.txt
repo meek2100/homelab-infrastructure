@@ -1,0 +1,28 @@
+   290611      4 drwxr-xr-x   4 root     root         4096 Jul 19  2024 /var/www
+   290612      4 drwxr-xr-x   2 root     root         4096 Jul 19  2024 /var/www/html
+   290072      4 -rw-r--r--   1 root     root          612 Jul 19  2024 /var/www/html/index.nginx-debian.html
+   291778      4 drwxr-xr-x   3 root     root         4096 Jul 21  2024 /var/www/mail.theurer.dev
+   292317      4 drwxr-xr-x  12 root     root         4096 Jul 21  2024 /var/www/mail.theurer.dev/mail
+   291935      4 -rw-r--r--   1 root     root           20 Jul 21  2024 /var/www/mail.theurer.dev/mail/phpinfo.php
+   295074     56 -rw-rw-r--   1 root     root        56852 May 19  2024 /var/www/mail.theurer.dev/mail/composer.lock
+   295075    212 -rw-rw-r--   1 root     root       213794 May 19  2024 /var/www/mail.theurer.dev/mail/CHANGELOG.md
+   297651     16 -rw-rw-r--   1 root     root        12661 May 19  2024 /var/www/mail.theurer.dev/mail/INSTALL
+   295791      4 drwxrwxr-x   3 root     root         4096 May 19  2024 /var/www/mail.theurer.dev/mail/skins
+   297477     12 -rw-rw-r--   1 root     root        11199 May 19  2024 /var/www/mail.theurer.dev/mail/index.php
+   297460      4 drwxrwxr-x   2 www-data www-data     4096 Jul 21  2024 /var/www/mail.theurer.dev/mail/logs
+   297478      4 drwxrwxr-x   2 root     root         4096 May 19  2024 /var/www/mail.theurer.dev/mail/bin
+   293812      4 drwxrwxr-x   3 root     root         4096 May 19  2024 /var/www/mail.theurer.dev/mail/public_html
+   295076      4 drwxrwxr-x   8 root     root         4096 May 19  2024 /var/www/mail.theurer.dev/mail/program
+   293821      4 -rw-rw-r--   1 root     root          967 May 19  2024 /var/www/mail.theurer.dev/mail/SECURITY.md
+   297495     36 -rw-rw-r--   1 root     root        35147 May 19  2024 /var/www/mail.theurer.dev/mail/LICENSE
+   297650      4 -rw-rw-r--   1 root     root         1086 May 19  2024 /var/www/mail.theurer.dev/mail/composer.json-dist
+   295786      4 drwxrwxr-x   2 root     root         4096 Jul 21  2024 /var/www/mail.theurer.dev/mail/config
+   293822      4 drwxrwxr-x  14 root     root         4096 May 19  2024 /var/www/mail.theurer.dev/mail/vendor
+   295882      4 drwxrwxr-x  37 root     root         4096 May 19  2024 /var/www/mail.theurer.dev/mail/plugins
+   297498      4 drwxrwxr-x   7 root     root         4096 May 19  2024 /var/www/mail.theurer.dev/mail/SQL
+   294390      0 lrwxrwxrwx   1 root     root           25 Jul 20  2024 /var/www/mail.theurer.dev/mail/admin -> /srv/postfixadmin/public/
+   293820      4 -rw-rw-r--   1 root     root         3853 May 19  2024 /var/www/mail.theurer.dev/mail/README.md
+   297476      4 -rw-rw-r--   1 root     root          994 May 19  2024 /var/www/mail.theurer.dev/mail/composer.json
+   297496      8 -rw-rw-r--   1 root     root         4657 May 19  2024 /var/www/mail.theurer.dev/mail/UPGRADING
+   291938      0 lrwxrwxrwx   1 root     root           21 Jul 21  2024 /var/www/mail.theurer.dev/mail/phpmyadmin -> /usr/share/phpmyadmin
+   297652      4 drwxrwxr-x   2 www-data www-data     4096 May 19  2024 /var/www/mail.theurer.dev/mail/temp

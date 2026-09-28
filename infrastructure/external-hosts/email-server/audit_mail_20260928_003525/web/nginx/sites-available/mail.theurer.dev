@@ -1,0 +1,53 @@
+server {
+    server_name mail.theurer.dev www.mail.theurer.dev;
+    root /var/www/mail.theurer.dev/mail;
+
+    index index.html index.htm index.php;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+     }
+
+    location ~ /\.ht {
+        deny all;
+    }
+
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    ssl_certificate /etc/letsencrypt/live/mail.theurer.dev/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/mail.theurer.dev/privkey.pem;
+
+ # managed by Certbot
+
+}
+server {
+        listen 80;
+        listen [::]:80;
+        server_name _;
+        return 301 https://$host$request_uri;
+}
+server {
+    if ($host = www.mail.theurer.dev) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+    if ($host = mail.theurer.dev) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+    listen 80;
+    listen [::]:80;
+    server_name mail.theurer.dev www.mail.theurer.dev;
+    return 404; # managed by Certbot
+
+
+
+
+}

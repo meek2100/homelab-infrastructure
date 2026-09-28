@@ -1,0 +1,1 @@
+2026-09-28 00:35:32,156 fail2ban                [29691]: ERROR   Permission denied to socket: /var/run/fail2ban/fail2ban.sock, (you must be root)

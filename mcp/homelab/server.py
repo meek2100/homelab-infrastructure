@@ -462,6 +462,21 @@ def audit_email_pipeline() -> str:
     """Audits email submission (SMTP :587), IMAPS (:993), and webmail health for mail.theurer.dev."""
     return run_script("manage-external-services.py", ["mail"])
 
+@mcp.tool()
+def audit_external_hosts(host: str = "all") -> str:
+    """Executes non-destructive baseline audit on external cloud hosts (web, email, or all)."""
+    return run_script("manage-external-hosts.py", ["audit", "--host", host])
+
+@mcp.tool()
+def backup_external_host(host: str = "all") -> str:
+    """Creates clean GitOps configuration backup bundles for external cloud hosts (web, email, or all)."""
+    return run_script("manage-external-hosts.py", ["backup", "--host", host])
+
+@mcp.tool()
+def get_external_security_status(host: str = "all") -> str:
+    """Audits Fail2Ban active jails, banned IPs, UFW firewall rules, and listening ports on external cloud hosts."""
+    return run_script("manage-external-hosts.py", ["security", "--host", host])
+
 if __name__ == "__main__":
     mcp.run()
 

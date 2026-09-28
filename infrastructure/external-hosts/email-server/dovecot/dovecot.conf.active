@@ -1,0 +1,89 @@
+# 2.3.21 (47349e2482): /etc/dovecot/dovecot.conf
+# Pigeonhole version 0.5.21 (f6cd4b8e)
+# OS: Linux 7.0.0-1013-gcp x86_64 Ubuntu 24.04.5 LTS 
+# Hostname: localhost
+auth_debug = yes
+auth_debug_passwords = yes
+mail_home = /var/vmail/%d/%n
+mail_location = maildir:~/Maildir
+mail_privileged_group = mail
+namespace inbox {
+  inbox = yes
+  location = 
+  mailbox Drafts {
+    auto = create
+    special_use = \Drafts
+  }
+  mailbox Junk {
+    auto = create
+    special_use = \Junk
+  }
+  mailbox Sent {
+    auto = create
+    special_use = \Sent
+  }
+  mailbox "Sent Messages" {
+    special_use = \Sent
+  }
+  mailbox Trash {
+    auto = create
+    special_use = \Trash
+  }
+  prefix = 
+}
+passdb {
+  args = /etc/dovecot/dovecot-sql.conf.ext
+  driver = sql
+}
+plugin {
+  imapsieve_mailbox1_before = file:/etc/dovecot/sieve/report-spam.sieve
+  imapsieve_mailbox1_causes = COPY FLAG
+  imapsieve_mailbox1_name = Junk
+  imapsieve_mailbox2_before = file:/etc/dovecot/sieve/report-ham.sieve
+  imapsieve_mailbox2_causes = COPY
+  imapsieve_mailbox2_from = Junk
+  imapsieve_mailbox2_name = *
+  sieve = file:~/sieve;active=~/.dovecot.sieve
+  sieve_after = /etc/dovecot/sieve/move-spam-to-junk.sieve
+  sieve_global_extensions = +vnd.dovecot.pipe
+  sieve_pipe_bin_dir = /etc/dovecot/sieve
+  sieve_plugins = sieve_imapsieve sieve_extprograms
+}
+protocols = " imap lmtp pop3"
+service auth {
+  unix_listener /var/spool/postfix/private/auth {
+    mode = 0666
+  }
+}
+service lmtp {
+  unix_listener /var/spool/postfix/private/dovecot-lmtp {
+    group = postfix
+    mode = 0600
+    user = postfix
+  }
+}
+service stats {
+  unix_listener stats-reader {
+    mode = 0660
+    user = www-data
+  }
+  unix_listener stats-writer {
+    mode = 0660
+    user = www-data
+  }
+}
+ssl_cert = </etc/letsencrypt/live/mail.theurer.dev/fullchain.pem
+ssl_client_ca_dir = /etc/ssl/certs
+ssl_dh = # hidden, use -P to show it
+ssl_key = # hidden, use -P to show it
+ssl_prefer_server_ciphers = yes
+userdb {
+  args = /etc/dovecot/dovecot-sql.conf.ext
+  driver = sql
+}
+protocol lmtp {
+  mail_plugins = " sieve"
+}
+protocol imap {
+  mail_plugins = " imap_sieve"
+}
