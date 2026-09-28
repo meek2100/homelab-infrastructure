@@ -191,15 +191,15 @@
       "service_id": 26
     },
     {
-      "aclName": "Mainsail to Luna Server",
+      "aclName": "Mainsail to Servers (Docker)",
       "action": "Permit",
       "serviceName": "All Traffic",
       "incomingInterface": "LAN",
       "outgoingInterface": "LAN",
       "sourceType": "Single IP",
       "sourceValue": "192.168.30.90",
-      "destinationType": "Single IP",
-      "destinationValue": "192.168.40.249",
+      "destinationType": "IP Range",
+      "destinationValue": "192.168.40.1-192.168.40.254",
       "enable": true,
       "priority": 11,
       "logEnable": false,
