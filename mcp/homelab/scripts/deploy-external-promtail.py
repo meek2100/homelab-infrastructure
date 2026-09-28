@@ -61,12 +61,13 @@ def run_remote_ssh(profile: dict, remote_cmd: str, timeout: int = 120) -> tuple[
     except Exception as e:
         return 1, "", str(e)
 
-def generate_promtail_config(host_key: str, push_url: str, bearer_token: str = "") -> str:
-    auth_header = ""
+def generate_promtail_config(host_key: str, push_url: str, tenant_id: str = "external-cloud-vps", bearer_token: str = "") -> str:
+    auth_lines = []
+    if tenant_id:
+        auth_lines.append(f'    tenant_id: "{tenant_id}"')
     if bearer_token:
-        auth_header = f"""
-    bearer_token: "{bearer_token}"
-"""
+        auth_lines.append(f'    bearer_token: "{bearer_token}"')
+    auth_block = ("\n" + "\n".join(auth_lines)) if auth_lines else ""
 
     if host_key == "web":
         return f"""server:
@@ -77,7 +78,7 @@ positions:
   filename: /var/log/promtail-positions.yaml
 
 clients:
-  - url: {push_url}{auth_header}
+  - url: {push_url}{auth_block}
 
 scrape_configs:
   - job_name: nginx-access
@@ -127,7 +128,7 @@ positions:
   filename: /var/log/promtail-positions.yaml
 
 clients:
-  - url: {push_url}{auth_header}
+  - url: {push_url}{auth_block}
 
 scrape_configs:
   - job_name: mail-logs
@@ -167,9 +168,9 @@ scrape_configs:
           __path__: /var/log/fail2ban.log
 """
 
-def deploy_host(target: str, push_url: str, bearer_token: str, dry_run: bool = False) -> dict:
+def deploy_host(target: str, push_url: str, tenant_id: str = "external-cloud-vps", bearer_token: str = "", dry_run: bool = False) -> dict:
     p = HOST_PROFILES[target]
-    config_yaml = generate_promtail_config(target, push_url, bearer_token)
+    config_yaml = generate_promtail_config(target, push_url, tenant_id, bearer_token)
 
     if dry_run:
         return {
@@ -240,6 +241,7 @@ def main():
     parser = argparse.ArgumentParser(description="Deploy Promtail to External Cloud VPS Hosts")
     parser.add_argument("--host", choices=["web", "email", "all"], default="all", help="Target host")
     parser.add_argument("--url", default=DEFAULT_PUSH_URL, help="Loki push endpoint URL")
+    parser.add_argument("--tenant-id", default="external-cloud-vps", help="Loki tenant ID for multi-tenant labeling")
     parser.add_argument("--token", default="", help="Optional Bearer authentication token")
     parser.add_argument("--dry-run", action="store_true", help="Generate configuration without applying")
     parser.add_argument("--json", action="store_true", help="Output JSON format")
@@ -248,7 +250,7 @@ def main():
     targets = ["web", "email"] if args.host == "all" else [args.host]
     results = {}
     for t in targets:
-        results[t] = deploy_host(t, args.url, args.token, args.dry_run)
+        results[t] = deploy_host(t, args.url, args.tenant_id, args.token, args.dry_run)
 
     if args.json:
         print(json.dumps(results, indent=2))

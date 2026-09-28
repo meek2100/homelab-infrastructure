@@ -478,9 +478,9 @@ def get_external_security_status(host: str = "all") -> str:
     return run_script("manage-external-hosts.py", ["security", "--host", host])
 
 @mcp.tool()
-def deploy_external_promtail(host: str = "all", url: str = "https://logs.theurer.dev/loki/api/v1/push", dry_run: bool = False) -> str:
+def deploy_external_promtail(host: str = "all", url: str = "https://logs.theurer.dev/loki/api/v1/push", tenant_id: str = "external-cloud-vps", dry_run: bool = False) -> str:
     """Deploys or previews Promtail log shipping agent on external cloud hosts (web, email, or all)."""
-    args = ["--host", host, "--url", url]
+    args = ["--host", host, "--url", url, "--tenant-id", tenant_id]
     if dry_run:
         args.append("--dry-run")
     return run_script("deploy-external-promtail.py", args)
