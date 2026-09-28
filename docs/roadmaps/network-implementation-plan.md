@@ -517,6 +517,23 @@ This section records empirical hard-won discoveries and architectural invariants
 - **The Gotcha**: Proxmox installed on a laptop (`pve` Dell Precision 5520) defaults to suspending the system when the lid is closed, and keeps the high-brightness panel backlight active even when unattended.
 - **The Invariant**: Systemd logind configured with `HandleLidSwitch=ignore`, and an ACPI event script (`/etc/acpi/lid-backlight.sh`) toggles the Intel panel backlight to 0 on lid close and 400 on open, saving power and preventing thermal throttling without interrupting hypervisor operations.
 
+### 11. Proxmox Backup Server (PBS) Post-Backup Pruning Role Invariant
+- **The Gotcha**: Proxmox VE evaluates storage retention policies (`prune-backups keep-daily=7,keep-last=7...`) immediately upon backup task completion. If the API token is only granted `DatastoreBackup`, PBS rejects the post-backup cleanup with a 403 Forbidden error on `Datastore.Prune` (`permission check failed for Datastore.Prune`).
+- **The Invariant**: Effective token permissions must include `DatastorePowerUser` (or `DatastoreAdmin`) on `/datastore/<datastore-name>`.
+
+### 12. Standalone Hypervisor Encryption Key Synchronization
+- **The Gotcha**: Standalone Proxmox hosts do not participate in a shared PVE cluster filesystem (`/etc/pve/`). Client-side PBS encryption keys generated on Node 1 (`/etc/pve/priv/storage/pbs-backup.enc`) do not replicate automatically. Missing or malformed keys on standalone nodes cause QEMU tasks to abort with `failed to load decryption key` and LXC tasks to fail with `fingerprint too long at line 1 column 260`.
+- **The Invariant**: Client encryption keys and `/etc/pve/notifications.cfg` must be distributed across all standalone hypervisors via `scp` from `pve1` to ensure identical cryptographic and alert configurations across the fleet.
+
+### 13. SMTP Submission (Port 587 STARTTLS) vs. Implicit SMTPS (Port 465 SSL)
+- **The Gotcha**: Port 465 uses direct SSL socket wrapping from byte 0 and does not advertise the `STARTTLS` extension. Applications implementing standard Go `net/smtp` (like Prometheus Alertmanager) require an explicit TLS upgrade over port 587 (`STARTTLS`). Pointing Alertmanager to port 465 with `require_tls: true` triggers continuous retry failures (`does not advertise the STARTTLS extension`).
+- **The Invariant**: Always route Alertmanager through submission port 587 with `STARTTLS`. Furthermore, Alertmanager requires a container restart to apply disk configuration changes unless `--web.enable-lifecycle` is explicitly passed in container arguments.
+
+### 14. Portainer External Stack Mechanics & Zero-Downtime Adoption
+- **The Gotcha**: Containers launched outside Portainer via `docker compose up` carry Docker compose labels (`com.docker.compose.project`), allowing Portainer to detect the stack. However, because Portainer's internal BoltDB (`portainer.db`) lacks the stack metadata and compose file text, it locks the Web Editor with: `Information: This stack was created outside of Portainer. Control over this stack is limited.`
+- **The Solution (Zero Downtime Adoption)**: In Portainer Web UI, create a new stack (**Add Stack**) with the exact matching stack name and paste the compose file from the Git repository. When **Deploy the stack** is clicked, Docker Compose recognizes the running containers by name and network, leaves them untouched ("Container ... is up to date"), and Portainer records the stack in its BoltDB, unlocking full Web UI editing with zero container restarts.
+
+
 
 
 
