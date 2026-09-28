@@ -452,17 +452,14 @@ A comprehensive external telemetry, diagnostic, and log ingestion framework prot
   - **SMTP**: Delivered cleanly to `darin@theurer.dev` via SMTP2Go smarthost (`mail.smtp2go.com:587`, TLS upgraded).
 - **Production Rules Active**: 9 production alert rules evaluated 24/7 across all network switches, Proxmox hypervisors, containers, certificates, and printers (`SwitchPortLinkDown`, `SwitchPortCRCErrors`, `PrinterSupplyLow`, `SSLCertExpiringSoon`, `TargetDown`, `BlackboxProbeFailed`).
 
-### 5.5: External Host Tailscale Onboarding & Zero-Trust Promtail Log Shipping
-- **Goal**: Ingest live Nginx access/error logs from `theurer.dev` and Postfix/Dovecot/auth logs from `mail.theurer.dev` into central Loki 3.0 on `nexus-server` (`192.168.40.185:3100`) without opening inbound firewall ports.
+### 5.5: External Host Audit, Zero-Trust Logging & GitOps Recovery
+- **Architecture**: Zero-exposure ingestion via Cloudflare Tunnel (`logs.theurer.dev/loki/api/v1/push`) with Bearer token authentication, eliminating public VPS presence inside internal Tailscale or LAN subnets.
 - **Action Items**:
-  1. On `theurer.dev` and `mail.theurer.dev`, install and connect Tailscale:
-     ```bash
-     curl -fsSL https://tailscale.com/install.sh | sh
-     tailscale up
-     ```
-  2. Install Promtail daemon on both external hosts.
-  3. Deploy Promtail configuration forwarding to `http://192.168.40.185:3100/loki/api/v1/push` (or Tailscale IP `http://100.70.65.45:3100/loki/api/v1/push` via subnet router Stack 69).
-  4. Verify log streams labeled `host="theurer.dev"` (`/var/log/nginx/*log`) and `host="mail.theurer.dev"` (`/var/log/mail.log`, `/var/log/auth.log`) appear dynamically in the Grafana **Homelab Command & Control Center** Consolidated Log Explorer.
+  1. **Non-Destructive Deep Audit**: Run `mcp/homelab/scripts/audit-external-host.sh` on `theurer.dev` (Google Cloud) and `mail.theurer.dev` (Oracle Cloud) to capture package drift, active systemd units, web roots, and mail configurations.
+  2. **Ingest GitOps Blueprints**: Archive audit bundles into `infrastructure/external-hosts/theurer-dev/` and `mail-theurer-dev/`.
+  3. **Cloudflare Restricted Ingress**: Configure Cloudflare Tunnel in Stack 100 on `nexus-server` to route authenticated POST requests directly to Loki (`:3100`).
+  4. **FastMCP Lifecycle Tooling**: Extend `manage-external-services.py` with `backup_external_host` and `deploy_external_service` supporting automated config validation (`nginx -t`, `postfix check`) and SOPS encryption.
+
 
 ### 5.6: Phase 2 Automation, Scheduled Snapshots & GitOps Drills
 - **Action Items**:
