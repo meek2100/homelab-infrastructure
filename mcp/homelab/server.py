@@ -477,6 +477,14 @@ def get_external_security_status(host: str = "all") -> str:
     """Audits Fail2Ban active jails, banned IPs, UFW firewall rules, and listening ports on external cloud hosts."""
     return run_script("manage-external-hosts.py", ["security", "--host", host])
 
+@mcp.tool()
+def deploy_external_promtail(host: str = "all", url: str = "https://logs.theurer.dev/loki/api/v1/push", dry_run: bool = False) -> str:
+    """Deploys or previews Promtail log shipping agent on external cloud hosts (web, email, or all)."""
+    args = ["--host", host, "--url", url]
+    if dry_run:
+        args.append("--dry-run")
+    return run_script("deploy-external-promtail.py", args)
+
 if __name__ == "__main__":
     mcp.run()
 

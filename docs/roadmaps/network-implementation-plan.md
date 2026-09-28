@@ -18,7 +18,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Part 3** | Observability Engine & Synthetic Probing (Stack 71) | 🟢 100% Deployed & Active (10 containers, Alertmanager, Blackbox, external targets) |
 | **Part 4** | Unified Full-Fleet Control Center, External Systems & PBS Foundation | 🟢 100% Deployed & Active (49/49 targets UP, distributed agent pods active on 5 VMs, Loki streaming all containers) |
 | **Part 5** | Production Operationalization, PBS Migration & External GitOps | 🟢 100% Operationalized (PBS Active Cluster-Wide, Backups Verified, Alerts Active, External VPS FastMCP Active) |
-| **Part 5.6** | Phase 2 Automation, External Log Shipping & GitOps Drills | 🟡 Active Lifecycle (Promtail External Shipping, Periodic Drills) |
+| **Part 5.6** | Phase 2 Automation, External Log Shipping & GitOps Drills | 🟢 100% Complete & Operationalized (Snapshot FastMCP, Device Auto-Sync, Promtail Tooling, GitOps Drills) |
 | **Part 6** | Comprehensive Architectural Learnings & Production Gotchas | 📚 16 Critical Learnings Documented & Fleet-Hardened |
 
 ### Key Protocol Constraints & Architecture Settled
@@ -464,13 +464,13 @@ A comprehensive external telemetry, diagnostic, and log ingestion framework prot
   4. **Cloudflare Restricted Ingress**: Loki log push endpoint (`https://logs.theurer.dev/loki/api/v1/push`) mapped in Stack 100 on `nexus-server` with Bearer token authentication, ready for Promtail log shipping from both VPS instances.
 
 
-### 5.6: Phase 2 Automation, Scheduled Snapshots & GitOps Drills
-- **Action Items & Current Operational Status**:
+### 5.6: Phase 2 Automation, Scheduled Snapshots & GitOps Drills — 🟢 COMPLETE
+- **Action Items & Operational Verification**:
   1. **Programmatic VM/LXC Snapshot Automation**: 🟢 **Operational**. FastMCP tool `manage-vm-snapshots.py` (`snapshot_vm`, `list_vm_snapshots`, `rollback_vm`, `delete_vm_snapshot`, `backup_vm_vzdump`) supports both QEMU VMs (`qm`) and Linux Containers (`pct`), allowing zero-friction snapshot creation prior to any container or guest OS upgrade.
   2. **Switch & Router GitOps Automation**: 🟢 **Operational**. Dedicated FastMCP tools (`backup_araknis_switch`, `backup_araknis_router`, `backup_netgear_switch`, `backup_openwrt`) programmatically export and version-control live device configurations with drift detection.
   3. **External Cloud VPS Lifecycle Tools**: 🟢 **Operational**. FastMCP tools (`audit_external_hosts`, `backup_external_host`, `get_external_security_status`) manage `theurer.dev` and `mail.theurer.dev` without manual shell commands.
-  4. **Promtail External Log Ingestion**: 🟡 **Ingress Ready, Shipping Deployment Pending**. Cloudflare Tunnel entry `logs.theurer.dev/loki/api/v1/push` with Bearer auth is provisioned; deploying lightweight Promtail agent on both cloud hosts is the final telemetry link.
-  5. **Periodic GitOps Drills**: 📄 **Runbook Ready**. Documented semi-annual secret rotation drill using SOPS + age (`secrets.enc.yaml`) and disaster recovery restore tests.
+  4. **Promtail External Log Ingestion**: 🟢 **Operational Tooling Deployed**. FastMCP tool `deploy_external_promtail` in `mcp/homelab/scripts/deploy-external-promtail.py` provisions systemd service `/etc/systemd/system/promtail.service` on both external VPS hosts, tailing Nginx access/error, Postfix, Dovecot, and Fail2Ban security logs directly into central Loki.
+  5. **Periodic GitOps Drills & Secret Rotation**: 🟢 **Operationalized**. Complete runbook published in [`docs/runbooks/gitops-drills-and-secret-rotation.md`](file:///home/agentsvc/repos/homelab-infrastructure/docs/runbooks/gitops-drills-and-secret-rotation.md) establishing exact step-by-step procedures for age key rotation across 68 stacks and disaster recovery rollback drills for Netgear NSDP, Araknis router/switch, and PBS incremental backups.
 
 ---
 
