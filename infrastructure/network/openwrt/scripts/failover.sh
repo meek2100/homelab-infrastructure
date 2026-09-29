@@ -8,6 +8,10 @@ VXLAN_SERVER_IP="192.168.1.150"
 BR_IF="br-lan"
 P1_IF="wan"
 VXLAN_IF="vxlan150"
+# Physical br-lan ports facing the Netgear switch (Port 8 → lan4) and spare wired drops.
+# These must carry the same tagged VLANs as vxlan150 so the bridge can forward between them.
+# lan1 is on br-mgmt (out-of-band management), never add trunk VLANs there.
+LAN_TRUNK_PORTS="lan2 lan3 lan4"
 FAIL_COUNT_FILE="/tmp/failover_p1_fails"
 P1_DOWN_SINCE_FILE="/tmp/failover_p1_down_since"
 P2_DOWN_SINCE_FILE="/tmp/failover_p2_down_since"
@@ -214,6 +218,15 @@ activate_p1() {
     done
     bridge vlan del dev "$VXLAN_IF" vid 1 2>/dev/null || true
 
+    # 3b. Add the same tagged VLANs to the physical LAN trunk ports.
+    # The Netgear switch (Port 8 → lan4, PVID 1) sends tagged VLAN 10/30 frames
+    # toward lan4. Without these entries the bridge VLAN filter drops them silently.
+    for port in $LAN_TRUNK_PORTS; do
+        for vid in 10 20 30 40 100 150 200; do
+            bridge vlan add dev "$port" vid "$vid" 2>/dev/null
+        done
+    done
+
     # 4. Restore VLAN 1 on wan without bouncing interface
     bridge vlan add dev "$P1_IF" vid 1 pvid untagged master >/dev/null 2>&1
     bridge vlan del dev "$P1_IF" vid 40 master >/dev/null 2>&1
@@ -255,6 +268,15 @@ activate_p2() {
     ip link set "$VXLAN_IF" up
     for vid in 10 20 30 40 100 150 200; do
         bridge vlan add dev "$VXLAN_IF" vid "$vid" 2>/dev/null
+    done
+
+    # 5b. Add the same tagged VLANs to the physical LAN trunk ports (same reason as P1).
+    # Netgear is still wired to lan4 during P2 failover; tagged VLANs must be allowed
+    # on the ingress port for the bridge to forward them across to vxlan150.
+    for port in $LAN_TRUNK_PORTS; do
+        for vid in 10 20 30 40 100 150 200; do
+            bridge vlan add dev "$port" vid "$vid" 2>/dev/null
+        done
     done
 
     # 6. Inform VM 107 via SSH to bridge VLAN 1
@@ -317,7 +339,7 @@ run_monitor() {
             log_msg "P1 integrity: $VXLAN_IF absent or down — restoring P1"
             activate_p1
         else
-            # vxlan150 is up — verify all 7 tagged VLANs are present
+            # vxlan150 is up — verify all 7 tagged VLANs are present on tunnel
             _VLAN_OUT=$(bridge vlan show dev "$VXLAN_IF" 2>/dev/null)
             _MISSING=""
             for _vid in 10 20 30 40 100 150 200; do
@@ -326,6 +348,23 @@ run_monitor() {
             if [ -n "$_MISSING" ]; then
                 log_msg "P1 integrity: $VXLAN_IF missing tagged VLANs:$_MISSING — restoring P1"
                 activate_p1
+            else
+                # Also verify LAN trunk ports (Netgear uplink → lan4) carry the same VLANs.
+                # Without these, tagged frames from the Netgear are dropped at bridge ingress.
+                for _port in $LAN_TRUNK_PORTS; do
+                    # Only check ports that are actually in the bridge
+                    ip link show "$_port" 2>/dev/null | grep -q "master $BR_IF" || continue
+                    _PORT_VLAN=$(bridge vlan show dev "$_port" 2>/dev/null)
+                    _PORT_MISSING=""
+                    for _vid in 10 20 30 40 100 150 200; do
+                        echo "$_PORT_VLAN" | grep -q " $_vid" || _PORT_MISSING="$_PORT_MISSING $_vid"
+                    done
+                    if [ -n "$_PORT_MISSING" ]; then
+                        log_msg "P1 integrity: $_port missing tagged VLANs:$_PORT_MISSING — restoring P1"
+                        activate_p1
+                        break
+                    fi
+                done
             fi
         fi
         exit 0
