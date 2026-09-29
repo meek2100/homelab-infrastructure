@@ -13,6 +13,10 @@ P1_DOWN_SINCE_FILE="/tmp/failover_p1_down_since"
 P2_DOWN_SINCE_FILE="/tmp/failover_p2_down_since"
 FAIL_THRESHOLD=3
 
+# Ensure log file exists — /var is tmpfs on OpenWrt; dir survives reboot but files do not.
+mkdir -p "$(dirname "$LOGFILE")"
+touch "$LOGFILE" 2>/dev/null
+
 log_msg() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOGFILE"
     logger -t failover -- "$1"
@@ -302,9 +306,27 @@ run_monitor() {
             log_msg "P1 detected healthy while failover was active — restoring P1"
             activate_p1
         elif ! bridge vlan show dev "$P1_IF" 2>/dev/null | grep -q " 1 "; then
+            log_msg "P1 integrity: VLAN 1 missing from $P1_IF — restoring P1"
             activate_p1
         elif bridge vlan show dev "$VXLAN_IF" 2>/dev/null | grep -q " 1 "; then
+            log_msg "P1 integrity: VLAN 1 incorrectly present on $VXLAN_IF — restoring P1"
             activate_p1
+        elif ! ip link show "$VXLAN_IF" 2>/dev/null | grep -q "state UP"; then
+            # vxlan150 missing entirely (e.g. after reboot) — /tmp state was wiped so
+            # none of the flags above fire. Recreate the tunnel and tagged VLANs.
+            log_msg "P1 integrity: $VXLAN_IF absent or down — restoring P1"
+            activate_p1
+        else
+            # vxlan150 is up — verify all 7 tagged VLANs are present
+            _VLAN_OUT=$(bridge vlan show dev "$VXLAN_IF" 2>/dev/null)
+            _MISSING=""
+            for _vid in 10 20 30 40 100 150 200; do
+                echo "$_VLAN_OUT" | grep -q " $_vid" || _MISSING="$_MISSING $_vid"
+            done
+            if [ -n "$_MISSING" ]; then
+                log_msg "P1 integrity: $VXLAN_IF missing tagged VLANs:$_MISSING — restoring P1"
+                activate_p1
+            fi
         fi
         exit 0
     fi
