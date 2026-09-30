@@ -30,7 +30,9 @@ CONFIG_LOCATIONS = [
 
 DEFAULTS = {
     "REMOTE_IP": "192.168.1.150",
-    "REMOTE_VLAN_IP": "192.168.40.1", # Main Router Gateway on VLAN 40
+    "PROBE_VLAN_ID": "10",             # Tagged VLAN probed across vxlan150 (must be in TAGGED_VLANS)
+    "REMOTE_VLAN_IP": "192.168.10.1",  # Main Router Gateway on the probe VLAN
+    "LOCAL_VLAN_IP": "192.168.10.254", # Temporary /32 probe address (keep outside DHCP pool)
     "GATEWAY_IP": "192.168.1.1",      # Main Router / DHCP Server
     "SSH_PRIVATE_KEY_PATH": "~/.ssh/id_ed25519",
     "VXLAN_IF": "vxlan150",
@@ -157,8 +159,8 @@ def teardown_vlan_test_env():
     and must survive the test run intact.
     """
     iface_base = CONFIG.get("BRIDGE_IF", "br-lan") if is_openwrt() else "br0"
-    target_ip  = CONFIG.get("REMOTE_VLAN_IP", "192.168.40.1")
-    for vid in [40]:
+    target_ip  = CONFIG.get("REMOTE_VLAN_IP", "192.168.10.1")
+    for vid in [int(CONFIG.get("PROBE_VLAN_ID", 10))]:
         vlan_iface = f"{iface_base}.{vid}"
         # Remove the host route first (before the interface disappears)
         run_command(["ip", "route", "del", f"{target_ip}/32", "dev", vlan_iface],
@@ -167,9 +169,11 @@ def teardown_vlan_test_env():
         run_command(["ip", "link", "del", vlan_iface], suppress_output=True)
         # Remove only the bridge CPU-port (self) filter entry — the only bridge VLAN
         # entry this test creates. Production port entries are never touched here.
-        if is_openwrt():
+        marker = self_vlan_marker(iface_base, vid)
+        if os.path.exists(marker):
             run_command(["bridge", "vlan", "del", "dev", iface_base, "vid", str(vid), "self"],
                         suppress_output=True)
+            os.remove(marker)
     log_debug("Cleaned up diagnostic VLAN sub-interfaces")
 
 # -------------------- Handlers --------------------
@@ -561,12 +565,12 @@ def vlan_test(active_priority):
         record_result("L2_VLAN", "SKIP", f"Skipped for {active_priority}")
         return
 
-    # Support multiple VLANS: Default 40 (Real VXLAN)
-    vlan_ids = [40]
+    # Probe VLAN from config (default 10 — a VLAN that actually has office devices)
+    vlan_ids = [int(CONFIG.get("PROBE_VLAN_ID", 10))]
     iface_base = CONFIG.get("BRIDGE_IF", "br-lan") if is_openwrt() else "br0"
 
-    # Target the real gateway on VLAN 40 for transparency verification
-    target_ip = CONFIG.get("REMOTE_VLAN_IP", "192.168.40.1")
+    # Target the real gateway on the probe VLAN for transparency verification
+    target_ip = CONFIG.get("REMOTE_VLAN_IP", "192.168.10.1")
 
     overall_status = "PASS"
     overall_details = []
@@ -577,7 +581,9 @@ def vlan_test(active_priority):
 
         try:
             # Always (re)create with correct VLAN IP
-            setup_vlan_interface(iface_base, vlan_id, active_priority)
+            probe_ip, dad_checked = setup_vlan_interface(iface_base, vlan_id, active_priority)
+            print_info(f"Probe source {probe_ip}/32 on {vlan_iface} "
+                       f"({'duplicate-address checked' if dad_checked else 'duplicate-address NOT checked'})")
             time.sleep(2) # Allow for kernel/STP convergence
 
             # Verify L2 VLAN transparency.
@@ -598,9 +604,12 @@ def vlan_test(active_priority):
             if ping_ok or arp_ok:
                 mac = arp_out.strip().split("lladdr")[1].split()[0] if "lladdr" in arp_out else "responded"
                 print_ok(f"VLAN {vlan_id} L2 transparent (Target: {target_ip}, MAC: {mac})")
-                overall_details.append(f"V{vlan_id}:OK")
+                overall_details.append(f"V{vlan_id}:OK src={probe_ip}")
             else:
                 print_fail(f"VLAN {vlan_id} failed to reach Gateway. (ping_ok={ping_ok}, arp={arp_out.strip() or 'FAILED'})")
+                if dad_checked:
+                    # A silent duplicate-address probe only means "free" if frames can leave; they could not.
+                    print_info(f"Duplicate-address result for {probe_ip} is unverified: the probe path itself is not passing frames")
                 overall_details.append(f"V{vlan_id}:FAIL")
                 overall_status = "FAIL"
         except Exception as e:
@@ -611,7 +620,96 @@ def vlan_test(active_priority):
 
     record_result("L2_VLAN", overall_status, ", ".join(overall_details))
 
+def have_command(name):
+    """True if an executable is on PATH or in a standard sbin directory."""
+    import shutil
+    if shutil.which(name):
+        return True
+    return any(os.access(os.path.join(d, name), os.X_OK) for d in ("/sbin", "/usr/sbin", "/usr/local/sbin"))
+
+def probe_ip_in_use(iface, ip):
+    """RFC 5227-style duplicate-address probe: ARP who-has <ip> sent from 0.0.0.0 out of iface.
+
+    Returns True if any host answered (address taken), False if none did, None if no probe
+    tool is available. The probe is an L2 broadcast on the probe VLAN, so it crosses vxlan150
+    and reaches every host on that VLAN on both sides of the tunnel with a single probe.
+    """
+    if HAS_SCAPY:
+        try:
+            ans = scapy.srp1(scapy.Ether(dst="ff:ff:ff:ff:ff:ff") /
+                             scapy.ARP(op=1, psrc="0.0.0.0", pdst=ip),
+                             iface=iface, timeout=2, retry=1, verbose=0)
+            return ans is not None
+        except Exception as e:
+            log_debug(f"scapy duplicate-address probe failed on {iface}: {e}")
+    if have_command("arping"):
+        # iputils prints "Received N response(s)", BusyBox "Received N reply/replies"; parse that rather
+        # than the exit code, which differs between implementations and on errors.
+        _, out = run_command(["arping", "-D", "-c", "2", "-w", "3", "-I", iface, ip],
+                             suppress_output=True)
+        m = re.search(r"Received\s+(\d+)\s+(?:response|repl(?:y|ies))", out or "")
+        if m:
+            return int(m.group(1)) > 0
+        log_debug(f"arping -D gave no response count for {ip} on {iface}: {(out or '').strip()}")
+    return None
+
+def choose_probe_ip(iface, target_ip):
+    """Pick a free /32 probe address on the probe VLAN, preferring LOCAL_VLAN_IP.
+
+    Tries the configured address first, then .254 down to .240 of the same /24, skipping the
+    probe target. Any address that answers the duplicate-address probe is treated as taken.
+    """
+    preferred = CONFIG.get("LOCAL_VLAN_IP", "192.168.10.254")
+    prefix = preferred.rsplit(".", 1)[0]
+    candidates = [preferred] + [f"{prefix}.{h}" for h in range(254, 239, -1)]
+    checked = set()
+    for ip in candidates:
+        if ip in checked or ip == target_ip:
+            continue
+        checked.add(ip)
+        in_use = probe_ip_in_use(iface, ip)
+        if in_use is None:
+            print_info(f"Duplicate-address check unavailable (no scapy/arping, or arping failed); using {preferred} unchecked")
+            return preferred, False
+        if not in_use:
+            if ip != preferred:
+                print_info(f"{preferred} is already in use on the VLAN; using free address {ip} instead")
+            return ip, True
+        log_debug(f"Probe candidate {ip} answered ARP — in use, trying next")
+    raise Exception(f"No free probe address in {prefix}.240-.254 (every candidate answered ARP)")
+
+def bridge_vlan_filtering(br):
+    """True if bridge `br` has VLAN filtering on (OpenWrt br-lan, vxlan-server br0)."""
+    try:
+        with open(f"/sys/class/net/{br}/bridge/vlan_filtering") as f:
+            return f.read().strip() == "1"
+    except OSError:
+        return False
+
+def bridge_self_has_vid(br, vid):
+    """True if the bridge device itself (CPU port) is already a member of `vid`."""
+    ok, out = run_command(["bridge", "-j", "vlan", "show", "dev", br], suppress_output=True)
+    if ok:
+        try:
+            for entry in json.loads(out or "[]"):
+                for v in entry.get("vlans", []):
+                    if v.get("vlan", -1) <= vid <= v.get("vlanEnd", v.get("vlan", -1)):
+                        return True
+            return False
+        except ValueError:
+            pass
+    _, out = run_command(["bridge", "vlan", "show", "dev", br], suppress_output=True)
+    return bool(re.search(rf"(?m)^\S*\s+{vid}\b", out or ""))
+
+def self_vlan_marker(br, vid):
+    """Marker recording that THIS tester added `vid` to the bridge CPU port (so teardown removes only that)."""
+    return f"/tmp/failover-tester-{br}-selfvid-{vid}"
+
 def setup_vlan_interface(base, vlan_id, active_priority="P1"):
+    """Create the diagnostic VLAN sub-interface and give it a conflict-checked /32 probe address.
+
+    Returns (probe source IP actually used, whether the duplicate-address check ran).
+    """
     iface = f"{base}.{vlan_id}"
     print_info(f"Ensuring diagnostic interface {iface}...")
 
@@ -631,21 +729,29 @@ def setup_vlan_interface(base, vlan_id, active_priority="P1"):
 
     run_command(["ip", "link", "set", iface, "up"])
 
-    # Assign local test IP for the subnet using /32 to avoid hijacking runner's subnet routing
-    my_ip = CONFIG.get("LOCAL_VLAN_IP", "192.168.40.254")
-    target_ip = CONFIG.get("REMOTE_VLAN_IP", "192.168.40.1")
-    run_command(["ip", "addr", "add", f"{my_ip}/32", "dev", iface])
-    run_command(["ip", "route", "add", f"{target_ip}/32", "dev", iface, "scope", "link"], suppress_output=True)
-
     # Add VLAN to bridge CPU-port so the kernel can receive/send frames on the sub-interface.
+    # Done BEFORE choosing the probe address: the duplicate-address probe must be able to egress.
     # The 'self' flag targets the bridge device itself — NOT any physical port.
     # We intentionally do NOT add to vxlan150, lan2/3/4, or wan:
     #   - vxlan150: already provisioned by activate_p1/p2; teardown must not touch it
     #   - wan:      carries only untagged VLAN 1 in all modes; tagged VLANs must never be added
     #   - lan ports: managed by activate_p1/p2; teardown must not touch them
-    if is_openwrt():
-        run_command(["bridge", "vlan", "add", "dev", base, "vid", str(vlan_id), "self"],
-                    suppress_output=True)
+    # Needed on BOTH ends: on a VLAN-filtering bridge (OpenWrt br-lan, vxlan-server br0) frames
+    # from base.<vid> are dropped unless the CPU port is a member. Only add if absent, and record
+    # it so teardown never removes a membership that existed before the test.
+    if bridge_vlan_filtering(base):
+        if not bridge_self_has_vid(base, vlan_id):
+            ok, _ = run_command(["bridge", "vlan", "add", "dev", base, "vid", str(vlan_id), "self"],
+                                suppress_output=True)
+            if ok:
+                open(self_vlan_marker(base, vlan_id), "w").close()
+
+    # Conflict-checked probe address, /32 so the runner's own subnet routing is untouched
+    target_ip = CONFIG.get("REMOTE_VLAN_IP", "192.168.10.1")
+    my_ip, dad_checked = choose_probe_ip(iface, target_ip)
+    run_command(["ip", "addr", "add", f"{my_ip}/32", "dev", iface])
+    run_command(["ip", "route", "add", f"{target_ip}/32", "dev", iface, "scope", "link"], suppress_output=True)
+    return my_ip, dad_checked
 
 def arp_test():
     """Verify ARP transparency — remote device MAC visible, not the bridge's MAC."""
@@ -1066,7 +1172,7 @@ if __name__ == "__main__":
     parser.add_argument("-x", "--multi", action="store_true", help="Multi-stream TCP throughput (4P)")
     parser.add_argument("-m", "--mdns", action="store_true", help="mDNS service discovery")
     parser.add_argument("-s", "--ssdp", action="store_true", help="SSDP device discovery")
-    parser.add_argument("-v", "--vlan", action="store_true", help="L2 VLAN 40 transparency probe")
+    parser.add_argument("-v", "--vlan", action="store_true", help="L2 tagged-VLAN transparency probe (PROBE_VLAN_ID, default 10)")
     parser.add_argument("-d", "--dhcp", action="store_true", help="DHCP relay/offer verification")
     parser.add_argument("-g", "--gw", action="store_true", help="Gateway + internet reachability")
     parser.add_argument("-L", "--local", action="store_true", help="Run local tests only (skip remote)")

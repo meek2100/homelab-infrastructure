@@ -12,10 +12,18 @@ VXLAN_IF="vxlan150"
 # These must carry the same tagged VLANs as vxlan150 so the bridge can forward between them.
 # lan1 is on br-mgmt (out-of-band management), never add trunk VLANs there.
 LAN_TRUNK_PORTS="lan2 lan3 lan4"
+# Tagged VLANs carried over vxlan150 and the LAN trunk ports. Must match TAGGED_VLANS in
+# vxlan-server's /usr/local/bin/vxlan-nm. VLAN 100 (Wireshark SPAN isolation) is deliberately
+# excluded: it must exist only on SW920 1/0/24.
+TAGGED_VLANS="10 30"  # office devices: 10 (Control4, printers) and 30 (Apple TV) per Netgear VLAN table
 FAIL_COUNT_FILE="/tmp/failover_p1_fails"
 P1_DOWN_SINCE_FILE="/tmp/failover_p1_down_since"
 P2_DOWN_SINCE_FILE="/tmp/failover_p2_down_since"
 FAIL_THRESHOLD=3
+# Integrity-triggered rebuilds tear down vxlan150 for every office device on a tagged VLAN.
+# Allow at most one per REBUILD_MIN_INTERVAL; a repeat inside the window means the check itself is wrong.
+REBUILD_STAMP_FILE="/tmp/failover_last_integrity_rebuild"
+REBUILD_MIN_INTERVAL=300
 
 # Ensure log file exists — /var is tmpfs on OpenWrt; dir survives reboot but files do not.
 mkdir -p "$(dirname "$LOGFILE")"
@@ -168,6 +176,26 @@ set_fail_count() {
     echo "$1" > "$FAIL_COUNT_FILE"
 }
 
+# True when vxlan150 exists and is administratively up.
+# VXLAN devices have no carrier, so `ip link` reports "state UNKNOWN" even when healthy;
+# matching "state UP" made every integrity check fail and rebuilt the tunnel every 30s.
+vxlan_admin_up() {
+    ip link show "$VXLAN_IF" 2>/dev/null | grep -qE "[<,]UP[,>]"
+}
+
+# Rebuild P1 for an integrity failure ($1 = reason), rate-limited to one per REBUILD_MIN_INTERVAL.
+integrity_restore() {
+    _now=$(date +%s)
+    _last=$(cat "$REBUILD_STAMP_FILE" 2>/dev/null || echo 0)
+    if [ $((_now - _last)) -lt "$REBUILD_MIN_INTERVAL" ]; then
+        log_msg "WARNING: P1 integrity tripped again within ${REBUILD_MIN_INTERVAL}s of last rebuild ($1) — NOT rebuilding; check may be misfiring"
+        return 0
+    fi
+    echo "$_now" > "$REBUILD_STAMP_FILE"
+    log_msg "P1 integrity: $1 — restoring P1"
+    activate_p1
+}
+
 check_p1() {
     # Check physical carrier first (0 = disconnected, 1 = link present)
     CARRIER=$(cat /sys/class/net/$P1_IF/carrier 2>/dev/null || echo 0)
@@ -213,7 +241,7 @@ activate_p1() {
     ip link set "$VXLAN_IF" mtu 1450
     ip link set dev "$VXLAN_IF" master "$BR_IF"
     ip link set "$VXLAN_IF" up
-    for vid in 10 20 30 40 100 150 200; do
+    for vid in $TAGGED_VLANS; do
         bridge vlan add dev "$VXLAN_IF" vid "$vid" 2>/dev/null
     done
     bridge vlan del dev "$VXLAN_IF" vid 1 2>/dev/null || true
@@ -222,7 +250,7 @@ activate_p1() {
     # The Netgear switch (Port 8 → lan4, PVID 1) sends tagged VLAN 10/30 frames
     # toward lan4. Without these entries the bridge VLAN filter drops them silently.
     for port in $LAN_TRUNK_PORTS; do
-        for vid in 10 20 30 40 100 150 200; do
+        for vid in $TAGGED_VLANS; do
             bridge vlan add dev "$port" vid "$vid" 2>/dev/null
         done
     done
@@ -266,7 +294,7 @@ activate_p2() {
     ip link set "$VXLAN_IF" mtu 1450
     ip link set dev "$VXLAN_IF" master "$BR_IF"
     ip link set "$VXLAN_IF" up
-    for vid in 10 20 30 40 100 150 200; do
+    for vid in $TAGGED_VLANS; do
         bridge vlan add dev "$VXLAN_IF" vid "$vid" 2>/dev/null
     done
 
@@ -274,7 +302,7 @@ activate_p2() {
     # Netgear is still wired to lan4 during P2 failover; tagged VLANs must be allowed
     # on the ingress port for the bridge to forward them across to vxlan150.
     for port in $LAN_TRUNK_PORTS; do
-        for vid in 10 20 30 40 100 150 200; do
+        for vid in $TAGGED_VLANS; do
             bridge vlan add dev "$port" vid "$vid" 2>/dev/null
         done
     done
@@ -328,26 +356,22 @@ run_monitor() {
             log_msg "P1 detected healthy while failover was active — restoring P1"
             activate_p1
         elif ! bridge vlan show dev "$P1_IF" 2>/dev/null | grep -q " 1 "; then
-            log_msg "P1 integrity: VLAN 1 missing from $P1_IF — restoring P1"
-            activate_p1
+            integrity_restore "VLAN 1 missing from $P1_IF"
         elif bridge vlan show dev "$VXLAN_IF" 2>/dev/null | grep -q " 1 "; then
-            log_msg "P1 integrity: VLAN 1 incorrectly present on $VXLAN_IF — restoring P1"
-            activate_p1
-        elif ! ip link show "$VXLAN_IF" 2>/dev/null | grep -q "state UP"; then
+            integrity_restore "VLAN 1 incorrectly present on $VXLAN_IF"
+        elif ! vxlan_admin_up; then
             # vxlan150 missing entirely (e.g. after reboot) — /tmp state was wiped so
             # none of the flags above fire. Recreate the tunnel and tagged VLANs.
-            log_msg "P1 integrity: $VXLAN_IF absent or down — restoring P1"
-            activate_p1
+            integrity_restore "$VXLAN_IF absent or down"
         else
-            # vxlan150 is up — verify all 7 tagged VLANs are present on tunnel
+            # vxlan150 is up — verify every VLAN in TAGGED_VLANS is present on the tunnel
             _VLAN_OUT=$(bridge vlan show dev "$VXLAN_IF" 2>/dev/null)
             _MISSING=""
-            for _vid in 10 20 30 40 100 150 200; do
-                echo "$_VLAN_OUT" | grep -q " $_vid" || _MISSING="$_MISSING $_vid"
+            for _vid in $TAGGED_VLANS; do
+                echo "$_VLAN_OUT" | grep -qw "$_vid" || _MISSING="$_MISSING $_vid"
             done
             if [ -n "$_MISSING" ]; then
-                log_msg "P1 integrity: $VXLAN_IF missing tagged VLANs:$_MISSING — restoring P1"
-                activate_p1
+                integrity_restore "$VXLAN_IF missing tagged VLANs:$_MISSING"
             else
                 # Also verify LAN trunk ports (Netgear uplink → lan4) carry the same VLANs.
                 # Without these, tagged frames from the Netgear are dropped at bridge ingress.
@@ -356,12 +380,11 @@ run_monitor() {
                     ip link show "$_port" 2>/dev/null | grep -q "master $BR_IF" || continue
                     _PORT_VLAN=$(bridge vlan show dev "$_port" 2>/dev/null)
                     _PORT_MISSING=""
-                    for _vid in 10 20 30 40 100 150 200; do
-                        echo "$_PORT_VLAN" | grep -q " $_vid" || _PORT_MISSING="$_PORT_MISSING $_vid"
+                    for _vid in $TAGGED_VLANS; do
+                        echo "$_PORT_VLAN" | grep -qw "$_vid" || _PORT_MISSING="$_PORT_MISSING $_vid"
                     done
                     if [ -n "$_PORT_MISSING" ]; then
-                        log_msg "P1 integrity: $_port missing tagged VLANs:$_PORT_MISSING — restoring P1"
-                        activate_p1
+                        integrity_restore "$_port missing tagged VLANs:$_PORT_MISSING"
                         break
                     fi
                 done
@@ -390,7 +413,7 @@ run_monitor() {
     # Threshold reached - failover
     if ping -c 3 -W 2 -I wl1-sta0 "$VXLAN_SERVER_IP" >/dev/null 2>&1; then
         rm -f "$P2_DOWN_SINCE_FILE"
-        if [ ! -f /tmp/failover_p2_active ] || ! ip link show "$VXLAN_IF" 2>/dev/null | grep -q "state UP" || ! bridge vlan show dev "$VXLAN_IF" 2>/dev/null | grep -q " 1 "; then
+        if [ ! -f /tmp/failover_p2_active ] || ! vxlan_admin_up || ! bridge vlan show dev "$VXLAN_IF" 2>/dev/null | grep -q " 1 "; then
             activate_p2
         fi
     else

@@ -23,6 +23,9 @@ VXLAN_IF="${VXLAN_IF:-vxlan150}"
 VXLAN_VNI="${VXLAN_VNI:-150}"
 DST_PORT="${DST_PORT:-4789}"
 LOCAL_IP="${LOCAL_IP:-192.168.1.150}"
+# Tagged VLANs carried over vxlan150 and ens18. Must match TAGGED_VLANS in OpenWrt failover.sh.
+# VLAN 100 (Wireshark SPAN isolation) is deliberately excluded: it lives only on SW920 1/0/24.
+TAGGED_VLANS="${TAGGED_VLANS:-10 30}"  # office devices: 10 and 30 per Netgear VLAN table
 
 mkdir -p "$(dirname "$LOG_FILE")"; touch "$LOG_FILE"; chmod 644 "$LOG_FILE"
 
@@ -62,7 +65,7 @@ setup_interfaces() {
     bridge vlan add dev "$PHYSICAL_IF" vid 1 pvid untagged 2>/dev/null || true
 
     # Provision Tagged VLANs on both physical trunk (ens18) and VXLAN tunnel (vxlan150)
-    for vid in 10 20 30 40 100 150 200; do
+    for vid in $TAGGED_VLANS; do
         bridge vlan add dev "$PHYSICAL_IF" vid "$vid" 2>/dev/null || true
         bridge vlan add dev "$VXLAN_IF" vid "$vid" 2>/dev/null || true
     done
@@ -89,7 +92,7 @@ activate_p2() {
             local "$LOCAL_IP" remote "$REMOTE_WIRELESS_IP" dstport "$DST_PORT" 2>/dev/null || true
         ip link set "$VXLAN_IF" mtu "$VXLAN_MTU"
         ip link set "$VXLAN_IF" up master "$BRIDGE_IF"
-        for vid in 10 20 30 40 100 150 200; do
+        for vid in $TAGGED_VLANS; do
             bridge vlan add dev "$VXLAN_IF" vid "$vid" 2>/dev/null || true
         done
     }
@@ -113,7 +116,7 @@ activate_p1() {
             local "$LOCAL_IP" remote "$REMOTE_IP" dstport "$DST_PORT" 2>/dev/null || true
         ip link set "$VXLAN_IF" mtu "$VXLAN_MTU"
         ip link set "$VXLAN_IF" up master "$BRIDGE_IF"
-        for vid in 10 20 30 40 100 150 200; do
+        for vid in $TAGGED_VLANS; do
             bridge vlan add dev "$VXLAN_IF" vid "$vid" 2>/dev/null || true
         done
     }
