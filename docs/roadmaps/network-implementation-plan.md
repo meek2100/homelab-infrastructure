@@ -10,11 +10,11 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | :--- | :--- | :---: |
 | **Part 1** | Core Router & Switch ACL Configuration (21 rules) | ✅ 100% Verified |
 | **Part 2** | End-to-End Verification & Testing Runbook (5 tests) | ✅ 100% Verified |
-| **Part 2.5** | Multicast & Discovery Architecture (Native Bonjour/IGMP) | ✅ Settled — 2026-09-29: IGMP snooping + querier added for VLAN 30; AP mDNS gate off on MGMT SSID; luna mDNS bloat fix pending (Part 7) |
+| **Part 2.5** | Multicast & Discovery Architecture (Native Bonjour/IGMP) | ✅ Settled — 2026-09-29: IGMP snooping + querier added for VLAN 30; AP mDNS gate off on MGMT SSID; 2026-09-30: luna HA/Homebridge bound to ens18 (verified), Vivint panel mDNS blocked on SW920 1/0/17 (runbook) |
 | **Part 2.6** | WAN2 & Storage SAN Isolation (untagged vmbr1) | ✅ Settled |
-| **Part 2.7** | vxlan-server Split Trunking Architecture (VM 107) | 🟢 Complete — 2026-09-29: fixed 30 s tunnel-rebuild loop (59–73% office loss → 0%); VLAN 100 removed from tunnel; `TAGGED_VLANS="10 30"` deploy pending (Part 7) |
+| **Part 2.7** | vxlan-server Split Trunking Architecture (VM 107) | 🟢 Complete — 2026-09-29: fixed 30 s tunnel-rebuild loop (59–73% office loss → 0%); VLAN 100 removed from tunnel; 2026-09-30: `TAGGED_VLANS="10 30"` deployed on both ends; tester re-run pending |
 | **Part 2.8** | Netgear GS108Ev2 Office Switch GitOps & Backup | 🟢 Complete — Native NSDP packet driver, L2 relay, and binary/JSON backups verified |
-| **Part 2.9** | Wireshark Headless SPAN Sniffer & Storage Engine (Stack 48) | 🟢 Hardened — 2026-09-29: unicast now captured (vmbr1 ageing 0 / learning off); 500M tmpfs, 50MB chunks, 8-file ring, 256 B snaplen; persist vmbr1 setting pending |
+| **Part 2.9** | Wireshark Headless SPAN Sniffer & Storage Engine (Stack 48) | 🟢 Hardened — 2026-09-29: unicast now captured (vmbr1 ageing 0 / learning off); 500M tmpfs, 50MB chunks, 8-file ring; 2026-09-30: vmbr1 hub mode + GRO off persisted, 512 B snaplen, VLAN-aware filter, open-file-safe background NAS worker as `abc`, soft `/mnt/captures` mount |
 | **Part 2.10**| Pakedge SX-8P Managed Switch & Work Testbench Lifecycle | 🟢 Complete — 2026-09-29: STP off + BPDU flooding, SW920 1/0/7 admin-edge + BPDU Guard (tested), trunk 1,10,150,200; ⚠️ power is WattBox, not PoE — `power_cycle_pakedge_switch` needs rework |
 | **Part 3** | Observability Engine & Synthetic Probing (Stack 71) | 🟢 100% Deployed & Active (10 containers, Alertmanager, Blackbox, external targets) |
 | **Part 4** | Unified Full-Fleet Control Center, External Systems & PBS Foundation | 🟢 100% Deployed & Active (49/49 targets UP, distributed agent pods active on 5 VMs, Loki streaming all containers) |
@@ -22,6 +22,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Part 5.6** | Phase 2 Automation, External Log Shipping & GitOps Drills | 🟢 100% Complete & Operationalized (Snapshot FastMCP, Device Auto-Sync, Promtail Tooling, GitOps Drills) |
 | **Part 6** | Comprehensive Architectural Learnings & Production Gotchas | 📚 24 Critical Learnings Documented & Fleet-Hardened |
 | **Part 7** | 2026-09-29 Capture-Driven Network Remediation (SPAN/pcap analysis) | 🟡 In Progress — core faults fixed; open items tracked in Part 7 checklist |
+| **Part 8** | Compute Platform Review (pve hosts, VMs, LXCs, Docker, GPU) | ⏸️ Future — starts once the network is stable and all important config/state is in git |
 
 ### Key Protocol Constraints & Architecture Settled
 - **Netgear GS108Ev2** — No HTTP REST API. Uses **NSDP** (Layer 2 UDP, ports 63321/63322). The `backup_netgear_switch` / `get_netgear_switch_status` MCP tools execute via pure Python NSDP using an automated Layer 2 adjacent relay hierarchy: primary OpenWrt router (`192.168.1.226` on `br-lan`) with fallback to Proxmox `pve` (`192.168.1.250` on `vmbr0`). Live telemetry and synchronized dual JSON/binary GitOps backups are 100% verified.
@@ -792,6 +793,18 @@ The 520's stale DHCP leases were cleared by the user; OvrC needs manual clean-up
   - Still to check: WAN2's mode on the 520 must be **failover/policy only, not load-balancing**; otherwise ordinary internet flows could leave via the Aurora/PIA path
 - Testbench SA-1 `.200.100` keeps trying MQTT to `192.168.80.150:8883`, an address on the old 192.168.80.x network, which is a stale config on the testbench. CA1 `.150.200` tries the home Director `.10.200:8883` and is blocked by VLAN isolation (good)
 
+### Decision — NAS shares are mounted inside the VMs, not as Proxmox NFS storage (2026-09-30)
+
+- **Proxmox NFS storage serves Proxmox content** (disk images, ISO, templates, backups). VMs can't use a host mount; host-mount + bind is an LXC-only pattern. The Docker stacks run in VMs (luna, media-server, discovery-server), so they need their own mount anyway.
+- **The NAS is a VM on pve3.** Hypervisor-level mounts would create a boot-order loop on pve3 and make pve/pve2 depend on one guest on another host.
+- **Blast radius.** A dead NFS storage hangs `pvestatd`, the GUI status and backup/migration jobs on every host. The 2026-09-30 pve3 NIC hang only froze luna's processes, because the mount lived in the VM.
+- **Ownership.** In-VM mounts give `1000:1000` files that match the containers; no root-squash/UID mapping through the host.
+- **Mount policy:**
+  - `/mnt/media` stays `hard` (writers pause and resume; soft can half-write, and makes Plex treat files as missing), plus `_netdev,nofail,x-systemd.mount-timeout=30`
+  - Docker drop-in `Wants=`/`After=mnt-media.mount`
+  - only the capture archive (`/mnt/captures`) is `soft`
+- **Not used:** virtiofs pass-through (Proxmox 8.4+). It stacks on NFS, blocks live migration and keeps the host exposed to NFS hangs.
+
 ### Pending Checklist
 - [x] Deploy `TAGGED_VLANS="10 30"` to both ends and prune 20/40/100/150/200 (2026-09-30: OpenWrt `vxlan150` = 10,30; vxlan-server `ens18` = 1,10,30, `vxlan150` = 10,30, `br0` self = 1)
 - [ ] Re-run `failover.sh --test --vlan` with the fixed tester (remote V10 failed before because vxlan-server `br0` self had only vid 1) and confirm `V10:OK` on both ends
@@ -818,7 +831,28 @@ The 520's stale DHCP leases were cleared by the user; OvrC needs manual clean-up
 - [ ] Deploy-script hardening: no world-readable secrets (`chmod -R 755`), health checks must fail on errors
 - [ ] Long term: run Ethernet to the office and retire the wireless bridge + VXLAN failover
 
+---
 
+## ⏸️ Part 8: Compute Platform Review — Future Phase (recorded 2026-09-30)
 
+**Not started. Nothing to do now** unless a Part 7 fix requires it.
 
+**Preconditions:**
+- the network is stable (Part 7 checklist closed);
+- all important settings and state are captured and backed up in this repo.
 
+**Goal:** re-evaluate the pve / pve2 / pve3 layout, VMs, LXCs and Docker stacks for performance, robustness and room to grow, especially future AI services on the **4 GB VRAM NVIDIA GPU in `pve`**.
+
+**Known pain points:**
+- The **Plex** Docker container has GPU-related limitations.
+- **RAM ballooning** limits (a VM with a PCIe-passthrough GPU pins all its RAM, so it cannot balloon).
+
+**Questions to answer then:**
+- GPU sharing model: a VM with passthrough (one owner, pinned RAM) vs LXC with the NVIDIA device shared across containers (Plex NVENC plus AI services).
+- VRAM budget: 4 GB fits Plex transcodes plus small quantized models (embeddings, speech-to-text, roughly ≤3–4B LLMs), not large models.
+- Which workloads belong in LXC vs VM vs Docker-in-VM, and on which host.
+- Host resilience lessons from Part 7:
+  - pve3's e1000e NIC hang;
+  - the NAS and PBS both live on pve3 (single point of failure);
+  - NAS mounts stay in-VM (see the 2026-09-30 decision in Part 7).
+- Storage placement, and memory and CPU headroom per host.
