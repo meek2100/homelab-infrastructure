@@ -145,16 +145,32 @@ def get_target_mac(ip, iface=None):
     return "ff:ff:ff:ff:ff:ff"
 
 def teardown_vlan_test_env():
-    """Cleans up any VLAN sub-interfaces and bridge filter entries created during testing."""
+    """Cleans up diagnostic VLAN interfaces created during testing.
+
+    Only removes:
+      - The VLAN sub-interface (br-lan.40 / br0.40)
+      - The bridge CPU-port 'self' filter entry added by setup_vlan_interface (OpenWrt only)
+      - The host route added for the probe target
+
+    Does NOT touch bridge vlan filter entries on production ports (vxlan150,
+    lan2/lan3/lan4, wan) — those are managed exclusively by activate_p1/p2
+    and must survive the test run intact.
+    """
     iface_base = CONFIG.get("BRIDGE_IF", "br-lan") if is_openwrt() else "br0"
+    target_ip  = CONFIG.get("REMOTE_VLAN_IP", "192.168.40.1")
     for vid in [40]:
-        run_command(["ip", "link", "del", f"{iface_base}.{vid}"], suppress_output=True)
-        # Remove bridge VLAN filter entries added during setup (OpenWrt DSA only)
+        vlan_iface = f"{iface_base}.{vid}"
+        # Remove the host route first (before the interface disappears)
+        run_command(["ip", "route", "del", f"{target_ip}/32", "dev", vlan_iface],
+                    suppress_output=True)
+        # Remove the diagnostic sub-interface
+        run_command(["ip", "link", "del", vlan_iface], suppress_output=True)
+        # Remove only the bridge CPU-port (self) filter entry — the only bridge VLAN
+        # entry this test creates. Production port entries are never touched here.
         if is_openwrt():
-            run_command(["bridge", "vlan", "del", "dev", iface_base, "vid", str(vid), "self"], suppress_output=True)
-            run_command(["bridge", "vlan", "del", "dev", "wan", "vid", str(vid)], suppress_output=True)
-            run_command(["bridge", "vlan", "del", "dev", CONFIG.get("VXLAN_IF", "vxlan150"), "vid", str(vid)], suppress_output=True)
-    log_debug("Cleaned up diagnostic VLAN interfaces")
+            run_command(["bridge", "vlan", "del", "dev", iface_base, "vid", str(vid), "self"],
+                        suppress_output=True)
+    log_debug("Cleaned up diagnostic VLAN sub-interfaces")
 
 # -------------------- Handlers --------------------
 def get_command_path(cmd):
@@ -564,17 +580,27 @@ def vlan_test(active_priority):
             setup_vlan_interface(iface_base, vlan_id, active_priority)
             time.sleep(2) # Allow for kernel/STP convergence
 
-            # Verify L2 VLAN transparency via ARP resolution.
-            # Ping may fail if the gateway firewall blocks ICMP from unknown hosts,
-            # but a successful ARP reply proves tagged frames traverse the bridge.
-            run_command(["ping", "-c", "1", "-W", "2", "-I", vlan_iface, target_ip], suppress_output=True)
-            success, arp_out = run_command(["ip", "neigh", "show", target_ip, "dev", vlan_iface])
-            if success and arp_out.strip() and ("REACHABLE" in arp_out.upper() or "lladdr" in arp_out):
-                mac = arp_out.strip().split("lladdr")[1].split()[0] if "lladdr" in arp_out else "?"
-                print_ok(f"VLAN {vlan_id} L2 transparent (ARP: {target_ip} → {mac})")
+            # Verify L2 VLAN transparency.
+            # Strategy: arping first to prime the ARP cache, then ping, then read neigh.
+            # NOTE: ip neigh entries for frames sent via a VLAN sub-interface (br-lan.40)
+            # are stored by the kernel under the *parent* bridge device (br-lan / br0),
+            # NOT under the sub-interface. Always query the parent for ARP lookups.
+            run_command(["arping", "-c", "2", "-w", "3", "-I", vlan_iface, target_ip],
+                        suppress_output=True)
+            ping_ok, ping_out = run_command(
+                ["ping", "-c", "3", "-W", "3", "-I", vlan_iface, target_ip],
+                suppress_output=True)
+            # Query neigh on the parent bridge, not the sub-interface
+            success, arp_out = run_command(["ip", "neigh", "show", target_ip, "dev", iface_base])
+            arp_ok = (success and arp_out.strip() and
+                      any(kw in arp_out.upper()
+                          for kw in ("REACHABLE", "DELAY", "STALE", "LLADDR")))
+            if ping_ok or arp_ok:
+                mac = arp_out.strip().split("lladdr")[1].split()[0] if "lladdr" in arp_out else "responded"
+                print_ok(f"VLAN {vlan_id} L2 transparent (Target: {target_ip}, MAC: {mac})")
                 overall_details.append(f"V{vlan_id}:OK")
             else:
-                print_fail(f"VLAN {vlan_id} failed to reach Gateway.")
+                print_fail(f"VLAN {vlan_id} failed to reach Gateway. (ping_ok={ping_ok}, arp={arp_out.strip() or 'FAILED'})")
                 overall_details.append(f"V{vlan_id}:FAIL")
                 overall_status = "FAIL"
         except Exception as e:
@@ -605,18 +631,23 @@ def setup_vlan_interface(base, vlan_id, active_priority="P1"):
 
     run_command(["ip", "link", "set", iface, "up"])
 
-    # Assign local test IP for the subnet (we'll use .254 as a safe probe address)
+    # Assign local test IP using /32 to avoid hijacking 192.168.40.0/24 subnet routing.
+    # Add an explicit host route to the probe target so the kernel knows to send via this iface.
     my_ip = CONFIG.get("LOCAL_VLAN_IP", "192.168.40.254")
-    run_command(["ip", "addr", "add", f"{my_ip}/24", "dev", iface])
+    target_ip = CONFIG.get("REMOTE_VLAN_IP", "192.168.40.1")
+    run_command(["ip", "addr", "add", f"{my_ip}/32", "dev", iface])
+    run_command(["ip", "route", "add", f"{target_ip}/32", "dev", iface, "scope", "link"],
+                suppress_output=True)
 
-    # Add VLAN to bridge filter table so tagged frames pass through
+    # Add VLAN to bridge CPU-port so the kernel can receive/send frames on the sub-interface.
+    # The 'self' flag targets the bridge device itself — NOT any physical port.
+    # We intentionally do NOT add to vxlan150, lan2/3/4, or wan:
+    #   - vxlan150: already provisioned by activate_p1/p2; teardown must not touch it
+    #   - wan:      carries only untagged VLAN 1 in all modes; tagged VLANs must never be added
+    #   - lan ports: managed by activate_p1/p2; teardown must not touch them
     if is_openwrt():
-        run_command(["bridge", "vlan", "add", "dev", base, "vid", str(vlan_id), "self"], suppress_output=True)
-        # Add to the active port so frames egress correctly
-        if active_priority == "P1":
-            run_command(["bridge", "vlan", "add", "dev", "wan", "vid", str(vlan_id)], suppress_output=True)
-        else:
-            run_command(["bridge", "vlan", "add", "dev", CONFIG.get("VXLAN_IF", "vxlan150"), "vid", str(vlan_id)], suppress_output=True)
+        run_command(["bridge", "vlan", "add", "dev", base, "vid", str(vlan_id), "self"],
+                    suppress_output=True)
 
 def arp_test():
     """Verify ARP transparency — remote device MAC visible, not the bridge's MAC."""
