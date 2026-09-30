@@ -807,9 +807,28 @@ The 520's stale DHCP leases were cleared by the user; OvrC needs manual clean-up
 
 ### Pending Checklist
 - [x] **Proxmox email notifications (SMTP2GO) broken on pve2 and pve3** (fixed 2026-09-30: copied `/etc/pve/priv/notifications.cfg` from pve; test sent from pve2 and pve3). They work on pve. The hosts are not clustered, so each keeps its own `/etc/pve/notifications.cfg` (the SMTP password is in `/etc/pve/priv/notifications.cfg`). **Cause found 2026-09-30:** `notifications.cfg` is identical on all three hosts, but pve2/pve3 log `Could not instantiate endpoint 'SMTP2GO': private config does not exist`. The public file was copied, the private file with the password was not. Fix: re-enter the password on pve2/pve3 (Datacenter → Notifications → SMTP2GO → Edit), then Test
-- [ ] **PBS `vm/100` collision:** nexus (pve), discovery-server (pve2) and nexus-server2 (pve3) are all VMID 100 and back up to one datastore with no namespace, so they share group `vm/100` (mixed snapshots, or owner-check failures). **Higher priority:** backup jobs prune with `keep-last=7, keep-daily=7, keep-weekly=4, keep-monthly=12`, so a prune from one host counts, and can delete, the other two VMs' snapshots in that shared group. Fix: one PBS namespace per host (`namespace` line in each host's `storage.cfg`), then verify each host's backups and restores
+- [ ] **Upgrade PBS 3 → 4** (CT 105 on pve3): PBS 3 support ended 2026-08-31, so there are no more security updates. Order: finish the namespace fix and the power test first. Then, one change at a time:
+  1. update to the latest 3.4 and run `pbs3to4 --full` (read-only checker);
+  2. back up `/etc/proxmox-backup` and vzdump CT 105 to **local** storage (not into PBS itself);
+  3. switch the apt sources bookworm → trixie (PBS 4 repo) and `apt dist-upgrade`;
+  4. reboot and re-run the checker;
+  5. verify the datastore and run a test backup from each host.
+  - **Checker baseline (2026-09-30):** PBS 3.4.9 in an LXC, hosts on PVE 9.1.1, ~60 pending bookworm updates.
+    Expected in a container, ignore: the FAIL `could not match the 'proxmox-backup' package` (the bare-metal metapackage, which pulls a kernel; never install it in a CT), the kernel mismatch (the CT uses the host kernel), grub-efi, and no NTP (the CT takes its time from pve3).
+    Real: the pending updates, covered by step 1.
+- [x] **PBS namespaces per host — done 2026-09-30.** Namespaces `pve`/`pve2`/`pve3` created on `homelab-datastore`; each host's `pbs-backup` storage has `namespace <host>`. Fresh full backups all succeeded, and each host lists only its own guests:
+  - pve: 100, 102, 103, 107, 109
+  - pve2: 100
+  - pve3: 100, 101, ct/105
+  - NAS VM 101: OS disk only; the 500G data disk `scsi1` is `backup=0`
+  - CT 105: the datastore bind mount `/backup` is skipped
+  - SMTP2GO notification sent from all three
+- [ ] **Delete the legacy root-namespace backups after 2026-10-14** (once each namespace has about 2 weeks of history): PBS → `homelab-datastore` → root namespace → remove group `vm/100` (mixed nexus/discovery/nexus-server2), and optionally the other root groups; Garbage Collection then frees the space
+- [ ] **NAS data disk has no backup at all:** VM 101 `scsi1` (500G on `shared-nas`) is excluded from PBS, on purpose, because PBS lives on the same host. List the irreplaceable folders (3D-printer backups, configs, documents, vs. re-downloadable media) and give those a copy off pve3 (file-level `proxmox-backup-client` from the NAS VM to a second datastore, or rsync to another disk/off-site)
+- [ ] Check discard/TRIM on the pve and pve2 VM disks: first backups were only 7–8% zero on luna and discovery-server (pve3's VMs all have `discard=on`). Run the per-VM disk check there; enable Discard (+SSD emulation) where missing and confirm `fstrim.timer` in the guests
+- [ ] ~~PBS `vm/100` collision~~ (resolved above; original finding kept for history): nexus (pve), discovery-server (pve2) and nexus-server2 (pve3) are all VMID 100 and back up to one datastore with no namespace, so they share group `vm/100` (mixed snapshots, or owner-check failures). **Higher priority:** backup jobs prune with `keep-last=7, keep-daily=7, keep-weekly=4, keep-monthly=12`, so a prune from one host counts, and can delete, the other two VMs' snapshots in that shared group. Fix: one PBS namespace per host (`namespace` line in each host's `storage.cfg`), then verify each host's backups and restores
 - [ ] **Pakedge VLAN 1 leak to test ports:** OvrC on CA1 (VLAN 150, Pakedge `gi8`) discovered VLAN 1 hosts (APs, pve, vxlan-server, PBS), so the access ports probably keep their factory **untagged VLAN 1** membership (the PVID was changed, membership was not). Check VLAN 1 membership in the Pakedge UI; only `gi1` should be a member
-- [ ] OvrC: turn off CA1 Test **LAN Latency** (still hourly); after the power test, set main **Network Scans** to 24 Hours (or file a Snap One ticket if the router ARP sweep persists with scanning off)
+- [ ] OvrC (CA1 Test LAN Latency is greyed out: VLAN 150 has no other LAN device to ping, so nothing to do there). After the power test, set main **Network Scans** to 24 Hours (or file a Snap One ticket if the router ARP sweep persists with scanning off)
 - [x] Deploy `TAGGED_VLANS="10 30"` to both ends and prune 20/40/100/150/200 (2026-09-30: OpenWrt `vxlan150` = 10,30; vxlan-server `ens18` = 1,10,30, `vxlan150` = 10,30, `br0` self = 1)
 - [ ] Re-run `failover.sh --test --vlan` with the fixed tester (remote V10 failed before because vxlan-server `br0` self had only vid 1) and confirm `V10:OK` on both ends
 - [x] Persist `vmbr1` hub mode in pve `/etc/network/interfaces`: `bridge-ageing 0`, `post-up bridge link set dev lan1 learning off` and `post-up ethtool -K lan1 gro off`. Done and verified 2026-09-30: `ifquery -c vmbr1` passes; live ageing_time 0, learning off, GRO off; luna saw 23,380 unicast frames in 10 s. **Re-check after any Proxmox GUI network apply**, since one reset these settings on 2026-09-29 at ~22:24 (optional: disable IPv6 on `vmbr1`)
@@ -859,4 +878,5 @@ The 520's stale DHCP leases were cleared by the user; OvrC needs manual clean-up
   - pve3's e1000e NIC hang;
   - the NAS and PBS both live on pve3 (single point of failure);
   - NAS mounts stay in-VM (see the 2026-09-30 decision in Part 7).
+  - **Backups share a failure domain with the data:** the PBS datastore (CT 105) sits on pve3's local disk, on the same host as the NAS VM (101); PBS backs itself up into itself; there is no off-host copy. Plan a second datastore or sync target (another host, USB/NAS disk, or off-site PBS) plus periodic test restores.
 - Storage placement, and memory and CPU headroom per host.
