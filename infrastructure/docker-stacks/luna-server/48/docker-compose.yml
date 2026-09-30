@@ -16,7 +16,14 @@ services:
     volumes:
       - ${BASE_PATH}/wireshark/config:/config
       - ${BASE_PATH}/wireshark/custom-services.d:/custom-services.d
-      - ${NFS_MOUNT_POINT}/wireshark-captures:/nas-storage
+      # Capture archive on its own soft NFS mount (luna /etc/fstab: /mnt/captures), so a NAS outage fails
+      # copies instead of freezing them. rslave: a remount on the host after the container started still
+      # appears inside it. The script only writes when /nas-storage/.capture-archive exists (share mounted).
+      - type: bind
+        source: ${CAPTURE_NFS_PATH:-/mnt/captures}
+        target: /nas-storage
+        bind:
+          propagation: rslave
     tmpfs:
       - /captures:rw,size=500M,mode=1777 # RAM buffer: several 50 MB chunks if the NFS mover lags (full SPAN since vmbr1 ageing 0)
     restart: unless-stopped

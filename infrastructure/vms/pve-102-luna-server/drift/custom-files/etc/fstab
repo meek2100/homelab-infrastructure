@@ -18,5 +18,9 @@ UUID=342820f6-43dc-4243-b041-3afe7cad6244 none            swap    sw            
 # NFS Share for Media
 192.168.40.248:/media /mnt/media nfs nfsvers=4.2,defaults 0 0
 
+# Wireshark capture archive (stack 48): soft so a NAS outage returns an error after ~1 min instead of
+# hanging the capture container; nofail so luna still boots if the NAS is down.
+192.168.40.248:/media/wireshark-captures /mnt/captures nfs nfsvers=4.2,soft,timeo=100,retrans=3,_netdev,nofail 0 0
+
 # SMB Share for Media
 # //192.168.40.248/media /mnt/media cifs credentials=/root/.smbcredentials,uid=1000,gid=1000 0 0

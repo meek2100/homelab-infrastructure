@@ -29,11 +29,17 @@ NAS_USER="abc"        # linuxserver runtime user, mapped to PUID/PGID from the c
                       # and stay usable over SMB/NFS; also works when the NFSv4 export squashes root.
 NAS_FILE_MODE=664     # owner+group read/write, everyone read
 
+NAS_MARKER=".capture-archive" # must exist in the NAS folder. If it is missing, the share isn't mounted (a bare
+                              # local directory) and nothing is written, so captures never fill luna's disk
+WORKER_WARN_SECONDS=300       # warn when one NAS pass has been running this long (NAS slow or unreachable)
+
 DUMPCAP_PID=""
+WORKER_PID=""
+WORKER_START=0
 
 as_nas_user() { s6-setuidgid "${NAS_USER}" "$@"; }
 
-nas_writable() { [ -d "${STORAGE_DIR}" ] && as_nas_user test -w "${STORAGE_DIR}"; }
+nas_ready() { [ -f "${STORAGE_DIR}/${NAS_MARKER}" ] && as_nas_user test -w "${STORAGE_DIR}"; }
 
 # Copy a completed chunk to the NAS as NAS_USER under a hidden .partial name, then rename it, so SMB/NFS
 # clients never see a half-written capture. The tmpfs original is removed only after a successful copy,
@@ -56,8 +62,50 @@ transfer_chunk() {
   fi
 }
 
+prune_archive() {
+  # Prune captures older than 24 hours, plus .partial leftovers from interrupted transfers
+  as_nas_user find "${STORAGE_DIR}" -maxdepth 1 -name "router_baseline_*.pcapng" -type f -mmin +"${RETENTION_MINUTES}" -delete 2>/dev/null
+  as_nas_user find "${STORAGE_DIR}" -maxdepth 1 -name ".router_baseline_*.partial" -type f -mmin +60 -delete 2>/dev/null
+
+  # Hard cap check: delete oldest files if count exceeds MAX_ARCHIVE_FILES
+  local total_files
+  total_files=$(ls -1 "${STORAGE_DIR}"/router_baseline_*.pcapng 2>/dev/null | wc -l)
+  if [ "$total_files" -gt "${MAX_ARCHIVE_FILES}" ]; then
+    local excess=$(( total_files - MAX_ARCHIVE_FILES ))
+    echo "🧹 NOC-Automation: Pruning $excess excess capture files beyond safety cap (${MAX_ARCHIVE_FILES})..."
+    ls -1t "${STORAGE_DIR}"/router_baseline_*.pcapng 2>/dev/null | tail -n "$excess" | as_nas_user xargs -r rm -f
+  fi
+}
+
+# One pass of NAS work (transfers, then pruning when asked). It runs in the background, so a hung or slow
+# NAS can only ever stall this worker, never the capture watchdog: on 2026-09-30 a NIC hang on pve3 froze
+# the NFS mount and, with it, this whole loop and 'docker restart'.
+nas_pass() {
+  local open_files completed_file
+  if ! nas_ready; then
+    echo "⚠️ NOC-Automation: [$(date '+%Y-%m-%d %H:%M:%S')] ${STORAGE_DIR} not ready (share not mounted, ${NAS_MARKER} missing, or not writable by ${NAS_USER} $(id -u "${NAS_USER}" 2>/dev/null):$(id -g "${NAS_USER}" 2>/dev/null)). Buffering in tmpfs..."
+    return
+  fi
+  # The active chunk is whichever file dumpcap holds open. Newest-mtime is NOT reliable: around a
+  # rotation the closing chunk can be written after the new one is created, so the new chunk looked
+  # "completed" and was mv'd across filesystems (copy + unlink) while still open. Only its header
+  # reached the NAS and dumpcap kept writing into the unlinked inode (lost 2026-09-29 23:11-23:57).
+  open_files=$(readlink "/proc/${DUMPCAP_PID}/fd/"* 2>/dev/null)
+  if [ -z "$open_files" ]; then
+    open_files=$(ls -1t "${CAPTURE_DIR}"/router_baseline_*.pcapng 2>/dev/null | head -n 1)  # fallback: old heuristic
+  fi
+  for completed_file in "${CAPTURE_DIR}"/router_baseline_*.pcapng; do
+    [ -e "$completed_file" ] || continue
+    if ! printf '%s\n' "$open_files" | grep -qxF "$completed_file"; then
+      transfer_chunk "$completed_file"
+    fi
+  done
+  [ "$1" = "prune" ] && prune_archive
+}
+
 cleanup() {
   echo "🛑 NOC-Automation: Received termination signal. Cleaning up..."
+  [ -n "$WORKER_PID" ] && kill -TERM "$WORKER_PID" 2>/dev/null
   if [ -n "$DUMPCAP_PID" ] && kill -0 "$DUMPCAP_PID" 2>/dev/null; then
     kill -TERM "$DUMPCAP_PID" 2>/dev/null
     wait "$DUMPCAP_PID" 2>/dev/null
@@ -93,27 +141,6 @@ start_dumpcap() {
   echo "✓ Dumpcap started with PID ${DUMPCAP_PID}"
 }
 
-prune_archive() {
-  if nas_writable; then
-    # Prune captures older than 24 hours, plus .partial leftovers from interrupted transfers
-    as_nas_user find "${STORAGE_DIR}" -maxdepth 1 -name "router_baseline_*.pcapng" -type f -mmin +"${RETENTION_MINUTES}" -delete 2>/dev/null
-    as_nas_user find "${STORAGE_DIR}" -maxdepth 1 -name ".router_baseline_*.partial" -type f -mmin +60 -delete 2>/dev/null
-
-    # Hard cap check: delete oldest files if count exceeds MAX_ARCHIVE_FILES
-    local total_files
-    total_files=$(ls -1 "${STORAGE_DIR}"/router_baseline_*.pcapng 2>/dev/null | wc -l)
-    if [ "$total_files" -gt "${MAX_ARCHIVE_FILES}" ]; then
-      local excess=$(( total_files - MAX_ARCHIVE_FILES ))
-      echo "🧹 NOC-Automation: Pruning $excess excess capture files beyond safety cap (${MAX_ARCHIVE_FILES})..."
-      ls -1t "${STORAGE_DIR}"/router_baseline_*.pcapng 2>/dev/null | tail -n "$excess" | as_nas_user xargs -r rm -f
-    fi
-  fi
-}
-
-# Boot-time initial prune pass
-echo "🧹 NOC-Automation: Running boot-time storage optimization pass..."
-prune_archive
-
 start_dumpcap
 
 loop_count=0
@@ -124,31 +151,20 @@ while true; do
     start_dumpcap
   fi
 
-  # 2. Transfer completed chunks from tmpfs to NAS storage to protect tmpfs capacity and avoid drive wear
-  if nas_writable; then
-    # The active chunk is whichever file dumpcap holds open. Newest-mtime is NOT reliable: around a
-    # rotation the closing chunk can be written after the new one is created, so the new chunk looked
-    # "completed" and was mv'd across filesystems (copy + unlink) while still open. Only its header
-    # reached the NAS and dumpcap kept writing into the unlinked inode (lost 2026-09-29 23:11-23:57).
-    open_files=$(readlink "/proc/${DUMPCAP_PID}/fd/"* 2>/dev/null)
-    if [ -z "$open_files" ]; then
-      open_files=$(ls -1t "${CAPTURE_DIR}"/router_baseline_*.pcapng 2>/dev/null | head -n 1)  # fallback: old heuristic
+  # 2. NAS work in the background: move completed chunks out of tmpfs, and prune every ~5 minutes
+  #    (30 x 10 s; the first pass also prunes). Never start a pass while the previous one still runs.
+  if [ -n "$WORKER_PID" ] && kill -0 "$WORKER_PID" 2>/dev/null; then
+    busy=$(( $(date +%s) - WORKER_START ))
+    if [ "$busy" -ge "${WORKER_WARN_SECONDS}" ] && [ $(( loop_count % 6 )) -eq 0 ]; then
+      echo "⚠️ NOC-Automation: [$(date '+%Y-%m-%d %H:%M:%S')] NAS pass busy for ${busy}s (NAS slow or unreachable); capture continues in tmpfs"
     fi
-    for completed_file in "${CAPTURE_DIR}"/router_baseline_*.pcapng; do
-      [ -e "$completed_file" ] || continue
-      if ! printf '%s\n' "$open_files" | grep -qxF "$completed_file"; then
-        transfer_chunk "$completed_file"
-      fi
-    done
   else
-    echo "⚠️ NOC-Automation: [$(date '+%Y-%m-%d %H:%M:%S')] ${STORAGE_DIR} is NOT mounted or NOT writable by ${NAS_USER} ($(id -u "${NAS_USER}" 2>/dev/null):$(id -g "${NAS_USER}" 2>/dev/null))! Buffering in tmpfs..."
+    [ "$loop_count" -eq 0 ] && echo "🧹 NOC-Automation: Running boot-time storage optimization pass..."
+    if [ $(( loop_count % 30 )) -eq 0 ]; then nas_pass prune & else nas_pass & fi
+    WORKER_PID=$!
+    WORKER_START=$(date +%s)
   fi
 
-  # 3. Periodic continuous 24-hour FIFO pruning (every ~5 minutes: 30 iterations * 10s)
   loop_count=$(( loop_count + 1 ))
-  if [ $(( loop_count % 30 )) -eq 0 ]; then
-    prune_archive
-  fi
-
   sleep 10
 done
