@@ -8,13 +8,53 @@ fi
 
 CAPTURE_DIR="/captures"
 STORAGE_DIR="/nas-storage"
-CAPTURE_FILTER="not host 192.168.40.248 and not port 3000 and not port 3001"
+# Traffic not worth keeping. Microsoft Teams call media (UDP 3478-3481 to Teams relays 52.112.0.0/14 and
+# 52.122.0.0/15) was ~44% of all stored bytes on 2026-09-30 (one work-laptop meeting), is encrypted, and
+# says nothing about the home network. The NAS is excluded on both its VLAN 40 (.40.248) and storage
+# (10.25.25.248) addresses, so copying captures off the NAS doesn't get captured again.
+CAPTURE_EXCLUDE="host 192.168.40.248 or host 10.25.25.248 or port 3000 or port 3001 or (udp portrange 3478-3481 and (net 52.112.0.0/14 or net 52.122.0.0/15))"
+# The SPAN is 802.1Q-tagged: a plain BPF expression only matches untagged (VLAN 1) frames, so apply the
+# exclusion again after 'vlan' (which must come last: it shifts the offsets of everything after it).
+CAPTURE_FILTER="not (${CAPTURE_EXCLUDE}) and not (vlan and (${CAPTURE_EXCLUDE}))"
 CHUNK_SIZE_KB=50000   # 50 MB chunks
-MAX_RING_FILES=100    # Dumpcap ring buffer limit
+SNAPLEN=512           # Bytes kept per frame: headers + DNS + DHCP options (they start at byte ~286 on a
+                      # tagged frame, so 256 cut every DHCP packet before its options) + most TLS SNIs.
+                      # Only frames larger than this cost more; bulk payload is still dropped.
+MAX_RING_FILES=8      # 8 x 50 MB = 400 MB < 500M tmpfs: if the NAS is down, dumpcap overwrites its
+                      # oldest chunk in RAM instead of filling tmpfs and dying with ENOSPC
 RETENTION_MINUTES=1440 # 24 hours
 MAX_ARCHIVE_FILES=150 # Hard safety cap on archive storage
+NAS_USER="abc"        # linuxserver runtime user, mapped to PUID/PGID from the compose file. All NAS
+                      # writes/deletes run as this user, so archive files are owned by PUID:PGID (not root)
+                      # and stay usable over SMB/NFS; also works when the NFSv4 export squashes root.
+NAS_FILE_MODE=664     # owner+group read/write, everyone read
 
 DUMPCAP_PID=""
+
+as_nas_user() { s6-setuidgid "${NAS_USER}" "$@"; }
+
+nas_writable() { [ -d "${STORAGE_DIR}" ] && as_nas_user test -w "${STORAGE_DIR}"; }
+
+# Copy a completed chunk to the NAS as NAS_USER under a hidden .partial name, then rename it, so SMB/NFS
+# clients never see a half-written capture. The tmpfs original is removed only after a successful copy,
+# so a failed transfer is retried on the next pass.
+transfer_chunk() {
+  local src="$1" name partial
+  name=$(basename "$src")
+  partial="${STORAGE_DIR}/.${name}.partial"
+  # dumpcap writes 0600 root files; hand them to NAS_USER so it can read them. Numeric IDs: in this image
+  # gid 1000 is named "users", so "abc:abc" would fail (or pick the wrong group).
+  chown "$(id -u "${NAS_USER}"):$(id -g "${NAS_USER}")" "$src" || \
+    echo "⚠️ NOC-Automation: could not chown ${name} to ${NAS_USER}; transfer will fail"
+  if as_nas_user cp -p "$src" "$partial" \
+     && as_nas_user chmod "${NAS_FILE_MODE}" "$partial" \
+     && as_nas_user mv -f "$partial" "${STORAGE_DIR}/${name}"; then
+    rm -f "$src"
+  else
+    as_nas_user rm -f "$partial" 2>/dev/null
+    echo "⚠️ NOC-Automation: [$(date '+%Y-%m-%d %H:%M:%S')] transfer of ${name} to ${STORAGE_DIR} failed; will retry"
+  fi
+}
 
 cleanup() {
   echo "🛑 NOC-Automation: Received termination signal. Cleaning up..."
@@ -31,11 +71,20 @@ sleep 15
 
 echo "🚀 NOC-Automation: Initializing Headless Capture Engine on ens19..."
 ip link set dev ens19 up promisc on 2>/dev/null || true
+# Receive offloads merge mirrored TCP segments into >1500-byte "super-frames" before dumpcap sees them
+# (seen 2026-09-29: IP lengths above 1500 from WAN hosts), which distorts segment and retransmission counts.
+# The pve host's lan1 needs the same (see network plan); this covers the guest side when ethtool exists.
+if command -v ethtool >/dev/null 2>&1; then
+  ethtool -K ens19 gro off lro off 2>/dev/null || echo "⚠️ NOC-Automation: could not disable GRO/LRO on ens19"
+else
+  echo "ℹ️ NOC-Automation: ethtool not in image; set 'ethtool -K ens19 gro off lro off' on the luna host instead"
+fi
 
 start_dumpcap() {
   echo "🚀 NOC-Automation: Starting dumpcap (${CHUNK_SIZE_KB}KB chunks into ${CAPTURE_DIR} tmpfs)..."
   /usr/bin/dumpcap -i ens19 \
     -f "${CAPTURE_FILTER}" \
+    -s "${SNAPLEN}" \
     -b filesize:"${CHUNK_SIZE_KB}" \
     -b files:"${MAX_RING_FILES}" \
     -w "${CAPTURE_DIR}/router_baseline.pcapng" \
@@ -45,9 +94,10 @@ start_dumpcap() {
 }
 
 prune_archive() {
-  if [ -d "${STORAGE_DIR}" ] && [ -w "${STORAGE_DIR}" ]; then
-    # Prune captures older than 24 hours
-    find "${STORAGE_DIR}" -name "router_baseline_*.pcapng" -type f -mmin +"${RETENTION_MINUTES}" -delete 2>/dev/null
+  if nas_writable; then
+    # Prune captures older than 24 hours, plus .partial leftovers from interrupted transfers
+    as_nas_user find "${STORAGE_DIR}" -maxdepth 1 -name "router_baseline_*.pcapng" -type f -mmin +"${RETENTION_MINUTES}" -delete 2>/dev/null
+    as_nas_user find "${STORAGE_DIR}" -maxdepth 1 -name ".router_baseline_*.partial" -type f -mmin +60 -delete 2>/dev/null
 
     # Hard cap check: delete oldest files if count exceeds MAX_ARCHIVE_FILES
     local total_files
@@ -55,7 +105,7 @@ prune_archive() {
     if [ "$total_files" -gt "${MAX_ARCHIVE_FILES}" ]; then
       local excess=$(( total_files - MAX_ARCHIVE_FILES ))
       echo "🧹 NOC-Automation: Pruning $excess excess capture files beyond safety cap (${MAX_ARCHIVE_FILES})..."
-      ls -1t "${STORAGE_DIR}"/router_baseline_*.pcapng 2>/dev/null | tail -n "$excess" | xargs -r rm -f
+      ls -1t "${STORAGE_DIR}"/router_baseline_*.pcapng 2>/dev/null | tail -n "$excess" | as_nas_user xargs -r rm -f
     fi
   fi
 }
@@ -75,16 +125,23 @@ while true; do
   fi
 
   # 2. Transfer completed chunks from tmpfs to NAS storage to protect tmpfs capacity and avoid drive wear
-  if [ -d "${STORAGE_DIR}" ] && [ -w "${STORAGE_DIR}" ]; then
-    active_file=$(ls -1t "${CAPTURE_DIR}"/router_baseline_*.pcapng 2>/dev/null | head -n 1)
+  if nas_writable; then
+    # The active chunk is whichever file dumpcap holds open. Newest-mtime is NOT reliable: around a
+    # rotation the closing chunk can be written after the new one is created, so the new chunk looked
+    # "completed" and was mv'd across filesystems (copy + unlink) while still open. Only its header
+    # reached the NAS and dumpcap kept writing into the unlinked inode (lost 2026-09-29 23:11-23:57).
+    open_files=$(readlink "/proc/${DUMPCAP_PID}/fd/"* 2>/dev/null)
+    if [ -z "$open_files" ]; then
+      open_files=$(ls -1t "${CAPTURE_DIR}"/router_baseline_*.pcapng 2>/dev/null | head -n 1)  # fallback: old heuristic
+    fi
     for completed_file in "${CAPTURE_DIR}"/router_baseline_*.pcapng; do
       [ -e "$completed_file" ] || continue
-      if [ "$completed_file" != "$active_file" ]; then
-        mv "$completed_file" "${STORAGE_DIR}/" 2>/dev/null
+      if ! printf '%s\n' "$open_files" | grep -qxF "$completed_file"; then
+        transfer_chunk "$completed_file"
       fi
     done
   else
-    echo "⚠️ NOC-Automation: [$(date '+%Y-%m-%d %H:%M:%S')] ${STORAGE_DIR} is NOT writable or mounted! Buffering in tmpfs..."
+    echo "⚠️ NOC-Automation: [$(date '+%Y-%m-%d %H:%M:%S')] ${STORAGE_DIR} is NOT mounted or NOT writable by ${NAS_USER} ($(id -u "${NAS_USER}" 2>/dev/null):$(id -g "${NAS_USER}" 2>/dev/null))! Buffering in tmpfs..."
   fi
 
   # 3. Periodic continuous 24-hour FIFO pruning (every ~5 minutes: 30 iterations * 10s)

@@ -13,7 +13,7 @@ iface vmbr0 inet static
 	bridge-stp off
 	bridge-fd 0
 	bridge-vlan-aware yes
-	bridge-vids 2-4094
+	bridge-vids 10 20 30 40 150 200
 	bridge-pvid 1
 
 auto vmbr1
@@ -24,6 +24,9 @@ iface vmbr1 inet manual
 	bridge-vlan-aware yes
 	bridge-vids 2-4094
 	bridge-pvid 1
+	bridge-ageing 0
 	post-up ip link set dev lan1 promisc on
+	post-up bridge link set dev lan1 learning off
+	post-up ethtool -K lan1 gro off
 
 source /etc/network/interfaces.d/*
