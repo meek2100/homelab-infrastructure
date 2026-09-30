@@ -761,6 +761,32 @@ Snaplen what-if on the same packets: 384 = 82% of 512, 256 = 62%, 128 = 41%. **K
 | Router still ARPs dead IPs above the sweep rate | `.1.243` 1,763, `.1.112` 1,701, `.1.247`, `.1.5`, `.1.137`, `.1.7`, `.1.3`, `.20.106` (sweep median 777) | Remove stale OvrC devices / 520 DHCP reservations for them |
 | Control4 Director resolves `stats.grafana.org` ~6×/min | 1,048 lookups in 2.7 h (most NXDOMAIN/blocked), plus `api.local` from the `.local` search domain | Low priority |
 
+### OvrC / 520 Inventory Review — 2026-09-30
+
+The 520's stale DHCP leases were cleared by the user; OvrC needs manual clean-up. The OvrC export (main network) has 71 *Healthy* and 105 *Critical* entries.
+
+**Delete from OvrC** (disconnected for months to a year; they keep old IPs "known", and some match addresses the router still ARPs for):
+- ~20 old Proxmox VM MACs (`BC:24:11:…`) on VLAN 1 (`.1.9`, `.100`, `.112`, `.118`, `.128`, `.136`, `.150` ×4, `.176`, `.185`, `.187`, `.198`, `.199`, `.240`), plus `.40.244` and `.40.245`
+- **Vivint outdoor camera `ODC350-390827` at `192.168.1.112`** (`84:EB:3E:39:08:27`, now on the panel's own AP), and five old Alpha Networks (Vivint) entries at `.1.109`/`.110`/`.113`/`.114`/`.115`
+- Old MoIP units TX/RX/TR at `.1.4`, `.1.85`, `.1.174` and `.1.181`; eero ×3; Nintendo ×6; old touchscreens T3 `.1.96`, T4 `.1.98` and T5 ×2 at `.1.55`/`.1.65`; Space Monkey `.1.5`; `guard2` `.1.91`; stale "Home Assistant Gateway (Chowmain)" ×2; old Google TVs (`.1.28`, `.1.37`, `.1.137`); old Apple/Intel/Raspberry Pi/phone entries; `192.168.80.125` (the old 192.168.80.x network)
+
+**Keep or decide:**
+- Binary MoIP Controller `.1.137` (physically disconnected)
+- Recent real devices that are just off: Guest Bedroom speaker `.20.106`, Emmy's speakers, Office display
+- **Josh.ai: three OvrC entries (`.1.151`, `.1.190` 20 days ago; `192.168.200.151` 2 days ago), and none matches Composer's `192.168.1.84`**. Confirm whether Josh.ai is still in use and where
+
+**Just "disconnected" after the lease clean-up** (static-IP hosts; they reappear on the next routed traffic, so don't delete): NAS `.40.248`, AdGuard2 `.40.186`, pve3 `.1.245`, `.1.244`
+
+**Rename:**
+- OvrC `192.168.1.225` "NPID93247" → OpenWrt wl1-sta0
+- OvrC `192.168.30.90` "adguard-home" → mainsail
+- 520 `192.168.1.226` "new-host1" → OpenWrt (wan/br-lan)
+- The 920 port labels noted above
+
+**Worth understanding:**
+- OvrC lists the storage network (`10.25.25.1` ASUS, `.240`, `.245`, `.246`, `.248`) as *Healthy*, and nexus → `10.25.25.248` SMB hairpins through the 520 on VLAN 40. Check the 520's static routes: something makes the router route and ARP the storage subnet
+- Testbench SA-1 `.200.100` keeps trying MQTT to `192.168.80.150:8883`, an address on the old 192.168.80.x network, which is a stale config on the testbench. CA1 `.150.200` tries the home Director `.10.200:8883` and is blocked by VLAN isolation (good)
+
 ### Pending Checklist
 - [x] Deploy `TAGGED_VLANS="10 30"` to both ends and prune 20/40/100/150/200 (2026-09-30: OpenWrt `vxlan150` = 10,30; vxlan-server `ens18` = 1,10,30, `vxlan150` = 10,30, `br0` self = 1)
 - [ ] Re-run `failover.sh --test --vlan` with the fixed tester (remote V10 failed before because vxlan-server `br0` self had only vid 1) and confirm `V10:OK` on both ends
