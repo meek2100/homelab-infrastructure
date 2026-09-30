@@ -8,4 +8,11 @@ ip link set wan up
 # when reaching 192.168.1.0/24 hosts (Rule 7 - agents.md)
 ip route replace 192.168.1.0/24 dev br-lan proto static scope link src 192.168.1.226 metric 10
 
+# Strict ARP mode — prevent cross-interface ARP poisoning.
+# wl1-sta0 (192.168.1.225) and wan/br-lan (192.168.1.226) share the same
+# 830 AP L2 bridge domain. Without strict ARP, the kernel may advertise
+# either IP from the wrong interface (MAC), causing ARP flapping at the
+# Araknis 520/920. See /etc/sysctl.d/10-arp-strict.conf for full rationale.
+sysctl -p /etc/sysctl.d/10-arp-strict.conf > /dev/null 2>&1
+
 exit 0
