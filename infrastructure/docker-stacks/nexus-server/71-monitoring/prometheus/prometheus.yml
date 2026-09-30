@@ -83,7 +83,9 @@ scrape_configs:
 
   - job_name: 'node_exporter'
     static_configs:
-      - targets: ['node-exporter:9100']
+      # node-exporter runs with network_mode: host (so it reports the VM's real NICs), so it is
+      # reached on the host IP rather than by container name.
+      - targets: ['192.168.40.185:9100']
         labels:
           instance_name: 'nexus-server'
       - targets: ['192.168.40.249:9100']
@@ -125,16 +127,17 @@ scrape_configs:
           device_name: 'hp-color-laserjet-m283cdw'
           device_type: 'printer'
           model: 'HP Color LaserJet MFP M283cdw'
+          __param_auth: 'public_v2'  # homelab-metrics community (auth name predates the rename)
       - targets:
         - 192.168.10.196
         labels:
           device_name: 'brother-ql-1110nwb'
           device_type: 'label_printer'
           model: 'Brother QL-1110NWB'
+          __param_auth: 'public_v2'  # homelab-metrics community
     metrics_path: /snmp
     params:
-      module: [printer_mib]
-      auth: [public]
+      module: [printer_mib]  # auth is set per target via __param_auth (printers differ)
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
@@ -143,7 +146,10 @@ scrape_configs:
       - target_label: __address__
         replacement: snmp-exporter:9116
 
+  # Proxmox jobs scrape every 60s: pve-exporter opens a new HTTPS session to the PVE API per scrape
+  # (~4,500 TLS handshakes per 11 min at 15s across the three nodes).
   - job_name: 'proxmox_pve'
+    scrape_interval: 60s
     metrics_path: /pve
     params:
       module: [pve]
@@ -164,6 +170,7 @@ scrape_configs:
         replacement: pve-exporter:9221
 
   - job_name: 'proxmox_pve2'
+    scrape_interval: 60s
     metrics_path: /pve
     params:
       module: [pve2]
@@ -184,6 +191,7 @@ scrape_configs:
         replacement: pve-exporter:9221
 
   - job_name: 'proxmox_pve3'
+    scrape_interval: 60s
     metrics_path: /pve
     params:
       module: [pve3]
@@ -290,11 +298,6 @@ scrape_configs:
           service: 'control4-core3'
           category: 'control4'
       - targets:
-        - http://192.168.10.201
-        labels:
-          service: 'control4-t5-touchscreen'
-          category: 'control4'
-      - targets:
         - http://192.168.30.90
         labels:
           service: 'mainsail-klipper'
@@ -304,8 +307,10 @@ scrape_configs:
         labels:
           service: 'moonraker-api'
           category: '3d-printing'
+      # HP EWS pages return 200 then truncate the body ("unexpected EOF" in blackbox);
+      # the LEDM status XML is small, complete, and reflects printer state.
       - targets:
-        - http://192.168.10.195
+        - http://192.168.10.195/DevMgmt/ProductStatusDyn.xml
         labels:
           service: 'hp-laserjet-web'
           category: 'printer'
@@ -351,6 +356,25 @@ scrape_configs:
         - 192.168.40.186:53
         labels:
           resolver: 'adguard-secondary-nexus2'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # Reachability-only probes for devices with no web UI (the T5 answers port 80 with RST).
+  - job_name: 'blackbox_icmp'
+    metrics_path: /probe
+    params:
+      module: [icmp]
+    static_configs:
+      - targets:
+        - 192.168.10.201
+        labels:
+          service: 'control4-t5-touchscreen'
+          category: 'control4'
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

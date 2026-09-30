@@ -137,34 +137,60 @@ def provision_pve_exporter_config():
     ok, out = qm_exec(write_cmd)
     return ok, f"Configured {len(tokens)} PVE nodes in pve.yml"
 
-def provision_alertmanager_config():
-    """Decrypt secrets.enc.yaml using SOPS and render alertmanager.yml securely."""
-    enc_path = os.path.join(STACK_DIR, "secrets.enc.yaml")
-    template_path = os.path.join(STACK_DIR, "alertmanager", "alertmanager.yml.template")
+SECRETS_PATH = os.path.join(STACK_DIR, "secrets.enc.yaml")
+# Secrets exported to the compose .env on the VM (interpolated in docker-compose.yml).
+COMPOSE_ENV_KEYS = ("GRAFANA_ADMIN_PASSWORD",)
 
-    if not os.path.exists(enc_path) or not os.path.exists(template_path):
-        return True, "No secrets.enc.yaml found, keeping existing Alertmanager configuration"
-
+def decrypt_stack_secrets():
+    """Decrypt secrets.enc.yaml with SOPS. Returns (dict, "") or (None, error)."""
+    if not os.path.exists(SECRETS_PATH):
+        return None, "No secrets.enc.yaml found"
     key_file = get_age_key_path()
     env = os.environ.copy()
     if key_file:
         env["SOPS_AGE_KEY_FILE"] = key_file
+    res = subprocess.run(["sops", "-d", SECRETS_PATH], capture_output=True, text=True, check=False, env=env)
+    if res.returncode != 0:
+        return None, f"SOPS decryption failed: {res.stderr.strip()}"
+    import yaml
+    secrets = yaml.safe_load(res.stdout)
+    if not isinstance(secrets, dict):
+        return None, "Decrypted secrets is not a YAML dictionary"
+    return secrets, ""
+
+def provision_compose_env():
+    """Write the compose .env (mode 600) holding COMPOSE_ENV_KEYS from secrets.enc.yaml."""
+    try:
+        secrets, err = decrypt_stack_secrets()
+    except Exception as e:
+        return False, f"Error decrypting secrets: {e}"
+    if secrets is None:
+        return False, err
+    missing = [k for k in COMPOSE_ENV_KEYS if not secrets.get(k)]
+    if missing:
+        return False, f"secrets.enc.yaml is missing {', '.join(missing)} (add with: sops {SECRETS_PATH})"
+    bad = [k for k in COMPOSE_ENV_KEYS if "'" in str(secrets[k]) or "\n" in str(secrets[k])]
+    if bad:
+        return False, f"{', '.join(bad)} must not contain single quotes or newlines"
+    # Single-quoted values are taken literally by compose (no $ interpolation).
+    body = "".join(f"{k}='{secrets[k]}'\n" for k in COMPOSE_ENV_KEYS)
+    b64_env = base64.b64encode(body.encode("utf-8")).decode("ascii")
+    ok, out = qm_exec(f"umask 077 && echo '{b64_env}' | base64 -d > {REMOTE_BASE}/.env && chmod 600 {REMOTE_BASE}/.env")
+    if not ok:
+        return False, f"Failed writing .env on VM: {out}"
+    return True, f"Compose .env written ({', '.join(COMPOSE_ENV_KEYS)})"
+
+def provision_alertmanager_config():
+    """Decrypt secrets.enc.yaml using SOPS and render alertmanager.yml securely."""
+    template_path = os.path.join(STACK_DIR, "alertmanager", "alertmanager.yml.template")
+
+    if not os.path.exists(SECRETS_PATH) or not os.path.exists(template_path):
+        return True, "No secrets.enc.yaml found, keeping existing Alertmanager configuration"
 
     try:
-        res = subprocess.run(
-            ["sops", "-d", enc_path],
-            capture_output=True,
-            text=True,
-            check=False,
-            env=env
-        )
-        if res.returncode != 0:
-            return False, f"SOPS decryption failed: {res.stderr.strip()}"
-
-        import yaml
-        secrets = yaml.safe_load(res.stdout)
-        if not isinstance(secrets, dict):
-            return False, "Decrypted secrets is not a YAML dictionary"
+        secrets, err = decrypt_stack_secrets()
+        if secrets is None:
+            return False, err
 
         with open(template_path, "r", encoding="utf-8") as f:
             template = f.read()
@@ -224,6 +250,13 @@ def deploy():
     else:
         print(f"  ⚠️ Warning: {am_msg}")
 
+    # 4b. Compose .env (Grafana admin password) — compose refuses to start without it
+    env_ok, env_msg = provision_compose_env()
+    if not env_ok:
+        print(f"  ❌ {env_msg}")
+        return False
+    print(f"  ✓ {env_msg}")
+
     # 5. Pull images and launch compose
     launch_cmd = f"cd {REMOTE_BASE} && docker compose up -d && docker compose restart prometheus alertmanager blackbox-exporter snmp-exporter pve-exporter loki promtail grafana"
     print("  ⏳ Pulling images and launching containers...")
@@ -270,7 +303,7 @@ def deploy():
     print(f"\nSNMP Scrape Sample (Araknis Router):\n{snmp_out.strip() if snmp_ok else 'Failed'}")
 
     # Test SNMP Exporter on HP Printer
-    printer_ok, printer_out = qm_exec("curl -s 'http://localhost:9116/snmp?target=192.168.10.195&module=printer_mib&auth=public' | grep -E 'prtMarker' | head -n 4")
+    printer_ok, printer_out = qm_exec("curl -s 'http://localhost:9116/snmp?target=192.168.10.195&module=printer_mib&auth=public_v2' | grep -E 'prtMarker' | head -n 4")
     print(f"\nSNMP Scrape Sample (HP LaserJet):\n{printer_out.strip() if printer_ok else 'Failed'}")
 
     # Test PVE Exporter on Proxmox Node 1

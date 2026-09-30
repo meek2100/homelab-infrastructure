@@ -44,8 +44,10 @@ services:
       - '--config.file=/etc/blackbox_exporter/config.yml'
     volumes:
       - ./blackbox_exporter/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    # Exporters are scraped by container name; host port bound to loopback only for
+    # deploy-monitoring-stack.py health checks. On 0.0.0.0 blackbox is an open probe proxy.
     ports:
-      - "9115:9115"
+      - "127.0.0.1:9115:9115"
 
   pve-exporter:
     image: prompve/prometheus-pve-exporter:latest
@@ -53,8 +55,9 @@ services:
     restart: unless-stopped
     volumes:
       - ./pve_exporter/pve.yml:/etc/prometheus/pve.yml:ro
+    # Loopback only: on 0.0.0.0 anyone on the LAN could query the PVE API with this token.
     ports:
-      - "9221:9221"
+      - "127.0.0.1:9221:9221"
 
   snmp-exporter:
     image: prom/snmp-exporter:v0.26.0
@@ -63,12 +66,16 @@ services:
     volumes:
       - ./snmp_exporter/snmp.yml:/etc/snmp_exporter/snmp.yml:ro
     ports:
-      - "9116:9116"
+      - "127.0.0.1:9116:9116"
 
   node-exporter:
     image: prom/node-exporter:v1.8.2
     container_name: node-exporter
     restart: unless-stopped
+    # Host network/PID namespaces so NIC and process metrics describe the VM, not the container.
+    # Listens on host :9100 (scraped as 192.168.40.185:9100); host mode takes no ports: mapping.
+    network_mode: host
+    pid: host
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -77,8 +84,6 @@ services:
       - '--path.procfs=/host/proc'
       - '--path.sysfs=/host/sys'
       - '--path.rootfs=/rootfs'
-    ports:
-      - "9100:9100"
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.49.1
@@ -94,7 +99,7 @@ services:
     devices:
       - /dev/kmsg
     ports:
-      - "8088:8080"
+      - "127.0.0.1:8088:8080"
 
   grafana:
     image: grafana/grafana:11.1.0
@@ -102,7 +107,9 @@ services:
     restart: unless-stopped
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      # Written to .env on the VM by deploy-monitoring-stack.py from secrets.enc.yaml.
+      # Only seeds a fresh grafana/data; an existing DB keeps its password (reset via grafana cli).
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in secrets.enc.yaml}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SERVER_HTTP_PORT=3000
     volumes:
