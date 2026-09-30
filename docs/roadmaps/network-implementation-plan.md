@@ -817,11 +817,11 @@ The 520's stale DHCP leases were cleared by the user; OvrC needs manual clean-up
     Expected in a container, ignore: the FAIL `could not match the 'proxmox-backup' package` (the bare-metal metapackage, which pulls a kernel; never install it in a CT), the kernel mismatch (the CT uses the host kernel), grub-efi, and no NTP (the CT takes its time from pve3).
     Real: the pending updates, covered by step 1.
   - **Lessons:** use `apt dist-upgrade`, not `apt upgrade` (the latter kept back 67 packages, including `proxmox-backup-server`). The old `.list` files went to `/root/apt-backup-2026-09-30/`; the new repo is deb822 `/etc/apt/sources.list.d/proxmox.sources` (`pbs-no-subscription`, trixie). Postfix failed to restart mid-upgrade and was fine after `pct reboot 105`. `sshd_config` was replaced with the Debian 13 default (it had not been customised; root login is still key-only).
-- [ ] **PBS 4 follow-ups (CT 105):**
-  - the upgrade re-created `pbs-enterprise.sources`, so `apt update` fails with 401: set `Enabled: false` in it (keep the file so upgrades don't add it back);
-  - `zfs-mount`, `zfs-share` and `zfs-zed` fail in the container (no ZFS in an LXC; the datastore is a bind mount): mask them;
-  - the upgrade set the datastore `notification-mode` to `legacy-sendmail`: switch to the notification system with an SMTP2GO target (the "PBS notifications" item);
-  - SSH key login to PBS: the laptop has no `id_ed25519` key yet.
+- [ ] **PBS 4 follow-ups (CT 105)** (three of four done 2026-09-30):
+  - [x] the upgrade re-created `pbs-enterprise.sources` (apt 401): now `Enabled: false` (file kept so upgrades don't add it back); `apt update` clean;
+  - [x] `zfs-mount`, `zfs-share`, `zfs-zed` failed in the container (no ZFS in an LXC; the datastore is a bind mount): masked; no failed units;
+  - [ ] the upgrade set the datastore `notification-mode` to `legacy-sendmail`: switch to the notification system with an SMTP2GO target (the "PBS notifications" item);
+  - [x] SSH key login: `proxmox_ed25519` (same key as the pve hosts) in CT 105 `/root/.ssh/authorized_keys`; laptop `~/.ssh/config` entry `pbs-server` → 192.168.1.244; host key checked against pve3 (ED25519 `SHA256:DVFaUYe/cP0sigc3kVLRvUcX/lL+wBOIQKbE3n4sD8E`). Root stays key-only.
 - [x] **PBS namespaces per host — done 2026-09-30.** Namespaces `pve`/`pve2`/`pve3` created on `homelab-datastore`; each host's `pbs-backup` storage has `namespace <host>`. Fresh full backups all succeeded, and each host lists only its own guests:
   - pve: 100, 102, 103, 107, 109
   - pve2: 100
