@@ -13,6 +13,7 @@ auto lo
 iface lo inet loopback
 
 iface eno1 inet manual
+	post-up /usr/sbin/ethtool -K eno1 tso off gso off
 
 iface wlp6s0 inet manual
 
@@ -26,7 +27,7 @@ iface vmbr0 inet static
 	bridge-stp off
 	bridge-fd 0
 	bridge-vlan-aware yes
-	bridge-vids 2-4094
+	bridge-vids 40
 
 auto vmbr1
 iface vmbr1 inet static
