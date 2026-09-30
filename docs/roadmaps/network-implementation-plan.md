@@ -807,7 +807,7 @@ The 520's stale DHCP leases were cleared by the user; OvrC needs manual clean-up
 
 ### Pending Checklist
 - [x] **Proxmox email notifications (SMTP2GO) broken on pve2 and pve3** (fixed 2026-09-30: copied `/etc/pve/priv/notifications.cfg` from pve; test sent from pve2 and pve3). They work on pve. The hosts are not clustered, so each keeps its own `/etc/pve/notifications.cfg` (the SMTP password is in `/etc/pve/priv/notifications.cfg`). **Cause found 2026-09-30:** `notifications.cfg` is identical on all three hosts, but pve2/pve3 log `Could not instantiate endpoint 'SMTP2GO': private config does not exist`. The public file was copied, the private file with the password was not. Fix: re-enter the password on pve2/pve3 (Datacenter → Notifications → SMTP2GO → Edit), then Test
-- [ ] **Upgrade PBS 3 → 4** (CT 105 on pve3): PBS 3 support ended 2026-08-31, so there are no more security updates. Order: finish the namespace fix and the power test first. Then, one change at a time:
+- [x] **Upgrade PBS 3 → 4** (CT 105 on pve3) — **done 2026-09-30: PBS 4.2.7-1 on Debian 13 (trixie)**; `proxmox-backup` and `proxmox-backup-proxy` active, `homelab-datastore` intact; test backups OK from pve3 (vm/100, vm/101, ct/105) and pve (vm/107, over the network). Rollback kept: `/var/lib/vz/dump/vzdump-lxc-105-2026_09_30-16_32_01.tar.zst` + `/root/pbs-etc-backup-2026-09-30.tgz` on pve3 (delete after about a week). PBS 3 support ended 2026-08-31. Steps used, one change at a time:
   1. update to the latest 3.4 and run `pbs3to4 --full` (read-only checker);
   2. back up `/etc/proxmox-backup` and vzdump CT 105 to **local** storage (not into PBS itself);
   3. switch the apt sources bookworm → trixie (PBS 4 repo) and `apt dist-upgrade`;
@@ -816,6 +816,12 @@ The 520's stale DHCP leases were cleared by the user; OvrC needs manual clean-up
   - **Checker baseline (2026-09-30):** PBS 3.4.9 in an LXC, hosts on PVE 9.1.1, ~60 pending bookworm updates.
     Expected in a container, ignore: the FAIL `could not match the 'proxmox-backup' package` (the bare-metal metapackage, which pulls a kernel; never install it in a CT), the kernel mismatch (the CT uses the host kernel), grub-efi, and no NTP (the CT takes its time from pve3).
     Real: the pending updates, covered by step 1.
+  - **Lessons:** use `apt dist-upgrade`, not `apt upgrade` (the latter kept back 67 packages, including `proxmox-backup-server`). The old `.list` files went to `/root/apt-backup-2026-09-30/`; the new repo is deb822 `/etc/apt/sources.list.d/proxmox.sources` (`pbs-no-subscription`, trixie). Postfix failed to restart mid-upgrade and was fine after `pct reboot 105`. `sshd_config` was replaced with the Debian 13 default (it had not been customised; root login is still key-only).
+- [ ] **PBS 4 follow-ups (CT 105):**
+  - the upgrade re-created `pbs-enterprise.sources`, so `apt update` fails with 401: set `Enabled: false` in it (keep the file so upgrades don't add it back);
+  - `zfs-mount`, `zfs-share` and `zfs-zed` fail in the container (no ZFS in an LXC; the datastore is a bind mount): mask them;
+  - the upgrade set the datastore `notification-mode` to `legacy-sendmail`: switch to the notification system with an SMTP2GO target (the "PBS notifications" item);
+  - SSH key login to PBS: the laptop has no `id_ed25519` key yet.
 - [x] **PBS namespaces per host — done 2026-09-30.** Namespaces `pve`/`pve2`/`pve3` created on `homelab-datastore`; each host's `pbs-backup` storage has `namespace <host>`. Fresh full backups all succeeded, and each host lists only its own guests:
   - pve: 100, 102, 103, 107, 109
   - pve2: 100
