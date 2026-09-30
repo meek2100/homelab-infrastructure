@@ -12,7 +12,9 @@
 /swap.img	none	swap	sw	0	0
 
 # NFS Share for Media
-192.168.40.248:/media /mnt/media nfs nfsvers=4.2,defaults 0 0
+# hard: writers pause during a NAS outage and resume (soft could half-write data, and makes Plex treat
+# files as missing). _netdev,nofail,x-systemd.mount-timeout=30: boot never hangs if the NAS is down.
+192.168.40.248:/media /mnt/media nfs nfsvers=4.2,hard,_netdev,nofail,x-systemd.mount-timeout=30 0 0
 
 # SMB Share for Media
 # //192.168.1.248/media /mnt/media cifs credentials=/root/.smbcredentials,uid=1000,gid=1000 0 0
