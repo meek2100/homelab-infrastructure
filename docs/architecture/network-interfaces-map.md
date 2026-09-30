@@ -1,5 +1,7 @@
 # 🌐 Comprehensive Network Topology & Subnet Map
 
+> ⚠️ **Outdated snapshot — superseded (noted 2026-09-30).** The interface dumps below predate the VLAN re-architecture. Current facts: VLAN 40 is **Servers – Admin** (`192.168.40.0/24`, AdGuard `.185`/`.186`, luna `.249`); **VLAN 50 no longer exists**; `pve2` has **no** `vmbr0.40`/`vmbr0.50` sub-interfaces (only `vmbr0` = `192.168.1.240` untagged and `vmbr1` = `10.25.25.240` storage). For the authoritative layout see [`vlan-matrix.md`](vlan-matrix.md) and [`../roadmaps/network-implementation-plan.md`](../roadmaps/network-implementation-plan.md).
+
 This document outlines all physical host bridges, VLANs, static IP assignments, and private storage networks across `pve`, `pve2`, `pve3`, and all virtual machines.
 
 --- 

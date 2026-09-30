@@ -4,27 +4,28 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 
 ---
 
-## 📈 Progress Summary — Last Updated 2026-09-28
+## 📈 Progress Summary — Last Updated 2026-09-29
 
 | Part | Title | Status |
 | :--- | :--- | :---: |
 | **Part 1** | Core Router & Switch ACL Configuration (21 rules) | ✅ 100% Verified |
 | **Part 2** | End-to-End Verification & Testing Runbook (5 tests) | ✅ 100% Verified |
-| **Part 2.5** | Multicast & Discovery Architecture (Native Bonjour/IGMP) | ✅ Settled |
+| **Part 2.5** | Multicast & Discovery Architecture (Native Bonjour/IGMP) | ✅ Settled — 2026-09-29: IGMP snooping + querier added for VLAN 30; AP mDNS gate off on MGMT SSID; luna mDNS bloat fix pending (Part 7) |
 | **Part 2.6** | WAN2 & Storage SAN Isolation (untagged vmbr1) | ✅ Settled |
-| **Part 2.7** | vxlan-server Split Trunking Architecture (VM 107) | 🟢 Complete — Wire-speed untagged VLAN 1 via AP bridge, isolated tagged VLANs encapsulated over VXLAN 150 |
+| **Part 2.7** | vxlan-server Split Trunking Architecture (VM 107) | 🟢 Complete — 2026-09-29: fixed 30 s tunnel-rebuild loop (59–73% office loss → 0%); VLAN 100 removed from tunnel; `TAGGED_VLANS="10 30"` deploy pending (Part 7) |
 | **Part 2.8** | Netgear GS108Ev2 Office Switch GitOps & Backup | 🟢 Complete — Native NSDP packet driver, L2 relay, and binary/JSON backups verified |
-| **Part 2.9** | Wireshark Headless SPAN Sniffer & Storage Engine (Stack 48) | 🟢 Hardened — 500M tmpfs, 50MB chunks, watchdog, continuous 24h FIFO |
-| **Part 2.10**| Pakedge SX-8P Managed Switch & Work Testbench Lifecycle | 🟢 Complete — Araknis Port 1/0/7 PoE automation, FastMCP status/backup/poe-cycle, on-demand monitoring |
+| **Part 2.9** | Wireshark Headless SPAN Sniffer & Storage Engine (Stack 48) | 🟢 Hardened — 2026-09-29: unicast now captured (vmbr1 ageing 0 / learning off); 500M tmpfs, 50MB chunks, 8-file ring, 256 B snaplen; persist vmbr1 setting pending |
+| **Part 2.10**| Pakedge SX-8P Managed Switch & Work Testbench Lifecycle | 🟢 Complete — 2026-09-29: STP off + BPDU flooding, SW920 1/0/7 admin-edge + BPDU Guard (tested), trunk 1,10,150,200; ⚠️ power is WattBox, not PoE — `power_cycle_pakedge_switch` needs rework |
 | **Part 3** | Observability Engine & Synthetic Probing (Stack 71) | 🟢 100% Deployed & Active (10 containers, Alertmanager, Blackbox, external targets) |
 | **Part 4** | Unified Full-Fleet Control Center, External Systems & PBS Foundation | 🟢 100% Deployed & Active (49/49 targets UP, distributed agent pods active on 5 VMs, Loki streaming all containers) |
 | **Part 5** | Production Operationalization, PBS Migration & External GitOps | 🟢 100% Operationalized (PBS Active Cluster-Wide, Backups Verified, Alerts Active, External VPS FastMCP Active) |
 | **Part 5.6** | Phase 2 Automation, External Log Shipping & GitOps Drills | 🟢 100% Complete & Operationalized (Snapshot FastMCP, Device Auto-Sync, Promtail Tooling, GitOps Drills) |
-| **Part 6** | Comprehensive Architectural Learnings & Production Gotchas | 📚 16 Critical Learnings Documented & Fleet-Hardened |
+| **Part 6** | Comprehensive Architectural Learnings & Production Gotchas | 📚 24 Critical Learnings Documented & Fleet-Hardened |
+| **Part 7** | 2026-09-29 Capture-Driven Network Remediation (SPAN/pcap analysis) | 🟡 In Progress — core faults fixed; open items tracked in Part 7 checklist |
 
 ### Key Protocol Constraints & Architecture Settled
 - **Netgear GS108Ev2** — No HTTP REST API. Uses **NSDP** (Layer 2 UDP, ports 63321/63322). The `backup_netgear_switch` / `get_netgear_switch_status` MCP tools execute via pure Python NSDP using an automated Layer 2 adjacent relay hierarchy: primary OpenWrt router (`192.168.1.226` on `br-lan`) with fallback to Proxmox `pve` (`192.168.1.250` on `vmbr0`). Live telemetry and synchronized dual JSON/binary GitOps backups are 100% verified.
-- **Pakedge SX-8P Managed Switch** — Embedded `Hydra/0.1.8` web server with Backbone.js SPA (`192.168.1.205`). Connected via 802.1Q trunk (VLAN 1, 150, 200) to Araknis 920 Port 1/0/7 (`poe high-power 4ptdot3af`). Powers work automation lab testbench (Control4 CA-1, Core-3, Core-5, touchscreens). Dedicated on-demand testbench profile: powered down when idle, exempt from 24/7 uptime SLOs, remotely power-cycled via FastMCP `power_cycle_pakedge_switch`, with synthetic probes labeled `environment: 'testbench-ondemand'`.
+- **Pakedge SX-8P Managed Switch** — Embedded `Hydra/0.1.8` web server with Backbone.js SPA (`192.168.1.205`, static, DHCP off). Connected via 802.1Q trunk (native VLAN 1 untagged; tagged 10, 150, 200) to Araknis 920 Port 1/0/7. **Mains-powered via its own adapter on a WattBox outlet** switched by a Control4 button (90-minute auto-off, together with SA1 on 1/0/5 and Core5 on 1/0/8); its ports 1–8 are PoE *outputs*, so toggling PoE on 920 1/0/7 does not power it. STP disabled with BPDU Processing = Flooding; 920 1/0/7 is Admin Edge + BPDU Guard (verified 2026-09-29). Ports 2–7 = VLAN 10 (main-system test gear), port 8 = VLAN 150 (CA-1). Exempt from 24/7 uptime SLOs; probes labeled `environment: 'testbench-ondemand'`.
 
 ---
 
@@ -34,14 +35,14 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 
 | Equipment | Model | IP Address | Subnet / VLAN | Role | Status |
 | :--- | :--- | :--- | :--- | :--- | :---: |
-| **Core Router** | Araknis 520 Dual-WAN | `192.168.10.1` & `192.168.1.1` | VLAN 1 & VLAN 10/40 | Layer 3 Gateway, Interzone Routing, NAT, ACL Firewall | 🟢 Active |
-| **Core Switch** | Araknis 920 Managed | `192.168.1.215` | VLAN 1 (Management) | 10G/2.5G L2+ Distribution, IGMP Snooping Querier, SPAN Mirror | 🟢 Active |
+| **Core Router** | Araknis 520 Dual-WAN | `192.168.<vlan>.1` on every VLAN | VLANs 1, 10, 20, 30, 40, 150, 200 (100 excluded) | Layer 3 Gateway, Interzone Routing, NAT, ACL Firewall, DHCP (all VLANs), global Bonjour repeater | 🟢 Active |
+| **Core Switch** | Araknis 920 Managed | `192.168.1.215` | VLAN 1 (Management) | 10G/2.5G L2+ Distribution, **RSTP root (priority 4096)**, BPDU Guard on edge ports, IGMP Snooping + Querier (VLANs 1, 10, 20, 30, 40), SPAN session 1 (1/0/1 Tx/Rx → 1/0/24) | 🟢 Active |
 | **AP 1 (Master)**| Araknis 830 Wi-Fi 7 | `192.168.1.231` | VLAN 1 (Management) | Broadcasts SSIDs + Wired Master for 5GHz PTP Bridge | 🟢 Active |
 | **AP 2 (Core)** | Araknis 830 Wi-Fi 7 | `192.168.1.236` | VLAN 1 (Management) | Broadcasts SSIDs (Ch 1 / 149 / 69) | 🟢 Active |
 | **AP 3 (Bridge)**| Araknis 830 Wi-Fi 7 | `192.168.1.237` | VLAN 1 (Management) | Dedicated Wireless Bridge Client (Insomniac_Bridge) | 🟢 Active |
 | **Office Switch**| Netgear GS108Ev2 | `192.168.1.220` | VLAN 1 (Management) | Desktop distribution switch behind OpenWrt — **No official API/CLI; managed via NSDP (UDP 63321/63322)** | 🟢 Active |
-| **Test Switch**  | Pakedge SX-8P Managed | `192.168.1.205` | VLAN 1 (Trunk 150/200) | Work Automation Lab / Testbench — **Powered down on demand via SW920 Port 1/0/7 PoE** | 🟡 On-Demand |
-| **Office Router**| Belkin AX3200 (OpenWrt) | `192.168.1.226` / `10.99.99.1` | VLAN 1 & VLAN 150 | 3-Priority Failover (Wire, VXLAN 150, Wi-Fi repeater) | 🟢 Active |
+| **Test Switch**  | Pakedge SX-8P Managed | `192.168.1.205` | VLAN 1 (trunk tagged 10/150/200) | Work Automation Lab / Testbench — **powered on demand by the Control4 **Office → All Test Equipment** button (WattBox 11 relay; 90 min auto-off)** | 🟡 On-Demand |
+| **Office Router**| Belkin AX3200 (OpenWrt) | `192.168.1.226` (`br-lan`), `192.168.1.225` (`wl1-sta0`), `10.99.99.1` (out-of-band mgmt on `lan1`/`br-mgmt`) | VLAN 1 (+ tagged 10/30 bridged to VXLAN VNI 150) | 3-Priority Failover (Wire, VXLAN VNI 150, Wi-Fi repeater). BusyBox `ash` only — no bash | 🟢 Active |
 | **WAN2 Router** | Asus RT-N66U (DD-WRT Aurora)| `10.25.25.1` & `10.20.20.2` | WAN2 / `10.25.25.0/24` | Torrent/discovery isolation with PIA VPN auto-watchdog | 🟢 Active |
 | **Upstream GW** | DD-WRT Luna | `10.20.20.1` | `10.20.20.0/24` | Upstream transit gateway (firewalled from WAN) | 🟢 Active |
 | **Admin VM** | nexus-server (pve:100)| `192.168.40.185` | VLAN 40 (Servers) | WireGuard (:51820), Tailscale (:69), AdGuard Home Primary (:53), NPM | 🟢 Active |
@@ -86,6 +87,8 @@ Audited and verified live via `GET /api/cgi-bin/v1/config/acls`. 21 rules active
 | **20** | Block Guests to Trusted LAN | Deny | All Traffic | `192.168.20.0/24` (Media) | `192.168.10.0/24` (Trusted) | 🟢 Active |
 | **21** | Block Guests to Servers | Deny | All Traffic | `192.168.20.0/24` (Media) | `192.168.40.0/24` (Servers) | 🟢 Active |
 
+> **VLANs 150 / 200 (work testbench) are isolated by Interzone Forwarding, not by the ACLs above.** Both zones have every "Allow forward TO/FROM" box unchecked and Device Management off. ACL Rule 1 (Any → AdGuard DNS) still permits their DNS. Verified 2026-09-29 in a SPAN capture: CA-1 (`192.168.150.200`) attempts to reach CA-10 (`192.168.10.200`:8883/6002) were rejected by the router (ICMP port-unreachable from `192.168.150.1`). The global Bonjour repeater cannot be scoped per VLAN, so home mDNS service names are still *visible* in 150/200 (information-only; no L3 path).
+
 ---
 
 ## 🔍 Part 2: End-to-End Verification & Testing Runbook
@@ -114,6 +117,12 @@ Audited and verified live via `GET /api/cgi-bin/v1/config/acls`. 21 rules active
 Containerized software relays (`multicast-relay`) tested earlier created severe duplicate-forwarder broadcast loops with the Araknis 520 router native multicast forwarding, triggering FDB MAC move flapping and switch port damping.
 * **Settled Architecture**: 100% native resolution via Araknis 520 Bonjour mDNS repeater + Araknis 920 IGMP Snooping Querier.
 * Zero software relays, zero multi-homed VM bridges, zero broadcast loop risk.
+
+### 2026-09-29 Findings & Adjustments (from SPAN capture)
+* **IGMP**: 920 snooping *and* querier now cover VLANs **1, 10, 20, 30, 40** (VLAN 30 was missing both). Never enable snooping on a VLAN without its querier. VLANs 150/200 intentionally left off (testbench, mostly powered down).
+* **AP "mDNS Forwarding" is a per-SSID gate, not a second repeater**: when off, that SSID's mDNS is blocked from leaving its network; the 520's Bonjour repeater does the cross-VLAN copy. Kept **on** for Insomniac / Guest / IOT, **off** for Insomniac_MGMT (AP1 + AP2). Captures showed no AP-originated mDNS, so no duplicate forwarder.
+* **mDNS was ~60% of all captured bytes.** Two amplifiers: (1) the **Vivint Security Panel** (`192.168.10.108`, `88:6a:e3:d8:eb:1c`, SW920 1/0/17, identified 2026-09-30 from its DNS/TLS traffic to `app.vivintsky.com` / `vivint.ai`) querying ~16/s nonstop for Chromecast/Spotify/HomeKit/Hue/Matter/Thread services — vendor firmware behaviour, not configurable; (2) luna (`192.168.40.249`) — Homebridge's HAP records (confirmed; Home Assistant likely too) carry **all 8 Docker bridge addresses (172.17–172.25.0.1) plus ~17 veth link-locals** in every reply, pushing responses over 1500 bytes (158k IP fragments/19 h) which the repeater then copies into 6 VLANs and which cannot cross the 1450-MTU VXLAN. **Fix pending**: bind Homebridge (`bridge.bind: ["ens18"]`, incl. child bridges) and Home Assistant (Settings → System → Network → ens18 only) to `ens18`.
+* **The repeater leaks home service names into testbench VLANs 150/200** (cannot be scoped per VLAN on the 520). Accepted as information-only; optional future control is a UDP 5353 filter toward the Pakedge.
 
 ---
 
@@ -161,7 +170,8 @@ The Araknis 830 AP 5GHz wireless bridge strips 802.1Q tags across the link to th
 1. **Untagged Traffic (VLAN 1 / Management `192.168.1.0/24`)**:
    * Flows exclusively across the physical 830 AP wireless bridge (Priority 1) with full 1500 MTU.
    * `vxlan150` on VM 107 and OpenWrt does **NOT** bridge untagged VLAN 1 during normal operation.
-2. **Tagged Traffic (VLANs 10, 20, 30, 40, 100, 150, 200)**:
+2. **Tagged Traffic (`TAGGED_VLANS` — single source in `failover.sh` and vxlan-server `vxlan-nm`)**:
+   * **2026-09-29**: reduced to the VLANs that actually have office devices per the Netgear VLAN table — **10** (Control4 Core-1/Core-3/T5/SA1, HP & Brother printers) and **30** (Office Apple TV). VLAN 100 (SPAN isolation) is never tunneled. Repo updated; live deploy of `"10 30"` + one-time `bridge vlan del` of 20/40/150/200 pending (Part 7). Previously `10, 20, 30, 40, 100, 150, 200`.
    * Encapsulated into UDP packets (VNI 150, Port 4789, MTU 1450, MSS 1406) by OpenWrt (`192.168.1.226`).
    * Decapsulated by `vxlan-server` (`192.168.1.150`) and injected into Proxmox `vmbr0` with respective 802.1Q tags.
    * Because untagged VLAN 1 is excluded from the tunnel, duplicate Layer 2 paths are physically impossible.
@@ -172,6 +182,11 @@ The Araknis 830 AP 5GHz wireless bridge strips 802.1Q tags across the link to th
    * **Autonomous Recovery & Promotion**:
      * **P3 ➔ P2**: Booting VM 107 triggers instant sub-second detection, stops `relayd`, and cleanly rebuilds `vxlan150` across all VLANs.
      * **P2 ➔ P1**: Reconnecting 830 AP cable restores `wan` carrier, isolates VLAN 1 from VXLAN, sets MTU 1500, and notifies VM 107 via SSH. Latency returns to sub-5ms (2.06ms min) with **0 switch CRC errors across all 8 ports**.
+4. **P1 Integrity Check & Rebuild Guard (fixed 2026-09-29)**:
+   * The integrity check (commit `bedc269`) tested `ip link show vxlan150 | grep "state UP"`. VXLAN devices report `state UNKNOWN` even when healthy, so the check always failed and cron (`* * * * * failover.sh -m; sleep 30; failover.sh -m`) **deleted and rebuilt vxlan150 every 30 s** — also flushing ARP and re-running `vxlan-nm -p1` on VM 107. Result: **59–73% packet loss** to every office device on tagged VLANs, router ARP answered only 26–35% of the time, flapping Prometheus alerts.
+   * Fix: `vxlan_admin_up()` checks the admin `UP` flag (`grep -qE "[<,]UP[,>]"`); `integrity_restore()` allows at most **one integrity rebuild per 300 s** and logs `WARNING … NOT rebuilding` on repeats. Verified live: office ping **0% loss** (100/100 in and out of `vxlan150`); two AP reboots at 21:19 and 21:31 recovered as `P1 check failed (1–2/3) → P1 recovered` with no rebuild.
+   * The frozen `known-good/openwrt/scripts/failover.sh` still contains the same `state UP` test in its P2 path (line 332) — do not restore it unmodified.
+5. **Failover-tester VLAN probe**: probes `PROBE_VLAN_ID` (default **10**, target gateway `192.168.10.1`). Before assigning its temporary /32, it runs an RFC 5227 duplicate-address probe (ARP from `0.0.0.0`, scapy or BusyBox/iputils `arping -D`) — the broadcast crosses `vxlan150`, so one probe covers hosts on both sides — and steps down from `LOCAL_VLAN_IP` (default `.254`) through `.240` until a free address is found. If all 15 answer, the test records `V<id>:ERR` and assigns nothing, so it can never cause a conflict. Keep `.240`–`.254` outside the VLAN 10 DHCP pool. On a VLAN-filtering bridge (OpenWrt `br-lan`, and vxlan-server `br0`, where `vxlan-nm` adds only vid 1 to the CPU port) the tester adds the probe VID to the bridge CPU port and removes it at teardown only if it added it — fix for the 2026-09-30 remote `V10:FAIL`. The duplicate-address result is reported as unverified when the probe path itself fails.
 
 ---
 
@@ -248,13 +263,15 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
 
 ## 📡 Part 2.9: Wireshark Headless SPAN Sniffer Optimization & Storage Engine (Stack 48 on luna-server)
 
-### Current State: 🟢 Resolved & Hardened (Ready for Deployment)
+### Current State: 🟢 Deployed & Capturing Full Traffic (2026-09-29)
 
 | Component | Architecture / Setting | Verification |
 | :--- | :--- | :---: |
-| **Ingress Interface** | `ens19` (VM 102 `tap102i1` on `vmbr1` / `lan1` SPAN mirror) | Promiscuous Mode ON |
-| **Drive Wear Protection** | RAM `tmpfs` `/captures` (size increased from 150M to **500M**) | 0 SSD NVMe Writes |
-| **Capture Chunk Size** | `-b filesize:50000` (50 MB) + `-b files:100` ring buffer | Prevents Buffer Exhaustion |
+| **SPAN Source** | SW920 session 1: `1/0/1` (Araknis 520 router, 2.5G) Tx/Rx → probe `1/0/24` (1G, access VLAN 100 dead-end) | Router-crossing traffic only; inter-VLAN flows appear twice (router-on-a-stick); probe port can drop under >1G load |
+| **Ingress Interface** | `ens19` (VM 102 `tap102i1` on `vmbr1` / `lan1` SPAN mirror), firewall off | Promiscuous Mode ON |
+| **Bridge Learning (critical)** | `vmbr1` must flood everything: `bridge-ageing 0` + `bridge link set dev lan1 learning off`. With learning on, the bridge learned every mirrored MAC on `lan1` and **dropped all mirrored unicast** — captures before 2026-09-29 18:51 contain zero TCP | Applied live 2026-09-29; **persist in `/etc/network/interfaces` pending** |
+| **Drive Wear Protection** | RAM `tmpfs` `/captures` **500M** (live since 2026-09-29) | 0 SSD NVMe Writes |
+| **Capture Chunk Size** | `-b filesize:50000` (50 MB), `-s 256` snaplen, `-b files:8` ring (8 × 50 MB < tmpfs: a NAS outage overwrites the oldest RAM chunk instead of ENOSPC-crashing dumpcap) | Deployed 2026-09-29 |
 | **Process Supervision** | Active watchdog in `tshark-capture` checks PID every 10s | Auto-restarts on crash |
 | **Continuous FIFO Pruning** | `find /nas-storage/ -mmin +1440 -delete` + 150-file hard cap | Runs every 5 minutes in loop |
 | **Storage Fault Tolerance** | Pre-flight write check on `/nas-storage` before moving chunks | Buffers safely in tmpfs |
@@ -285,7 +302,8 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
 | :--- | :---: |
 | Physical uplink & 802.1Q trunk (Port 1/0/7 on Araknis 920) | ✅ Documented & Active |
 | FastMCP telemetry tool (`get_pakedge_switch_status`) | ✅ Verified Live (11 learned MACs) |
-| FastMCP remote PoE power-cycle tool (`power_cycle_pakedge_switch`) | ✅ Verified Live (Port 7 cycle) |
+| FastMCP remote power tool (`power_cycle_pakedge_switch`) | ⚠️ Ineffective — toggles PoE on 920 1/0/7, but the SX-8P is mains-powered via WattBox; rework to WattBox control pending |
+| Loop protection: STP off + BPDU flooding on SX-8P; 920 1/0/7 Admin Edge + BPDU Guard | ✅ Verified 2026-09-29 (1 BPDU → 1/0/7 disabled, as designed) |
 | FastMCP config backup tool (`backup_pakedge_switch`) | ✅ Integrated with SOPS credentials |
 | Prometheus synthetic probe & alert suppression | ✅ Configured (`environment: 'testbench-ondemand'`) |
 | Grafana Smart Home & Control4 Dashboard integration | ✅ Provisioned with Standby/Online badge |
@@ -298,25 +316,31 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
    - Model: **Pakedge SX-8P** (8-port Gigabit Managed PoE+ Switch).
    - Management IP: **`192.168.1.205`** (VLAN 1).
    - Upstream Switch: **Araknis 920 Managed Switch** (`192.168.1.215`), Interface `1/0/7`.
-   - Upstream PoE Profile: `poe high-power 4ptdot3af` on Araknis Port 1/0/7.
-   - Trunk Configuration: 802.1Q trunk carrying native untagged **VLAN 1** (Management), tagged **VLAN 150** (`CA-1 Test`), and tagged **VLAN 200** (`Core-5 Test`).
-   - Attached Lab Fleet: Control4 CA-1 controllers, Core-3, Core-5, touchscreens (T3/T4/T5), Zigbee/Z-Wave radio modules.
+   - Power (Control4 programming reviewed 2026-09-30): the Control4 **Office → All Test Equipment** button drives three separate relays.
+     - **On** (after 5 s, and only if timer `Testing Equipment Off` is not running): close *Rack Room → Wattbox 11 (Test Equipment)* (the SX-8P's own adapter; 920 1/0/12 is the WattBox), then +1 s *Office → Triad SA1* relay, then +1 s *Office → Remotes n Touchscreens* relay.
+     - **Off**, or expiry of the 90-minute `Testing Equipment Off` timer: macro `Testing Equipment` opens each closed relay (SA1 and Remotes 2 s after clearing their `State Flipping` variables) and sets the button state Off.
+     - SA1 (920 1/0/5, access VLAN 200) is on its **own Triad relay**, not the WattBox outlet. Core5 (920 1/0/8, access VLAN 200) comes up with the same button; which relay feeds it is not yet confirmed. 920 1/0/7 still has `poe high-power 4ptdot3af`, which has no effect (SX-8P ports are PoE outputs).
+   - Trunk Configuration: 802.1Q trunk carrying native untagged **VLAN 1** (Management) and tagged **VLAN 10**, **150** (`CA-1 Test`), **200** (`Core-5 Test`) — pruned on both the SX-8P (port 1 hybrid) and 920 1/0/7 (`1,10,150,200`) on 2026-09-29.
+   - Port map (live 2026-09-29): ports 2–7 access **VLAN 10** (DS2 door station, Luma X20 cams, Pakedge PoE switch on 6 (device to confirm), EA1 + unmanaged switch on 7 — main-system test gear); port 8 access **VLAN 150** (CA-1); port 9 VLAN 1.
+   - Spanning tree: **disabled** on the SX-8P (global + per port), **BPDU Processing = Flooding** so a loop behind it returns the 920's BPDUs; 920 1/0/7 is **Admin Edge + BPDU Guard** and shuts the port on the first BPDU. The SX-8P has no BPDU guard / loop detection of its own. SX-8P MAC `90:A7:C1:9E:D9:26` is higher than the 920's, so it could never win a root election at equal priority.
+   - SNMP: `public` read-write removed; `homelab-metrics` read-only only.
 
 2. **On-Demand Power & SLA Invariant**:
    - The Pakedge switch and attached test equipment serve strictly as a work automation testbench.
    - **Powered Down When Idle**: Kept unpowered when active testing is not in progress.
    - **Exempt from 24/7 SLA**: Alertmanager rules explicitly suppress `TargetDown` and `BlackboxProbeFailed` alerts for targets with `environment: 'testbench-ondemand'`.
-   - **Remote Power Control**: Users and agents can power on, cycle, or reboot the testbench on demand without physical switch access:
+   - **Remote Power Control**: Power is the Control4 button. The legacy command below only toggles PoE on 920 1/0/7 and does **not** power the SX-8P. Its replacement should trigger the Control4 button/macro rather than the WattBox outlet directly: toggling only the outlet would leave SA1, the remotes relay, the button state and the auto-off timer out of sync.
      ```bash
-     python3 mcp/homelab/scripts/manage-pakedge-switch.py poe-cycle --port 7
+     python3 mcp/homelab/scripts/manage-pakedge-switch.py poe-cycle --port 7   # ineffective — see above
      ```
 
 3. **GitOps Backup & Management Tooling**:
    - Tool script: [`mcp/homelab/scripts/manage-pakedge-switch.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/manage-pakedge-switch.py).
    - FastMCP Native Tools in [`mcp/homelab/server.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/server.py):
      - `get_pakedge_switch_status`: Audits switch reachability (HTTP/Telnet) and inspects upstream Araknis Port 1/0/7 MAC table.
-     - `backup_pakedge_switch`: Authenticates to Pakedge Hydra web server, initiates configuration export, and saves backup to `infrastructure/network/configs/pakedge-sx8p-running.cfg`.
-     - `power_cycle_pakedge_switch`: Powers cycles Araknis 920 Port 1/0/7 over FASTPATH SSH CLI.
+     - `backup_pakedge_switch`: Authenticates to Pakedge Hydra web server, initiates configuration export, and saves backup to `infrastructure/network/configs/pakedge-sx8p-running.cfg` (⚠️ the committed copy predates the 2026-09-29 VLAN/SNMP/STP changes — refresh).
+     - `configure-vlans` (CLI action): re-applies the live layout (VLANs 10/150/200; gi1 tagged 10,150,200; gi2–7 access 10; gi8 access 150) over **Telnet**. Additive only (does not remove VLANs) and unusable if Telnet is disabled; not yet run against the live switch.
+     - `power_cycle_pakedge_switch`: Toggles PoE on Araknis 920 Port 1/0/7 over FASTPATH SSH CLI (⚠️ does not power the mains-powered SX-8P — rework to WattBox pending).
 
 ---
 
@@ -339,7 +363,16 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
   * **SNMP Exporter (`v0.26.0`)**: Port `9116:9116` (Scrapes Araknis router, switch, AP fleet, and office printers)
   * **Node Exporter (`v1.8.2`)**: Port `9100:9100` (Host OS, CPU, RAM, disk, load averages)
   * **cAdvisor (`v0.49.1`)**: Port `8088:8080` (Container-level CPU, RAM, and network I/O)
-* **Active Target Inventory (23/23 🟢 UP)**:
+* **2026-09-29 changes (deployed via `deploy-monitoring-stack.py`, verified live)**:
+  * Exporter host ports bound to **`127.0.0.1`** (blackbox 9115, snmp 9116, pve 9221, cadvisor 8088) — confirmed closed from the LAN. Prometheus 9090, Alertmanager 9093, Grafana 3030 and Loki 3100 (Promtail push) remain LAN-reachable.
+  * **node-exporter** runs `network_mode: host` + `pid: host` (real VM NICs); scraped as `192.168.40.185:9100`.
+  * **Proxmox jobs** scrape every **60 s** (pve-exporter opened ~4,500 TLS sessions per 11 min at 15 s).
+  * **Grafana admin password** comes from `GRAFANA_ADMIN_PASSWORD` in `secrets.enc.yaml` → compose `.env` (mode 600); live DB password reset via `grafana cli`.
+  * **Printers**: SNMP community moved from `public` to `homelab-metrics` on both printers (auth `public_v2`, set per target via `__param_auth`); HP web probe targets `/DevMgmt/ProductStatusDyn.xml` (the EWS home page truncates its body and fails blackbox).
+  * **T5 touchscreen** moved from HTTP to a new `blackbox_icmp` job (it RSTs port 80).
+  * The office-device probe failures (Core-1, Core-3, T5, printers) were caused by the VXLAN rebuild loop (Part 2.7 §4), not stale IPs — the VLAN 10 addresses are correct.
+  * Known follow-ups: the deploy script's `chmod -R 755` makes `grafana.db`/secrets world-readable, and its health checks print 🟢 on failure; Home Assistant and Homebridge are each probed twice.
+* **Active Target Inventory (as of 2026-09-29 ~21:00: all up except `pakedge-sx8p-switch` when the testbench is off)**:
   * 🟢 `192.168.1.1`: Araknis 520 Core Router (`snmp_infrastructure`, `if_mib` via community `homelab-metrics`)
   * 🟢 `192.168.1.215`: Araknis 920 Switch (`snmp_infrastructure`, `if_mib` - 24 ports + SFP+)
   * 🟢 `192.168.1.231`: Araknis 830 AP 1 House Front (`snmp_access_points`, `ap_system`)
@@ -348,7 +381,7 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
   * 🟢 `192.168.10.195`: HP Color LaserJet MFP M283cdw (`snmp_printers`, `printer_mib` - 4 toners, 1,739 lifetime pages)
   * 🟢 `192.168.10.196`: Brother QL-1110NWB (`snmp_printers`, `printer_mib` - 1,399 labels, console state `READY`)
   * 🟢 `192.168.1.250`: Proxmox Node 1 `pve` (`proxmox_pve` - Dell Precision 5520, VMs 100, 102, 103, 107, 109)
-  * 🟢 `10.25.25.240`: Proxmox Node 2 `pve2` (`proxmox_pve2` - Awow AK34Pro, VM 100 discovery-server)
+  * 🟢 `192.168.1.240`: Proxmox Node 2 `pve2` (`proxmox_pve2` - Awow AK34Pro, VM 100 discovery-server; storage NIC `10.25.25.240`)
   * 🟢 `192.168.1.245`: Proxmox Node 3 `pve3` (`proxmox_pve3` - HP EliteDesk, VMs 100 nexus-server2, 101 nas-server)
   * 🟢 `http://192.168.40.185:3030`: Grafana web frontend (`blackbox_http`)
   * 🟢 `http://192.168.40.185:81`: Nginx Proxy Manager admin UI (`blackbox_http`)
@@ -558,7 +591,7 @@ This section records empirical hard-won discoveries and architectural invariants
 
 ### 8. Wireless Point-to-Point Bridge 802.1Q Tag Stripping & Split Trunking
 - **The Gotcha**: The Araknis 830 AP 5GHz wireless backhaul strips 802.1Q VLAN tags across the link to the office. Bridging untagged VLAN 1 in parallel with a virtual tunnel causes instant Layer 2 broadcast loops and switch port shutdown.
-- **The Invariant**: Split Trunking architecture: Untagged VLAN 1 (Management) traverses the physical wireless bridge natively at wire speed (1500 MTU). All tagged VLANs (10, 20, 30, 40, 100, 150, 200) are encapsulated into VXLAN UDP packets (Port 4789, MTU 1450, MSS 1406) terminated by `vxlan-server` (VM 107). Mutual exclusion prevents Layer 2 loops while providing transparent multi-VLAN trunking.
+- **The Invariant**: Split Trunking architecture: Untagged VLAN 1 (Management) traverses the physical wireless bridge natively at wire speed (1500 MTU). The tagged VLANs listed in `TAGGED_VLANS` (currently 10 and 30 — only VLANs with office devices) are encapsulated into VXLAN UDP packets (Port 4789, MTU 1450, MSS 1406) terminated by `vxlan-server` (VM 107). Mutual exclusion prevents Layer 2 loops while providing transparent multi-VLAN trunking. Every VLAN in the list floods its broadcast/multicast across the Wi-Fi tunnel, so keep it minimal.
 
 ### 9. Headless Switch NSDP Layer 2 Broadcast Boundaries
 - **The Gotcha**: The Netgear GS108Ev2 switch has no HTTP web interface, SSH server, or SNMP agent. Management relies entirely on the proprietary Netgear Switch Discovery Protocol (NSDP) over UDP (ports 63321/63322). Because NSDP frames are Layer 2 broadcast/unicast, management scripts cannot cross Layer 3 subnets.
@@ -591,6 +624,168 @@ This section records empirical hard-won discoveries and architectural invariants
 ### 16. External VPS Lifecycle Automation & Fail2Ban Permission Isolation
 - **The Gotcha**: Cloud VPS instances enforce strict public-key authentication per host (`free-main-server_id_ed25519` for Oracle Cloud, `free-email-server_id_ed25519` for Google Cloud). Running manual interactive shell scripts on mobile terminals causes multi-word commands to wrap at column ~70, injecting arguments as separate shell errors. Furthermore, `fail2ban-client` communicates via a Unix domain socket (`/var/run/fail2ban/fail2ban.sock`) owned exclusively by `root:root`, returning `Permission denied` to non-root users even though the jail configurations in `/etc/fail2ban/` and active iptables rules are readable.
 - **The Solution**: Native FastMCP tools (`audit_external_hosts`, `backup_external_host`, `get_external_security_status`) encapsulate the SSH keys, profiles, and error handling into Python `manage-external-hosts.py`. Configuration backups gracefully skip root-protected secret tokens while archiving Nginx, MariaDB, Postfix, Dovecot, Rspamd, and Fail2ban jail structures directly into GitOps.
+
+### 17. VXLAN Interfaces Report `state UNKNOWN` When Healthy
+- **The Gotcha**: VXLAN (and other carrier-less virtual) devices show `<BROADCAST,MULTICAST,UP,LOWER_UP> … state UNKNOWN` in `ip link`. A health check of `grep "state UP"` is therefore always false.
+- **The Failure Mode**: `failover.sh` treated the tunnel as down on every cron pass and rebuilt it every 30 s (plus ARP flush and a remote `vxlan-nm -p1`), causing 59–73% loss for every office device on tagged VLANs.
+- **The Invariant**: Test the admin flag (`grep -qE "[<,]UP[,>]"` or `/sys/class/net/<if>/flags`), and rate-limit any self-healing rebuild so a broken check cannot become an outage loop.
+
+### 18. A Linux Bridge in Front of a SPAN Capture VM Drops Mirrored Unicast
+- **The Gotcha**: Mirrored frames all arrive on the physical SPAN port, so a learning bridge (`vmbr1`) learns every source MAC on that port and then drops every unicast frame whose destination is "on the port it came in on". Only broadcast/multicast/unknown-unicast reach the VM.
+- **The Invariant**: A SPAN bridge must act as a hub: `bridge-ageing 0` and `bridge link set dev <nic> learning off`, persisted in `/etc/network/interfaces`, with the bridge used for nothing else.
+
+### 19. Pin the STP Root; Linux Bridges Speak Slow 802.1D
+- **The Gotcha**: The office OpenWrt bridge advertised priority `0x7fff` (32767), beating the Araknis 920 default 32768 — the office router became root of the whole house whenever its BPDUs reached the 920. Linux kernel bridges only speak legacy 802.1D, so the 920 ports that hear them (1/0/2 pve, 1/0/3 AP1 bridge) fall back to 30–50 s timers after any topology change.
+- **The Invariant**: 920 bridge priority **4096**; OpenWrt `br-lan` priority **61440**; optional future step `mstpd` for RSTP on the Linux bridges.
+
+### 20. Edge Ports + BPDU Guard Protect Against Switches That Cannot Protect Themselves
+- **The Pattern**: Downstream switch with STP off and BPDU flooding → upstream port Admin Edge + BPDU Guard. Any loop behind it returns a BPDU and the upstream port is disabled instead of the house storming. Admin Edge also stops WattBox power cycles from generating topology changes.
+- **The Invariant**: Never use Admin/Auto Edge or BPDU Guard on ports that legitimately carry BPDUs (920 1/0/2 and 1/0/3 have Auto Edge off). Recovery after a trip: fix the cause, then re-enable the port (temporarily untick global BPDU Guard if the downstream switch is unreachable).
+
+### 21. MAC-Based VLAN Classifies Ingress Only
+- **The Gotcha**: A 920 MAC-based VLAN entry puts a device's *outgoing* frames into the VLAN, but replies only egress ports that are members of that VLAN. On an access port of a different VLAN the device can send but never receive.
+- **The Failure Mode**: The OvrC-MoIP controller (`D4:6A:91:62:A2:7E`, MAC-VLAN 10) ARPed its gateway every second for 16 h; the router's replies and ARPs never reached it.
+- **The Invariant**: Use a normal access VLAN on the port; MAC-based VLAN entries were deleted 2026-09-29.
+
+### 22. Containers Leak Docker Bridge Addresses into mDNS
+- **The Gotcha**: Homebridge (confirmed in captures) — and likely Home Assistant — advertise every host interface, all Docker bridges and veths, in their mDNS answers, inflating replies past 1500 bytes and handing clients unreachable 172.x addresses.
+- **The Invariant**: Bind mDNS advertisers to the real LAN interface (`ens18`).
+
+### 23. OpenWrt Runs BusyBox `ash`
+- **The Gotcha**: No bash, no `timeout` applet; `2>/dev/null` hid a `timeout: not found` error and made a tcpdump test look like a result.
+- **The Invariant**: OpenWrt scripts and runbook commands must be POSIX `sh`; bound captures with `( cmd & P=$!; sleep N; kill $P )` or `tcpdump -c N`; do not silence errors in diagnostics.
+
+### 24. Reading a Router-on-a-Stick SPAN Correctly
+- **The Gotcha**: Mirroring the router port (Tx/Rx) shows every inter-VLAN packet twice (in on VLAN A, out on VLAN B) and never shows same-VLAN device-to-device traffic. Naive tools report the second copy as a TCP retransmission.
+- **The Invariant**: Analyse per VLAN tag (`vlan.id`), treat the mirror as router-crossing traffic only, and temporarily add device ports as extra mirror sources for same-VLAN problems.
+
+---
+
+## 🩺 Part 7: 2026-09-29 Capture-Driven Network Remediation
+
+> **Status: 🟡 In Progress** — Source: 19.3 h broadcast-only baseline (2026-09-28 21:10 → 2026-09-29 16:44 PDT) plus an 11-minute full-traffic capture after the SPAN fix. Analysis with `dpkt` in the `personal-ai` WSL distro (no Wireshark on the workstation).
+
+### Findings & Root Causes
+| # | Finding | Root Cause | Status |
+| :---: | :--- | :--- | :---: |
+| 1 | Captures contained zero TCP | `vmbr1` learning bridge dropped mirrored unicast (Learning 18) | ✅ Fixed live; persist pending |
+| 2 | 59–73% loss to office devices on tagged VLANs | `failover.sh` rebuilt `vxlan150` every 30 s (Learning 17) | ✅ Fixed & verified (0% loss) |
+| 3 | Office tagged devices held VLAN 1 addresses overnight | Exact cause not captured (broadcast-only data); cleared when the 2026-09-29 16:15–16:51 failover/trunk-port changes landed | ✅ Resolved (devices on VLAN 10/30) |
+| 4 | Office router was STP root; 802.1D interop | Default priorities (Learning 19) | ✅ 920 = 4096; OpenWrt 61440 pending confirmation |
+| 5 | Testbench "STP storm" | STP on the SX-8P + no edge/guard on 920 1/0/7 | ✅ STP off + Admin Edge + BPDU Guard (tested) |
+| 6 | mDNS ≈ 60% of captured bytes, 158k fragments | Query-storm client `.10.108` + luna advertising Docker IPs (Learning 22) | 🟡 Binding fix pending |
+| 7 | Router ARP sweeps of empty VLANs 150/200 every ~20 s | Most likely OvrC client discovery on the 520 while the testbench is powered off (not proven) | ✅ Understood; stops when testbench is up |
+| 8 | OvrC-MoIP controller could send but not receive | MAC-based VLAN (Learning 21) | 🟡 MAC-VLAN deleted; give controller a VLAN 10 port |
+| 9 | vxlan-server DNS pointed at dead `.1.249` / `.1.186` | Stale pre-re-IP resolv.conf | ✅ Now `.40.185`, `.40.186`, `.1.1` |
+| 10 | Monitoring exposure & false alerts | Open exporter ports, default Grafana creds, bad probes | ✅ Deployed (Part 3) |
+| 11 | mainsail offline ~22 h | Pi hang/Wi-Fi stuck (logs lost to RAMlog) | ✅ Back; RAMlog #2 set; Wi-Fi monitor recommended; no watchdog (would kill prints) |
+| 12 | DNS: `.local` search domain junk, AdGuard bypass | DHCP domain `local`; Google devices/APs/Pakedge hardcoded DNS | 🟡 Pending |
+
+### Applied (verified live 2026-09-29)
+- [x] `vmbr1` `ageing_time 0` + `lan1 learning off` (runtime)
+- [x] `failover.sh` integrity fix + 300 s rebuild guard; `TAGGED_VLANS` variable; VLAN 100 removed from `vxlan150`/`lan2-4` (OpenWrt) and `vxlan150`/`ens18` (vxlan-server)
+- [x] vxlan-server `/etc/resolv.conf` → `192.168.40.185`, `192.168.40.186`, `192.168.1.1`
+- [x] SW920: bridge priority 4096; BPDU Guard; Admin Edge 1/0/5, 1/0/7, 1/0/8; Auto Edge off 1/0/2, 1/0/3; IGMP snooping + querier VLAN 30; VLAN 100 removed from all trunks; 1/0/7 = `1,10,150,200`; MAC-based VLAN entries deleted
+- [x] pve `vmbr0` VLAN IDs `10 20 30 40 150 200`; pve3 `vmbr0` VLAN IDs `40`
+- [x] SX-8P: STP disabled, BPDU flooding, VLANs 1/10/150/200 only, static IP, SNMP `homelab-metrics` RO only
+- [x] APs: Fast Roaming off on Insomniac_Guest; mDNS Forwarding off on Insomniac_MGMT; AP3 5 GHz DFS off
+- [x] Printers on SNMP `homelab-metrics`; monitoring stack redeployed (Part 3); Grafana password rotated
+- [x] Capture stack: 500M tmpfs, 50 MB chunks, 8-file ring, 256 B snaplen
+- [x] mainsail: DietPi-RAMlog #2; hardware watchdog deliberately not used
+
+### Capture Review — 2026-09-29 21:39 → 09-30 00:47 (11 files, snaplen 256)
+
+> ⚠️ **Correction (overnight files 09-30 00:47–06:21):** the SPAN lost **all unicast from ~22:24 on 9/29**. The user applied pve VLAN changes in the Proxmox GUI at about that time, which reloads the bridges and reset the runtime-only `vmbr1` hub settings (`ageing_time 0`, `lan1 learning off`). As a result:
+> - The retransmission, DNS and ARP-reply figures below cover only **21:39–22:24**.
+> - The 5× packet-rate drop at 22:25 was this fault, not usage ending.
+> - The overnight files hold broadcast/multicast only (0 ARP replies, 0 TCP, 0 DNS; 8 unicast frames in 5.6 h). What they still show: STP stable (10,030 BPDUs, root `0x1000`, 0 TC); the router ARP sweep heavier overnight (VLAN 1 ≈ 30/s, VLAN 200 ≈ 20/s, VLAN 150 ≈ 12/s, VLAN 10 ≈ 5/s; about 90% of all captured frames); Vivint panel mDNS ≈ 4.6/s (IPv4 + IPv6); most-requested ARP targets `.1.181`, `.1.205` (Pakedge, powered off) and `.1.112`.
+>
+> Fix: re-apply the runtime settings on pve and persist them in `/etc/network/interfaces` (repo copies updated 2026-09-30).
+
+**Healthy:**
+- STP: 4,200 BPDUs, all with root `0x1000`/SW920, and **0 topology changes**.
+- Office TCP retransmission-like segments are **4.1%**, down from 35.5% before the §4 integrity fix. That figure is inflated by Director MQTT retries to the powered-off `.10.213` and `.10.220`.
+- OpenWrt `.1.225` and `.1.226` each map to one MAC, so no ARP flapping.
+
+**Problems:**
+
+| Finding | Evidence | Action |
+|---|---|---|
+| Capture mover lost 46 min (23:11–23:57) | Chunk `00007` reached the NAS as a 278-byte header. The mover treated the newest-mtime file as active, so it `mv`'d the still-open chunk across filesystems | Repo fix: skip files held open by dumpcap (`/proc/<pid>/fd`); tested against the race. Also 2026-09-30: NAS copies and pruning run as linuxserver user `abc` (= `PUID:PGID` 1000:1000), not root, so files are usable over SMB/NFSv4 even with root squash. Files are written as a hidden `.partial` and renamed when complete (mode 664, timestamps kept); failed copies are retried |
+| Mirror path merges packets (GRO) | IP lengths >1500 from WAN hosts (Netflix `45.57.x`), i.e. GRO/LRO coalescing on pve `lan1` → `tap102i1` → luna `ens19` | `ethtool -K lan1 gro off lro off` (pve) and `ethtool -K ens19 gro off lro off` (luna); persist with the vmbr1 hub-mode change |
+| snaplen 256 hides DHCP | All 170 DHCP frames are cut before the options (they start at byte ~286) | `SNAPLEN` raised to **512** in the repo `tshark-capture` (2026-09-30); deploy stack 48 |
+| Router ARP sweep on every VLAN | All 254 addresses on each VLAN. VLAN 1 and VLAN 200 ≈ every 10 s (~25/s and ~21/s), VLAN 150 ≈ every 24 s, VLANs 10/20/30/40 every 3–8 min. It makes up ~99% of VLAN 1/150/200 broadcasts | OvrC/520 discovery scan; limit per the OvrC VLAN settings |
+| Vivint panel mDNS is dual-stack | IPv4 78k + **IPv6 74.5k** packets (≈13.5/s combined) | The mDNS block needs an IPv6 ACL as well as the IPv4 one |
+| DNS queries without a response | `.40.186` 741/2,364 (31%), `.40.185` 1,546/14,345 (11%), `8.8.8.8` 31% | Check the AdGuard query logs and per-client rate limits; decide whether direct 8.8.8.8 use should be blocked or redirected |
+| mainsail `.30.90` link quality | 67% repeated segments from `.40.185:443` → `.30.90` | 2026-09-30 08:21: `-60 dBm`, 2.4 GHz channel 1, rx 39 / tx 57.7 Mbit/s, associated to BSSID `1a:3f:c3:e8:b9:95`. That MAC is in the same family as AP3 (`14:3f:c3:e8:b9:20`, the office 830 wireless-bridge AP), so the likely path is a **double wireless hop**. **Uptime shows a reboot at ~02:13 on 9/30**; the cause is unknown because the journal is volatile under RAMlog. Check power-save, the undervoltage flags and any watchdog |
+| Work laptop dual-homed on VLAN 1 | Realtek USB Ethernet `.1.117` (`a0:29:19:8f:5d:45`, 12.7% repeated segments; EEE, Green Ethernet and Idle Power Saving enabled) **and** Wi-Fi `.1.186` on the same subnet | Disable Wi-Fi when wired or turn off the Realtek power-saving features (IT-managed laptop); move off VLAN 1 |
+| Control4 Core5 "Dinner Time" on VLAN 1 | `.1.181` ↔ Director `.10.200` MQTT/TLS routed between VLANs, 5% repeated segments | Move to VLAN 10 with the rest of Control4 |
+| DHCP search domain `.local` | Lookups such as `stats.grafana.org.local` and `api.local` | Supports the pending DHCP domain → `home.arpa` change |
+| Vivint `192.168.1.112` still dead | 1,792 unanswered router ARPs, 83 RTSP SYNs from the panel | See the Vivint camera / Smart Drive items |
+| Homebridge mDNS fragments (pre-fix) | 3,102 fragmented mDNS datagrams from `.40.249` | Fixed 2026-09-30 (ens18 binding verified) |
+| AP3 `.1.237` uses two MACs | `14:3f:c3:e8:b9:20` (replies) and `36:3f:c3:e8:b9:23` (wireless-bridge STA MAC, requests) | Expected for a Wi-Fi client bridge. Watch only |
+
+### Capture Review — 2026-09-30 08:07 → 09:05 (unicast restored; 21 files, snaplen 256 → 512)
+
+**Verified fixed:**
+- Vivint panel mDNS: **0** (IPv4 and IPv6); no traffic to `.1.112`.
+- No IP fragments, and no packets over 1500 bytes (GRO off works).
+- STP: 4,748 BPDUs, root `0x1000`, 0 TC.
+- Office TCP repeats: **0.02%**.
+- DNS no-response is down to ~3%: `.40.185` 2.3%, `.40.186` 4.4% (was 31%).
+- OpenWrt ARP clean.
+- DHCP hostnames are now readable. `00:0f:ff:0c:41:ca` = **SA1** and CA1 = `00:0f:ff:51:92:2f`, which resolves the earlier SA1/CA1 MAC mix-up.
+
+**What fills the capture** (1.25 GB stored in ~1 h, ≈1.2 GB/h):
+
+| Share | Traffic | Action |
+|---|---|---|
+| **~44%** | Work laptop `.1.117` Microsoft Teams call media (UDP 3478–3481 → `52.112.0.0/14`) | Excluded in `CAPTURE_FILTER` (repo, 2026-09-30) |
+| ~18% | iPhone `.10.123` Reddit/Instagram video over QUIC (UDP 443, Fastly/fbcdn) | Normal use; keep |
+| ~7% | **CA1 `192.168.150.200` running Ookla speed tests** (TCP 8080 to Comcast/CenturyLink/Charter). Caused the 23 Mbit/s burst at 08:10:43 (a 50 MB file in 17 s) and another at ~08:46 | Find out what schedules it (Control4/OvrC on the testbench); it stops when the bench is off |
+| ~3% | Google/Android update downloads (`.20.156`, gvt1.com) | Normal |
+| ~4% | Monitoring polls from nexus: SNMP to SW920 and the Proxmox API (8006) on pve/pve2/pve3 | Normal |
+
+Snaplen what-if on the same packets: 384 = 82% of 512, 256 = 62%, 128 = 41%. **Kept 512**; the Teams exclusion is the big saving (expected ≈2× longer retention).
+
+**New findings:**
+
+| Finding | Evidence | Next step |
+|---|---|---|
+| iPhone `.10.123` (private MAC `66:af:7a:cc:eb:e4`) cross-VLAN sessions failed after the handshake, 08:07–09:05 only | TCP 8009 (Google Cast) to Google devices `.20.186`/`.121`/`.116`/`.236`/`.142`, and to the ecobee "Hallway" `.30.167` (`44:61:32`, likely HomeKit). The router forwarded the phone's packets onto VLAN 20/30, but the devices kept resending SYN-ACKs (191 vs 49 SYN) and ACKed almost nothing. **Not network-wide:** 09:06–09:53, nexus `.40.185` → the same Cast devices on 8009 was healthy (2–3% repeats), and the second iPhone `.10.178` (`5a:92:e0:02:c7:ea`) → Apple device `.30.127` was healthy. No AirPlay (7000/7100), Sonos (1400/1443) or Spotify Connect (4070) sessions from phones were seen, so those are untested | Ask whether casting/Home app on that phone misbehaves; run a timed test (cast + ecobee in the Home app) and review that capture |
+| mainsail `.30.90` loses Wi-Fi frames | Correction: the frequent connections are **nexus → Pi** (Prometheus blackbox probes of `http://192.168.30.90` and `:7125`, 15 s scrape), not the Pi calling out. About 25% of nexus's connection attempts get no SYN-ACK (553 SYN vs 405 SYN-ACK; 111 vs 83 later), and 67% of nexus → Pi data on the long-lived Moonraker (`python`, pid 479) session to nexus `:443` is resent. Both directions cross the router intact, so the loss is on the Wi-Fi hop. Power save is already **off**; signal is -60 dBm | Check the AP client view for mainsail (which AP, retries/rate); optionally lengthen the mainsail probe interval (the load is tiny, the loss is the issue); a USB-Ethernet adapter would remove Wi-Fi entirely |
+| Work laptop uploads repeat | `.1.117` → `160.79.104.10:443` 34% repeated segments, with the server's ACKs arriving at the router. The laptop's own counter since boot is 0.9% retransmitted overall | Realtek USB power-saving features (EEE/Green/Idle); which port or dock? |
+| Work laptop reaches VLAN 40 and the NAS **through Tailscale** | This laptop routes `192.168.40.0/24` and `10.25.25.0/24` via the `Tailscale` adapter (subnet routes, most likely advertised by nexus). Copying captures at 09:06 went laptop → router → nexus inside WireGuard (UDP 41065, 44% of that window), then nexus → router (hairpin on VLAN 40) → NAS `10.25.25.248` over SMB (11%). The capture recorded it at up to 145 Mbit/s stored | At home, turn off *Use Tailscale subnets* on the laptop (`tailscale set --accept-routes=false`) and use the NAS at `192.168.40.248`. Capture filter now also excludes `10.25.25.248` |
+| SDDP: Vivint panel, SW920 and AP `.1.231` missing from Composer's Available Devices | APs `.1.236`/`.1.237`, Core5, both Sonos and the 520 still answer the Director (unicast SDDP to `.10.200`). None of the three missing devices sent SDDP in the 09:05–09:51 capture. **Not the Vivint ACL** (list removed, the panel still did not appear). The panel works in Control4 with its reserved IP entered manually | Inspect the 920 IGMP snooping table for `239.255.255.250`; A/B test snooping off on VLAN 1/10; check the SDDP setting on the 920 and on AP `.1.231` |
+| Android `.20.156` Pokémon GO asset download | 352 MB stored at 09:27 (`nianticstatic.com`) | Normal user traffic |
+| Router still ARPs dead IPs above the sweep rate | `.1.243` 1,763, `.1.112` 1,701, `.1.247`, `.1.5`, `.1.137`, `.1.7`, `.1.3`, `.20.106` (sweep median 777) | Remove stale OvrC devices / 520 DHCP reservations for them |
+| Control4 Director resolves `stats.grafana.org` ~6×/min | 1,048 lookups in 2.7 h (most NXDOMAIN/blocked), plus `api.local` from the `.local` search domain | Low priority |
+
+### Pending Checklist
+- [x] Deploy `TAGGED_VLANS="10 30"` to both ends and prune 20/40/100/150/200 (2026-09-30: OpenWrt `vxlan150` = 10,30; vxlan-server `ens18` = 1,10,30, `vxlan150` = 10,30, `br0` self = 1)
+- [ ] Re-run `failover.sh --test --vlan` with the fixed tester (remote V10 failed before because vxlan-server `br0` self had only vid 1) and confirm `V10:OK` on both ends
+- [x] Persist `vmbr1` hub mode in pve `/etc/network/interfaces`: `bridge-ageing 0`, `post-up bridge link set dev lan1 learning off` and `post-up ethtool -K lan1 gro off`. Done and verified 2026-09-30: `ifquery -c vmbr1` passes; live ageing_time 0, learning off, GRO off; luna saw 23,380 unicast frames in 10 s. **Re-check after any Proxmox GUI network apply**, since one reset these settings on 2026-09-29 at ~22:24 (optional: disable IPv6 on `vmbr1`)
+- [x] luna: persist `ethtool -K ens19 gro off` (udev rule `/etc/udev/rules.d/70-ens19-no-gro.rules`, installed 2026-09-30)
+- [x] Stack 48 capture script deployed 2026-09-30: open-file-safe mover, `SNAPLEN=512`, NAS copies as `abc` (1000:1000, mode 664); existing NAS files chowned
+- [ ] Capture retention vs. volume: after unicast was restored and snaplen went to 512, the first 50 MB chunks rotated every 1–3 min (morning of 2026-09-30). At that rate `MAX_ARCHIVE_FILES=150` (7.5 GB) keeps only about 4–7 h, not the 24 h `RETENTION_MINUTES`. Measure a full day, then either raise the cap (NAS space permitting), exclude known bulk flows in `CAPTURE_FILTER`, or lower `SNAPLEN` to 384
+- [ ] Confirm/persist OpenWrt `br-lan` STP priority 61440 (`uci set network.@device[N].priority='61440'`)
+- [x] Homebridge and Home Assistant bound to `ens18` — **verified 2026-09-30**: 120 s luna capture, 113 mDNS packets from `.40.249`, zero `172.x` addresses (set 2026-09-30: Homebridge *Network Interfaces* = `ens18`, advertiser Bonjour HAP; HA *Network adapter* = `ens18` only, Autoconfigure off). Remaining: restart both, then verify with a luna tcpdump that no `172.x` A records remain, child bridges (`0E_*`) included. Leave the Homebridge UI *Host IP Address* at its default; it sets only the web-UI listen address, not mDNS
+- [ ] Vivint panel (`192.168.10.108`): the user confirmed (2026-09-30) it needs only cloud arm/disarm (phone and panel), the doorbell camera and the outdoor camera — no local Nest/Google, Spotify or Hue. **Applied 2026-09-30:** `VIVINT_NO_MDNS6` (IPv6) at sequence 1 and `VIVINT_NO_MDNS` (IPv4) at sequence 2, each `deny udp any any eq 5353` / `permit every`, on 1/0/17 inbound, ahead of the built-in `EXC_initial_list`. The panel's mDNS on the SPAN fell from 290 to 1 packet per 30 s. **Runbook: [`vivint-panel-mdns-acl.md`](../runbooks/vivint-panel-mdns-acl.md)** (how to read, test, roll back). Remaining: verify arm/disarm plus doorbell live view (panel and app) and the ACL hit counts, then `write memory`. Undo: `no ip access-group VIVINT_NO_MDNS in` / `no ipv6 traffic-filter VIVINT_NO_MDNS6 in` on 1/0/17
+- [x] Vivint cameras off the LAN (2026-09-30): the user moved the Vivint/LG PoE Wi-Fi camera bridge onto the **panel's own AP**, so no Vivint cameras remain on the home LAN. This supersedes the `.1.112` reservation and 1/0/18 cable work. Any router ARPs still seen for `.1.112` are the OvrC sweep (it ARPs every VLAN 1 address about every 10 s), not the panel
+- [ ] After `write memory` on the 920: refresh the repo backup `infrastructure/network/configs/araknis-920-running.cfg` (`backup` tool). It still predates STP root, BPDU Guard, IGMP snooping, trunk pruning and the Vivint ACLs
+- [ ] SW920 port labels: relabel 1/0/18 ("Vivint Smart Drive", now unused). Two ports say "Control4 CA-10": 1/0/11 (VLAN 10) and 1/0/15 (VLAN 1). Confirm which one holds the Director `.10.200` (`00:0f:ff:20:74:d0`) and what is on the other
+- [ ] Control4 ↔ Vivint integration (`.10.200` → panel `.10.108` TCP 8765, both DHCP-reserved, same VLAN 10, so switched and never routed): verify that the Composer driver shows connected, that arm/disarm from Control4 works, and that sensor states update with the mDNS ACL on. Then `write memory` on the 920. The driver must use the reserved IP, not discovery
+- [ ] Move the OvrC-MoIP controller's LAN port to access VLAN 10
+- [ ] Prune remaining trunks: AP ports 1/0/3, 1/0/4, 1/0/6 → `1,10,20,30,150,200`; pve3 1/0/21 → `1,40`; after the tunnel trim, pve 1/0/2 → `1,10,30,40` and pve `vmbr0` → `10 30 40`; set pve2's switch port (find MAC `38:F7:CD:C1:67:E0` in the 920 MAC table) to access VLAN 1 — pve2 `vmbr0` is **not** VLAN-aware (Proxmox GUI, 2026-09-30), has no VLAN sub-interfaces, and VM 100 uses only the storage NIC
+- [ ] DHCP domain `local` → `home.arpa` (check AdGuard rewrites first); set AP and SX-8P DNS to AdGuard; optionally block outbound 53/853 except from AdGuard
+- [ ] Printers: replace default Set communities (HP blank → random, Brother `internal` → random)
+- [ ] APs: confirm AP1 5 GHz DFS off; consider 2.4 GHz TX power 50–75%; review UPnP on the 520
+- [ ] Move end devices off VLAN 1 (cameras, MoIP endpoints, Vivint, dev controllers) to proper VLANs
+- [ ] Decide fix vs retire for the pve nginx `*.secure.theurer.dev` upstreams still pointing at `.1.249` / `.1.185` / `.1.186`
+- [ ] Rework `power_cycle_pakedge_switch` to trigger the Control4 *All Test Equipment* button/macro (not the WattBox outlet directly — see Part 2.10 power notes); refresh `pakedge-sx8p-running.cfg` via `backup_pakedge_switch`; decide Telnet on/off (the `configure-vlans` action needs it)
+- [ ] OpenWrt: confirm ARP-strict is live (`sysctl net.ipv4.conf.all.arp_ignore` = 1, `arp_announce` = 2) and that `sysupgrade -l` now lists `/etc/sysctl.d/10-arp-strict.conf` and `/etc/crontabs/root` (added to the repo `sysupgrade.conf`)
+- [ ] Deploy-script hardening: no world-readable secrets (`chmod -R 755`), health checks must fail on errors
+- [ ] Long term: run Ethernet to the office and retire the wireless bridge + VXLAN failover
 
 
 

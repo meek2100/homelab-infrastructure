@@ -43,7 +43,7 @@
 
 ### Node 2: `pve2` (Awow AK34Pro Mini PC Profile — `192.168.1.240`)
 - **Hardware**: Intel Celeron J3455 (4C/4T), 6GB RAM.
-- **Network Bridges**: `vmbr0` (`192.168.1.240`), `vmbr0.40`, `vmbr0.50`, `vmbr1` (`10.25.25.240`).
+- **Network Bridges**: `vmbr0` (`192.168.1.240` on `enp1s0`, untagged VLAN 1 management only — no VLAN sub-interfaces, verified 2026-09-30), `vmbr1` (`10.25.25.240` on `enp2s0`, storage network; VM 100 attaches only here).
 - **Backed Up Portainer VM Stacks**:
   - `VM 100` (`discovery-server` Download VM): **24 Portainer Stacks** (2 Active: `audiobookbay-automated-dev` VPN master stack, `watchtower`; 22 Inactive/historical stacks).
   - **Active Container Infrastructure**:
