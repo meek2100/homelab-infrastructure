@@ -79,12 +79,21 @@ show_status() {
     echo "--- 3-Priority Failover System Status ---"
     echo ""
 
+    # Which path carries VLAN 1 is the real state (vxlan150 always carries the tagged VLANs, and
+    # wan stays STP-forwarding while parked in the probe VLAN, so neither alone means "active").
+    V1_ON_P1=no; V1_ON_P2=no; P3_UP=no
+    bridge vlan show dev "$P1_IF" 2>/dev/null | grep -qE '[[:space:]]1 PVID' && V1_ON_P1=yes
+    bridge vlan show dev "$VXLAN_IF" 2>/dev/null | grep -qE '[[:space:]]1 PVID' && V1_ON_P2=yes
+    /etc/init.d/relayd status 2>/dev/null | grep -q "running" && P3_UP=yes
+
     # P1: wan
     P1_STATE=$(get_stp_status "$P1_IF")
     P1_CARRIER=$(get_carrier "$P1_IF")
     P1_MTU=$(get_mtu "$P1_IF")
-    if [ "$P1_STATE" = "forwarding" ]; then
-        echo "Priority 1 (Wifi 7 Bridge): [ ACTIVE / FORWARDING ] (MTU: $P1_MTU)"
+    if [ "$V1_ON_P1" = "yes" ] && [ "$P1_STATE" = "forwarding" ]; then
+        echo "Priority 1 (Wifi 7 Bridge): [ ACTIVE / carrying VLAN 1 ] (MTU: $P1_MTU)"
+    elif bridge vlan show dev "$P1_IF" 2>/dev/null | grep -qE "[[:space:]]$PROBE_VID PVID"; then
+        echo "Priority 1 (Wifi 7 Bridge): [ STANDBY / parked in probe VLAN $PROBE_VID, carrier $P1_CARRIER ] (MTU: $P1_MTU)"
     elif [ "$P1_CARRIER" = "1" ]; then
         echo "Priority 1 (Wifi 7 Bridge): [ STANDBY / $P1_STATE ] (MTU: $P1_MTU)"
     else
@@ -93,10 +102,10 @@ show_status() {
 
     # P2: vxlan150
     P2_MTU=$(get_mtu "$VXLAN_IF")
-    if [ -f /tmp/failover_p2_active ]; then
-        echo "Priority 2 (VXLAN Tunnel) : [ FAILOVER ACTIVE (VLAN 1 Forwarding) ] (MTU: $P2_MTU)"
+    if [ "$V1_ON_P2" = "yes" ]; then
+        echo "Priority 2 (VXLAN Tunnel) : [ FAILOVER ACTIVE / carrying VLAN 1 + tagged $TAGGED_VLANS ] (MTU: $P2_MTU)"
     elif bridge link 2>/dev/null | grep -q "$VXLAN_IF"; then
-        echo "Priority 2 (VXLAN Tunnel) : [ ACTIVE / TRUNKED (Tagged VLANs Active, VLAN 1 Isolated) ] (MTU: $P2_MTU)"
+        echo "Priority 2 (VXLAN Tunnel) : [ STANDBY / tagged VLANs $TAGGED_VLANS only (normal) ] (MTU: $P2_MTU)"
     elif ip link show "$VXLAN_IF" 2>/dev/null | grep -q "UP"; then
         echo "Priority 2 (VXLAN Tunnel) : [ STANDBY / ADMIN ] (MTU: $P2_MTU)"
     else
@@ -105,10 +114,25 @@ show_status() {
 
     # P3: Relayd (uses br-lan MTU)
     BR_MTU=$(get_mtu "$BR_IF")
-    if /etc/init.d/relayd status 2>/dev/null | grep -q "running"; then
-        echo "Priority 3 (Relayd)       : [ READY / RUNNING ] (MTU: $BR_MTU)"
+    if [ "$P3_UP" = "yes" ]; then
+        echo "Priority 3 (Relayd)       : [ ACTIVE / RUNNING ] (MTU: $BR_MTU)"
     else
         echo "Priority 3 (Relayd)       : [ INACTIVE (Service Stopped) ] (MTU: $BR_MTU)"
+    fi
+
+    # One-line verdict: exactly one path should carry VLAN 1
+    if [ "$V1_ON_P1" = "yes" ] && [ "$V1_ON_P2" = "yes" ]; then
+        echo ">>> VLAN 1 path: P1 AND P2 — LOOP RISK (the monitor's loop guard fixes this within 30 s; to force it now: $0 -m)"
+    elif [ "$V1_ON_P1" = "yes" ] && [ "$P3_UP" = "yes" ]; then
+        echo ">>> VLAN 1 path: P1 AND P3 (relayd) — LOOP RISK (the monitor's loop guard fixes this within 30 s; to force it now: $0 -m)"
+    elif [ "$V1_ON_P1" = "yes" ]; then
+        echo ">>> VLAN 1 path: P1 (Wi-Fi bridge) — normal"
+    elif [ "$V1_ON_P2" = "yes" ]; then
+        echo ">>> VLAN 1 path: P2 (VXLAN tunnel) — failover"
+    elif [ "$P3_UP" = "yes" ]; then
+        echo ">>> VLAN 1 path: P3 (relayd) — failover"
+    else
+        echo ">>> VLAN 1 path: NONE — office VLAN 1 is down"
     fi
 
     # Monitor state
@@ -374,7 +398,28 @@ activate_p3() {
     log_msg "Priority 3 Active (Relayd running for VLAN 1)."
 }
 
+# Loop guard: VLAN 1 must never be on wan and vxlan150 (or wan and relayd) at the same time. Runs first
+# in every monitor cycle and is NOT rate-limited like integrity_restore, because two VLAN 1 paths are a
+# live loop. It keeps the path the controller believes is active and only takes VLAN 1 off the other;
+# the normal checks below then decide whether to fail over or back as usual.
+loop_guard() {
+    bridge vlan show dev "$P1_IF" 2>/dev/null | grep -qE '[[:space:]]1 PVID' || return 0
+    _p2=no; _p3=no
+    bridge vlan show dev "$VXLAN_IF" 2>/dev/null | grep -qE '[[:space:]]1 PVID' && _p2=yes
+    /etc/init.d/relayd status 2>/dev/null | grep -q "running" && _p3=yes
+    [ "$_p2" = "no" ] && [ "$_p3" = "no" ] && return 0
+    if [ -f /tmp/failover_p2_active ] || [ "$_p3" = "yes" ]; then
+        log_msg "LOOP GUARD: VLAN 1 on $P1_IF and on the failover path (P2=$_p2 P3=$_p3) — parking $P1_IF"
+        bridge vlan del dev "$P1_IF" vid 1 master >/dev/null 2>&1
+        park_p1_in_probe_vlan
+    else
+        log_msg "LOOP GUARD: VLAN 1 on both $P1_IF and $VXLAN_IF outside failover — removing it from $VXLAN_IF"
+        bridge vlan del dev "$VXLAN_IF" vid 1 >/dev/null 2>&1
+    fi
+}
+
 run_monitor() {
+    loop_guard
     if check_p1; then
         FAILS=$(get_fail_count)
         if [ "$FAILS" -gt 0 ]; then
