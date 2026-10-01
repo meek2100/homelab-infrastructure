@@ -227,6 +227,7 @@ graph TD
 * **Tailscale Node IP**: `100.85.40.185` (`tailscale-nexus.tail4499d6.ts.net`), `tag:server`, key expiry disabled, non-ephemeral (`TS_EPHEMERAL=false`).
 * **Tailnet addressing**: device IPs are set by hand in the admin console to mirror the LAN, `100.85.<vlan>.<host>` (nexus `100.85.40.185` ↔ `192.168.40.185`; phone `iphone181` `100.85.10.123` ↔ `192.168.10.123`). Verified 2026-09-30.
 * **Advertised Subnets**: `192.168.1.0/24`, `192.168.10.0/24`, `192.168.20.0/24`, `192.168.30.0/24`, `192.168.40.0/24`, `10.25.25.0/24`.
+* **Approved Subnets (trial from 2026-09-30)**: only `192.168.40.0/24`, plus the exit node. The other five stay advertised but unapproved, so clients never receive them; the admin can approve one from the Tailscale console when needed. Once a few days pass without needing them, drop them from `TS_ROUTES`. Admin fallback without approving: SSH jump via nexus (`ssh -J nexus-server <host>`).
 * **Zero-NAT Real Client Tracking**: `--snat-subnet-routes=false` preserves client `100.x.y.z` IPs, allowing AdGuard Home to log and apply filtering policies per individual mobile device.
 * **Return Path**: Relies on Araknis static route `100.64.0.0/10 via 192.168.40.185`.
 * **Split DNS**: Tailscale admin console delegates `secure.theurer.dev` to `100.85.40.185` (Primary direct mesh) and `192.168.40.186` (Secondary HA on `pve3`, reachable only through the `192.168.40.0/24` subnet route). MagicDNS on; global nameservers not overridden (verified 2026-09-30).
@@ -237,7 +238,7 @@ graph TD
 * **Configuration**:
   * Client IP Range: `10.8.0.0/24`
   * Optimal MTU: `1420` (prevents PMTU blackholes and packet fragmentation).
-  * Allowed IPs: `192.168.1.0/24, 192.168.10.0/24, 192.168.20.0/24, 192.168.30.0/24, 192.168.40.0/24, 10.25.25.0/24`.
+  * Allowed IPs: `0.0.0.0/0, ::/0` (full tunnel, `WG_ALLOWED_IPS` in stack 44). For emergencies only; no client stays connected.
   * DNS: `192.168.40.185`, `192.168.40.186`.
 * **Full Administrative Reach**: Direct access to Proxmox Web UIs (`:8006`), SSH (`:22`), switch web consoles, router management, and private storage networks.
 * **Return Path**: Relies on Araknis static route `10.8.0.0/24 via 192.168.40.185` to ensure return packets from VLAN 1 (`192.168.1.0/24`) and other subnets route back to `nexus-server` even if container MASQUERADE is bypassed or un-NATted.
