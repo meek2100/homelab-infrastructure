@@ -12,7 +12,16 @@ STORAGE_DIR="/nas-storage"
 # 52.122.0.0/15) was ~44% of all stored bytes on 2026-09-30 (one work-laptop meeting), is encrypted, and
 # says nothing about the home network. The NAS is excluded on both its VLAN 40 (.40.248) and storage
 # (10.25.25.248) addresses, so copying captures off the NAS doesn't get captured again.
-CAPTURE_EXCLUDE="host 192.168.40.248 or host 10.25.25.248 or port 3000 or port 3001 or (udp portrange 3478-3481 and (net 52.112.0.0/14 or net 52.122.0.0/15))"
+# Internet bulk payload: full-size packets with an end outside the local ranges (downloads, streaming,
+# cloud uploads). Two CDN downloads on 2026-10-01 05:33-05:50 wrote 3.1 GB in ~7 min and evicted hours
+# of archive. Kept: all packets <=1200 bytes (handshakes, ACKs, DNS, most control traffic) and every
+# LAN<->LAN, broadcast and multicast packet of any size (mDNS answers exceed 1500 bytes).
+LOCAL4_SRC="src net 192.168.0.0/16 or src net 10.0.0.0/8 or src net 172.16.0.0/12 or src net 100.64.0.0/10 or src net 169.254.0.0/16"
+LOCAL4_DST="dst net 192.168.0.0/16 or dst net 10.0.0.0/8 or dst net 172.16.0.0/12 or dst net 100.64.0.0/10 or dst net 169.254.0.0/16 or dst net 224.0.0.0/4 or dst host 255.255.255.255"
+LOCAL6_SRC="src net fc00::/7 or src net fe80::/10"
+LOCAL6_DST="dst net fc00::/7 or dst net fe80::/10 or dst net ff00::/8"
+INTERNET_BULK="greater 1200 and ((ip and not ((${LOCAL4_SRC}) and (${LOCAL4_DST}))) or (ip6 and not ((${LOCAL6_SRC}) and (${LOCAL6_DST}))))"
+CAPTURE_EXCLUDE="host 192.168.40.248 or host 10.25.25.248 or port 3000 or port 3001 or (udp portrange 3478-3481 and (net 52.112.0.0/14 or net 52.122.0.0/15)) or (${INTERNET_BULK})"
 # The SPAN is 802.1Q-tagged: a plain BPF expression only matches untagged (VLAN 1) frames, so apply the
 # exclusion again after 'vlan' (which must come last: it shifts the offsets of everything after it).
 CAPTURE_FILTER="not (${CAPTURE_EXCLUDE}) and not (vlan and (${CAPTURE_EXCLUDE}))"

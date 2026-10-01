@@ -24,6 +24,15 @@ FAIL_THRESHOLD=3
 # Allow at most one per REBUILD_MIN_INTERVAL; a repeat inside the window means the check itself is wrong.
 REBUILD_STAMP_FILE="/tmp/failover_last_integrity_rebuild"
 REBUILD_MIN_INTERVAL=300
+# P1 recovery probe (P2/P3 only). With no VLAN membership the DSA switch drops every frame on wan,
+# and a packet socket on a bridge port never sees replies anyway, so `arping -I wan` could never
+# detect a recovered bridge (2026-10-01 outage: stuck in P2, wan rx_packets delta 0).
+# Instead wan is parked untagged in PROBE_VID, whose only other member is the bridge CPU port
+# (no loop possible), and PROBE_IF sends RFC 5227 ARP probes (sender IP 0.0.0.0) from its own
+# locally administered MAC, so SW920 learns that MAC only behind the Wi-Fi bridge.
+PROBE_VID=4094
+PROBE_IF="p1probe"
+PROBE_MAC="02:9f:80:50:58:2f"
 
 # Ensure log file exists — /var is tmpfs on OpenWrt; dir survives reboot but files do not.
 mkdir -p "$(dirname "$LOGFILE")"
@@ -196,6 +205,30 @@ integrity_restore() {
     activate_p1
 }
 
+park_p1_in_probe_vlan() {
+    bridge vlan add dev "$BR_IF" vid "$PROBE_VID" self 2>/dev/null
+    bridge vlan add dev "$P1_IF" vid "$PROBE_VID" pvid untagged master 2>/dev/null
+    if ! ip link show "$PROBE_IF" >/dev/null 2>&1; then
+        ip link add link "$BR_IF" name "$PROBE_IF" type vlan id "$PROBE_VID"
+        ip link set "$PROBE_IF" address "$PROBE_MAC"
+    fi
+    ip link set "$PROBE_IF" up
+}
+
+unpark_p1_probe_vlan() {
+    ip link del "$PROBE_IF" 2>/dev/null
+    bridge vlan del dev "$P1_IF" vid "$PROBE_VID" master 2>/dev/null
+    bridge vlan del dev "$BR_IF" vid "$PROBE_VID" self 2>/dev/null
+}
+
+# Success = TRACK_IP answered an ARP probe sent out the parked wan. Parse the reply count instead
+# of the exit code: BusyBox and iputils disagree on what -D's exit status means.
+probe_p1_parked() {
+    command -v arping >/dev/null 2>&1 || return 0
+    ip link show "$PROBE_IF" >/dev/null 2>&1 || park_p1_in_probe_vlan
+    arping -D -c 3 -w 4 -I "$PROBE_IF" "$TRACK_IP" 2>&1 | grep -qE 'Received [1-9]'
+}
+
 check_p1() {
     # Check physical carrier first (0 = disconnected, 1 = link present)
     CARRIER=$(cat /sys/class/net/$P1_IF/carrier 2>/dev/null || echo 0)
@@ -212,15 +245,10 @@ check_p1() {
         ping -c 3 -W 2 -I 192.168.1.226 "$TRACK_IP" >/dev/null 2>&1
         return $?
     else
-        # In P2 or P3 failover mode:
-        # wan has carrier=1. Verify if the upstream wireless bridge link has recovered
-        # using an isolated Layer 2 ARP query directly on wan (does not touch br-lan or loop)
-        if command -v arping >/dev/null 2>&1; then
-            arping -c 2 -w 2 -I "$P1_IF" "$TRACK_IP" >/dev/null 2>&1
-            return $?
-        else
-            return 0
-        fi
+        # In P2 or P3 failover mode: wan has carrier=1. Probe through the isolated probe VLAN
+        # (see PROBE_VID) to see whether the Wi-Fi bridge carries traffic end to end again.
+        probe_p1_parked
+        return $?
     fi
 }
 
@@ -255,9 +283,10 @@ activate_p1() {
         done
     done
 
-    # 4. Restore VLAN 1 on wan without bouncing interface
+    # 4. Restore VLAN 1 on wan without bouncing interface, then drop the P2/P3 probe VLAN
     bridge vlan add dev "$P1_IF" vid 1 pvid untagged master >/dev/null 2>&1
     bridge vlan del dev "$P1_IF" vid 40 master >/dev/null 2>&1
+    unpark_p1_probe_vlan
     ip link set "$BR_IF" mtu 1500
 
     # 5. Restore br-lan routes
@@ -275,8 +304,10 @@ activate_p2() {
     log_msg "Activating Priority 2 (VXLAN Tunnel)..."
     /etc/init.d/relayd stop >/dev/null 2>&1
 
-    # 1. Remove VLAN 1 from wan port FIRST (Do not bring interface down, just remove VID 1)
+    # 1. Remove VLAN 1 from wan port FIRST (Do not bring interface down, just remove VID 1),
+    #    and park wan in the isolated probe VLAN so check_p1 can see the bridge recover
     bridge vlan del dev "$P1_IF" vid 1 master >/dev/null 2>&1
+    park_p1_in_probe_vlan
 
     # 2. Restore br-lan routes
     ip route add 192.168.1.0/24 dev "$BR_IF" proto static scope link src 192.168.1.226 metric 10 2>/dev/null
@@ -321,8 +352,9 @@ activate_p2() {
 
 activate_p3() {
     log_msg "Activating Priority 3 (Relayd)..."
-    # Remove VLAN 1 from both P1 and P2
+    # Remove VLAN 1 from both P1 and P2; park wan in the probe VLAN (see PROBE_VID)
     bridge vlan del dev "$P1_IF" vid 1 master >/dev/null 2>&1
+    park_p1_in_probe_vlan
     bridge vlan del dev "$VXLAN_IF" vid 1 >/dev/null 2>&1
     rm -f /tmp/failover_p2_active
     ip link set "$BR_IF" mtu 1500
