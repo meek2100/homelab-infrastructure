@@ -354,7 +354,7 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
   * *Selection Rationale*: Dedicated to core networking/ingress (NPM, Tailscale, Cloudflared). Eliminates I/O competition on `luna-server` (which runs continuous Wireshark SPAN captures in Stack 48). Enables direct local ingress without cross-VM hairpinned proxying.
   * *Blueprint*: [`infrastructure/docker-stacks/nexus-server/71-monitoring/`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/71-monitoring/)
 * **Live Service & Port Matrix (10 Containers)**:
-  * **Grafana (`11.1.0`)**: Port `3030:3000` (Web UI at `http://192.168.40.185:3030` or reverse-proxied via NPM / Tailscale `http://100.70.65.45:3030`)
+  * **Grafana (`11.1.0`)**: Port `3030:3000` (Web UI at `http://192.168.40.185:3030` or reverse-proxied via NPM / Tailscale `http://100.85.40.185:3030`)
   * **Prometheus TSDB (`v2.53.1`)**: Port `9090:9090` (30-day persistent retention, active alerting rules engine)
   * **Alertmanager (`v0.27.0`)**: Port `9093:9093` (Pushover mobile priority alerts & SMTP notification routing)
   * **Blackbox Exporter (`v0.25.0`)**: Port `9115:9115` (HTTP/HTTPS, DNS UDP, TCP, and TLS SSL cert expiration probing)
@@ -817,10 +817,10 @@ The 520's stale DHCP leases were cleared by the user; OvrC needs manual clean-up
     Expected in a container, ignore: the FAIL `could not match the 'proxmox-backup' package` (the bare-metal metapackage, which pulls a kernel; never install it in a CT), the kernel mismatch (the CT uses the host kernel), grub-efi, and no NTP (the CT takes its time from pve3).
     Real: the pending updates, covered by step 1.
   - **Lessons:** use `apt dist-upgrade`, not `apt upgrade` (the latter kept back 67 packages, including `proxmox-backup-server`). The old `.list` files went to `/root/apt-backup-2026-09-30/`; the new repo is deb822 `/etc/apt/sources.list.d/proxmox.sources` (`pbs-no-subscription`, trixie). Postfix failed to restart mid-upgrade and was fine after `pct reboot 105`. `sshd_config` was replaced with the Debian 13 default (it had not been customised; root login is still key-only).
-- [ ] **PBS 4 follow-ups (CT 105)** (three of four done 2026-09-30):
+- [x] **PBS 4 follow-ups (CT 105)** (all done 2026-09-30):
   - [x] the upgrade re-created `pbs-enterprise.sources` (apt 401): now `Enabled: false` (file kept so upgrades don't add it back); `apt update` clean;
   - [x] `zfs-mount`, `zfs-share`, `zfs-zed` failed in the container (no ZFS in an LXC; the datastore is a bind mount): masked; no failed units;
-  - [ ] the upgrade set the datastore `notification-mode` to `legacy-sendmail`: switch to the notification system with an SMTP2GO target (the "PBS notifications" item). **SMTP2GO target created in PBS and its test email arrived (2026-09-30)**; remaining: route the default matcher to it and switch the datastore to `notification-system`;
+  - [x] PBS notifications (done 2026-09-30): SMTP2GO target (test email arrived), `default-matcher` → SMTP2GO only (`mail-to-root` unticked), datastore on *Use global notification settings*. Confirm the first real garbage-collection/verify email arrives;
   - [x] SSH key login: `proxmox_ed25519` (same key as the pve hosts) in CT 105 `/root/.ssh/authorized_keys`; laptop `~/.ssh/config` entry `pbs-server` → 192.168.1.244; host key checked against pve3 (ED25519 `SHA256:DVFaUYe/cP0sigc3kVLRvUcX/lL+wBOIQKbE3n4sD8E`). Root stays key-only.
 - [x] **PBS namespaces per host — done 2026-09-30.** Namespaces `pve`/`pve2`/`pve3` created on `homelab-datastore`; each host's `pbs-backup` storage has `namespace <host>`. Fresh full backups all succeeded, and each host lists only its own guests:
   - pve: 100, 102, 103, 107, 109

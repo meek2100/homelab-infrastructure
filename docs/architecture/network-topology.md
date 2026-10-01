@@ -202,7 +202,7 @@ graph TD
 
     subgraph Nexus ["nexus-server (VM 100 on pve - 192.168.40.185)"]
         WG["WireGuard (wg-easy Stack 44)<br>10.8.0.0/24 (MTU 1420)<br>MASQUERADE ──► eth0"]
-        TS["Tailscale (Stack 69 v22)<br>100.70.65.45<br>Subnets: VLAN 1, 10, 20, 30, 40, Storage"]
+        TS["Tailscale (Stack 69 v22)<br>100.85.40.185<br>Subnets: VLAN 1, 10, 20, 30, 40, Storage"]
         AG1["AdGuard Home Primary<br>Listening on *:53"]
         NPM["Nginx Proxy Manager<br>Listening on *:80, *:443"]
     end
@@ -224,11 +224,12 @@ graph TD
 ```
 
 ### 1. Tailscale Mesh Ingress (`nexus-server/69` - v22)
-* **Tailscale Node IP**: `100.70.65.45` (`tailscale-nexus.tail4499d6.ts.net`).
+* **Tailscale Node IP**: `100.85.40.185` (`tailscale-nexus.tail4499d6.ts.net`), `tag:server`, key expiry disabled, non-ephemeral (`TS_EPHEMERAL=false`).
+* **Tailnet addressing**: device IPs are set by hand in the admin console to mirror the LAN, `100.85.<vlan>.<host>` (nexus `100.85.40.185` ↔ `192.168.40.185`; phone `iphone181` `100.85.10.123` ↔ `192.168.10.123`). Verified 2026-09-30.
 * **Advertised Subnets**: `192.168.1.0/24`, `192.168.10.0/24`, `192.168.20.0/24`, `192.168.30.0/24`, `192.168.40.0/24`, `10.25.25.0/24`.
 * **Zero-NAT Real Client Tracking**: `--snat-subnet-routes=false` preserves client `100.x.y.z` IPs, allowing AdGuard Home to log and apply filtering policies per individual mobile device.
 * **Return Path**: Relies on Araknis static route `100.64.0.0/10 via 192.168.40.185`.
-* **Split DNS**: Tailscale admin console delegates `secure.theurer.dev` to `100.70.65.45` (Primary direct mesh) and `192.168.40.186` (Secondary HA on `pve3`).
+* **Split DNS**: Tailscale admin console delegates `secure.theurer.dev` to `100.85.40.185` (Primary direct mesh) and `192.168.40.186` (Secondary HA on `pve3`, reachable only through the `192.168.40.0/24` subnet route). MagicDNS on; global nameservers not overridden (verified 2026-09-30).
 
 ### 2. WireGuard "Break Glass" Administrative Backdoor (`nexus-server/44`)
 * **Endpoint**: `vpn.theurer.dev:51820/udp` (Port forwarded directly through Araknis WAN1).
