@@ -423,6 +423,24 @@ scrape_configs:
         labels:
           service: 'mail-imaps'
           environment: 'external'
+      # NAS NFS on both paths. 2026-09-30: pve3's NIC hung and the NAS dropped off VLAN 40 while its
+      # storage IP stayed up; these two probes tell those cases apart (BlackboxProbeFailed alerts after 2m).
+      - targets:
+        - 192.168.40.248:2049
+        labels:
+          service: 'nas-nfs-vlan40'
+          category: 'storage'
+      - targets:
+        - 10.25.25.248:2049
+        labels:
+          service: 'nas-nfs-storage-net'
+          category: 'storage'
+      # Proxmox Backup Server API (LXC CT 105 on pve3; went down with the same NIC hang)
+      - targets:
+        - 192.168.1.244:8007
+        labels:
+          service: 'pbs-api'
+          category: 'backup'
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
