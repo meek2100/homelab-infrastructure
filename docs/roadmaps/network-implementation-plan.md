@@ -820,7 +820,7 @@ The 520's stale DHCP leases were cleared by the user; OvrC needs manual clean-up
 - [ ] **PBS 4 follow-ups (CT 105)** (three of four done 2026-09-30):
   - [x] the upgrade re-created `pbs-enterprise.sources` (apt 401): now `Enabled: false` (file kept so upgrades don't add it back); `apt update` clean;
   - [x] `zfs-mount`, `zfs-share`, `zfs-zed` failed in the container (no ZFS in an LXC; the datastore is a bind mount): masked; no failed units;
-  - [ ] the upgrade set the datastore `notification-mode` to `legacy-sendmail`: switch to the notification system with an SMTP2GO target (the "PBS notifications" item);
+  - [ ] the upgrade set the datastore `notification-mode` to `legacy-sendmail`: switch to the notification system with an SMTP2GO target (the "PBS notifications" item). **SMTP2GO target created in PBS and its test email arrived (2026-09-30)**; remaining: route the default matcher to it and switch the datastore to `notification-system`;
   - [x] SSH key login: `proxmox_ed25519` (same key as the pve hosts) in CT 105 `/root/.ssh/authorized_keys`; laptop `~/.ssh/config` entry `pbs-server` → 192.168.1.244; host key checked against pve3 (ED25519 `SHA256:DVFaUYe/cP0sigc3kVLRvUcX/lL+wBOIQKbE3n4sD8E`). Root stays key-only.
 - [x] **PBS namespaces per host — done 2026-09-30.** Namespaces `pve`/`pve2`/`pve3` created on `homelab-datastore`; each host's `pbs-backup` storage has `namespace <host>`. Fresh full backups all succeeded, and each host lists only its own guests:
   - pve: 100, 102, 103, 107, 109
@@ -856,7 +856,7 @@ The 520's stale DHCP leases were cleared by the user; OvrC needs manual clean-up
 - [ ] Move end devices off VLAN 1 (cameras, MoIP endpoints, Vivint, dev controllers) to proper VLANs
 - [ ] Decide fix vs retire for the pve nginx `*.secure.theurer.dev` upstreams still pointing at `.1.249` / `.1.185` / `.1.186`
 - [ ] Rework `power_cycle_pakedge_switch` to trigger the Control4 *All Test Equipment* button/macro (not the WattBox outlet directly — see Part 2.10 power notes); refresh `pakedge-sx8p-running.cfg` via `backup_pakedge_switch`; decide Telnet on/off (the `configure-vlans` action needs it)
-- [ ] (live 2026-09-30: `arp_announce=2` confirmed; the `sysupgrade -l` check is still open) OpenWrt: confirm ARP-strict is live (`sysctl net.ipv4.conf.all.arp_ignore` = 1, `arp_announce` = 2) and that `sysupgrade -l` now lists `/etc/sysctl.d/10-arp-strict.conf` and `/etc/crontabs/root` (added to the repo `sysupgrade.conf`)
+- [x] (done 2026-09-30: `arp_announce=2` live; `sysupgrade -l` lists `/etc/sysctl.d/10-arp-strict.conf` and `/etc/crontabs/root`) OpenWrt: confirm ARP-strict is live (`sysctl net.ipv4.conf.all.arp_ignore` = 1, `arp_announce` = 2) and that `sysupgrade -l` now lists `/etc/sysctl.d/10-arp-strict.conf` and `/etc/crontabs/root` (added to the repo `sysupgrade.conf`)
 - [ ] Deploy-script hardening: no world-readable secrets (`chmod -R 755`), health checks must fail on errors
 - [ ] Long term: run Ethernet to the office and retire the wireless bridge + VXLAN failover
 
