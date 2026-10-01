@@ -59,7 +59,7 @@ services:
       - TZ=${TZ}
       - PORT=5056
     volumes:
-      - ${BASE_PATH}/seerr/config:/config
+      - ${BASE_PATH}/seerr/config:/app/config
     ports:
       - "5056:5056"
     restart: unless-stopped
