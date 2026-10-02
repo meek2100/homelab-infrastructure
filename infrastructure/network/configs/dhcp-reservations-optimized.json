@@ -1,0 +1,316 @@
+{
+  "dhcpReservations": [
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.10.101",
+      "macAddress": "EC:B5:FA:8D:E0:05",
+      "name": "Philips hue"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.10.103",
+      "macAddress": "D4:6A:91:9C:00:67",
+      "name": "Luma X20 Cam 1"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.10.104",
+      "macAddress": "D4:6A:91:9C:00:8A",
+      "name": "Luma X20 Cam 2"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.10.105",
+      "macAddress": "D4:6A:91:9C:00:69",
+      "name": "Luma X20 Cam 3"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.10.108",
+      "macAddress": "88:6A:E3:D8:EB:1C",
+      "name": "Vivint Security Panel"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.10.121",
+      "macAddress": "D4:6A:91:19:00:54",
+      "name": "Luma Bridge"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.10.126",
+      "macAddress": "14:98:77:3E:4E:8D",
+      "name": "Mac Mini"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.10.195",
+      "macAddress": "F8:0D:AC:D9:32:47",
+      "name": "HP Printer"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.10.196",
+      "macAddress": "00:80:77:5C:F6:11",
+      "name": "Brother QL-1110NWB (Wired)"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.1.205",
+      "macAddress": "90:A7:C1:9E:D9:26",
+      "name": "Pakedge SX-8P Switch"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.1.215",
+      "macAddress": "14:3F:C3:91:0F:8B",
+      "name": "Araknis 920 POE Switch"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.10.200",
+      "macAddress": "00:0F:FF:20:74:D0",
+      "name": "Control4 CA-10"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.1.220",
+      "macAddress": "84:1B:5E:98:F1:F4",
+      "name": "Netgear GS108Ev2 Switch"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.1.250",
+      "macAddress": "9C:EB:E8:96:11:44",
+      "name": "ProxMox Host - Dell Precision 5520"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.40.249",
+      "macAddress": "BC:24:11:B7:CF:A3",
+      "name": "ProxMox VM - Luna Server"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.40.248",
+      "macAddress": "BC:24:11:1A:56:46",
+      "name": "ProxMox VM - OMV NAS Server"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.40.247",
+      "macAddress": "BC:24:11:40:7F:72",
+      "name": "ProxMox VM - Media Server"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.40.246",
+      "macAddress": "BC:24:11:EF:2D:13",
+      "name": "ProxMox VM - Discovery Server"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.1.240",
+      "macAddress": "38:F7:CD:C1:67:E0",
+      "name": "ProxMox Host - Awow"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.1.150",
+      "macAddress": "36:CF:D5:50:A0:FC",
+      "name": "ProxMox VM - Vxlan Server (br0)"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.10.35",
+      "macAddress": "00:0F:FF:0C:31:E8",
+      "name": "core1-000FFF0C31E8"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.10.153",
+      "macAddress": "00:0F:FF:9F:0C:72",
+      "name": "core3-000FFF9F0C72"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.1.225",
+      "macAddress": "E8:9F:80:50:58:32",
+      "name": "OpenWRT - Vxlan Server (br-lan)"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.40.165",
+      "macAddress": "BC:24:11:5B:43:43",
+      "name": "Debian 12 VM"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.40.175",
+      "macAddress": "BC:24:11:17:C9:60",
+      "name": "ProxMox - Minecraft Docker Server"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.40.176",
+      "macAddress": "BC:24:11:17:B9:4F",
+      "name": "ProxMox - Docker Development & Testing Server"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.40.185",
+      "macAddress": "BC:24:11:97:EB:DB",
+      "name": "ProxMox Host - Nexus"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.1.245",
+      "macAddress": "8C:DC:D4:3E:A7:D8",
+      "name": "ProxMox Host - HP EliteDesk 800 G1"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.40.186",
+      "macAddress": "BC:24:11:BB:08:AD",
+      "name": "ProxMox Host - Nexus2"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.200.100",
+      "macAddress": "00:0F:FF:0C:41:CA",
+      "name": "SA-1 (Ryff)"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.200.200",
+      "macAddress": "00:0F:FF:0C:33:AE",
+      "name": "core5-000FFF0C33AE"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.150.200",
+      "macAddress": "00:0F:FF:51:92:2F",
+      "name": "ca1-000FFF51922F"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.200.150",
+      "macAddress": "00:0F:FF:92:8C:21",
+      "name": "ea3-000FFF928C21"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.150.150",
+      "macAddress": "00:0F:FF:0C:34:7F",
+      "name": "core3-000FFF0C347F"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.1.231",
+      "macAddress": "14:3F:C3:E8:B9:93",
+      "name": "Araknis 830-AP (House Front)"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.1.236",
+      "macAddress": "14:3F:C3:E8:B9:A2",
+      "name": "Araknis 830-AP (House Back)"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.1.237",
+      "macAddress": "14:3F:C3:E8:B9:20",
+      "name": "Araknis 830-AP (Office Backhaul)"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.1.226",
+      "macAddress": "E8:9F:80:50:58:30",
+      "name": "OpenWrt (Wi-Fi 7 Pass-Through Bridge-Backhaul)"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.30.90",
+      "macAddress": "E4:5F:01:78:DF:81",
+      "name": "mainsail"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.1.91",
+      "macAddress": "00:E0:4C:36:06:63",
+      "name": "Uctronics Micro-usb POE Adapter (Raspberry Pi)"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.10.64",
+      "macAddress": "88:A2:9E:14:32:76",
+      "name": "splatoon-printer"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.10.116",
+      "macAddress": "16:16:98:A3:0F:DF",
+      "name": "Pixel-10-Pro"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.1.117",
+      "macAddress": "A0:29:19:8F:5D:45",
+      "name": "011PRD-HKWJBK3.local (Wired)"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.10.118",
+      "macAddress": "F4:46:37:7A:6A:7A",
+      "name": "011PRD-HKWJBK3.local (Wifi)"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.10.123",
+      "macAddress": "66:AF:7A:CC:EB:E4",
+      "name": "Kimber-iPhone"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.10.124",
+      "macAddress": "96:5D:E6:EE:4E:5B",
+      "name": "Kimber-iPad"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.1.251",
+      "macAddress": "00:24:9B:55:A0:49",
+      "name": "pve-wireshark"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.10.201",
+      "macAddress": "00:0F:FF:0B:39:4E",
+      "name": "T5 in-wall (Desk)"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.1.244",
+      "macAddress": "BC:24:11:3E:06:69",
+      "name": "PBS Backup"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.20.205",
+      "macAddress": "C4:38:75:C6:54:A4",
+      "name": "Sonos Roam 2 (Office)"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.20.223",
+      "macAddress": "74:CA:60:24:40:BE",
+      "name": "Sonos Move 2 (Living Room 1)"
+    },
+    {
+      "enable": true,
+      "staticIPAddress": "192.168.20.143",
+      "macAddress": "74:CA:60:24:4A:50",
+      "name": "Sonos Move 2 (Living Room 2)"
+    }
+  ]
+}
