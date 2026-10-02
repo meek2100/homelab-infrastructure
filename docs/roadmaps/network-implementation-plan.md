@@ -302,10 +302,12 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
 | Item | Status |
 | :--- | :---: |
 | Physical uplink & 802.1Q trunk (Port 1/0/7 on Araknis 920) | ✅ Documented & Active |
-| FastMCP telemetry tool (`get_pakedge_switch_status`) | ✅ Verified Live (11 learned MACs) |
+| FastMCP telemetry tool (`get_pakedge_switch_status`) | ✅ Verified Live (11–20 learned MACs across VLAN 1, 10, 150) |
 | FastMCP remote power tool (`power_cycle_pakedge_switch`) | ⚠️ Ineffective — toggles PoE on 920 1/0/7, but the SX-8P is mains-powered via WattBox; rework to WattBox control pending |
+| FastMCP port power tool (`power_cycle_pakedge_poe_port`) | ✅ Verified Live — power-cycles individual PoE ports (1–8) on the SX-8P |
 | Loop protection: STP off + BPDU flooding on SX-8P; 920 1/0/7 Admin Edge + BPDU Guard | ✅ Verified 2026-09-29 (1 BPDU → 1/0/7 disabled, as designed) |
-| FastMCP config backup tool (`backup_pakedge_switch`) | ✅ Integrated with SOPS credentials |
+| FastMCP config backup tool (`backup_pakedge_switch`) | ✅ Integrated & Verified Live with SOPS credentials (refreshed 2026-10-02) |
+| FastMCP configuration tool (`configure_pakedge_vlans`) | ✅ Verified Live via RFC 854 raw socket Telnet engine |
 | Prometheus synthetic probe & alert suppression | ✅ Configured (`environment: 'testbench-ondemand'`) |
 | Grafana Smart Home & Control4 Dashboard integration | ✅ Provisioned with Standby/Online badge |
 
@@ -316,13 +318,16 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
 1. **Role & Hardware Profile**:
    - Model: **Pakedge SX-8P** (8-port Gigabit Managed PoE+ Switch).
    - Management IP: **`192.168.1.205`** (VLAN 1).
+   - DNS: **`192.168.40.185`** (AdGuard Primary) with `ip dns lookup` enabled.
+   - SNTP & Clock: **`time.google.com`** port 123, PST (UTC-8), PDT recurring USA daylight saving rules.
+   - Syslog: Forwarding to **`192.168.40.185`** (nexus-server Promtail/Loki).
    - Upstream Switch: **Araknis 920 Managed Switch** (`192.168.1.215`), Interface `1/0/7`.
    - Power (Control4 programming reviewed 2026-09-30): the Control4 **Office → All Test Equipment** button drives three separate relays.
      - **On** (after 5 s, and only if timer `Testing Equipment Off` is not running): close *Rack Room → Wattbox 11 (Test Equipment)* (the SX-8P's own adapter; 920 1/0/12 is the WattBox), then +1 s *Office → Triad SA1* relay, then +1 s *Office → Remotes n Touchscreens* relay.
      - **Off**, or expiry of the 90-minute `Testing Equipment Off` timer: macro `Testing Equipment` opens each closed relay (SA1 and Remotes 2 s after clearing their `State Flipping` variables) and sets the button state Off.
      - SA1 (920 1/0/5, access VLAN 200) is on its **own Triad relay**, not the WattBox outlet. Core5 (920 1/0/8, access VLAN 200) comes up with the same button; which relay feeds it is not yet confirmed. 920 1/0/7 still has `poe high-power 4ptdot3af`, which has no effect (SX-8P ports are PoE outputs).
    - Trunk Configuration: 802.1Q trunk carrying native untagged **VLAN 1** (Management) and tagged **VLAN 10**, **150** (`CA-1 Test`), **200** (`Core-5 Test`) — pruned on both the SX-8P (port 1 hybrid) and 920 1/0/7 (`1,10,150,200`) on 2026-09-29.
-   - Port map (live 2026-09-29): ports 2–7 access **VLAN 10** (DS2 door station, Luma X20 cams, Pakedge PoE switch on 6 (device to confirm), EA1 + unmanaged switch on 7 — main-system test gear); port 8 access **VLAN 150** (CA-1); port 9 VLAN 1.
+   - Port map (live 2026-10-02): ports 2–7 access **VLAN 10** (DS2 door station, Luma X20 cams, Pakedge PoE switch on 6, EA1 + unmanaged switch on 7 — main-system test gear); port 8 access **VLAN 150** (CA-1); port 9 VLAN 1.
    - Spanning tree: **disabled** on the SX-8P (global + per port), **BPDU Processing = Flooding** so a loop behind it returns the 920's BPDUs; 920 1/0/7 is **Admin Edge + BPDU Guard** and shuts the port on the first BPDU. The SX-8P has no BPDU guard / loop detection of its own. SX-8P MAC `90:A7:C1:9E:D9:26` is higher than the 920's, so it could never win a root election at equal priority.
    - SNMP: `public` read-write removed; `homelab-metrics` read-only only.
 
@@ -339,8 +344,9 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
    - Tool script: [`mcp/homelab/scripts/manage-pakedge-switch.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/manage-pakedge-switch.py).
    - FastMCP Native Tools in [`mcp/homelab/server.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/server.py):
      - `get_pakedge_switch_status`: Audits switch reachability (HTTP/Telnet) and inspects upstream Araknis Port 1/0/7 MAC table.
-     - `backup_pakedge_switch`: Authenticates to Pakedge Hydra web server, initiates configuration export, and saves backup to `infrastructure/network/configs/pakedge-sx8p-running.cfg` (⚠️ the committed copy predates the 2026-09-29 VLAN/SNMP/STP changes — refresh).
-     - `configure-vlans` (CLI action): re-applies the live layout (VLANs 10/150/200; gi1 tagged 10,150,200; gi2–7 access 10; gi8 access 150) over **Telnet**. Additive only (does not remove VLANs) and unusable if Telnet is disabled; not yet run against the live switch.
+     - `backup_pakedge_switch`: Authenticates to Pakedge Hydra web server, initiates configuration export, and saves backup to `infrastructure/network/configs/pakedge-sx8p-running.cfg` (refreshed and verified 2026-10-02).
+     - `configure_pakedge_vlans`: Automates full baseline provisioning (VLANs 10/150/200, gi1 hybrid trunk, gi2–7 access 10, gi8 access 150, SNTP, DNS, SNMP, Syslog, save) over raw RFC 854 socket engine.
+     - `power_cycle_pakedge_poe_port`: Power cycles individual PoE ports (1–8) on the SX-8P to reboot attached test devices.
      - `power_cycle_pakedge_switch`: Toggles PoE on Araknis 920 Port 1/0/7 over FASTPATH SSH CLI (⚠️ does not power the mains-powered SX-8P — rework to WattBox pending).
 
 ---
@@ -834,7 +840,7 @@ The 520's stale DHCP leases were cleared by the user; OvrC needs manual clean-up
 - [ ] **Tailscale subnet trial (started 2026-09-30):** only `192.168.40.0/24` (+ exit node) is approved on `tailscale-nexus`; `.1`, `.10`, `.20`, `.30` and `10.25.25` stay advertised but unapproved. Members' devices (including `iphone181`, the Cast/ecobee phone) no longer get `.10` routes, so retest casting on it at home. If a few days pass with nothing else needed, remove the five from `TS_ROUTES` in stack 69. The tailnet policy already restricts non-admin users to DNS plus the NPM public list on VLAN 40 (user, 2026-09-30); keep it. Optional: add `autoApprovers` for `tag:server` routes and the exit node, so a re-registered nexus needs no manual approval. Note: WireGuard (stack 44) runs on nexus too, so it is not independent of nexus/pve; OvrC remote access to the 520 and WattBox is the out-of-band path
 - [x] **Full datastore verify, 2026-10-01: TASK OK, 16 groups, 0 errors.** Verify job `v-ae0f2308-666b` (namespace Root, full depth). Root (legacy) groups: ct/105 (5), vm/100 (9), vm/101 (5), vm/102, vm/103, vm/107 and vm/109 (6 each). Namespaced: one fresh snapshot per guest (vm/107: 2). Only **root `vm/100` is mixed**: three snapshots at 21:04/21:09/21:16Z on 09-30, and nightly ones at 09:00, 09:30 and 10:00Z, one from each host. Delete it. **Keep root `vm/101`:** it has a single owner (nas-server on pve3), and `vm/101/2026-09-27T23:08:33Z` includes `drive-scsi1` (the NAS data disk, ~130 GB used). That is the newest backup of the NAS data, taken before `backup=0`. Keep it until the NAS data has its own backup
 - [ ] **Legacy Root cleanup (moved up to 2026-10-01; user decision):** remove every Root group (ct/105, vm/100, vm/101, vm/102, vm/103, vm/107, vm/109), then run GC (space returns after 24 h). Root `vm/101/2026-09-27` no longer needs keeping: the newer **NAS data backup** is the protected vzdump `vzdump-qemu-101-2026_09_30-20_49_35.vma.zst` (67.6 GB, notes "nas-server - NAS Data Backup") on pve3 storage `backup`. That file sits on the same host as the NAS, so copy it to pve's backup drive for an off-host copy
-- [ ] **Power-outage test (2026-10-01): Pakedge excluded.** The Pakedge has lost VLAN 1 management (gi1 was changed hybrid → trunk without untagged VLAN 1; recover via gi9, which is still an untagged VLAN 1 port, and restore gi1 hybrid: PVID 1, VLAN 1 untagged, 10/20/30/40/150/200 tagged). For the test, WattBox outlet 11 "Testing Equipment" is set to *Disabled*, so CA1 `.150.200` being offline is expected
+- [x] **Pakedge recovery & configuration (2026-10-02): complete.** Switch factory-reset, recovered, credentials configured (`meek2100` in startup-config). Baseline applied: `gi1` hybrid trunk (PVID 1, tagged 10/150/200), `gi2–7` access VLAN 10, `gi8` access VLAN 150, STP off + BPDU flooding, SNTP `time.google.com` + PDT USA DST, DNS AdGuard `192.168.40.185`, Syslog `192.168.40.185`, SNMP `homelab-metrics` ro. Tested live via `manage-pakedge-switch.py` and FastMCP tools.
 - [x] **Power-outage test, 2026-10-01 00:38 PDT: results.**
   - **Came back clean:** pve/pve2/pve3 with every VM and CT running and 0 failed units; pve `vmbr1` hub mode and GRO off held; pve3 `eno1` TSO/GSO off with 0 NIC hangs; PBS active; luna/media/discovery NAS mounts came up before Docker (wait-for-nas works); capture restarted at 00:42:54; Prometheus: only the Pakedge probe failing (expected); the T5 came up late. Mainsail needed a manual power-cycle.
   - **OpenWrt did not lose power** (uptime 2 days, so it is on another circuit or a UPS) and was not cold-start tested.
@@ -902,7 +908,7 @@ The 520's stale DHCP leases were cleared by the user; OvrC needs manual clean-up
 - [ ] APs: confirm AP1 5 GHz DFS off; consider 2.4 GHz TX power 50–75%; review UPnP on the 520
 - [ ] Move end devices off VLAN 1 (cameras, MoIP endpoints, Vivint, dev controllers) to proper VLANs
 - [ ] Decide fix vs retire for the pve nginx `*.secure.theurer.dev` upstreams still pointing at `.1.249` / `.1.185` / `.1.186`
-- [ ] Rework `power_cycle_pakedge_switch` to trigger the Control4 *All Test Equipment* button/macro (not the WattBox outlet directly — see Part 2.10 power notes); refresh `pakedge-sx8p-running.cfg` via `backup_pakedge_switch`; decide Telnet on/off (the `configure-vlans` action needs it)
+- [x] **Pakedge SX-8P GitOps & automation (2026-10-02):** `pakedge-sx8p-running.cfg` refreshed via `backup_pakedge_switch`; `configure_pakedge_vlans` and `power_cycle_pakedge_poe_port` FastMCP tools verified live with raw socket Telnet engine. (Reworking `power_cycle_pakedge_switch` to trigger the Control4 *All Test Equipment* button/macro remains open for future WattBox/C4 integration).
 - [x] (done 2026-09-30: `arp_announce=2` live; `sysupgrade -l` lists `/etc/sysctl.d/10-arp-strict.conf` and `/etc/crontabs/root`) OpenWrt: confirm ARP-strict is live (`sysctl net.ipv4.conf.all.arp_ignore` = 1, `arp_announce` = 2) and that `sysupgrade -l` now lists `/etc/sysctl.d/10-arp-strict.conf` and `/etc/crontabs/root` (added to the repo `sysupgrade.conf`)
 - [ ] Deploy-script hardening: no world-readable secrets (`chmod -R 755`), health checks must fail on errors
 - [ ] Long term: run Ethernet to the office and retire the wireless bridge + VXLAN failover

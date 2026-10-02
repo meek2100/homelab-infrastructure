@@ -505,6 +505,16 @@ def power_cycle_pakedge_switch(port: int = 7) -> str:
     """Power-cycles the Pakedge SX-8P testbench switch via upstream Araknis 920 Port 1/0/7 PoE."""
     return run_script("manage-pakedge-switch.py", ["poe-cycle", "--port", str(port)])
 
+@mcp.tool()
+def configure_pakedge_vlans(host: str = "192.168.1.205") -> str:
+    """Configures VLANs (10, 150, 200), trunk uplink gi1, and access ports on Pakedge SX-8P switch."""
+    return run_script("manage-pakedge-switch.py", ["configure-vlans", "--host", host])
+
+@mcp.tool()
+def power_cycle_pakedge_poe_port(port: int, wait_sec: float = 3.0, host: str = "192.168.1.205") -> str:
+    """Power-cycles an individual PoE port (1-8) on the Pakedge SX-8P switch to reboot attached test gear."""
+    return run_script("manage-pakedge-switch.py", ["poe-port-cycle", "--port", str(port), "--wait", str(wait_sec), "--host", host])
+
 if __name__ == "__main__":
     mcp.run()
 

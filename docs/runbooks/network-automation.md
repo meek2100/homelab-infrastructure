@@ -221,17 +221,35 @@ python3 mcp/homelab/scripts/manage-pakedge-switch.py backup
 
 ---
 
+### 20. Provision Pakedge SX-8P Baseline Profile & VLANs
+Applies the authoritative baseline to the switch via raw RFC 854 socket Telnet CLI: VLANs 10/150/200, hybrid trunk uplink gi1 (native VLAN 1 PVID, tagged 10/150/200), access ports gi2–gi7 (VLAN 10), gi8 (VLAN 150), STP disabled with BPDU flooding, SNTP `time.google.com` (PST/PDT recurring USA), AdGuard DNS `192.168.40.185`, Syslog `192.168.40.185`, and SNMP `homelab-metrics` ro. Saves directly to startup-config in flash.
+
+```bash
+python3 mcp/homelab/scripts/manage-pakedge-switch.py configure-vlans
+```
+
+---
+
+### 21. Power-Cycle Individual Pakedge SX-8P PoE Port
+Toggles `power inline disable` then `power inline enable` on an individual PoE port (1–8) on the Pakedge switch to reboot connected test equipment (cameras, door stations, controllers) without rebooting the switch or touching upstream power.
+
+```bash
+python3 mcp/homelab/scripts/manage-pakedge-switch.py poe-port-cycle --port 3 --wait 3
+```
+
+---
+
 ## 🏛️ Ground-Truth Technical Reference
 
 ### Pakedge SX-8P Managed Switch Hardware & Protocol Profile
 - **IP Address**: `192.168.1.205` (VLAN 1 Management).
 - **Physical Link**: Port 1/0/7 on Araknis 920 Managed Switch (`192.168.1.215`).
 - **PoE Profile**: Powered/connected via Araknis Port 1/0/7 (`poe high-power 4ptdot3af`).
-- **Trunking**: 802.1Q trunk carrying native VLAN 1, tagged VLAN 150 (`CA-1 Test`), and tagged VLAN 200 (`Core-5 Test`).
+- **Trunking**: 802.1Q trunk carrying native VLAN 1, tagged VLAN 10 (`Main-Trusted`), tagged VLAN 150 (`CA-1 Test`), and tagged VLAN 200 (`Core-5 Test`).
 - **Web Server**: `Hydra/0.1.8` web server hosting a Backbone.js SPA.
-- **Ports & Protocols**: HTTP (TCP 80), Telnet CLI (TCP 23).
+- **Ports & Protocols**: HTTP (TCP 80), Telnet CLI (TCP 23 via custom raw RFC 854 socket engine).
 - **SLA Policy**: On-Demand Testbench. Kept powered off when not testing; exempt from 24/7 SLA. Synthetic probes tagged `environment: 'testbench-ondemand'`.
-- **FastMCP Tools**: `get_pakedge_switch_status`, `backup_pakedge_switch`, `power_cycle_pakedge_switch`.
+- **FastMCP Tools**: `get_pakedge_switch_status`, `backup_pakedge_switch`, `configure_pakedge_vlans`, `power_cycle_pakedge_poe_port`, `power_cycle_pakedge_switch`.
 
 ### Netgear GS108Ev2 Hardware & Protocol Invariants
 - **Firmware**: `1.00.12`
