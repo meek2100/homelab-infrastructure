@@ -329,12 +329,6 @@ scrape_configs:
         labels:
           service: 'mail-theurer-dev-web'
           environment: 'external'
-      - targets:
-        - http://192.168.1.205
-        labels:
-          service: 'pakedge-sx8p-switch'
-          category: 'network'
-          environment: 'testbench-ondemand'
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
@@ -375,6 +369,14 @@ scrape_configs:
         labels:
           service: 'control4-t5-touchscreen'
           category: 'control4'
+      # Pakedge SX-8P: the 2026-10-02 rebuild runs telnet only (no web server), so probe by ICMP.
+      # It is powered from the C4 "All Test Equipment" button, so it is excluded from alerts.
+      - targets:
+        - 192.168.1.205
+        labels:
+          service: 'pakedge-sx8p-switch'
+          category: 'network'
+          environment: 'testbench-ondemand'
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
