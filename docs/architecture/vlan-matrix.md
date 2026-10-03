@@ -59,7 +59,7 @@ The router evaluates **32 granular rules** (see full rule list in [`network-impl
 2. **Automation & Smart Home (Rules 7–10)**: Permits IoT & Media to Control4 CA-10 (`192.168.10.200`), and IoT to Home Assistant / Homebridge (`192.168.40.249`).
 3. **Mainsail 3D Printing (Rules 11–14, 16, 20–21)**: Permits bidirectional traffic between Mainsail (`192.168.30.90`) and Trusted LAN (`192.168.10.0/24`), Management (`192.168.1.0/24`), and Servers (`192.168.40.0/24`) for Moonraker API (7125), HTTP (80), and SSH (22).
 4. **Media & Entertainment (Rules 15, 17)**: Permits Media (VLAN 20) to Plex (`192.168.40.247:32400`) and Home Assistant (`192.168.40.249:8123`).
-5. **Sonos Bidirectional Inter-VLAN (Rules 18–19)**: Permits All Traffic between the Sonos block (`192.168.20.140–.225`) and Trusted LAN (`192.168.10.0/24`), enabling SSDP/SDDP discovery, TCP 1400 control, and reverse UPnP event callbacks without dropouts.
+5. **Sonos Bidirectional Inter-VLAN (Rules 18–19)**: Permits All Traffic between the Sonos block (`192.168.20.140–.225`, tightening to dedicated sequential block `192.168.20.201–.205` in Part 7.5) and Trusted LAN (`192.168.10.0/24`), enabling SSDP/SDDP discovery, TCP 1400 control, and reverse UPnP event callbacks without dropouts.
 6. **Testbench mDNS Isolation (Rules 22–25)**: Explicitly drops mDNS (UDP 5353) to/from VLAN 150 (CA-1 Test) and VLAN 200 (Core-5 Test) to prevent Bonjour repeater hostname leaks.
 7. **Strict Isolation & Segmentation (Rules 26–32)**: Explicitly denies all other cross-VLAN initiation:
    - IoT (VLAN 30) BLOCKED to Management, Trusted LAN, Guest/Media, and Servers.

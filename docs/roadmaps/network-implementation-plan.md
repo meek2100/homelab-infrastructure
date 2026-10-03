@@ -22,6 +22,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Part 5.6** | Phase 2 Automation, External Log Shipping & GitOps Drills | 🟢 100% Complete & Operationalized (Snapshot FastMCP, Device Auto-Sync, Promtail Tooling, GitOps Drills) |
 | **Part 6** | Comprehensive Architectural Learnings & Production Gotchas | 📚 26 Critical Learnings Documented & Fleet-Hardened |
 | **Part 7** | 2026-09-29 / 10-02 Capture-Driven Network Remediation | 🟢 Complete / Stable — BPDU leak eliminated, Sonos inter-VLAN operating, Mainsail restored, DHCP optimized (52 active entries), 144 capture files analyzed |
+| **Part 7.5**| DHCP Reorganization, IP Tiering & Sonos Inter-VLAN | 🟡 Planned / Staged — Authoritative plan documented in [`network-dhcp-ip-reorganization-plan.md`](file:///home/agentsvc/repos/homelab-infrastructure/docs/roadmaps/network-dhcp-ip-reorganization-plan.md) |
 | **Part 8** | Compute Platform Review (pve hosts, VMs, LXCs, Docker, GPU) | ⏸️ Future — starts once the network is stable and all important config/state is in git |
 
 ### Key Protocol Constraints & Architecture Settled

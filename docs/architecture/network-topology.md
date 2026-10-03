@@ -4,6 +4,44 @@ This document details the physical hardware, virtual bridges, dual-WAN egress pa
 
 ---
 
+## 🗺️ Master Interconnection & Routing Flow Diagram
+
+```text
+                       ┌─────────────────────────────────────────────────────────────┐
+                       │           Araknis 520 Dual-WAN Router (192.168.1.1)          │
+                       │           • OvrC Cloud Agent (66 Stale MAC Sweeps)          │
+                       │           • Inter-VLAN Firewall (32 ACL Rules)              │
+                       │           • WAN1 (ISP) + WAN2 (10.25.25.1 Discovery Ingress)│
+                       └──────────────────────────────┬──────────────────────────────┘
+                                                      │ 802.1Q Trunk (VLANs 1,10,20,30,40,100,150,200)
+                                                      ▼
+                       ┌─────────────────────────────────────────────────────────────┐
+                       │          Araknis 920 Core Switch (192.168.1.215)            │
+                       │          • FASTPATH Hardware Multicast Database (MFDB)      │
+                       │          • STP Root Bridge: 14:3f:c3:91:0f:8b (Stable)      │
+                       │          • SPAN Port Mirroring Destination (VLAN 100)       │
+                       └───────────┬──────────────────┬──────────────────┬───────────┘
+                                   │                  │                  │
+         ┌─────────────────────────┘                  │                  └─────────────────────────┐
+         │ Port 1/0/7 Trunk                           │ L2 Trunk (lan0)                            │ PTP 5GHz Backhaul (AP 1)
+         ▼                                            ▼                                            ▼
+┌────────────────────────┐                   ┌────────────────────────┐                   ┌────────────────────────┐
+│   Pakedge SX-8P        │                   │   Proxmox Node 1 (pve) │                   │  Araknis 830 AP 1 & 3  │
+│   Automation Switch    │                   │   • VM 100: nexus-srv  │                   │  • Strips 802.1Q tags  │
+│   (192.168.1.205)      │                   │     (192.168.40.185)   │                   │  • Passes VLAN 1 native│
+├────────────────────────┤                   │     [MTU 1420 ICMP Frag│                   └───────────┬────────────┘
+│ VLAN 150: CA-1 Test    │                   │      from Cloudflared] │                               │
+│ VLAN 200: CORE 5 Test  │                   │   • VM 107: vxlan-srv  │                               ▼
+│ (143k Router ARPs!)    │                   │     (192.168.1.150)    │                   ┌────────────────────────┐
+└────────────────────────┘                   └───────────▲────────────┘                   │  OpenWrt Belkin AX3200 │
+                                                         │                                │  (192.168.1.226)       │
+                                                         │ VXLAN 150 Encapsulation        │  • Enforces MSS Clamp  │
+                                                         │ (Outer UDP 4789, MTU 1450)     │    at EXACTLY 1406!    │
+                                                         └────────────────────────────────┴────────────────────────┘
+```
+
+---
+
 ## 🏛️ Physical Network Hardware
 
 ### 1. Core Router: Araknis 520 Dual-WAN Router
