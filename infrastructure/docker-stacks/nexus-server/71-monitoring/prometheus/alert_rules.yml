@@ -3,25 +3,25 @@ groups:
     rules:
       - alert: TargetDown
         expr: up{environment!="testbench-ondemand"} == 0
-        for: 2m
+        for: 5m
         labels:
           severity: critical
         annotations:
           summary: "Target {{ $labels.instance }} is DOWN"
-          description: "Scrape target {{ $labels.instance }} (job: {{ $labels.job }}) has been unreachable for more than 2 minutes."
+          description: "Scrape target {{ $labels.instance }} (job: {{ $labels.job }}) has been unreachable for more than 5 minutes."
 
       - alert: BlackboxProbeFailed
         expr: probe_success{environment!="testbench-ondemand"} == 0
-        for: 2m
+        for: 5m
         labels:
           severity: critical
         annotations:
           summary: "Service Endpoint {{ $labels.instance }} FAILED"
-          description: "Blackbox probe to {{ $labels.instance }} (module: {{ $labels.job }}) failed."
+          description: "Blackbox probe to {{ $labels.instance }} (module: {{ $labels.job }}) failed for more than 5 minutes."
 
       - alert: DNSResolutionFailed
         expr: probe_success{job="blackbox_dns"} == 0
-        for: 1m
+        for: 2m
         labels:
           severity: critical
         annotations:
@@ -39,16 +39,16 @@ groups:
 
       - alert: SwitchPortLinkDown
         expr: ifOperStatus{job="snmp_infrastructure", device_type="switch", ifIndex=~"1|2|3|4"} == 2
-        for: 2m
+        for: 5m
         labels:
           severity: warning
         annotations:
           summary: "Switch Port {{ $labels.ifDescr }} is DOWN"
-          description: "Araknis 920 switch port {{ $labels.ifDescr }} link state changed to DOWN."
+          description: "Araknis 920 switch port {{ $labels.ifDescr }} link state changed to DOWN for more than 5 minutes."
 
       - alert: SwitchPortCRCErrors
         expr: rate(ifInErrors{job="snmp_infrastructure"}[5m]) > 0
-        for: 2m
+        for: 5m
         labels:
           severity: warning
         annotations:
