@@ -8,7 +8,7 @@ This authoritative implementation plan defines the complete architecture, IP tie
 
 1. **Resolve Sonos Inter-VLAN Discovery & Control**:
    - Enable reliable control of Sonos speakers residing on **VLAN 20 (Guest/AV)** from personal devices on **VLAN 10 (Main - Trusted)**.
-   - Eliminate SSDP multicast frame drops on the Araknis 920 switch and enable routed UPnP reflection on the Araknis 520 router.
+   - Eliminate multicast frame drops on the Araknis 920 switch and leverage native mDNS reflection while keeping router UPnP IGD strictly disabled.
 2. **Implement Enterprise Subnet Tiering Across All 7 VLANs**:
    - Shift dynamic DHCP client pools from `.100–.254` to `.20–.99` across all subnets.
    - Establish dedicated, predictable functional IP tiers for workstations, smart home hubs, cameras, printers, AV controllers, and hypervisors.
@@ -33,15 +33,10 @@ This authoritative implementation plan defines the complete architecture, IP tie
 - **Impact**: Multicast discovery packets (`239.255.255.250:1900` SSDP) transmitted by the Sonos app on VLAN 10 were snooped by the switch and forwarded *only* to subscribed ports within VLAN 10. They were **never forwarded up port 1/0/1 to the router**, preventing the router from ever seeing the discovery requests.
 - **Remediation**: Execute `set igmp mrouter interface 1/0/1` on the switch for both VLAN 10 and VLAN 20.
 
-### 2. Araknis 520 Router UPnP Helper Disabled
-- **Mechanism**: Router configuration query (`/api/cgi-bin/v2/config/firewall`) showed:
-  ```json
-  "enableBonjour": true,
-  "enableMulticastForwarding": true,
-  "enableUPnP": false
-  ```
-- **Impact**: While Bonjour (mDNS `224.0.0.251:5353`) was forwarded across zones, SSDP/UPnP (`239.255.255.250:1900`) was dropped by the routing engine. Sonos discovery requires SSDP M-SEARCH and NOTIFY frames to cross the subnet boundary.
-- **Remediation**: Set `enableUPnP: true` on the router firewall engine.
+### 2. Router UPnP IGD Remains Strictly Disabled (Zero-Trust Security Standard)
+- **Security Reality**: On edge routers, the `enableUPnP` setting controls the **UPnP Internet Gateway Device (IGD)** daemon (`miniupnpd`). UPnP IGD allows unauthenticated LAN clients to dynamically punch open inbound port-forwarding holes on the public WAN interface without administrator consent. This is a severe, well-documented security exposure (e.g. CallStranger CVE-2020-12695, unauthenticated port mapping).
+- **Sonos Architectural Reality**: Sonos **does NOT require UPnP IGD**. Sonos is an internal audio streaming ecosystem; it never requests or needs inbound WAN port forwarding from the public internet. Modern Sonos (S2) discovers speakers via **mDNS / Bonjour** (`_sonos._tcp.local` on `224.0.0.251:5353`), which the Araknis 520 router **already natively repeats** (`enableBonjour: true`).
+- **Policy Invariant**: `enableUPnP: false` will **REMAIN DISABLED** on the Araknis 520 router. Sonos discovery is achieved via native mDNS reflection + 920 switch static mrouter forwarding on Port 1/0/1, keeping the WAN perimeter 100% locked down.
 
 ### 3. ACL Rule 18 Clamped to Leaky Slice & Rule 31 Inter-VLAN Drop
 - **Mechanism**:
@@ -330,8 +325,9 @@ File: `infrastructure/docker-stacks/nexus-server/71-monitoring/prometheus/promet
   - Verify gateway IP (`.1`) and subnet mask (`255.255.255.0`) remain intact.
 - [ ] **2.2. Push Reorganized DHCP Reservations JSON**:
   - Post the updated complete reservation payload containing all grouped devices.
-- [ ] **2.3. Enable UPnP Routing Helper**:
-  - Call `POST /api/cgi-bin/v2/config/firewall` with `{"enableUPnP": true}`.
+- [ ] **2.3. Confirm UPnP IGD Remains Disabled (`enableUPnP: false`)**:
+  - Verify `/api/cgi-bin/v2/config/firewall` maintains `enableUPnP: false` to guarantee zero unauthenticated WAN port openings.
+  - Verify `enableBonjour: true` remains active for native mDNS reflection across VLANs.
 - [ ] **2.4. Tighten ACL Rule 18**:
   - Update Rule 18 source range to `192.168.20.201 - 192.168.20.205`.
 
