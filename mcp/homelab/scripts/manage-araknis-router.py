@@ -260,6 +260,33 @@ def cmd_apply_acls(s, host, payload_file):
     return {"status": "success", "response": resp}
 
 
+def cmd_apply_dhcp(s, host, payload_file):
+    """Apply DHCP reservations from a JSON file."""
+    with open(payload_file, "r") as f:
+        payload = json.load(f)
+    resp = api_put(s, host, "/config/lan/dhcp-reservation", payload)
+    return {"status": "success", "response": resp}
+
+
+def cmd_apply_subnets(s, host, payload_file):
+    """Apply LAN subnet configurations from a JSON file."""
+    with open(payload_file, "r") as f:
+        payload = json.load(f)
+    resp = api_put(s, host, "/config/lan/subnets", payload)
+    return {"status": "success", "response": resp}
+
+
+def cmd_set_upnp(s, host, enable=True):
+    """Enable or disable UPnP discovery helper on router firewall."""
+    url = f"http://{host}/api/cgi-bin/v2/config/firewall"
+    resp = s.put(url, json={"enableUPnP": enable}, timeout=15)
+    resp.raise_for_status()
+    try:
+        return {"status": "success", "response": resp.json()}
+    except Exception:
+        return {"status": "success", "status_code": resp.status_code, "text": resp.text}
+
+
 def cmd_restore(s, host, backup_file=None):
     """Restore router configuration from a backup file."""
     target = backup_file or CONFIG_BACKUP_FILE
@@ -282,9 +309,9 @@ def cmd_restore(s, host, backup_file=None):
 
 def main():
     parser = argparse.ArgumentParser(description="Araknis 520 Router REST API Management Tool")
-    parser.add_argument("action", choices=["backup", "status", "dhcp-table", "get-acls", "apply-acls", "restore"])
+    parser.add_argument("action", choices=["backup", "status", "dhcp-table", "get-acls", "apply-acls", "apply-dhcp", "apply-subnets", "enable-upnp", "restore"])
     parser.add_argument("--backup-file", help="Path to backup file (for restore)")
-    parser.add_argument("--payload-file", help="Path to JSON file containing {aclConfig, serviceManagement} (for apply-acls)")
+    parser.add_argument("--payload-file", help="Path to JSON file containing payload (for apply-acls, apply-dhcp, apply-subnets)")
     parser.add_argument("--json", action="store_true", help="Output raw JSON")
     args = parser.parse_args()
 
@@ -305,6 +332,16 @@ def main():
             if not args.payload_file:
                 raise ValueError("--payload-file required for apply-acls")
             result = cmd_apply_acls(s, host, args.payload_file)
+        elif args.action == "apply-dhcp":
+            if not args.payload_file:
+                raise ValueError("--payload-file required for apply-dhcp")
+            result = cmd_apply_dhcp(s, host, args.payload_file)
+        elif args.action == "apply-subnets":
+            if not args.payload_file:
+                raise ValueError("--payload-file required for apply-subnets")
+            result = cmd_apply_subnets(s, host, args.payload_file)
+        elif args.action == "enable-upnp":
+            result = cmd_set_upnp(s, host, enable=True)
         elif args.action == "restore":
             result = cmd_restore(s, host, args.backup_file)
 

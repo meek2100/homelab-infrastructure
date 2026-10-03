@@ -13,7 +13,7 @@ It drops the panel's **mDNS** traffic (UDP port 5353, the "Bonjour" local-discov
 
 ## 2. Why
 
-The Vivint panel (`192.168.10.108`, MAC `88:6a:e3:d8:eb:1c`) sent mDNS queries non-stop, looking for Chromecast/Google/Nest, Spotify, Hue, HomeKit, Matter and Thread devices:
+The Vivint panel (`192.168.10.108`, migrating to `192.168.10.151` in Part 7.5, MAC `88:6a:e3:d8:eb:1c`) sent mDNS queries non-stop, looking for Chromecast/Google/Nest, Spotify, Hue, HomeKit, Matter and Thread devices:
 
 - about **13.5 packets/s** in the evening and about **4.6/s** overnight, split roughly half IPv4 and half IPv6 (SPAN captures 2026-09-29/30);
 - the Araknis 520's Bonjour repeater copied it into **every VLAN** (1, 10, 20, 30, 40, 150, 200) at about 2–3.5 packets/s each;
@@ -44,7 +44,7 @@ interface 1/0/17
 | Traffic | Purpose |
 |---|---|
 | Panel → cloud (`app.vivintsky.com`, `grpc.vivintsky.com`, `signaling.access.vivint.ai`, `*.run.vivint.ai`) | Arm/disarm from the app, notifications, firmware updates |
-| Control4 Director `192.168.10.200` (port 1/0/11) ↔ panel `192.168.10.108` **TCP 8765** | Control4 integration. Both are on VLAN 10, so the switch forwards this directly and it never passes through the router |
+| Control4 Director `192.168.10.200` (port 1/0/11) ↔ panel `192.168.10.108` (migrating to `192.168.10.151` in Part 7.5) **TCP 8765** | Control4 integration. Both are on VLAN 10, so the switch forwards this directly and it never passes through the router |
 | DNS to AdGuard `192.168.40.185` / `.186`, DHCP, NTP, ICMP, SSDP | Normal operation |
 | Anything *to* the panel | The block only filters what the panel **sends** |
 
