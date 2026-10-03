@@ -51,20 +51,19 @@ This document provides the authoritative network segmentation specification for 
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 📋 Authoritative Inter-VLAN ACL Rule Table (Araknis 520 Router)
+### 📋 Authoritative Inter-VLAN ACL Rule Hierarchy (Araknis 520 Router)
 
-Apply the following rules in **exact order of priority (1 to 8)** in the router GUI under **Security ➔ Access Control / Inter-VLAN Routing**:
+The router evaluates **32 granular rules** (see full rule list in [`network-implementation-plan.md`](../roadmaps/network-implementation-plan.md#1-araknis-520-router-access-control-lists-acl-hierarchy)):
 
-| Priority | Rule Name | Source Interface / IP | Destination Interface / IP | Protocol / Port | Action | Purpose & Operational Rationale |
-| :---: | :--- | :--- | :--- | :--- | :---: | :--- |
-| **1** | `ALLOW-VLAN40-ALL` | `VLAN 40 (Servers - Admin)` | `Any Subnet` | Any | **PERMIT** | **Safety Lifeline**: Ensures WireGuard (`192.168.40.185:51820`) and Tailscale can manage all Proxmox nodes, switches, APs, and IoT. |
-| **2** | `ALLOW-VLAN10-LAN` | `VLAN 10 (Main - Trusted)` | `VLAN 1, VLAN 20, VLAN 30, VLAN 40` | Any | **PERMIT** | Trusted PCs manage the homelab, print, control Sonos, and access NAS shares. |
-| **3** | `ALLOW-VLAN30-DNS` | `VLAN 30 (Isolated - IOT)` | `192.168.40.185`, `192.168.40.186` | UDP / TCP `53` | **PERMIT** | Allows smart plugs and sensors to query internal AdGuard Home DNS. |
-| **4** | `ALLOW-VLAN30-HA` | `VLAN 30 (Isolated - IOT)` | `192.168.40.249` (Home Assistant / Homebridge) | TCP `8123`, TCP `8581` | **PERMIT** | Allows local IoT integrations (ESPHome, Shelly, Tuya) to push states to Home Assistant / Homebridge at `192.168.40.249`. |
-| **5** | `ALLOW-VLAN20-DNS` | `VLAN 20 (Guest - Media)` | `192.168.40.185`, `192.168.40.186` | UDP / TCP `53` | **PERMIT** | Allows Smart TVs, Sonos, and guest devices to resolve DNS for streaming services. |
-| **6** | `ALLOW-SONOS-CALLBACK`| `VLAN 20 (Guest - Media)` | `VLAN 10 (Main - Trusted)` | TCP `3400, 3401, 3500` | **PERMIT** | **Sonos UPnP Reverse Callback**: Enables speakers to push volume and track progress back to phones on VLAN 10. |
-| **7** | `BLOCK-VLAN30-INTERNAL`| `VLAN 30 (Isolated - IOT)` | `VLAN 1, VLAN 10, VLAN 40` | Any | **DENY** | **IoT Isolation**: Blocks untrusted smart home hardware from initiating connections to hypervisors or PCs. |
-| **8** | `BLOCK-VLAN20-INTERNAL`| `VLAN 20 (Guest - Media)` | `VLAN 1, VLAN 10, VLAN 40` | Any | **DENY** | **Guest Isolation**: Blocks guest devices from probing internal administration or server infrastructure. |
+1. **DNS & Security (Rules 1–6)**: Permits UDP/TCP 53, HTTPS DoH (443), and DoQ (853) to/from AdGuard Primary (`192.168.40.185`) and Secondary (`192.168.40.186`).
+2. **Automation & Smart Home (Rules 7–10)**: Permits IoT & Media to Control4 CA-10 (`192.168.10.200`), and IoT to Home Assistant / Homebridge (`192.168.40.249`).
+3. **Mainsail 3D Printing (Rules 11–14, 16, 20–21)**: Permits bidirectional traffic between Mainsail (`192.168.30.90`) and Trusted LAN (`192.168.10.0/24`), Management (`192.168.1.0/24`), and Servers (`192.168.40.0/24`) for Moonraker API (7125), HTTP (80), and SSH (22).
+4. **Media & Entertainment (Rules 15, 17)**: Permits Media (VLAN 20) to Plex (`192.168.40.247:32400`) and Home Assistant (`192.168.40.249:8123`).
+5. **Sonos Bidirectional Inter-VLAN (Rules 18–19)**: Permits All Traffic between the Sonos block (`192.168.20.140–.225`) and Trusted LAN (`192.168.10.0/24`), enabling SSDP/SDDP discovery, TCP 1400 control, and reverse UPnP event callbacks without dropouts.
+6. **Testbench mDNS Isolation (Rules 22–25)**: Explicitly drops mDNS (UDP 5353) to/from VLAN 150 (CA-1 Test) and VLAN 200 (Core-5 Test) to prevent Bonjour repeater hostname leaks.
+7. **Strict Isolation & Segmentation (Rules 26–32)**: Explicitly denies all other cross-VLAN initiation:
+   - IoT (VLAN 30) BLOCKED to Management, Trusted LAN, Guest/Media, and Servers.
+   - Guest/Media (VLAN 20) BLOCKED to Management, Trusted LAN, and Servers.
 
 ---
 

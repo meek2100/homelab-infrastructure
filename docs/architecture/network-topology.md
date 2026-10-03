@@ -99,17 +99,17 @@ This document details the physical hardware, virtual bridges, dual-WAN egress pa
 * **Physical Uplink**: Direct 802.1Q trunk from **Araknis 920 Switch (Port 1/0/7)**.
 * **Port Trunking Configuration**:
   * Native Untagged PVID: **VLAN 1 (`Management`)**.
-  * Tagged Trunks: **VLAN 150 (`CA-1 Test`)** and **VLAN 200 (`Core-5 Test`)**.
-  * Upstream PoE: Araknis 920 Port 1/0/7 operates with `poe high-power 4ptdot3af` enabled.
+  * Tagged Trunks: **VLAN 10 (`Main - Trusted`)**, **VLAN 150 (`CA-1 Test`)**, and **VLAN 200 (`Core-5 Test`)**.
+  * Storm Control & BPDU Filter: Araknis 920 Port 1/0/7 operates with `storm-control broadcast level 5` and port BPDU filter enabled, completely eliminating BPDU leakage into the core switch.
 * **Hardware & Management Profile**:
   * Model: Pakedge SX-8P (8-port Gigabit Managed Switch with PoE+).
-  * Web GUI: Embedded `Hydra/0.1.8` web server running a Backbone.js SPA.
-  * Active Listeners: TCP Port 80 (HTTP) and TCP Port 23 (Telnet CLI).
+  * Web GUI / Management: Telnet CLI (TCP 23) managed via native RFC 854 socket engine.
+  * Power Architecture: **Mains-powered via its own power adapter on a WattBox outlet** switched by a Control4 button (*Office → All Test Equipment*, 90-minute auto-off, alongside Triad SA-1 on 1/0/5 and Core-5 on 1/0/8). Its ports 1–8 are PoE *outputs*, so toggling PoE on SW920 1/0/7 does not power the switch.
 * **Operational Invariant & Monitoring Policy**:
   * **On-Demand Testbench**: Powers dedicated work automation hardware (Control4 CA-1 controllers, Core-3, Core-5, touchscreens, test zigbee/zwave bridges).
   * **Powered Down When Idle**: To conserve power and isolate non-production test gear, the switch and its attached bench are powered down when active testing is not underway.
   * **Exempt from 24/7 SLA**: Prometheus synthetic probes tag the switch with `environment: 'testbench-ondemand'` to suppress alertmanager down-alerts when unpowered.
-  * **Remote Lifecycle & Power Control**: The switch can be remotely rebooted or power-cycled via FASTPATH CLI `poe-cycle --port 7` using the `power_cycle_pakedge_switch` FastMCP tool.
+  * **Remote Lifecycle & Power Control**: Downstream bench devices can have their individual PoE ports cycled via FastMCP tool `power_cycle_pakedge_poe_port`. Switch-level power is controlled via the Control4 WattBox relay.
   * **GitOps Backup & Telemetry**: Managed via [`mcp/homelab/scripts/manage-pakedge-switch.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/manage-pakedge-switch.py) (`get_pakedge_switch_status` and `backup_pakedge_switch`), synchronizing backups into `infrastructure/network/configs/pakedge-sx8p-running.cfg`.
 
 ---
