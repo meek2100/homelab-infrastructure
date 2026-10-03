@@ -64,20 +64,85 @@
 ## MCP & Tool Standards
 - Keep Model Context Protocol (MCP) servers modular in `mcp/` and reference project-level MCP tools in `.agents/mcp_config.json`.
 - Secret Backup Standard: Encrypt all secrets using `SOPS` + `age` (`*.enc.yaml`). Keep master key in user password manager; no unencrypted secrets in Git.
-- **Snapshot & Backup Tooling (VM & LXC Support)**:
-  - `mcp/homelab/scripts/manage-vm-snapshots.py`: Programmatic snapshot creation, listing, rollback, deletion, and vzdump backup with automatic detection for both QEMU VMs (`qm`) and Linux Containers (`pct`).
-  - Native FastMCP tools: `snapshot_vm`, `list_vm_snapshots`, `rollback_vm`, `delete_vm_snapshot`, `backup_vm_vzdump`, `list_vms`, `get_docker_status`.
-- **Network Infrastructure & GitOps Tooling**:
-  - `docs/architecture/vlan-matrix.md`: Authoritative 8-VLAN table (VLAN 1 Management, 10 Main Trusted, 20 Guest Media, 30 Isolated IOT, 40 Servers Admin, 100 Wireshark Debug, 150 CA-1 Test, 200 Core-5 Test).
-  - `docs/architecture/network-topology.md`: Dual-WAN topology (WAN1 house LAN, WAN2 `10.25.25.0/24` egress for `discovery-server`), Araknis 520 router, 920 switch, 830 APs, and DNS split-horizon.
-  - `docs/specifications/netgear-gs108ev2-nsdp.md`: Comprehensive reverse-engineered NSDP protocol specification and register mapping.
-  - `docs/runbooks/network-automation.md`: Authoritative quick-reference runbook for all network automation, Netgear NSDP, and Wireshark capture scripts.
-  - `mcp/homelab/scripts/manage-araknis-switch.py`: FastMCP tools `backup_araknis_switch`, `get_araknis_switch_status`, `power_cycle_switch_poe_port` via interactive FASTPATH SSH automation.
-  - `mcp/homelab/scripts/manage-pakedge-switch.py`: FastMCP tools `get_pakedge_switch_status`, `backup_pakedge_switch`, `power_cycle_pakedge_switch` for the work automation lab testbench switch (`192.168.1.205`), attached via Araknis 920 Port 1/0/7 PoE trunk. Exempt from 24/7 SLA.
-  - `mcp/homelab/scripts/manage-araknis-router.py`: FastMCP tools `backup_araknis_router`, `get_araknis_router_status`, `restore_araknis_router` via authenticated REST API (`/api/cgi-bin/v1/`).
-  - `mcp/homelab/scripts/manage-netgear-switch.py`: FastMCP tools `backup_netgear_switch`, `get_netgear_switch_status` via native headless NSDP protocol driver. Accompanied by helper wrappers `mcp/homelab/scripts/probe-netgear-l2.sh` and `mcp/homelab/scripts/inspect-nsdp-live.sh`. Complete execution guide in `docs/runbooks/network-automation.md`.
-  - `mcp/homelab/scripts/backup-openwrt-config.py`: FastMCP tool `backup_openwrt` pulls and SOPS-encrypts OpenWrt `/etc/config/`.
-  - `mcp/homelab/scripts/sync-wireshark-capture-script.py`: FastMCP tool `sync_wireshark_capture` archives headless capture scripts from `luna-server` (VM 102) into Stack 48.
+- Master Tool Definition: `mcp/homelab/server.py` implements the FastMCP server (`Homelab Infrastructure System`), bundling 48 native tools covering hypervisors, containers, switching, routing, and external services.
+
+### Bundled FastMCP Tool Catalog (`mcp/homelab/server.py`)
+
+#### 1. Fleet Discovery, Blueprints & Drift Management
+- `sync_fleet(node, vmid, apply, diff_only)`: Discovers and synchronizes live Proxmox host configs, VM configs, and Portainer stacks into GitOps blueprints (`sync-live-fleet.py`).
+- `generate_stack_index()`: Rebuilds `infrastructure/docker-stacks/STACK-INDEX.md` mapping all 83 stacks, services, and SOPS secret states.
+- `audit_infrastructure()`: Runs Phase 1 system, VM, and host configuration audits across nodes (`pve`, `pve2`, `pve3`).
+- `register_host(node, ip)` / `register_vm(node, vmid, name)`: Registers host and VM metadata under `infrastructure/`.
+
+#### 2. Proxmox Host, VM & Container Lifecycle
+- `list_vms(node)`: Lists all QEMU VMs (`qm list`) and LXC containers (`pct list`) across nodes.
+- `get_docker_status(node, vmid)`: Inspects live Docker containers via QEMU Guest Agent (`qm guest exec`) or `pct exec`.
+- `snapshot_vm(node, vmid, name, description, include_ram)`: Creates atomic live snapshot for QEMU VM or LXC container (`manage-vm-snapshots.py`).
+- `list_vm_snapshots(node, vmid)`: Lists existing snapshots for a VM/CT.
+- `rollback_vm(node, vmid, name)`: Rolls back a VM/CT to a snapshot.
+- `delete_vm_snapshot(node, vmid, name)`: Prunes a VM/CT snapshot.
+- `backup_vm_vzdump(node, vmid, storage)`: Triggers a full Proxmox `vzdump` backup archive.
+- `start_vm(node, vmid)` / `stop_vm(node, vmid)`: Starts or gracefully stops a VM or LXC container.
+
+#### 3. Disaster Recovery & Zero-Trust State Blueprints
+- `backup_host(node)` / `restore_host(node, dry_run)` / `restore_host_configs(node, dry_run)`: Backs up custom host files and restores host configurations/drifts.
+- `backup_vm(node, vmid)` / `restore_vm(node, vmid, dry_run)`: Backs up and restores VM custom drift files.
+- `backup_stacks()` / `restore_stacks(node, vmid, stack, dry_run)` / `start_docker_stacks(node, vmid, dry_run)`: Splits, decrypts SOPS secrets (`secrets.enc.yaml`), and deploys/starts Portainer stacks.
+- `backup_apt_packages(node, vmid)` / `restore_apt_packages(node, vmid, dry_run)`: Audits and restores APT package installations across nodes and guests.
+
+#### 4. Switch & Core Network Automation
+- **Araknis 920 Switch (`192.168.1.215`)**:
+  - `get_araknis_switch_status()`: Queries live ports, link speeds, learned MAC tables, RSTP status, and IGMP querier state via FASTPATH SSH.
+  - `backup_araknis_switch()`: Pulls sanitized running-config into `infrastructure/network/configs/araknis-920-running.cfg`.
+  - `power_cycle_switch_poe_port(port)`: Power cycles PoE power on individual ports (e.g. `1/0/3` AP).
+- **Araknis 520 Router (`192.168.1.1` / `192.168.10.1`)**:
+  - `get_araknis_router_status()`: Queries system stats, WAN status, LAN subnets, 52 DHCP reservations, and 32 ACL rules via authenticated REST API (`/api/cgi-bin/v1/`).
+  - `backup_araknis_router()`: Exports OpenSSL-encrypted configuration blob to `infrastructure/network/configs/araknis-520-backup.cfg`.
+  - `restore_araknis_router(backup_file)`: Pushes blueprint configuration blob via `POST /command/restore-config`.
+- **Pakedge SX-8P Managed Switch (`192.168.1.205`)**:
+  - Data trunked on Araknis 920 Port 1/0/7; mains-powered via Control4 WattBox outlet 11 (*Office → All Test Equipment* Control4 button with 90-min auto-off timer).
+  - `get_pakedge_switch_status(host)`: Queries switch status, open services, and upstream learned MACs.
+  - `backup_pakedge_switch(host)`: Backs up running config via RFC 854 raw Telnet socket engine to `pakedge-sx8p-running.cfg`.
+  - `configure_pakedge_vlans(host)`: Provisions hybrid trunk `gi1` (PVID 1, tagged 10/150/200), access VLAN 10 (`gi2-7`), access VLAN 150 (`gi8`), disables STP, enables BPDU flooding.
+  - `power_cycle_pakedge_poe_port(port, wait_sec, host)`: Reboots individual PoE testbench loads (ports 1–8).
+  - `power_cycle_pakedge_switch(port)`: Reboots the switch (to be wired to Control4 WattBox macro).
+- **Netgear GS108Ev2 Managed Switch (`192.168.1.220`)**:
+  - Native headless pure-Python NSDP (UDP 63321/63322) protocol driver via OpenWrt L2 bridge relay (`192.168.1.226`). See `docs/specifications/netgear-gs108ev2-nsdp.md`.
+  - `get_netgear_switch_status(ip)`: Audits live ports, speed, duplex, traffic counters, and CRC error statistics.
+  - `backup_netgear_switch(ip)`: Dumps full switch configuration to GitOps.
+  - `set_netgear_vlan(vid, tagged_ports, untagged_ports, pvid_ports, force_uplink, ip)`: Provisions 802.1Q VLANs with uplink safety guards.
+  - `delete_netgear_vlan(vid, ip)`: Removes VLANs safely reverting PVIDs.
+  - `set_netgear_pvid(port, pvid, force_uplink, ip)`: Configures port default PVID.
+  - `set_netgear_port(port, admin, speed, force_uplink, ip)`: Controls port administrative status and link speed.
+  - `set_netgear_features(igmp, loop_detection, ip)`: Sets IGMP snooping and loop detection.
+  - `restore_netgear_switch(config_file, confirm, ip)` / `verify_netgear_switch(baseline_file, ip)`: Validates and restores ProSAFE binary `.cfg` or JSON configs.
+
+#### 5. Routing, Failover & Network Observability
+- **OpenWrt & DD-WRT**:
+  - `get_openwrt_status(ip)`: Audits Office Belkin AX3200 OpenWrt router (`192.168.1.226`), routes, and failover daemon state.
+  - `backup_openwrt(ip, user)` / `restore_openwrt(ip, user, dry_run)`: Backs up and restores `/etc/config/`, custom daemons, and failover scripts.
+  - `deploy_vxlan_hardening()`: Deploys hardened failover scripts, isolated probe VLAN 4094, loop guard, and STP priority 8192.
+  - `get_ddwrt_status(ip)` / `restore_ddwrt(router, ip, dry_run)`: Manages DD-WRT routers (`aurora: 10.25.25.1`, `luna: 10.20.20.1`) and PIA VPN watchdogs.
+- **Network Matrix & SPAN Observability**:
+  - `verify_network_matrix(profile)`: Automated end-to-end ICMP and TCP port matrix verification across all 8 VLANs.
+  - `get_wireshark_status(vmid)`: Inspects luna-server (VM 102) SPAN mirror interface (`ens19`), packet counters, and tmpfs capture chunks.
+  - `sync_wireshark_capture()`: Synchronizes headless tshark capture mover scripts from Stack 48 into Git.
+
+#### 6. External Cloud Services & Security Hardening
+- `get_external_services_status()`: Zero-trust synthetic health audit for `theurer.dev` web and `mail.theurer.dev`.
+- `check_ssl_certificates()`: Audits TLS/SSL certificate validity and expiration dates across external domains.
+- `audit_email_pipeline()`: Validates submission (SMTP :587), IMAPS (:993), and webmail health for `mail.theurer.dev`.
+- `audit_external_hosts(host)` / `backup_external_host(host)`: Audits and archives GitOps configuration bundles for cloud VPS hosts.
+- `get_external_security_status(host)`: Audits Fail2Ban active jails, banned IPs, UFW firewall rules, and listening ports.
+- `deploy_external_promtail(host, url, tenant_id, dry_run)`: Deploys Promtail log shipping agent to external cloud VPS.
+- `whitelist_external_ip(ip, host)`: Safely whitelists home egress IP in cloud Fail2Ban `ignoreip`.
+
+#### 7. Architecture & Runbook Reference Links
+- `docs/architecture/vlan-matrix.md`: Authoritative 8-VLAN table and 32 live ACL rules.
+- `docs/architecture/network-topology.md`: Dual-WAN topology, Araknis 520, 920 switch, 830 APs, and DNS split-horizon.
+- `docs/specifications/netgear-gs108ev2-nsdp.md`: Comprehensive reverse-engineered NSDP protocol specification and register mapping.
+- `docs/runbooks/network-automation.md`: Authoritative quick-reference runbook for all network automation, Netgear NSDP, and Wireshark capture scripts.
+- `docs/roadmaps/network-implementation-plan.md`: Master phased homelab roadmap and historical decision log.
 
 ## Araknis 520 Router REST API — Technical Reference
 - **Auth Mechanism**: HTTP Basic Auth via `GET /api/cgi-bin/v1/authorize` with `Authorization: Basic base64(user:pass)` header. Returns `302` on success, `401` on failure. NO session cookies — send the `Authorization` header on every request.
