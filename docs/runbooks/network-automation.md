@@ -13,6 +13,8 @@ This runbook contains single-click copy/paste commands for managing the Netgear 
 | [`mcp/homelab/scripts/manage-netgear-switch.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/manage-netgear-switch.py) | Full switch status, port link matrix, CRC error stats, and JSON backup export | `personal-ai` / `pve` | Native / L2 SSH Relay |
 | [`mcp/homelab/scripts/manage-pakedge-switch.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/manage-pakedge-switch.py) | Testbench status, learned MACs, config export, and Port 1/0/7 PoE power cycle | `personal-ai` | Native / SW920 Port 1/0/7 |
 | [`mcp/homelab/scripts/get-wireshark-status.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/get-wireshark-status.py) | Inspect ens19 SPAN counters, Wireshark container, and NAS archive | `personal-ai` | Queries VM 102 via `pve` |
+| [`scripts/analyze_all_pcaps.py`](file:///home/agentsvc/repos/homelab-infrastructure/scripts/analyze_all_pcaps.py) | High-speed multi-file binary struct analyzer for continuous 24-hr ring-buffers | `personal-ai` | Processes all local/WSL pcaps |
+| [`scripts/analyze_lan_pcap.py`](file:///home/agentsvc/repos/homelab-infrastructure/scripts/analyze_lan_pcap.py) | Deep packet inspection engine (dpkt) for L2-L7 TCP metrics, DNS latency & rogues | `personal-ai` | Single or batch pcapng files |
 | [`infrastructure/network/openwrt/scripts/failover.sh`](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/network/openwrt/scripts/failover.sh) | 3-Priority failover monitor, state transitions (P1/P2/P3), and diagnostics | OpenWrt (`192.168.1.226`) | Local router shell |
 | `/usr/local/bin/vxlan-nm` | State-aware VXLAN receiver daemon, mutual exclusion VLAN 1 filter | VM 107 (`192.168.1.150`) | Systemd daemon on `pve` |
 
@@ -235,6 +237,19 @@ Toggles `power inline disable` then `power inline enable` on an individual PoE p
 
 ```bash
 python3 mcp/homelab/scripts/manage-pakedge-switch.py poe-port-cycle --port 3 --wait 3
+```
+
+---
+
+### 22. Execute Multi-File PCAP Diagnostic Engine (24-Hour Telemetry Audit)
+Analyzes continuous ring-buffer PCAPNG files captured from the router SPAN mirror (`ens19` on `luna-server`). Uses low-level binary struct parsing to process millions of packets at >100,000 pkts/s, generating structured L2–L7 diagnostic reports covering VLAN distribution, ARP churn, STP stability, TCP RST/retransmissions, and DNS leaks.
+
+```bash
+# High-speed processing of all 109 ring-buffer captures (32M+ packets in ~5 min):
+python3 scripts/analyze_all_pcaps.py
+
+# Deep inspection of a single capture or custom batch with latency tracking:
+python3 scripts/analyze_lan_pcap.py "C:\Users\dtheurer\Downloads\Router pcap\router_baseline_*.pcapng" --max-files 5 --output-md /tmp/pcap_report.md
 ```
 
 ---

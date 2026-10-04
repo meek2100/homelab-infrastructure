@@ -6,19 +6,21 @@ This document serves as the authoritative, persistent tracking blueprint for res
 
 ## 📊 Empirical Baseline Summary (Pre-Remediation)
 
-- **Source Dataset**: `C:\Users\dtheurer\Downloads\Router pcap` (`router_baseline_00140` through `00144`)
-- **Packets Ingested**: `1,444,810 packets` (`193.16 MB`, ~1 hour baseline)
-- **Telemetry Engine**: [`scripts/analyze_lan_pcap.py`](../../scripts/analyze_lan_pcap.py)
+- **Source Dataset**: `C:\Users\dtheurer\Downloads\Router pcap` (`router_baseline_00116` through `router_baseline_00224`)
+- **Packets Ingested**: `32,038,778 packets` (`5.69 GB`, complete 23.97-hour continuous baseline)
+- **Telemetry Engine**: [`scripts/analyze_all_pcaps.py`](../../scripts/analyze_all_pcaps.py) & [`scripts/analyze_lan_pcap.py`](../../scripts/analyze_lan_pcap.py)
 
-| Metric | Measured Baseline | Target Health State | Severity | Primary Root Cause |
+| Metric | Measured Baseline (24-Hour) | Target Health State | Severity | Primary Root Cause |
 |---|---|---|---|---|
-| **Non-Unicast L2 Frame Ratio** | **`34.36%`** | `< 5.00%` | 🚨 CRITICAL | Router ARP storm & unpruned mDNS/SSDP |
-| **Router ARP Flooding** | **`480,665 frames`** (peak 734/s) | `< 20,000 frames` (< 50/s) | 🚨 CRITICAL | OvrC scanning 66 dead MACs; dead IP reservations |
-| **TCP Retransmission Rate** | **`4.653%`** (67,231 pkts) | `< 0.50%` | 🚨 DEGRADED | L2 congestion + PMTUD tunnel black hole |
-| **ICMP MTU Exceeded (Type 3 Code 4)**| **8 events** (from `192.73.240.128`) | 0 events | ⚠️ ELEVATED | `nexus-server` (VM 100) 1500 MTU vs 1420 tunnel |
-| **DNS External Bypasses** | **1,597 queries** (to 8.8.8.8, 1.1.1.1)| 0 queries | ⚠️ LEAK | Hardcoded IoT/smart device DNS bypassing AdGuard |
-| **STP/RSTP Topology Flapping** | **0 TCNs** (1,881 BPDUs) | 0 TCNs | ✅ STABLE | STP root `14:3f:c3:91:0f:8b` is rock-solid |
-| **Rogue DHCP Servers** | **0 dual-offer collisions** | 0 collisions | ✅ STABLE | DHCP DORA is clean across all VLANs |
+| **Non-Unicast L2 Frame Ratio** | **`33.06%`** (10,593,081 frames) | `< 5.00%` | 🚨 CRITICAL | Router ARP flooding (9.65M pkts) & mDNS/SSDP (1.66M pkts) |
+| **Router ARP Flooding** | **`9,655,215 requests`** (111.9 req/s avg) | `< 20,000 frames` (< 50/s) | 🚨 CRITICAL | Cloud keepalives hitting offline testbench (5.25M ARPs on VLAN 150/200) + OvrC sweeps (3.13M ARPs on VLAN 1) |
+| **DNS External Bypasses** | **`36,950 queries`** (to 8.8.8.8, 8.8.4.4, 1.1.1.1) | 0 queries | ⚠️ LEAK | Hardcoded DNS on Google/streaming devices (`.20.186`, `.220`) & lab gear (`.200.100`) |
+| **Runaway DNS Retry Loop** | **`188,933 queries`** for `stats.grafana.org` | `< 100 queries/day` | ⚠️ CHURN | Control4 CA-10 (`.10.200`) retrying every ~0.45s because AdGuard blocks with `0.0.0.0` (10s TTL) |
+| **TCP RST Rate** | **`388,088 RSTs`** (RST:SYN ratio 0.805) | `< 0.20 ratio` | ⚠️ ELEVATED | `nexus-server` (`.40.185`) closing Prometheus exporter scrapes (:8006, :21114) |
+| **TCP Retransmission Rate** | **`4.653%`** (sample baseline) | `< 0.50%` | 🚨 DEGRADED | L2 congestion + PMTUD tunnel black hole |
+| **STP/RSTP Topology Flapping** | **0 TCNs** (43,087 BPDUs) | 0 TCNs | ✅ STABLE | STP root `00:14:3f:c3:91:0f` (Araknis 920) is 100% rock-solid |
+| **Rogue DHCP Servers** | **0 dual-offer collisions** (443 ACKs) | 0 collisions | ✅ STABLE | DHCP DORA strictly confined to official router gateways |
+| **VLAN ACL Boundary Integrity** | **0 cross-VLAN leaks** (IoT strictly isolated) | 0 leaks | ✅ VERIFIED | VLAN 30 has 0 traffic to VLAN 10 or 1; VLAN 20 limited to Sonos-C4 |
 
 ---
 
@@ -73,8 +75,12 @@ This document serves as the authoritative, persistent tracking blueprint for res
 - [ ] **1.3. Deploy Clean DHCP Reservations & Narrow Dynamic Pools on Araknis 520**:
   - Deploy [`infrastructure/network/configs/dhcp-reservations-reorganized.json`](../../infrastructure/network/configs/dhcp-reservations-reorganized.json) as specified in [`network-dhcp-ip-reorganization-plan.md`](network-dhcp-ip-reorganization-plan.md).
   - Eliminates stale `.1.137` ARP sweeps by moving Binary MoIP to `.1.155` and TV to `.20.232`, retains verified active hardware like T5 touchscreen at `192.168.10.201`, and narrows dynamic pools to `.20–.99`.
-- [ ] **1.4. Silence Inactive Testbench VLAN Sweeps**:
-  - On VLAN 150 (`CA-1 Test`) and VLAN 200 (`Core-5 Test`), disable automated polling while test equipment is powered down.
+- [ ] **1.4. Silence Inactive Testbench VLAN Sweeps & Suppress WAN Ingress ARP Floods**:
+  - **Empirical Finding**: 5.25 million ARP requests (over 54% of all homelab ARPs) occur on VLAN 150 (`192.168.150.1`: 2.18M) and VLAN 200 (`192.168.200.1`: 3.07M).
+  - **Root Cause**: Inbound AWS cloud traffic from Control4 servers (`3.229.47.208`, `34.230.216.96`, `3.237.107.96`) continuously attempts to maintain keepalives with `192.168.150.200` (CA-1) and `192.168.200.200` (Core-5) while the Pakedge switch (SW920 Port 1/0/7) is powered down via WattBox. The Araknis 520 router floods ARP requests across both `/24` subnets searching for the dormant controllers.
+  - **Remediation**:
+    - Add WAN ACL rule on Araknis 520 to drop inbound cloud traffic destined for testbench IPs (`192.168.150.200`, `192.168.200.200`) when testbench is idle, OR install static dummy ARP entries for testbench controller IPs on the router to silence broadcast sweeps.
+    - Disable OvrC active polling/auto-claim on VLANs 150 and 200.
 
 ---
 
@@ -117,12 +123,17 @@ This document serves as the authoritative, persistent tracking blueprint for res
 *Target: Force 100% of LAN and IoT devices through AdGuard Home (`192.168.40.185` / `.186`).*
 
 - [ ] **4.1. Configure Destination NAT (DNAT) on Araknis 520 Router**:
+  - **Empirical Leakers Identified**: `192.168.20.186` (Google TV/Cast - 8.1k queries), `192.168.20.220` (7.6k queries), `.20.121`, `.20.230`, `.20.106` (hardcoded `8.8.8.8`/`8.8.4.4`), and `192.168.200.100` (hardcoded `1.1.1.1`).
   - Rule: If Destination Port == `UDP/53` or `TCP/53` AND Destination IP != `192.168.40.185` and != `192.168.40.186`:
     - Action: Redirect / DNAT to `192.168.40.185:53`.
 - [ ] **4.2. Block Outbound DNS-over-TLS (DoT)**:
   - On IoT (VLAN 30) and Guest/Media (VLAN 20), add an egress firewall rule blocking outbound port `TCP 853` to prevent devices from using encrypted DNS to evade AdGuard Home filters.
 - [ ] **4.3. Validate Interception**:
   - Execute a test query from a client: `nslookup google.com 8.8.8.8` and verify it appears in AdGuard query logs on `nexus-server`.
+- [ ] **4.4. Remediate `stats.grafana.org` Runaway Query Loop**:
+  - **Empirical Finding**: 188,933 queries (over 2 queries/second continuously) sent by Control4 CA-10 (`192.168.10.200`) and Core-5 (`192.168.200.200`).
+  - **Root Cause**: AdGuard default block response returns `0.0.0.0` with a 10-second TTL. The Control4 metrics daemon immediately encounters `Connection Refused` and retries without backoff.
+  - **Action**: In AdGuard Home (`192.168.40.185`), add a custom DNS rewrite rule or blocking mode setting for `stats.grafana.org` to return `NXDOMAIN` or configure upstream cache TTL to `86400` (24h) to suppress the rapid retry loop.
 
 ---
 

@@ -127,6 +127,8 @@
   - `verify_network_matrix(profile)`: Automated end-to-end ICMP and TCP port matrix verification across all 8 VLANs.
   - `get_wireshark_status(vmid)`: Inspects luna-server (VM 102) SPAN mirror interface (`ens19`), packet counters, and tmpfs capture chunks.
   - `sync_wireshark_capture()`: Synchronizes headless tshark capture mover scripts from Stack 48 into Git.
+  - `analyze_pcap_telemetry(path, focus, vlan, max_files, max_packets, json_output)`: Deep packet diagnostic engine streaming PCAP/PCAPNG ring buffers at >100,000 pkts/s via zero-copy binary unpacking. Generates L2–L7 scorecards across VLANs, ARP floods, STP, TCP RSTs, DNS bypass leakers, and rogue DHCP.
+  - `query_pcap_flows(path, host, port, proto, vlan, limit, max_files)`: Forensic flow search tool querying matching packet flows and conversations across captures by host, port, protocol, or VLAN.
 
 #### 6. External Cloud Services & Security Hardening
 - `get_external_services_status()`: Zero-trust synthetic health audit for `theurer.dev` web and `mail.theurer.dev`.

@@ -65,6 +65,13 @@ The router evaluates **32 granular rules** (see full rule list in [`network-impl
    - IoT (VLAN 30) BLOCKED to Management, Trusted LAN, Guest/Media, and Servers.
    - Guest/Media (VLAN 20) BLOCKED to Management, Trusted LAN, and Servers.
 
+> [!NOTE]
+> **24-Hour Empirical Packet Validation (2026-10-03)**:
+> Ingestion of 32,038,778 packets over 23.97 continuous hours across all 109 ring-buffer captures confirmed **100% boundary integrity**:
+> - **VLAN 30 (IoT)**: 0 packets initiated to VLAN 10 or VLAN 1.
+> - **VLAN 20 (Guest Media)**: 0 packets initiated to VLAN 1 or VLAN 40; inter-VLAN flows strictly confined to legitimate Sonos-to-Control4 CA-10 communications under Rules 18–19.
+> - **Testbench Ingress Gap**: Discovered that inbound Control4 AWS cloud keepalives to dormant testbench controllers (`192.168.150.200`, `192.168.200.200`) triggered 5.25 million router broadcast ARPs while the testbench switch is powered off by WattBox. Remediated via WAN drop ACL rules in `lan-hygiene-pcap-remediation-plan.md`.
+
 ---
 
 ## 🎵 Sonos & Spotify Connect Configuration Rules

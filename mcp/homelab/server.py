@@ -515,8 +515,50 @@ def power_cycle_pakedge_poe_port(port: int, wait_sec: float = 3.0, host: str = "
     """Power-cycles an individual PoE port (1-8) on the Pakedge SX-8P switch to reboot attached test gear."""
     return run_script("manage-pakedge-switch.py", ["poe-port-cycle", "--port", str(port), "--wait", str(wait_sec), "--host", host])
 
+@mcp.tool()
+def analyze_pcap_telemetry(
+    path: str = "",
+    focus: str = "comprehensive",
+    vlan: int = None,
+    max_files: int = None,
+    max_packets: int = None,
+    json_output: bool = False
+) -> str:
+    """Principal Network Diagnostic & Telemetry Engine for PCAP/PCAPNG packet captures.
+    Streams continuous ring buffers at >100,000 pkts/s using zero-copy binary unpacking.
+    Focus options: 'comprehensive', 'summary', 'l2_hygiene', 'routing_matrix', 'transport_health', 'core_services', 'security_anomalies'.
+    Optionally filter by VLAN ID (e.g. 10, 20, 30, 40, 150, 200)."""
+    args = ["--focus", focus]
+    if path: args.extend(["--path", path])
+    if vlan is not None: args.extend(["--vlan", str(vlan)])
+    if max_files is not None: args.extend(["--max-files", str(max_files)])
+    if max_packets is not None: args.extend(["--max-packets", str(max_packets)])
+    if json_output: args.append("--json")
+    return run_script("analyze-pcap-telemetry.py", args)
+
+@mcp.tool()
+def query_pcap_flows(
+    path: str = "",
+    host: str = None,
+    port: int = None,
+    proto: str = None,
+    vlan: int = None,
+    limit: int = 50,
+    max_files: int = 10
+) -> str:
+    """Forensic flow search tool for querying matching packet flows across PCAP/PCAPNG captures.
+    Filter by host IP (e.g. '192.168.10.200'), port (e.g. 53), protocol ('tcp', 'udp', 'icmp', 'arp'), or VLAN ID."""
+    args = ["--focus", "query_flows", "--limit", str(limit), "--max-files", str(max_files)]
+    if path: args.extend(["--path", path])
+    if host: args.extend(["--query-host", host])
+    if port is not None: args.extend(["--query-port", str(port)])
+    if proto: args.extend(["--query-proto", proto])
+    if vlan is not None: args.extend(["--vlan", str(vlan)])
+    return run_script("analyze-pcap-telemetry.py", args)
+
 if __name__ == "__main__":
     mcp.run()
+
 
 
 
