@@ -146,7 +146,7 @@ This document provides the authoritative, extensive reference for the **20 conso
 * **Purpose**: Fully programmatic management of the headless Netgear GS108Ev2 desktop switch via pure-Python Layer 2 NSDP protocol across an L2 relay hop (`192.168.1.226` or `192.168.1.250`).
 * **Arguments**:
   - `action` (*str*, default: `'status'`): `'status'`, `'backup'`, `'verify'`, `'restore'`, `'set_vlan'`, `'delete_vlan'`, `'set_pvid'`, `'set_port'`, `'set_features'`.
-  - `relay` (*str*, default: `'192.168.1.226'`): Layer 2 bridge relay IP.
+  - `ip` (*str*, default: `'192.168.1.220'`): Target Netgear switch IP (relays automatically via OpenWrt/PVE).
   - `vid`, `pvid`, `port`, `tagged`, `untagged`, `admin`, `speed`, `igmp`, `loop`, `confirm`, `json_output`.
 * **Example**:
   ```python
@@ -225,7 +225,7 @@ This document provides the authoritative, extensive reference for the **20 conso
 * **Purpose**: Drift inspection, GitOps configuration backup, and Promtail log shipping deployment for external VPS hosts.
 * **Arguments**:
   - `action` (*str*, default: `'audit'`): `'audit'`, `'backup'`, `'deploy_promtail'`.
-  - `target` (*str*, default: `'all'`): `'web-server'`, `'email-server'`, or `'all'`.
+  - `target` (*str*, default: `'all'`): `'web'`, `'email'`, or `'all'`.
 
 ---
 
