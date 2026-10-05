@@ -263,6 +263,8 @@ linux-image-6.1.0-44-amd64
 linux-image-6.1.0-47-amd64
 linux-image-6.1.0-49-amd64
 linux-image-6.1.0-50-amd64
+linux-image-6.1.0-52-amd64
+linux-image-6.1.0-53-amd64
 linux-image-amd64
 locales
 login

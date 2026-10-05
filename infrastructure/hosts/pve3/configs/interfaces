@@ -13,7 +13,7 @@ auto lo
 iface lo inet loopback
 
 iface eno1 inet manual
-	post-up /usr/sbin/ethtool -K eno1 tso off gso off
+        post-up /usr/sbin/ethtool -K eno1 tso off gso off
 
 iface wlp6s0 inet manual
 

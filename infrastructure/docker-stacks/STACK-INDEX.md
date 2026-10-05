@@ -3,9 +3,9 @@
 This document provides a searchable, friendly service catalog mapping every Portainer stack ID across all virtual machines to its application name, container images, exposed ports, host node, and SOPS secret encryption status.
 
 ## Summary Metrics
-- **Total Stacks Cataloged**: 85
-- **Total Docker Services Defined**: 155
-- **Stacks with Encrypted Secrets (`secrets.enc.yaml`)**: 68
+- **Total Stacks Cataloged**: 91
+- **Total Docker Services Defined**: 188
+- **Stacks with Encrypted Secrets (`secrets.enc.yaml`)**: 69
 - **Host Virtual Machines**: 6 (`discovery-server`, `luna-server`, `media-server`, `minecraft-server`, `nexus-server`, `nexus-server2`)
 
 ---
@@ -43,7 +43,7 @@ Total Stacks: **24**
 ---
 
 ## VM: `luna-server` (Node: `pve`, VMID: `102`)
-Total Stacks: **33**
+Total Stacks: **34**
 
 | Stack ID | Primary Services | Container Images | Exposed Ports | Encrypted Secrets | Blueprint Path |
 | :--- | :--- | :--- | :--- | :---: | :--- |
@@ -80,38 +80,41 @@ Total Stacks: **33**
 | **102** | `prometheus` | `prom/prometheus:latest` | `9090:9090` | 🔒 Yes | [luna-server/102](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/luna-server/102) |
 | **104** | `octoeverywhere` | `octoeverywhere/octoeverywhere:latest` | `Internal / Host` | 🔒 Yes | [luna-server/104](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/luna-server/104) |
 | **105** | `multicast-relay` | `ghcr.io/scyto/multicast-relay:latest` | `Internal / Host` | — None | [luna-server/105](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/luna-server/105) |
+| **106** | `node-exporter`<br>`cadvisor`<br>`promtail` | `prom/node-exporter:v1.8.2`<br>`gcr.io/cadvisor/cadvisor:v0.49.1`<br>`grafana/promtail:3.0.0` | `9100:9100`<br>`8088:8080`<br>`Internal / Host` | — None | [luna-server/106](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/luna-server/106) |
 
 ---
 
 ## VM: `media-server` (Node: `pve`, VMID: `103`)
-Total Stacks: **9**
+Total Stacks: **10**
 
 | Stack ID | Primary Services | Container Images | Exposed Ports | Encrypted Secrets | Blueprint Path |
 | :--- | :--- | :--- | :--- | :---: | :--- |
 | **2** | `watchtower` | `nickfedor/watchtower` | `Internal / Host` | — None | [media-server/2](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/2) |
 | **24** | `storyteller` | `registry.gitlab.com/smoores/storyteller:latest` | `8001:8001` | 🔒 Yes | [media-server/24](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/24) |
 | **32** | `tunnel` | `cloudflare/cloudflared:latest` | `Internal / Host` | 🔒 Yes | [media-server/32](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/32) |
-| **72** | `plex`<br>`overseerr`<br>`seerr`<br>`heimdall`<br>`calibre-web-automated`<br>`audiobookshelf` | `lscr.io/linuxserver/plex:latest`<br>`lscr.io/linuxserver/overseerr:latest`<br>`ghcr.io/seerr-team/seerr:latest`<br>`lscr.io/linuxserver/heimdall:latest`<br>`crocodilestick/calibre-web-automated:latest`<br>`ghcr.io/advplyr/audiobookshelf:latest` | `32400:32400/tcp, 8324:8324/tcp, 32469:32469/tcp, 1900:1900/udp, 32410:32410/udp, 32412:32412/udp, 32413:32413/udp, 32414:32414/udp`<br>`5055:5055`<br>`5056:5056`<br>`80:80, 443:443`<br>`8083:8083`<br>`13378:80` | 🔒 Yes | [media-server/72](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/72) |
+| **72** | `plex`<br>`seerr`<br>`heimdall`<br>`calibre-web-automated`<br>`audiobookshelf` | `lscr.io/linuxserver/plex:latest`<br>`ghcr.io/seerr-team/seerr:latest`<br>`lscr.io/linuxserver/heimdall:latest`<br>`crocodilestick/calibre-web-automated:latest`<br>`ghcr.io/advplyr/audiobookshelf:latest` | `32400:32400/tcp, 8324:8324/tcp, 32469:32469/tcp, 1900:1900/udp, 32410:32410/udp, 32412:32412/udp, 32413:32413/udp, 32414:32414/udp`<br>`5055:5055`<br>`80:80, 443:443`<br>`8083:8083`<br>`13378:80` | 🔒 Yes | [media-server/72](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/72) |
 | **76** | `kavita` | `lscr.io/linuxserver/kavita:latest` | `5000:5000` | 🔒 Yes | [media-server/76](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/76) |
 | **78** | `audiobookshelf` | `ghcr.io/advplyr/audiobookshelf:latest` | `13378:80` | 🔒 Yes | [media-server/78](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/78) |
 | **79** | `filebrowser` | `hurlenko/filebrowser` | `8084:8080` | 🔒 Yes | [media-server/79](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/79) |
 | **80** | `testflight-watcher` | `uzurka/testflight-watcher` | `Internal / Host` | 🔒 Yes | [media-server/80](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/80) |
 | **82** | `homarr` | `ghcr.io/homarr-labs/homarr:latest` | `7575:7575` | 🔒 Yes | [media-server/82](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/82) |
+| **83** | `node-exporter`<br>`cadvisor`<br>`promtail` | `prom/node-exporter:v1.8.2`<br>`gcr.io/cadvisor/cadvisor:v0.49.1`<br>`grafana/promtail:3.0.0` | `9100:9100`<br>`8088:8080`<br>`Internal / Host` | — None | [media-server/83](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/83) |
 
 ---
 
 ## VM: `minecraft-server` (Node: `pve`, VMID: `109`)
-Total Stacks: **2**
+Total Stacks: **3**
 
 | Stack ID | Primary Services | Container Images | Exposed Ports | Encrypted Secrets | Blueprint Path |
 | :--- | :--- | :--- | :--- | :---: | :--- |
 | **3** | `mcbd-connect`<br>`mcbd-proxy`<br>`mcbd-family-server`<br>`mcbd-friend-server` | `strausmann/minecraft-bedrock-connect:latest`<br>`ghcr.io/meek2100/mcbd-proxy:develop`<br>`itzg/minecraft-bedrock-server:latest`<br>`itzg/minecraft-bedrock-server:latest` | `19132:19132/udp`<br>`19133:19133/udp, 19134:19134/udp`<br>`Internal / Host`<br>`Internal / Host` | 🔒 Yes | [minecraft-server/3](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/minecraft-server/3) |
 | **4** | `watchtower` | `nickfedor/watchtower` | `Internal / Host` | — None | [minecraft-server/4](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/minecraft-server/4) |
+| **6** | `node-exporter`<br>`cadvisor`<br>`promtail` | `prom/node-exporter:v1.8.2`<br>`gcr.io/cadvisor/cadvisor:v0.49.1`<br>`grafana/promtail:3.0.0` | `9100:9100`<br>`8088:8080`<br>`Internal / Host` | — None | [minecraft-server/6](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/minecraft-server/6) |
 
 ---
 
 ## VM: `nexus-server` (Node: `pve`, VMID: `100`)
-Total Stacks: **10**
+Total Stacks: **12**
 
 | Stack ID | Primary Services | Container Images | Exposed Ports | Encrypted Secrets | Blueprint Path |
 | :--- | :--- | :--- | :--- | :---: | :--- |
@@ -124,12 +127,14 @@ Total Stacks: **10**
 | **68** | `hbbs`<br>`hbbr` | `rustdesk/rustdesk-server:latest`<br>`rustdesk/rustdesk-server:latest` | `Internal / Host`<br>`Internal / Host` | 🔒 Yes | [nexus-server/68](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/68) |
 | **69** | `tailscale` | `tailscale/tailscale:latest` | `Internal / Host` | 🔒 Yes | [nexus-server/69](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/69) |
 | **70** | `openspeedtest` | `openspeedtest/latest` | `8082:3000` | 🔒 Yes | [nexus-server/70](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/70) |
-| **71-monitoring** | `prometheus`<br>`pve-exporter`<br>`snmp-exporter`<br>`node-exporter`<br>`cadvisor`<br>`grafana`<br>`loki`<br>`promtail` | `prom/prometheus:v2.53.1`<br>`prompve/prometheus-pve-exporter:latest`<br>`prom/snmp-exporter:v0.26.0`<br>`prom/node-exporter:v1.8.2`<br>`gcr.io/cadvisor/cadvisor:v0.49.1`<br>`grafana/grafana:11.1.0`<br>`grafana/loki:3.0.0`<br>`grafana/promtail:3.0.0` | `9090:9090`<br>`9221:9221`<br>`9116:9116`<br>`9100:9100`<br>`8088:8080`<br>`3030:3000`<br>`3100:3100`<br>`Internal / Host` | — None | [nexus-server/71-monitoring](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/71-monitoring) |
+| **71** | `prometheus`<br>`alertmanager`<br>`blackbox-exporter`<br>`pve-exporter`<br>`snmp-exporter`<br>`node-exporter`<br>`cadvisor`<br>`grafana`<br>`loki`<br>`promtail` | `prom/prometheus:v2.53.1`<br>`prom/alertmanager:v0.27.0`<br>`prom/blackbox-exporter:v0.25.0`<br>`prompve/prometheus-pve-exporter:latest`<br>`prom/snmp-exporter:v0.26.0`<br>`prom/node-exporter:v1.8.2`<br>`gcr.io/cadvisor/cadvisor:v0.49.1`<br>`grafana/grafana:11.1.0`<br>`grafana/loki:3.0.0`<br>`grafana/promtail:3.0.0` | `9090:9090`<br>`9093:9093`<br>`9115:9115`<br>`9221:9221`<br>`9116:9116`<br>`9100:9100`<br>`8088:8080`<br>`3030:3000`<br>`3100:3100`<br>`Internal / Host` | — None | [nexus-server/71](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/71) |
+| **72** | `prometheus`<br>`alertmanager`<br>`blackbox-exporter`<br>`pve-exporter`<br>`snmp-exporter`<br>`node-exporter`<br>`cadvisor`<br>`grafana`<br>`loki`<br>`promtail` | `prom/prometheus:v2.53.1`<br>`prom/alertmanager:v0.27.0`<br>`prom/blackbox-exporter:v0.25.0`<br>`prompve/prometheus-pve-exporter:latest`<br>`prom/snmp-exporter:v0.26.0`<br>`prom/node-exporter:v1.8.2`<br>`gcr.io/cadvisor/cadvisor:v0.49.1`<br>`grafana/grafana:11.1.0`<br>`grafana/loki:3.0.0`<br>`grafana/promtail:3.0.0` | `9090:9090`<br>`9093:9093`<br>`9115:9115`<br>`9221:9221`<br>`9116:9116`<br>`9100:9100`<br>`8088:8080`<br>`3030:3000`<br>`3100:3100`<br>`Internal / Host` | — None | [nexus-server/72](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/72) |
+| **71-monitoring** | `prometheus`<br>`alertmanager`<br>`blackbox-exporter`<br>`pve-exporter`<br>`snmp-exporter`<br>`node-exporter`<br>`cadvisor`<br>`grafana`<br>`loki`<br>`promtail` | `prom/prometheus:v2.53.1`<br>`prom/alertmanager:v0.27.0`<br>`prom/blackbox-exporter:v0.25.0`<br>`prompve/prometheus-pve-exporter:latest`<br>`prom/snmp-exporter:v0.26.0`<br>`prom/node-exporter:v1.8.2`<br>`gcr.io/cadvisor/cadvisor:v0.49.1`<br>`grafana/grafana:11.1.0`<br>`grafana/loki:3.0.0`<br>`grafana/promtail:3.0.0` | `9090:9090`<br>`9093:9093`<br>`127.0.0.1:9115:9115`<br>`127.0.0.1:9221:9221`<br>`127.0.0.1:9116:9116`<br>`Internal / Host`<br>`127.0.0.1:8088:8080`<br>`3030:3000`<br>`3100:3100`<br>`Internal / Host` | 🔒 Yes | [nexus-server/71-monitoring](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/71-monitoring) |
 
 ---
 
 ## VM: `nexus-server2` (Node: `pve3`, VMID: `100`)
-Total Stacks: **7**
+Total Stacks: **8**
 
 | Stack ID | Primary Services | Container Images | Exposed Ports | Encrypted Secrets | Blueprint Path |
 | :--- | :--- | :--- | :--- | :---: | :--- |
@@ -140,5 +145,6 @@ Total Stacks: **7**
 | **46** | `tunnel` | `cloudflare/cloudflared:latest` | `Internal / Host` | 🔒 Yes | [nexus-server2/46](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server2/46) |
 | **59** | `adguardhome`<br>`adguardhome-certbot` | `adguard/adguardhome`<br>`certbot/dns-cloudflare` | `Internal / Host`<br>`Internal / Host` | 🔒 Yes | [nexus-server2/59](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server2/59) |
 | **62** | `nginx-proxy-manager` | `jc21/nginx-proxy-manager:latest` | `Internal / Host` | 🔒 Yes | [nexus-server2/62](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server2/62) |
+| **68** | `node-exporter`<br>`cadvisor`<br>`promtail` | `prom/node-exporter:v1.8.2`<br>`gcr.io/cadvisor/cadvisor:v0.49.1`<br>`grafana/promtail:3.0.0` | `9100:9100`<br>`8088:8080`<br>`Internal / Host` | — None | [nexus-server2/68](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server2/68) |
 
 ---

@@ -53,6 +53,7 @@ dpkg
 e2fsprogs
 eject
 emacsen-common
+ethtool
 fdisk
 file
 findutils
@@ -201,6 +202,7 @@ libpam-modules-bin
 libpam-runtime
 libpam-systemd:amd64
 libpam0g:amd64
+libpcap0.8:amd64
 libpci3:amd64
 libpcre2-8-0:amd64
 libperl5.36:amd64
@@ -270,6 +272,8 @@ linux-image-6.1.0-44-amd64
 linux-image-6.1.0-47-amd64
 linux-image-6.1.0-49-amd64
 linux-image-6.1.0-50-amd64
+linux-image-6.1.0-52-amd64
+linux-image-6.1.0-53-amd64
 linux-image-amd64
 locales
 login
@@ -348,6 +352,7 @@ task-english
 task-ssh-server
 tasksel
 tasksel-data
+tcpdump
 tmux
 traceroute
 tzdata

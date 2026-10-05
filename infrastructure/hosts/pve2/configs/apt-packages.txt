@@ -21,6 +21,7 @@ bsd-mailx
 bsdextrautils
 bsdutils
 btrfs-progs
+build-essential
 busybox
 bzip2
 ca-certificates
@@ -35,6 +36,10 @@ containernetworking-plugins
 coreutils
 corosync
 cpio
+cpp
+cpp-14
+cpp-14-x86-64-linux-gnu
+cpp-x86-64-linux-gnu
 criu
 cron
 cron-daemon-common
@@ -55,12 +60,14 @@ debsums
 diffutils
 dirmngr
 distro-info-data
+dkms
 dmeventd
 dmidecode
 dmsetup
 doc-debian
 dosfstools
 dpkg
+dpkg-dev
 dracut-install
 dtach
 e2fsprogs
@@ -68,6 +75,7 @@ ebtables
 efibootmgr
 eject
 ethtool
+fakeroot
 faketime
 fdisk
 fdutils
@@ -84,8 +92,16 @@ frr
 frr-pythontools
 fuse
 fuse3
+g++
+g++-14
+g++-14-x86-64-linux-gnu
+g++-x86-64-linux-gnu
+gcc
 gcc-12-base:amd64
+gcc-14
 gcc-14-base:amd64
+gcc-14-x86-64-linux-gnu
+gcc-x86-64-linux-gnu
 gdisk
 genisoimage
 gettext-base
@@ -145,6 +161,9 @@ less
 libacl1:amd64
 libaio1:amd64
 libaio1t64:amd64
+libalgorithm-diff-perl
+libalgorithm-diff-xs-perl
+libalgorithm-merge-perl
 libanyevent-http-perl
 libanyevent-perl
 libapparmor1:amd64
@@ -154,6 +173,7 @@ libapt-pkg6.0:amd64
 libapt-pkg7.0:amd64
 libarchive13t64:amd64
 libargon2-1:amd64
+libasan8:amd64
 libasound2-data
 libasound2t64:amd64
 libassuan0:amd64
@@ -177,8 +197,10 @@ libbsd0:amd64
 libbytes-random-secure-perl
 libbz2-1.0:amd64
 libc-bin
+libc-dev-bin
 libc-l10n
 libc6:amd64
+libc6-dev:amd64
 libcairo2:amd64
 libcap-ng0:amd64
 libcap2:amd64
@@ -186,6 +208,7 @@ libcap2-bin
 libcares2:amd64
 libcbor0.10:amd64
 libcbor0.8:amd64
+libcc1-0:amd64
 libcephfs2
 libcfg7:amd64
 libclass-methodmaker-perl:amd64
@@ -197,6 +220,7 @@ libcompel1:amd64
 libconvert-asn1-perl
 libcorosync-common4:amd64
 libcpg4:amd64
+libcrypt-dev:amd64
 libcrypt-openssl-bignum-perl
 libcrypt-openssl-random-perl:amd64
 libcrypt-openssl-rsa-perl:amd64
@@ -234,6 +258,7 @@ libevent-2.1-7t64:amd64
 libevent-core-2.1-7t64:amd64
 libexpat1:amd64
 libext2fs2t64:amd64
+libfakeroot:amd64
 libfaketime:amd64
 libfdisk1:amd64
 libfdt1:amd64
@@ -257,6 +282,7 @@ libfuse2t64:amd64
 libfuse3-3:amd64
 libfuse3-4:amd64
 libgbm1:amd64
+libgcc-14-dev:amd64
 libgcc-s1:amd64
 libgcrypt20:amd64
 libgdbm-compat4t64:amd64
@@ -274,6 +300,7 @@ libglusterfs0:amd64
 libgmp10:amd64
 libgnutls-dane0t64:amd64
 libgnutls30t64:amd64
+libgomp1:amd64
 libgoogle-perftools4t64:amd64
 libgpg-error0:amd64
 libgpgme11t64:amd64
@@ -292,6 +319,7 @@ libhttp-daemon-perl
 libhttp-date-perl
 libhttp-message-perl
 libhttp-negotiate-perl
+libhwasan0:amd64
 libibverbs1:amd64
 libicu72:amd64
 libicu76:amd64
@@ -306,7 +334,9 @@ libip4tc2:amd64
 libip6tc2:amd64
 libipset13t64:amd64
 libiscsi7:amd64
+libisl23:amd64
 libisns0t64:amd64
+libitm1:amd64
 libjansson4:amd64
 libjemalloc2:amd64
 libjpeg62-turbo:amd64
@@ -341,6 +371,7 @@ liblmdb0:amd64
 liblocale-gettext-perl
 liblockfile-bin
 liblockfile1:amd64
+liblsan0:amd64
 liblsof0
 liblttng-ust-common1t64:amd64
 liblttng-ust-ctl5t64:amd64
@@ -363,6 +394,8 @@ libmime-base32-perl
 libmnl0:amd64
 libmount1:amd64
 libmp3lame0:amd64
+libmpc3:amd64
+libmpfr6:amd64
 libmpg123-0t64:amd64
 libnbd0
 libncurses6:amd64
@@ -461,6 +494,7 @@ libqt5core5a:amd64
 libqt5core5t64:amd64
 libqt5dbus5t64:amd64
 libqt5network5t64:amd64
+libquadmath0:amd64
 libquorum5:amd64
 librabbitmq4:amd64
 librados2
@@ -500,6 +534,7 @@ libss2:amd64
 libssh2-1t64:amd64
 libssl3t64:amd64
 libstatgrab10t64
+libstdc++-14-dev:amd64
 libstdc++6:amd64
 libstring-shellquote-perl
 libsubid4:amd64
@@ -528,8 +563,10 @@ libtirpc3t64:amd64
 libtlsrpt0:amd64
 libtpms0:amd64
 libtry-tiny-perl
+libtsan2:amd64
 libtypes-serialiser-perl
 libu2f-server0
+libubsan1:amd64
 libuchardet0:amd64
 libudev1:amd64
 libunbound8:amd64
@@ -593,12 +630,14 @@ libzfs6linux:amd64
 libzpool6linux:amd64
 libzstd1:amd64
 linux-base
+linux-libc-dev
 linux-sysctl-defaults
 locales
 login
 login.defs
 logrotate
 logsave
+lsb-release
 lsof
 lua-lpeg:amd64
 lvm2
@@ -606,8 +645,10 @@ lxc-pve
 lxcfs
 lzop
 mailcap
+make
 man-db
 manpages
+manpages-dev
 mawk
 media-types
 memtest86+
@@ -635,6 +676,7 @@ openssh-sftp-server
 openssl
 openssl-provider-legacy
 passwd
+patch
 pci.ids
 pciutils
 perl
@@ -753,6 +795,7 @@ qttranslations5-l10n
 readline-common
 reportbug
 rpcbind
+rpcsvc-proto
 rrdcached
 rsync
 runit-helper
@@ -777,6 +820,7 @@ sqv
 ssh
 ssl-cert
 strace
+sudo
 swtpm
 swtpm-libs:amd64
 swtpm-tools
@@ -814,6 +858,7 @@ xfsprogs
 xkb-data
 xsltproc
 xz-utils
+zfs-dkms
 zfs-initramfs
 zfs-zed
 zfsutils-linux

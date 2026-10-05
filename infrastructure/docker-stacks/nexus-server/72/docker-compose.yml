@@ -1,0 +1,139 @@
+services:
+  prometheus:
+    image: prom/prometheus:v2.53.1
+    container_name: prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    volumes:
+      - /home/meek2100/docker/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - /home/meek2100/docker/monitoring/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - /home/meek2100/docker/monitoring/prometheus/data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - snmp-exporter
+      - node-exporter
+      - cadvisor
+      - pve-exporter
+      - blackbox-exporter
+      - alertmanager
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: alertmanager
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    volumes:
+      - /home/meek2100/docker/monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - /home/meek2100/docker/monitoring/alertmanager/data:/alertmanager
+    ports:
+      - "9093:9093"
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.25.0
+    container_name: blackbox-exporter
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/blackbox_exporter/config.yml'
+    volumes:
+      - /home/meek2100/docker/monitoring/blackbox_exporter/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    ports:
+      - "9115:9115"
+
+  pve-exporter:
+    image: prompve/prometheus-pve-exporter:latest
+    container_name: pve-exporter
+    restart: unless-stopped
+    volumes:
+      - /home/meek2100/docker/monitoring/pve_exporter/pve.yml:/etc/prometheus/pve.yml:ro
+    ports:
+      - "9221:9221"
+
+  snmp-exporter:
+    image: prom/snmp-exporter:v0.26.0
+    container_name: snmp-exporter
+    restart: unless-stopped
+    volumes:
+      - /home/meek2100/docker/monitoring/snmp_exporter/snmp.yml:/etc/snmp_exporter/snmp.yml:ro
+    ports:
+      - "9116:9116"
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+    ports:
+      - "9100:9100"
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: cadvisor
+    restart: unless-stopped
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    privileged: true
+    devices:
+      - /dev/kmsg
+    ports:
+      - "8088:8080"
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_HTTP_PORT=3000
+    volumes:
+      - /home/meek2100/docker/monitoring/grafana/data:/var/lib/grafana
+      - /home/meek2100/docker/monitoring/grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3030:3000"
+    depends_on:
+      - prometheus
+      - loki
+
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/loki.yml
+    volumes:
+      - /home/meek2100/docker/monitoring/loki/loki.yml:/etc/loki/loki.yml:ro
+      - /home/meek2100/docker/monitoring/loki/data:/tmp/loki
+    ports:
+      - "3100:3100"
+
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: promtail
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/promtail.yml
+    volumes:
+      - /home/meek2100/docker/monitoring/promtail/promtail.yml:/etc/promtail/promtail.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    depends_on:
+      - loki

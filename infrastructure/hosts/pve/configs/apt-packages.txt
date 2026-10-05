@@ -907,6 +907,7 @@ xfsprogs
 xkb-data
 xsltproc
 xz-utils
+zfs-dkms
 zfs-initramfs
 zfs-zed
 zfsutils-linux

@@ -11,19 +11,19 @@ services:
       - PUID=${PUID}
       - PGID=${GUID}
       - TZ=${TZ}
+      - RETENTION_MINUTES=1440   # 24 hours
+      - MAX_ARCHIVE_FILES=150
       - DISABLE_IPV6=true
       - AUTOCAPTURE=true # SET TO 'true' FOR Headless Capture | SET TO 'false' FOR Pure GUI Mode (Reference /home/meek2100/docker/wireshark/GUI_MANUAL_CAPTURE.md for instructions on manual setup.)
     volumes:
       - ${BASE_PATH}/wireshark/config:/config
       - ${BASE_PATH}/wireshark/custom-services.d:/custom-services.d
-      # Capture archive on its own soft NFS mount (luna /etc/fstab: /mnt/captures), so a NAS outage fails
-      # copies instead of freezing them. rslave: a remount on the host after the container started still
-      # appears inside it. The script only writes when /nas-storage/.capture-archive exists (share mounted).
+      #- ${NFS_MOUNT_POINT}/wireshark-captures:/nas-storage
       - type: bind
         source: ${CAPTURE_NFS_PATH:-/mnt/captures}
         target: /nas-storage
         bind:
           propagation: rslave
     tmpfs:
-      - /captures:rw,size=500M,mode=1777 # RAM buffer: several 50 MB chunks if the NFS mover lags (full SPAN since vmbr1 ageing 0)
+      - /captures:rw,size=500M,mode=1777
     restart: unless-stopped

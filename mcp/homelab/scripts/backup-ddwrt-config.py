@@ -26,7 +26,7 @@ ROUTER_PROFILES = {
     },
     "luna": {
         "ip": "10.20.20.1",
-        "user": "meek2100",
+        "user": "root",
         "role": "Upstream DD-WRT Gateway (Transit 10.20.20.0/24)"
     }
 }

@@ -2,29 +2,39 @@ services:
   vpn-proxy:
     image: ghcr.io/meek2100/gp-proxy:main
     container_name: gp-proxy
+    restart: unless-stopped
     cap_add:
       - NET_ADMIN
     devices:
-      - /dev/net/tun:/dev/net/tun
+      - /dev/net/tun
     environment:
-      #- DNS_SERVERS=192.168.1.185,192.168.1.186
-      #- VPN_MODE=standard
-      #- PROXY_MODE=socks5,socks4,socks4a,http,https,ss
+      # --- Core VPN Configuration ---
+      - VPN_PORTAL=lehvpn.snapone.com
+      # Modes: 'proxy' (proxy listeners only), 'gateway' (NAT router), or 'proxy,gateway' (both)
       - VPN_MODE=proxy
       - PROXY_MODE=socks5
-      - VPN_PORTAL=lehvpn.snapone.com
+      - LOG_LEVEL=DEBUG
+
+      # --- Smart Split-Tunneling ---
       - SPLIT_TUNNEL=true
-      - ALLOWED_SUBNETS=192.168.1.0/24,192.168.10.0/24,192.168.20.0/24,192.168.30.0/24,192.168.40.0/24,10.25.25.0/24,10.20.20.0/24,100.64.0.0/10,100.100.100.100/32,100.115.92.0/23
+      # Subnets to keep on the local network (bypassing the VPN tunnel)
       - LOCAL_SUBNETS=192.168.1.0/24,192.168.10.0/24,192.168.20.0/24,192.168.30.0/24,192.168.40.0/24,10.25.25.0/24,10.20.20.0/24,100.64.0.0/10,100.100.100.100/32,100.115.92.0/23
+      # Domains to resolve via your local LAN DNS
       - LOCAL_DOMAINS=secure.theurer.dev
-      - VPN_DOMAINS=wirepathsystems.local,snapav.com,control4.com,nxc.local,resideo.com,adiglobal.com,adi-dist.net,ds.resideo.com,control4.dev,workbench.control4.dev
-      - LOG_LEVEL=debug
+      # LAN DNS server(s) for local domains and non-VPN resolution
       - LOCAL_DNS=192.168.40.185,192.168.40.186
+      # Domains forced through the VPN tunnel (resolved via VPN DNS)
+      - VPN_DOMAINS=wirepathsystems.local,snapav.com,control4.com,nxc.local,resideo.com,adiglobal.com,adi-dist.net,ds.resideo.com,control4.dev,workbench.control4.dev
+      # --- Optional Advanced Settings (uncomment if needed) ---
+      # - VPN_GATEWAY=                    # Explicit gateway override if different from portal
+      # - VPN_DNS=                        # Explicit VPN DNS if auto-detection fails
+      # - VPN_SUBNETS=                    # Explicit CIDRs to force through VPN
+      # - GATEWAY_CLIENTS=192.168.40.0/24 # If using VPN_MODE=proxy,gateway, restricts allowed clients
+      # - TZ=America/Denver               # Timezone for logs
     networks:
       gp_network:
         ipv4_address: 192.168.40.155
         mac_address: 02:F5:58:97:8E:88
-    restart: unless-stopped
 
 networks:
   gp_network:
@@ -35,17 +45,15 @@ networks:
       config:
         - subnet: 192.168.40.0/24
           gateway: 192.168.40.1
-
-
-############### Development & Testing Info ###############
+      ############### Development & Testing Info ###############
       ### Example values for testing ###
       #- VPN_PORTAL=uwmadison.vpn.wisc.edu
       #- PROXY_MODE=socks5
-    #tmpfs:
-    #  - /tmp:size=64M,mode=1777
-    #ports:
+      #tmpfs:
+      #  - /tmp:size=64M,mode=1777
+      #ports:
       #- 8001:8001
       #- 1080:1080
-    #volumes:
+      #volumes:
       #- ${NFS_MOUNT_POINT}/globalprotect-vpn/entrypoint.sh:/entrypoint2.sh:rw
       #- ${NFS_MOUNT_POINT}/globalprotect-vpn/html/:/var/www/html2/:rw

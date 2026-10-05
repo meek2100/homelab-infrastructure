@@ -217,9 +217,13 @@ libseccomp2:amd64
 libselinux1:amd64
 libsemanage-common
 libsemanage2:amd64
+libsensors-config
+libsensors5:amd64
 libsepol2:amd64
 libslang2:amd64
 libsmartcols1:amd64
+libsnmp-base
+libsnmp40:amd64
 libsqlite3-0:amd64
 libss2:amd64
 libssh2-1:amd64
@@ -266,6 +270,8 @@ linux-image-6.1.0-47-amd64
 linux-image-6.1.0-49-amd64
 linux-image-6.1.0-50-amd64
 linux-image-6.1.0-51-amd64
+linux-image-6.1.0-52-amd64
+linux-image-6.1.0-53-amd64
 linux-image-amd64
 locales
 login
@@ -332,6 +338,7 @@ runit-helper
 sed
 sensible-utils
 shared-mime-info
+snmp
 sudo
 systemd
 systemd-sysv

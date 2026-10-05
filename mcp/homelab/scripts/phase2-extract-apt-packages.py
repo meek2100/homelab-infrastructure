@@ -64,8 +64,6 @@ def extract_vm_packages(target_node=None, target_vmid=None):
         # We know qm guest exec can still output JSON if we just use `cat`.
         # Wait, if we use `ssh root@host "qm guest exec 100 -- cat /etc/issue"`, it prints JSON:
         # {"exitcode": 0, "out-data": "Ubuntu..."}
-        # We should parse JSON!
-        import json
         try:
             data = json.loads(res_fetch.stdout)
             packages = data.get("out-data", "")

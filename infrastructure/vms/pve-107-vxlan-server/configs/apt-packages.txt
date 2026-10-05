@@ -395,6 +395,7 @@ linux-image-6.1.0-42-amd64
 linux-image-6.1.0-43-amd64
 linux-image-6.1.0-47-amd64
 linux-image-6.1.0-51-amd64
+linux-image-6.1.0-52-amd64
 linux-image-amd64
 linux-libc-dev:amd64
 locales
