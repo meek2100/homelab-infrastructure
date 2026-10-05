@@ -2,6 +2,102 @@
   "dhcpReservations": [
     {
       "enable": true,
+      "macAddress": "00:E0:4C:36:06:63",
+      "staticIPAddress": "192.168.1.150",
+      "name": "Uctronics Micro-usb POE Adapte"
+    },
+    {
+      "enable": true,
+      "macAddress": "36:CF:D5:50:A0:FC",
+      "staticIPAddress": "192.168.1.151",
+      "name": "ProxMox VM - Vxlan Server br0"
+    },
+    {
+      "enable": true,
+      "macAddress": "D4:6A:91:62:A2:7E",
+      "staticIPAddress": "192.168.1.155",
+      "name": "Binary MoIP 4K Controller"
+    },
+    {
+      "enable": true,
+      "macAddress": "90:A7:C1:9E:D9:26",
+      "staticIPAddress": "192.168.1.205",
+      "name": "Pakedge SX-8P Switch"
+    },
+    {
+      "enable": true,
+      "macAddress": "14:3F:C3:91:0F:8B",
+      "staticIPAddress": "192.168.1.215",
+      "name": "Araknis 920 POE Switch"
+    },
+    {
+      "enable": true,
+      "macAddress": "84:1B:5E:98:F1:F4",
+      "staticIPAddress": "192.168.1.220",
+      "name": "Netgear GS108Ev2 Switch"
+    },
+    {
+      "enable": true,
+      "macAddress": "E8:9F:80:50:58:32",
+      "staticIPAddress": "192.168.1.225",
+      "name": "OpenWRT - Vxlan Server br-lan"
+    },
+    {
+      "enable": true,
+      "macAddress": "E8:9F:80:50:58:2F",
+      "staticIPAddress": "192.168.1.226",
+      "name": "OpenWrt Wi-Fi 7 Pass-Through B"
+    },
+    {
+      "enable": true,
+      "macAddress": "14:3F:C3:E8:B9:93",
+      "staticIPAddress": "192.168.1.231",
+      "name": "Araknis 830-AP House Front"
+    },
+    {
+      "enable": true,
+      "macAddress": "14:3F:C3:E8:B9:A2",
+      "staticIPAddress": "192.168.1.236",
+      "name": "Araknis 830-AP House Back"
+    },
+    {
+      "enable": true,
+      "macAddress": "14:3F:C3:E8:B9:20",
+      "staticIPAddress": "192.168.1.237",
+      "name": "Araknis 830-AP Office Backhaul"
+    },
+    {
+      "enable": true,
+      "macAddress": "38:F7:CD:C1:67:E0",
+      "staticIPAddress": "192.168.1.240",
+      "name": "ProxMox Host - Awow"
+    },
+    {
+      "enable": true,
+      "macAddress": "BC:24:11:3E:06:69",
+      "staticIPAddress": "192.168.1.244",
+      "name": "PBS Backup"
+    },
+    {
+      "enable": true,
+      "macAddress": "8C:DC:D4:3E:A7:D8",
+      "staticIPAddress": "192.168.1.245",
+      "name": "ProxMox Host - HP EliteDesk 80"
+    },
+    {
+      "enable": true,
+      "macAddress": "9C:EB:E8:96:11:44",
+      "staticIPAddress": "192.168.1.250",
+      "name": "ProxMox Host - Dell Precision "
+    },
+    {
+      "enable": true,
+      "macAddress": "00:24:9B:55:A0:49",
+      "staticIPAddress": "192.168.1.251",
+      "name": "pve-wireshark"
+    },
+    {
+      "enable": true,
       "macAddress": "A0:29:19:8F:5D:45",
       "staticIPAddress": "192.168.10.102",
       "name": "Desktop PC 011PRD Wired"
@@ -20,7 +116,7 @@
     },
     {
       "enable": true,
-      "macAddress": "16:16:98:A3:0F:DF",
+      "macAddress": "6E:72:FF:20:9B:AA",
       "staticIPAddress": "192.168.10.110",
       "name": "Pixel 10 Pro"
     },
@@ -41,6 +137,30 @@
       "macAddress": "BA:07:67:57:ED:7D",
       "staticIPAddress": "192.168.10.113",
       "name": "Kimber iPad Pro"
+    },
+    {
+      "enable": true,
+      "macAddress": "F0:C3:71:4A:8A:27",
+      "staticIPAddress": "192.168.10.114",
+      "name": "Darin iPhone"
+    },
+    {
+      "enable": true,
+      "macAddress": "EE:A8:80:16:D5:A9",
+      "staticIPAddress": "192.168.10.115",
+      "name": "iPhone Client 1"
+    },
+    {
+      "enable": true,
+      "macAddress": "32:C2:B9:5F:40:56",
+      "staticIPAddress": "192.168.10.116",
+      "name": "iPhone Client 2"
+    },
+    {
+      "enable": true,
+      "macAddress": "90:A7:C1:4B:1D:71",
+      "staticIPAddress": "192.168.10.117",
+      "name": "Pakedge Lab AP Client"
     },
     {
       "enable": true,
@@ -179,6 +299,54 @@
       "macAddress": "58:D5:0A:A1:79:0A",
       "staticIPAddress": "192.168.10.208",
       "name": "Control4 T4 10 Tabletop Touchs"
+    },
+    {
+      "enable": true,
+      "macAddress": "3A:BF:95:75:C9:57",
+      "staticIPAddress": "192.168.20.101",
+      "name": "Samsung Galaxy S9"
+    },
+    {
+      "enable": true,
+      "macAddress": "48:88:CA:E1:BA:DD",
+      "staticIPAddress": "192.168.20.102",
+      "name": "Lenovo Yoga Tab 3 Plus"
+    },
+    {
+      "enable": true,
+      "macAddress": "56:81:3E:71:AF:5F",
+      "staticIPAddress": "192.168.20.103",
+      "name": "Guest Mobile Device 1"
+    },
+    {
+      "enable": true,
+      "macAddress": "BA:98:6B:7F:13:B7",
+      "staticIPAddress": "192.168.20.104",
+      "name": "Guest Mobile Device 2"
+    },
+    {
+      "enable": true,
+      "macAddress": "50:26:EF:26:C9:AD",
+      "staticIPAddress": "192.168.20.120",
+      "name": "Control4 Halo Touch Remote"
+    },
+    {
+      "enable": true,
+      "macAddress": "24:CD:8D:6F:FD:A0",
+      "staticIPAddress": "192.168.20.121",
+      "name": "Control4 Halo Tactile Remote"
+    },
+    {
+      "enable": true,
+      "macAddress": "34:15:13:D2:BD:1E",
+      "staticIPAddress": "192.168.20.122",
+      "name": "Control4 SR-260 Remote"
+    },
+    {
+      "enable": true,
+      "macAddress": "24:62:AB:BD:94:8C",
+      "staticIPAddress": "192.168.20.125",
+      "name": "Hatch Rest+ Sound Machine"
     },
     {
       "enable": true,
@@ -356,99 +524,63 @@
     },
     {
       "enable": true,
-      "macAddress": "00:E0:4C:36:06:63",
-      "staticIPAddress": "192.168.1.150",
-      "name": "Uctronics Micro-usb POE Adapte"
+      "macAddress": "FC:3C:D7:0F:E0:84",
+      "staticIPAddress": "192.168.30.180",
+      "name": "Tuya Smart Light 1"
     },
     {
       "enable": true,
-      "macAddress": "36:CF:D5:50:A0:FC",
-      "staticIPAddress": "192.168.1.151",
-      "name": "ProxMox VM - Vxlan Server br0"
+      "macAddress": "FC:3C:D7:10:A4:93",
+      "staticIPAddress": "192.168.30.181",
+      "name": "Tuya Smart Light 2"
     },
     {
       "enable": true,
-      "macAddress": "D4:6A:91:62:A2:7E",
-      "staticIPAddress": "192.168.1.155",
-      "name": "Binary MoIP 4K Controller"
+      "macAddress": "FC:3C:D7:10:D7:47",
+      "staticIPAddress": "192.168.30.182",
+      "name": "Tuya Smart Light 3"
     },
     {
       "enable": true,
-      "macAddress": "90:A7:C1:9E:D9:26",
-      "staticIPAddress": "192.168.1.205",
-      "name": "Pakedge SX-8P Switch"
+      "macAddress": "FC:3C:D7:11:19:D6",
+      "staticIPAddress": "192.168.30.183",
+      "name": "Tuya Smart Light 4"
     },
     {
       "enable": true,
-      "macAddress": "14:3F:C3:91:0F:8B",
-      "staticIPAddress": "192.168.1.215",
-      "name": "Araknis 920 POE Switch"
+      "macAddress": "FC:3C:D7:12:CE:8C",
+      "staticIPAddress": "192.168.30.184",
+      "name": "Tuya Smart Light 5"
     },
     {
       "enable": true,
-      "macAddress": "84:1B:5E:98:F1:F4",
-      "staticIPAddress": "192.168.1.220",
-      "name": "Netgear GS108Ev2 Switch"
+      "macAddress": "70:74:14:C0:2C:6A",
+      "staticIPAddress": "192.168.30.190",
+      "name": "Rachio 3 Smart Sprinkler"
     },
     {
       "enable": true,
-      "macAddress": "E8:9F:80:50:58:32",
-      "staticIPAddress": "192.168.1.225",
-      "name": "OpenWRT - Vxlan Server br-lan"
+      "macAddress": "3C:E4:B0:85:D4:F6",
+      "staticIPAddress": "192.168.30.191",
+      "name": "Moen Flo Smart Water Shutoff"
     },
     {
       "enable": true,
-      "macAddress": "E8:9F:80:50:58:30",
-      "staticIPAddress": "192.168.1.226",
-      "name": "OpenWrt Wi-Fi 7 Pass-Through B"
+      "macAddress": "2C:D2:6B:86:D7:61",
+      "staticIPAddress": "192.168.30.192",
+      "name": "Chamberlain MyQ Smart Garage"
     },
     {
       "enable": true,
-      "macAddress": "14:3F:C3:E8:B9:93",
-      "staticIPAddress": "192.168.1.231",
-      "name": "Araknis 830-AP House Front"
+      "macAddress": "04:78:63:3E:F9:25",
+      "staticIPAddress": "192.168.30.193",
+      "name": "Smart Appliance MXCHIP"
     },
     {
       "enable": true,
-      "macAddress": "14:3F:C3:E8:B9:A2",
-      "staticIPAddress": "192.168.1.236",
-      "name": "Araknis 830-AP House Back"
-    },
-    {
-      "enable": true,
-      "macAddress": "14:3F:C3:E8:B9:20",
-      "staticIPAddress": "192.168.1.237",
-      "name": "Araknis 830-AP Office Backhaul"
-    },
-    {
-      "enable": true,
-      "macAddress": "38:F7:CD:C1:67:E0",
-      "staticIPAddress": "192.168.1.240",
-      "name": "ProxMox Host - Awow"
-    },
-    {
-      "enable": true,
-      "macAddress": "BC:24:11:3E:06:69",
-      "staticIPAddress": "192.168.1.244",
-      "name": "PBS Backup"
-    },
-    {
-      "enable": true,
-      "macAddress": "8C:DC:D4:3E:A7:D8",
-      "staticIPAddress": "192.168.1.245",
-      "name": "ProxMox Host - HP EliteDesk 80"
-    },
-    {
-      "enable": true,
-      "macAddress": "9C:EB:E8:96:11:44",
-      "staticIPAddress": "192.168.1.250",
-      "name": "ProxMox Host - Dell Precision "
-    },
-    {
-      "enable": true,
-      "macAddress": "00:24:9B:55:A0:49",
-      "staticIPAddress": "192.168.1.251",
-      "name": "pve-wireshark"
+      "macAddress": "02:F5:58:97:8E:88",
+      "staticIPAddress": "192.168.40.155",
+      "name": "Virtual TAP Interface Host"
     },
     {
       "enable": true,

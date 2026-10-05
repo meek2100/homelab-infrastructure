@@ -94,10 +94,14 @@ Every `/24` subnet across the homelab adopts this standardized allocation schema
 | **Desktop PC (011PRD Wired)** | `A0:29:19:8F:5D:45` | `192.168.1.117` | `192.168.10.102` | Workstations | Aligns wired NIC with Netgear port 2 (VLAN 10) |
 | **Desktop PC (011PRD Wi-Fi)** | `F4:46:37:7A:6A:7A` | `192.168.10.118` | `192.168.10.103` | Workstations | Sequential with wired NIC |
 | **Mac Mini** | `14:98:77:3E:4E:8D` | `192.168.10.126` | `192.168.10.104` | Workstations | Workstation block |
-| **Pixel 10 Pro** | `16:16:98:A3:0F:DF` | `192.168.10.116` | `192.168.10.110` | Personal Mobile | Mobile phone block |
+| **Pixel 10 Pro** | `6E:72:FF:20:9B:AA` | `192.168.10.40` | `192.168.10.110` | Personal Mobile | Live Wi-Fi MAC updated |
 | **Kimber iPhone** | `66:AF:7A:CC:EB:E4` | `192.168.10.123` | `192.168.10.111` | Personal Mobile | Mobile phone block |
 | **Kimber iPad** | `96:5D:E6:EE:4E:5B` | `192.168.10.124` | `192.168.10.112` | Personal Mobile | Tablet block |
 | **Kimber iPad Pro** | `BA:07:67:57:ED:7D` | `192.168.10.124` | `192.168.10.113` | Personal Mobile | Distinct MAC from OvrC |
+| **Darin iPhone** | `F0:C3:71:4A:8A:27` | `192.168.10.45` | `192.168.10.114` | Personal Mobile | Mobile phone block |
+| **iPhone Client 1** | `EE:A8:80:16:D5:A9` | `192.168.10.42` | `192.168.10.115` | Personal Mobile | Guest / family mobile |
+| **iPhone Client 2** | `32:C2:B9:5F:40:56` | `192.168.10.64` | `192.168.10.116` | Personal Mobile | Guest / family mobile |
+| **Pakedge Lab AP Client** | `90:A7:C1:4B:1D:71` | `192.168.10.41` | `192.168.10.117` | Work Testbench | Pakedge test host |
 | **Nintendo Switch 1** | `A4:C1:E8:13:20:48` | `192.168.10.127` | `192.168.10.130` | Consoles | Handheld gaming block |
 | **Nintendo Switch 2** | `98:E2:55:3D:C4:B9` | `192.168.10.132` | `192.168.10.131` | Consoles | Handheld gaming block |
 | **Philips Hue Bridge** | `EC:B5:FA:8D:E0:05` | `192.168.10.101` | `192.168.10.150` | Smart Hubs | Smart home lighting bridge |
@@ -130,6 +134,14 @@ Every `/24` subnet across the homelab adopts this standardized allocation schema
 | Device Name | MAC Address | Current IP | Proposed IP | Functional Tier | Notes & Dependencies |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Araknis 520 Gateway** | — | `192.168.20.1` | `192.168.20.1` | Gateway | No change |
+| **Samsung Galaxy S9** | `3A:BF:95:75:C9:57` | `192.168.20.71` | `192.168.20.101` | Guest Mobile | Moved from VLAN 10 to Insomniac_Guest |
+| **Lenovo Yoga Tab 3 Plus** | `48:88:CA:E1:BA:DD` | `192.168.20.30` | `192.168.20.102` | Guest Mobile | Moved from VLAN 10 to Insomniac_Guest |
+| **Guest Mobile Device 1** | `56:81:3E:71:AF:5F` | `192.168.20.82` | `192.168.20.103` | Guest Mobile | Guest wireless endpoint |
+| **Guest Mobile Device 2** | `BA:98:6B:7F:13:B7` | `192.168.20.90` | `192.168.20.104` | Guest Mobile | Guest wireless endpoint |
+| **Control4 Halo Touch Remote** | `50:26:EF:26:C9:AD` | `192.168.20.87` | `192.168.20.120` | Remotes & Acc | Wi-Fi remote on Insomniac_Guest |
+| **Control4 Halo Tactile Remote** | `24:CD:8D:6F:FD:A0` | `192.168.20.34` | `192.168.20.121` | Remotes & Acc | Wi-Fi remote on Insomniac_Guest |
+| **Control4 SR-260 Remote** | `34:15:13:D2:BD:1E` | `192.168.20.85` | `192.168.20.122` | Remotes & Acc | Wi-Fi remote on Insomniac_Guest |
+| **Hatch Rest+ Sound Machine** | `24:62:AB:BD:94:8C` | `192.168.20.44` | `192.168.20.125` | Smart Nursery | Moved to Insomniac_Guest |
 | **Sonos Move 2 (Living Room 1)**| `74:CA:60:24:40:BE`| `192.168.20.223` | `192.168.20.201` | Sonos Block | Target of ACL Rule 18 |
 | **Sonos Move 2 (Living Room 2)**| `74:CA:60:24:4A:50`| `192.168.20.143` | `192.168.20.202` | Sonos Block | Target of ACL Rule 18 |
 | **Sonos Roam 2 (Office)** | `C4:38:75:C6:54:A4`| `192.168.20.205` | `192.168.20.203` | Sonos Block | Target of ACL Rule 18 |
@@ -170,7 +182,16 @@ Every `/24` subnet across the homelab adopts this standardized allocation schema
 | **Roborock Robotic Vacuum** | `24:9E:7D:58:58:32` | `192.168.30.108` | `192.168.30.175` | Appliances | Smart cleaning appliance |
 | **GE Smart Appliance 1** | `D8:28:C9:75:63:F6` | `192.168.30.106` | `192.168.30.176` | Appliances | Smart home appliance |
 | **GE Smart Appliance 2** | `D8:28:C9:61:57:A5` | `192.168.30.137` | `192.168.30.177` | Appliances | Smart home appliance |
-| **IoT Dynamic Clients** | *(Dynamic)* | `.30.100–.254` | `192.168.30.20–.99` | IoT Dynamic | Transient smart plugs, Tuya modules |
+| **Tuya Smart Light 1** | `FC:3C:D7:0F:E0:84` | `192.168.30.64` | `192.168.30.180` | Smart Lighting | Contiguous Tuya block (.180–.184) |
+| **Tuya Smart Light 2** | `FC:3C:D7:10:A4:93` | `192.168.30.44` | `192.168.30.181` | Smart Lighting | Contiguous Tuya block (.180–.184) |
+| **Tuya Smart Light 3** | `FC:3C:D7:10:D7:47` | `192.168.30.77` | `192.168.30.182` | Smart Lighting | Contiguous Tuya block (.180–.184) |
+| **Tuya Smart Light 4** | `FC:3C:D7:11:19:D6` | `192.168.30.75` | `192.168.30.183` | Smart Lighting | Contiguous Tuya block (.180–.184) |
+| **Tuya Smart Light 5** | `FC:3C:D7:12:CE:8C` | `192.168.30.45` | `192.168.30.184` | Smart Lighting | Contiguous Tuya block (.180–.184) |
+| **Rachio 3 Smart Sprinkler** | `70:74:14:C0:2C:6A` | `192.168.30.34` | `192.168.30.190` | Irrigation | Smart sprinkler controller |
+| **Moen Flo Smart Water Shutoff**| `3C:E4:B0:85:D4:F6`| `192.168.30.83` | `192.168.30.191` | Utilities | Smart whole-home shutoff |
+| **Chamberlain MyQ Smart Garage**| `2C:D2:6B:86:D7:61`| `192.168.30.95` | `192.168.30.192` | Access Control | Smart garage hub |
+| **Smart Appliance MXCHIP** | `04:78:63:3E:F9:25` | `192.168.30.63` | `192.168.30.193` | Appliances | Smart appliance Wi-Fi module |
+| **IoT Dynamic Clients** | *(Dynamic)* | `.30.100–.254` | `192.168.30.20–.99` | IoT Dynamic | Transient smart plugs, unassigned |
 
 ---
 
@@ -186,7 +207,7 @@ Every `/24` subnet across the homelab adopts this standardized allocation schema
 | **Pakedge SX-8P Switch** | `90:A7:C1:9E:D9:26` | `192.168.1.205` | `192.168.1.205` | Switching | Managed testbench switch |
 | **Araknis 920 Switch** | `14:3F:C3:91:0F:8B` | `192.168.1.215` | `192.168.1.215` | Switching | RSTP root & core L2 switch |
 | **Netgear GS108Ev2 Switch** | `84:1B:5E:98:F1:F4` | `192.168.1.220` | `192.168.1.220` | Switching | Office distribution switch |
-| **OpenWrt Belkin (br-lan)** | `E8:9F:80:50:58:30` | `192.168.1.226` | `192.168.1.226` | Routing | Primary bridge backhaul |
+| **OpenWrt Belkin (br-lan)** | `E8:9F:80:50:58:2F` | `192.168.1.226` | `192.168.1.226` | Routing | Primary bridge backhaul |
 | **OpenWrt Belkin (wl1-sta0)** | `E8:9F:80:50:58:32` | `192.168.1.225` | `192.168.1.225` | Routing | Wi-Fi repeater failover |
 | **Araknis 830-AP (House Front)**| `14:3F:C3:E8:B9:93` | `192.168.1.231` | `192.168.1.231` | Wi-Fi Access | Master AP |
 | **Araknis 830-AP (House Back)** | `14:3F:C3:E8:B9:A2` | `192.168.1.236` | `192.168.1.236` | Wi-Fi Access | Secondary AP |
@@ -205,6 +226,7 @@ Every `/24` subnet across the homelab adopts this standardized allocation schema
 | Device Name | MAC Address | Current IP | Proposed IP | Functional Tier | Notes & Dependencies |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Araknis 520 Gateway** | — | `192.168.40.1` | `192.168.40.1` | Gateway | No change |
+| **Virtual TAP Interface Host** | `02:F5:58:97:8E:88` | `192.168.40.155` | `192.168.40.155` | Testing | Virtual / container TAP interface |
 | **Debian 12 Testing VM** | `BC:24:11:5B:43:43` | `192.168.40.165` | `192.168.40.165` | Testing VMs | No change |
 | **Minecraft Docker VM (109)** | `BC:24:11:17:C9:60` | `192.168.40.175` | `192.168.40.175` | Docker VMs | No change |
 | **Docker Dev & Testing VM** | `BC:24:11:17:B9:4F` | `192.168.40.176` | `192.168.40.176` | Docker VMs | No change |
