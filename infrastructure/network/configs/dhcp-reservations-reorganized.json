@@ -4,13 +4,13 @@
       "enable": true,
       "macAddress": "A0:29:19:8F:5D:45",
       "staticIPAddress": "192.168.10.102",
-      "name": "Desktop PC (011PRD Wired)"
+      "name": "Desktop PC 011PRD Wired"
     },
     {
       "enable": true,
       "macAddress": "F4:46:37:7A:6A:7A",
       "staticIPAddress": "192.168.10.103",
-      "name": "Desktop PC (011PRD Wi-Fi)"
+      "name": "Desktop PC 011PRD Wi-Fi"
     },
     {
       "enable": true,
@@ -70,7 +70,7 @@
       "enable": true,
       "macAddress": "84:EB:3E:39:08:27",
       "staticIPAddress": "192.168.10.152",
-      "name": "Vivint Outdoor Cam (ODC350)"
+      "name": "Vivint Outdoor Cam ODC350"
     },
     {
       "enable": true,
@@ -124,7 +124,7 @@
       "enable": true,
       "macAddress": "00:80:77:5C:F6:11",
       "staticIPAddress": "192.168.10.182",
-      "name": "Brother QL-1110NWB (Wired)"
+      "name": "Brother QL-1110NWB Wired"
     },
     {
       "enable": true,
@@ -136,7 +136,7 @@
       "enable": true,
       "macAddress": "00:0F:FF:0B:39:4E",
       "staticIPAddress": "192.168.10.201",
-      "name": "Control4 T5 Touchscreen (Desk)"
+      "name": "Control4 T5 Touchscreen Desk"
     },
     {
       "enable": true,
@@ -178,25 +178,25 @@
       "enable": true,
       "macAddress": "58:D5:0A:A1:79:0A",
       "staticIPAddress": "192.168.10.208",
-      "name": "Control4 T4 10\" Tabletop Touchscreen"
+      "name": "Control4 T4 10 Tabletop Touchs"
     },
     {
       "enable": true,
       "macAddress": "74:CA:60:24:40:BE",
       "staticIPAddress": "192.168.20.201",
-      "name": "Sonos Move 2 (Living Room 1)"
+      "name": "Sonos Move 2 Living Room 1"
     },
     {
       "enable": true,
       "macAddress": "74:CA:60:24:4A:50",
       "staticIPAddress": "192.168.20.202",
-      "name": "Sonos Move 2 (Living Room 2)"
+      "name": "Sonos Move 2 Living Room 2"
     },
     {
       "enable": true,
       "macAddress": "C4:38:75:C6:54:A4",
       "staticIPAddress": "192.168.20.203",
-      "name": "Sonos Roam 2 (Office)"
+      "name": "Sonos Roam 2 Office"
     },
     {
       "enable": true,
@@ -232,7 +232,7 @@
       "enable": true,
       "macAddress": "7C:D9:5C:7C:92:F6",
       "staticIPAddress": "192.168.20.215",
-      "name": "Kitchen Display (Nest Hub)"
+      "name": "Kitchen Display Nest Hub"
     },
     {
       "enable": true,
@@ -244,13 +244,13 @@
       "enable": true,
       "macAddress": "7C:D9:5C:7D:BE:0A",
       "staticIPAddress": "192.168.20.217",
-      "name": "Office Display (Nest Hub)"
+      "name": "Office Display Nest Hub"
     },
     {
       "enable": true,
       "macAddress": "14:C1:4E:BC:1C:B6",
       "staticIPAddress": "192.168.20.230",
-      "name": "Living Room TV (Chromecast)"
+      "name": "Living Room TV Chromecast"
     },
     {
       "enable": true,
@@ -316,7 +316,7 @@
       "enable": true,
       "macAddress": "90:DD:5D:E1:E5:FE",
       "staticIPAddress": "192.168.30.160",
-      "name": "Apple Office Hub (HomePod)"
+      "name": "Apple Office Hub HomePod"
     },
     {
       "enable": true,
@@ -358,13 +358,13 @@
       "enable": true,
       "macAddress": "00:E0:4C:36:06:63",
       "staticIPAddress": "192.168.1.150",
-      "name": "Uctronics Micro-usb POE Adapter (RPi)"
+      "name": "Uctronics Micro-usb POE Adapte"
     },
     {
       "enable": true,
       "macAddress": "36:CF:D5:50:A0:FC",
       "staticIPAddress": "192.168.1.151",
-      "name": "ProxMox VM - Vxlan Server (br0)"
+      "name": "ProxMox VM - Vxlan Server br0"
     },
     {
       "enable": true,
@@ -394,31 +394,31 @@
       "enable": true,
       "macAddress": "E8:9F:80:50:58:32",
       "staticIPAddress": "192.168.1.225",
-      "name": "OpenWRT - Vxlan Server (br-lan)"
+      "name": "OpenWRT - Vxlan Server br-lan"
     },
     {
       "enable": true,
       "macAddress": "E8:9F:80:50:58:30",
       "staticIPAddress": "192.168.1.226",
-      "name": "OpenWrt (Wi-Fi 7 Pass-Through Bridge)"
+      "name": "OpenWrt Wi-Fi 7 Pass-Through B"
     },
     {
       "enable": true,
       "macAddress": "14:3F:C3:E8:B9:93",
       "staticIPAddress": "192.168.1.231",
-      "name": "Araknis 830-AP (House Front)"
+      "name": "Araknis 830-AP House Front"
     },
     {
       "enable": true,
       "macAddress": "14:3F:C3:E8:B9:A2",
       "staticIPAddress": "192.168.1.236",
-      "name": "Araknis 830-AP (House Back)"
+      "name": "Araknis 830-AP House Back"
     },
     {
       "enable": true,
       "macAddress": "14:3F:C3:E8:B9:20",
       "staticIPAddress": "192.168.1.237",
-      "name": "Araknis 830-AP (Office Backhaul)"
+      "name": "Araknis 830-AP Office Backhaul"
     },
     {
       "enable": true,
@@ -436,13 +436,13 @@
       "enable": true,
       "macAddress": "8C:DC:D4:3E:A7:D8",
       "staticIPAddress": "192.168.1.245",
-      "name": "ProxMox Host - HP EliteDesk 800 G1"
+      "name": "ProxMox Host - HP EliteDesk 80"
     },
     {
       "enable": true,
       "macAddress": "9C:EB:E8:96:11:44",
       "staticIPAddress": "192.168.1.250",
-      "name": "ProxMox Host - Dell Precision 5520"
+      "name": "ProxMox Host - Dell Precision "
     },
     {
       "enable": true,
@@ -460,13 +460,13 @@
       "enable": true,
       "macAddress": "BC:24:11:17:C9:60",
       "staticIPAddress": "192.168.40.175",
-      "name": "ProxMox - Minecraft Docker Server"
+      "name": "ProxMox - Minecraft Docker Ser"
     },
     {
       "enable": true,
       "macAddress": "BC:24:11:17:B9:4F",
       "staticIPAddress": "192.168.40.176",
-      "name": "ProxMox - Docker Dev & Testing"
+      "name": "ProxMox - Docker Dev and Testi"
     },
     {
       "enable": true,
@@ -526,7 +526,7 @@
       "enable": true,
       "macAddress": "00:0F:FF:0C:41:CA",
       "staticIPAddress": "192.168.200.201",
-      "name": "SA-1 (Ryff)"
+      "name": "SA-1 Ryff"
     },
     {
       "enable": true,

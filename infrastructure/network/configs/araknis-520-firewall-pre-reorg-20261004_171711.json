@@ -1,0 +1,28 @@
+{
+  "firewallConfig": {
+    "enableFirewall": true,
+    "enableSPI": true,
+    "dosPrevention": true,
+    "blockWAN": true,
+    "remoteManagement": false,
+    "remoteManagementPort": 7000,
+    "multicastPassthrough": false,
+    "IPSecPassthrough": false,
+    "pptpPassthrough": false,
+    "enableDMZ": false,
+    "dmzIP": "192.168.1.246",
+    "blockICMPBroadcast": true
+  },
+  "miscConfig": {
+    "enableUPnP": false,
+    "enableBonjour": true,
+    "enableFlowControl": false,
+    "enableSipAlg": false,
+    "UDPTimeout": 60,
+    "natLoopback": true
+  },
+  "resultMessage": {
+    "code": 0,
+    "message": "OK"
+  }
+}

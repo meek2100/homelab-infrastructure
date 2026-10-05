@@ -144,11 +144,11 @@
           ]
         }
       },
-      "title": "Core-1 Controller (192.168.10.35)",
+      "title": "Core-1 Controller (192.168.10.202)",
       "type": "stat",
       "targets": [
         {
-          "expr": "probe_success{instance=\"http://192.168.10.35\"} or vector(1)",
+          "expr": "probe_success{instance=\"http://192.168.10.202\"} or vector(1)",
           "legendFormat": "Core-1 Status"
         }
       ]
@@ -210,11 +210,11 @@
           ]
         }
       },
-      "title": "Core-3 Controller (192.168.10.153)",
+      "title": "Core-3 Controller (192.168.10.203)",
       "type": "stat",
       "targets": [
         {
-          "expr": "probe_success{instance=\"http://192.168.10.153\"} or vector(1)",
+          "expr": "probe_success{instance=\"http://192.168.10.203\"} or vector(1)",
           "legendFormat": "Core-3 Status"
         }
       ]
@@ -746,11 +746,11 @@
           ]
         }
       },
-      "title": "HP LaserJet Web (192.168.10.195)",
+      "title": "HP LaserJet Web (192.168.10.181)",
       "type": "stat",
       "targets": [
         {
-          "expr": "probe_success{instance=\"http://192.168.10.195\"}",
+          "expr": "probe_success{instance=\"http://192.168.10.181/DevMgmt/ProductStatusDyn.xml\"} or probe_success{instance=\"http://192.168.10.181\"}",
           "legendFormat": "HP LaserJet"
         }
       ]
@@ -812,11 +812,11 @@
           ]
         }
       },
-      "title": "Brother Printer Web (192.168.10.196)",
+      "title": "Brother Printer Web (192.168.10.182)",
       "type": "stat",
       "targets": [
         {
-          "expr": "probe_success{instance=\"http://192.168.10.196\"}",
+          "expr": "probe_success{instance=\"http://192.168.10.182\"}",
           "legendFormat": "Brother Printer"
         }
       ]

@@ -1,0 +1,117 @@
+{
+  "subnets": [
+    {
+      "vlanID": 1,
+      "name": "Management",
+      "gatewayIP": "192.168.1.1",
+      "totalIPs": 155,
+      "subnetMask": "255.255.255.0",
+      "dhcpMode": "Server",
+      "ipRangeLow": "192.168.1.100",
+      "ipRangeHigh": "192.168.1.254",
+      "leaseTime": 720,
+      "dnsServerMode": "Static",
+      "dns1": "192.168.40.185",
+      "dns2": "192.168.40.186",
+      "dhcpOptions": []
+    },
+    {
+      "vlanID": 10,
+      "name": "Main - Trusted",
+      "gatewayIP": "192.168.10.1",
+      "totalIPs": 155,
+      "subnetMask": "255.255.255.0",
+      "dhcpMode": "Server",
+      "ipRangeLow": "192.168.10.100",
+      "ipRangeHigh": "192.168.10.254",
+      "leaseTime": 720,
+      "dnsServerMode": "Static",
+      "dns1": "192.168.40.185",
+      "dns2": "192.168.40.186",
+      "dhcpOptions": []
+    },
+    {
+      "vlanID": 20,
+      "name": "Guest - Media",
+      "gatewayIP": "192.168.20.1",
+      "totalIPs": 155,
+      "subnetMask": "255.255.255.0",
+      "dhcpMode": "Server",
+      "ipRangeLow": "192.168.20.100",
+      "ipRangeHigh": "192.168.20.254",
+      "leaseTime": 720,
+      "dnsServerMode": "Static",
+      "dns1": "192.168.40.185",
+      "dns2": "192.168.40.186",
+      "dhcpOptions": []
+    },
+    {
+      "vlanID": 30,
+      "name": "Isolated - IOT",
+      "gatewayIP": "192.168.30.1",
+      "totalIPs": 155,
+      "subnetMask": "255.255.255.0",
+      "dhcpMode": "Server",
+      "ipRangeLow": "192.168.30.100",
+      "ipRangeHigh": "192.168.30.254",
+      "leaseTime": 720,
+      "dnsServerMode": "Static",
+      "dns1": "192.168.40.185",
+      "dns2": "192.168.40.186",
+      "dhcpOptions": [
+        {
+          "name": "Local IoT NTP Gateway"
+        }
+      ]
+    },
+    {
+      "vlanID": 40,
+      "name": "Servers - Admin",
+      "gatewayIP": "192.168.40.1",
+      "totalIPs": 155,
+      "subnetMask": "255.255.255.0",
+      "dhcpMode": "Server",
+      "ipRangeLow": "192.168.40.100",
+      "ipRangeHigh": "192.168.40.254",
+      "leaseTime": 720,
+      "dnsServerMode": "Static",
+      "dns1": "192.168.40.185",
+      "dns2": "192.168.40.186",
+      "dhcpOptions": []
+    },
+    {
+      "vlanID": 150,
+      "name": "CA-1 Test",
+      "gatewayIP": "192.168.150.1",
+      "totalIPs": 155,
+      "subnetMask": "255.255.255.0",
+      "dhcpMode": "Server",
+      "ipRangeLow": "192.168.150.100",
+      "ipRangeHigh": "192.168.150.254",
+      "leaseTime": 720,
+      "dnsServerMode": "Static",
+      "dns1": "1.1.1.1",
+      "dns2": "1.0.0.1",
+      "dhcpOptions": []
+    },
+    {
+      "vlanID": 200,
+      "name": "Core-5 Test",
+      "gatewayIP": "192.168.200.1",
+      "totalIPs": 155,
+      "subnetMask": "255.255.255.0",
+      "dhcpMode": "Server",
+      "ipRangeLow": "192.168.200.100",
+      "ipRangeHigh": "192.168.200.254",
+      "leaseTime": 720,
+      "dnsServerMode": "Static",
+      "dns1": "1.1.1.1",
+      "dns2": "1.0.0.1",
+      "dhcpOptions": []
+    }
+  ],
+  "resultMessage": {
+    "code": 0,
+    "message": "OK"
+  }
+}

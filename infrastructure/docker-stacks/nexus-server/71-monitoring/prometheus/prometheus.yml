@@ -288,12 +288,12 @@ scrape_configs:
           service: 'control4-ca10-director'
           category: 'control4'
       - targets:
-        - http://192.168.10.35
+        - http://192.168.10.202
         labels:
           service: 'control4-core1'
           category: 'control4'
       - targets:
-        - http://192.168.10.153
+        - http://192.168.10.203
         labels:
           service: 'control4-core3'
           category: 'control4'
@@ -310,12 +310,12 @@ scrape_configs:
       # HP EWS pages return 200 then truncate the body ("unexpected EOF" in blackbox);
       # the LEDM status XML is small, complete, and reflects printer state.
       - targets:
-        - http://192.168.10.195/DevMgmt/ProductStatusDyn.xml
+        - http://192.168.10.181/DevMgmt/ProductStatusDyn.xml
         labels:
           service: 'hp-laserjet-web'
           category: 'printer'
       - targets:
-        - http://192.168.10.196
+        - http://192.168.10.182
         labels:
           service: 'brother-printer-web'
           category: 'printer'
