@@ -8,8 +8,8 @@ This document details the physical hardware, virtual bridges, dual-WAN egress pa
 
 ```text
                        ┌─────────────────────────────────────────────────────────────┐
-                       │           Araknis 520 Dual-WAN Router (192.168.1.1)          │
-                       │           • OvrC Cloud Agent (Auto-Claim OFF, Manual Only)  │
+                       │           Araknis 520 Dual-WAN Router (192.168.1.1)         │
+                       │           • OvrC Cloud Agent (Auto-Claim OFF, 24-hour Scan) │
                        │           • Inter-VLAN Firewall (36 ACL Rules)              │
                        │           • WAN1 (ISP) + WAN2 (10.25.25.1 Discovery Ingress)│
                        └──────────────────────────────┬──────────────────────────────┘
