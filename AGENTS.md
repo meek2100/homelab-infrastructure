@@ -64,7 +64,7 @@
 ## MCP & Tool Standards
 - Keep Model Context Protocol (MCP) servers modular in `mcp/` and reference project-level MCP tools in `.agents/mcp_config.json`.
 - Secret Backup Standard: Encrypt all secrets using `SOPS` + `age` (`*.enc.yaml`). Keep master key in user password manager; no unencrypted secrets in Git.
-- Master Tool Definition: `mcp/homelab/server.py` implements the FastMCP server (`Homelab Infrastructure System`), bundling 48 native tools covering hypervisors, containers, switching, routing, and external services.
+- Master Tool Definition: `mcp/homelab/server.py` implements the FastMCP server (`Homelab Infrastructure System`), bundling 50 native tools covering hypervisors, containers, switching, routing, and external services.
 
 ### Bundled FastMCP Tool Catalog (`mcp/homelab/server.py`)
 
@@ -129,6 +129,8 @@
   - `sync_wireshark_capture()`: Synchronizes headless tshark capture mover scripts from Stack 48 into Git.
   - `analyze_pcap_telemetry(path, focus, vlan, max_files, max_packets, json_output)`: Deep packet diagnostic engine streaming PCAP/PCAPNG ring buffers at >100,000 pkts/s via zero-copy binary unpacking. Generates L2–L7 scorecards across VLANs, ARP floods, STP, TCP RSTs, DNS bypass leakers, and rogue DHCP.
   - `query_pcap_flows(path, host, port, proto, vlan, limit, max_files)`: Forensic flow search tool querying matching packet flows and conversations across captures by host, port, protocol, or VLAN.
+  - `sync_adguard_clients(host, user, password, dry_run)`: Synchronizes authoritative DHCP reservations into AdGuard Home's Persistent Clients table via REST API; auto-replicated to secondary AdGuard via `adguardhome-sync`.
+  - `align_ovrc_devices(ovrc_csv, reservations, output)`: Correlates and aligns OvrC device list against authoritative DHCP reservations, resolving "Unspecified" and generic device names into accurate human-friendly names and rooms in `ovrc-device-list-aligned.csv`.
 
 #### 6. External Cloud Services & Security Hardening
 - `get_external_services_status()`: Zero-trust synthetic health audit for `theurer.dev` web and `mail.theurer.dev`.

@@ -556,6 +556,36 @@ def query_pcap_flows(
     if vlan is not None: args.extend(["--vlan", str(vlan)])
     return run_script("analyze-pcap-telemetry.py", args)
 
+@mcp.tool()
+def sync_adguard_clients(
+    host: str = "http://192.168.40.185:8081",
+    user: str = None,
+    password: str = None,
+    dry_run: bool = False
+) -> str:
+    """Synchronizes authoritative DHCP reservations into AdGuard Home's Persistent Clients table via REST API.
+    Applied to Primary AdGuard Home (nexus-server); adguardhome-sync automatically mirrors to Secondary AdGuard Home."""
+    args = ["--host", host]
+    if user: args.extend(["--user", user])
+    if password: args.extend(["--password", password])
+    if dry_run: args.append("--dry-run")
+    return run_script("sync-adguard-clients.py", args)
+
+@mcp.tool()
+def align_ovrc_devices(
+    ovrc_csv: str = "",
+    reservations: str = "",
+    output: str = ""
+) -> str:
+    """Correlates and aligns OvrC device list against authoritative DHCP reservations.
+    Resolves 'Unspecified' and generic device names into accurate human-friendly names and rooms,
+    generating an enriched CSV blueprint (ovrc-device-list-aligned.csv)."""
+    args = []
+    if ovrc_csv: args.extend(["--ovrc-csv", ovrc_csv])
+    if reservations: args.extend(["--reservations", reservations])
+    if output: args.extend(["--output", output])
+    return run_script("align-ovrc-devices.py", args)
+
 if __name__ == "__main__":
     mcp.run()
 
