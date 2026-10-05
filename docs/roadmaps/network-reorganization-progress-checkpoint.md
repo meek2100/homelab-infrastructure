@@ -1,7 +1,7 @@
 # 🏁 Homelab Network Remediation & DHCP Reorganization: Milestone Checkpoint
 
 **Date**: 2026-10-04  
-**Status**: Pre-Powercycle Milestone Reached (Tasks 001–006, 009 Complete; Ready for Global Powercycle)
+**Status**: Post-Powercycle Verification Complete (Tasks 001–011 Complete; Prometheus 60/60 UP; Sonos/Printers/RustDesk Verified)
 
 ---
 
@@ -10,17 +10,17 @@
 | Task ID | Description | Status | Verification & Target State |
 | :--- | :--- | :---: | :--- |
 | **`TASK_001`** | Pre-Flight Snapshots & Safety Blueprints | 🟢 **COMPLETED** | Saved `araknis-520-backup-pre-reorg.cfg`, `araknis-920-running-pre-reorg.cfg`, and timestamped JSON state files. |
-| **`TASK_002`** | Monitoring Alert Silences | 🟢 **COMPLETED** | 2-hour active silences in Alertmanager for Control4, Sonos, and printers. |
-| **`TASK_003`** | OvrC & WAN Ingress Dropping | 🟢 **COMPLETED** | Rules 35 & 36 added on Araknis 520 dropping WAN sweeps to `.150.200` & `.200.200`. |
-| **`TASK_004`** | Enterprise Subnet Tiering & DHCP | 🟢 **COMPLETED** | All 7 VLAN dynamic ranges updated to `.20–.99`; 90 static reservations applied to router NVRAM. |
+| **`TASK_002`** | Monitoring Alert Silences | 🟢 **COMPLETED** | 2-hour active silences in Alertmanager for Control4, Sonos, and printers (now cleanly expired; 0 active alerts). |
+| **`TASK_003`** | OvrC & WAN Ingress Dropping | 🟢 **COMPLETED** | Rules 35 & 36 added on Araknis 520 dropping WAN sweeps to `.150.200` & `.200.200`. OvrC Auto-Claim disabled. |
+| **`TASK_004`** | Enterprise Subnet Tiering & DHCP | 🟢 **COMPLETED** | All 7 VLAN dynamic ranges updated to `.20–.99`; 90 static reservations applied to router NVRAM; 77 clients verified active. |
 | **`TASK_005`** | Firewall Hardening & DNS Interception | 🟢 **COMPLETED** | Clamped Rule 18 down to `.20.201–.205`; Rules 33 & 34 block DoT; Port 53 DNAT active; UPnP disabled. |
 | **`TASK_006`** | Switch Multicast Router & Storm Control | 🟢 **COMPLETED** | `set igmp mrouter 20` on Port 1/0/1; Storm control active (200 pps access, 500 pps trunk); `write memory` confirmed. |
-| **`TASK_007`** | DNS Runaway Loop Remediation | 🟢 **PARTIAL** | AdGuard Home NXDOMAIN rule verified (`RCODE: 3`); container `adguardhome-sync`/NPM sed commands queued for host. |
-| **`TASK_008`** | TCP PMTUD & Host MSS Clamping | ⏳ **PENDING** | Sudo iptables commands ready for execution on `nexus-server` (VM 100). |
-| **`TASK_009`** | GitOps Monitoring Targets Alignment | 🟢 **COMPLETED** | Prometheus targets and Grafana dashboards updated for Core-1/3 and printers (`commit 25b3520`). |
-| **`TASK_010`** | Device Lease Renewals & Sonos Testing | ⏳ **PENDING** | Ready to be executed via network powercycle + Sonos/C4 app testing. |
-| **`TASK_011`** | Observability Resume & 60/60 Audit | ⏳ **PENDING** | Prometheus restart and Alertmanager unsilence post-reboot. |
-| **`TASK_012`** | Post-Remediation PCAP Telemetry Delta | ⏳ **PENDING** | 1-hour capture analysis via `scripts/analyze_lan_pcap.py`. |
+| **`TASK_007`** | DNS Runaway Loop Remediation | 🟢 **COMPLETED** | AdGuard Home NXDOMAIN rule verified (`RCODE: 3`); container `adguardhome-sync` and NPM host 14 updated to `.40.185`/`.40.186`. |
+| **`TASK_008`** | TCP PMTUD & Host MSS Clamping | 🟢 **COMPLETED** | TCPMSS clamped to 1380 on FORWARD and OUTPUT; saved to `/etc/iptables/rules.v4` on `nexus-server`. |
+| **`TASK_009`** | GitOps Monitoring Targets Alignment | 🟢 **COMPLETED** | Prometheus targets and Grafana dashboards updated for Core-1/3 and printers (`commit 25b3520` & `commit 5249763`). |
+| **`TASK_010`** | Device Lease Renewals & Functional Testing | 🟢 **COMPLETED** | Global powercycle complete; Sonos Move 2 discovery, playback & volume slider verified; HP & Brother printers verified; RustDesk relay verified. |
+| **`TASK_011`** | Observability Resume & 60/60 Audit | 🟢 **COMPLETED** | Stack 71 updated and restarted on `nexus-server`; Prometheus reached **60/60 UP (100% healthy)**. |
+| **`TASK_012`** | Post-Remediation PCAP Telemetry Delta | ⏳ **PENDING** | Capture analysis via `scripts/analyze_lan_pcap.py` to confirm non-unicast frame ratio < 5.0% and ARP rate < 20/s. |
 | **`TASK_013`** | Final Aggregation & Operational Sign-off | ⏳ **PENDING** | Final delivery sign-off report. |
 
 ---

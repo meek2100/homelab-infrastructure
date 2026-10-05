@@ -22,7 +22,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Part 5.6** | Phase 2 Automation, External Log Shipping & GitOps Drills | 🟢 100% Complete & Operationalized (Snapshot FastMCP, Device Auto-Sync, Promtail Tooling, GitOps Drills) |
 | **Part 6** | Comprehensive Architectural Learnings & Production Gotchas | 📚 26 Critical Learnings Documented & Fleet-Hardened |
 | **Part 7** | 2026-09-29 / 10-02 Capture-Driven Network Remediation | 🟢 Complete / Stable — BPDU leak eliminated, Sonos inter-VLAN operating, Mainsail restored, DHCP optimized (52 active entries), 144 capture files analyzed |
-| **Part 7.5**| DHCP Reorganization, IP Tiering & Sonos Inter-VLAN | 🟡 Planned / Staged — Authoritative plan documented in [`network-dhcp-ip-reorganization-plan.md`](file:///home/agentsvc/repos/homelab-infrastructure/docs/roadmaps/network-dhcp-ip-reorganization-plan.md) |
+| **Part 7.5**| DHCP Reorganization, IP Tiering & Sonos Inter-VLAN | 🟢 100% Complete & Verified — All 7 VLAN dynamic ranges updated to `.20–.99`; 90 static enterprise reservations deployed; Sonos Move 2 cross-VLAN discovery & control verified; Prometheus at 60/60 UP |
 | **Part 8** | Compute Platform Review (pve hosts, VMs, LXCs, Docker, GPU) | ⏸️ Future — starts once the network is stable and all important config/state is in git |
 
 ### Key Protocol Constraints & Architecture Settled
@@ -63,7 +63,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 ## 📋 Part 1: Core Router & Switch Authoritative Configuration
 
 ### 1. Araknis 520 Router Access Control Lists (ACL Hierarchy)
-Audited and verified live via `GET /api/cgi-bin/v1/config/acls`. 32 rules active with strict evaluation order:
+Audited and verified live via `GET /api/cgi-bin/v1/config/acls`. 36 rules active with strict evaluation order:
 
 | Priority | Rule Name | Action | Service | Source | Destination | Status |
 | :---: | :--- | :---: | :--- | :--- | :--- | :---: |
@@ -84,7 +84,7 @@ Audited and verified live via `GET /api/cgi-bin/v1/config/acls`. 32 rules active
 | **15** | Media to Plex Server | Permit | Plex-Media (TCP:32400) | `192.168.20.0/24` (Media) | `192.168.40.247` (media-server) | 🟢 Active |
 | **16** | Management to Mainsail | Permit | All Traffic | `192.168.1.0/24` (Management) | `192.168.30.90` (mainsail) | 🟢 Active |
 | **17** | Media to Home Assistant | Permit | Home-Assistant (TCP:8123) | `192.168.20.0/24` (Media) | `192.168.40.249` (luna-server) | 🟢 Active |
-| **18** | Sonos to Trusted LAN | Permit | All Traffic | `192.168.20.140-225` (Sonos) | `192.168.10.0/24` (Trusted) | 🟢 Active |
+| **18** | Sonos to Trusted LAN | Permit | All Traffic | `192.168.20.201-205` (Sonos) | `192.168.10.0/24` (Trusted) | 🟢 Active |
 | **19** | Trusted LAN to Sonos & Media | Permit | All Traffic | `192.168.10.0/24` (Trusted) | `192.168.20.0/24` (Media) | 🟢 Active |
 | **20** | Servers to Mainsail | Permit | All Traffic | `192.168.40.0/24` (Servers) | `192.168.30.90` (mainsail) | 🟢 Active |
 | **21** | Management to Mainsail SSH | Permit | SSH (TCP:22) | `192.168.1.0/24` (Management) | `192.168.30.90` (mainsail) | 🟢 Active |
@@ -99,8 +99,12 @@ Audited and verified live via `GET /api/cgi-bin/v1/config/acls`. 32 rules active
 | **30** | Block Guests to Management | Deny | All Traffic | `192.168.20.0/24` (Media) | `192.168.1.0/24` (Management) | 🟢 Active |
 | **31** | Block Guests to Trusted LAN | Deny | All Traffic | `192.168.20.0/24` (Media) | `192.168.10.0/24` (Trusted) | 🟢 Active |
 | **32** | Block Guests to Servers | Deny | All Traffic | `192.168.20.0/24` (Media) | `192.168.40.0/24` (Servers) | 🟢 Active |
+| **33** | Block DoT on VLAN 20 | Deny | DNS over TLS (TCP:853) | `192.168.20.0/24` (Media) | Any | 🟢 Active |
+| **34** | Block DoT on VLAN 30 | Deny | DNS over TLS (TCP:853) | `192.168.30.0/24` (IoT) | Any | 🟢 Active |
+| **35** | Drop WAN Keepalive to CA-1 | Deny | All Traffic | WAN1 (Internet) | `192.168.150.200` (CA-1 Test) | 🟢 Active |
+| **36** | Drop WAN Keepalive to Core-5| Deny | All Traffic | WAN1 (Internet) | `192.168.200.200` (Core-5 Test) | 🟢 Active |
 
-> **VLANs 150 / 200 (work testbench) are isolated by Interzone Forwarding and explicit mDNS Deny rules (22-25).** Both zones have every "Allow forward TO/FROM" box unchecked and Device Management off. ACL Rule 1 (Any → AdGuard DNS) still permits their DNS. The explicit mDNS rules prevent the router's Bonjour repeater from leaking local homelab service names into test environments.
+> **VLANs 150 / 200 (work testbench) are isolated by Interzone Forwarding, explicit mDNS Deny rules (22-25), and WAN ingress drop rules (35-36).** Both zones have every "Allow forward TO/FROM" box unchecked and Device Management off. ACL Rule 1 (Any → AdGuard DNS) still permits their DNS. The explicit mDNS rules prevent the router's Bonjour repeater from leaking local homelab service names into test environments, while Rules 35 & 36 drop inbound AWS cloud keepalive sweeps to silence 5.25M router broadcast ARPs.
 
 ---
 

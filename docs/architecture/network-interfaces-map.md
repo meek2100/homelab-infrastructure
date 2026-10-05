@@ -1,6 +1,6 @@
 # 🌐 Comprehensive Network Topology & Subnet Map
 
-> ⚠️ **Outdated snapshot — superseded (noted 2026-09-30).** The interface dumps below predate the VLAN re-architecture. Current facts: VLAN 40 is **Servers – Admin** (`192.168.40.0/24`, AdGuard `.185`/`.186`, luna `.249`); **VLAN 50 no longer exists**; `pve2` has **no** `vmbr0.40`/`vmbr0.50` sub-interfaces (only `vmbr0` = `192.168.1.240` untagged and `vmbr1` = `10.25.25.240` storage). For the authoritative layout see [`vlan-matrix.md`](vlan-matrix.md) and [`../roadmaps/network-implementation-plan.md`](../roadmaps/network-implementation-plan.md).
+> ⚠️ **Historical Snapshot Notice — Superseded**: The raw host interface dumps below predate the fleet VLAN re-architecture and 2026-10-04 enterprise reorganization. Current facts: VLAN 40 is **Servers – Admin** (`192.168.40.0/24`, AdGuard `.185`/`.186`, luna `.249`, OMV `.248`); **VLAN 50 no longer exists**; `pve2` has **no** `vmbr0.40`/`vmbr0.50` sub-interfaces (only `vmbr0` = `192.168.1.240` untagged and `vmbr1` = `10.25.25.240` storage). Dynamic pools across all 7 VLANs are restricted to `.20–.99` with 90 enterprise reservations active. For authoritative specs see [`vlan-matrix.md`](vlan-matrix.md), [`network-topology.md`](network-topology.md), and [`../roadmaps/network-dhcp-ip-reorganization-plan.md`](../roadmaps/network-dhcp-ip-reorganization-plan.md).
 
 This document outlines all physical host bridges, VLANs, static IP assignments, and private storage networks across `pve`, `pve2`, `pve3`, and all virtual machines.
 

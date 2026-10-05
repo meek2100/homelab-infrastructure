@@ -53,24 +53,26 @@ This document provides the authoritative network segmentation specification for 
 
 ### 📋 Authoritative Inter-VLAN ACL Rule Hierarchy (Araknis 520 Router)
 
-The router evaluates **32 granular rules** (see full rule list in [`network-implementation-plan.md`](../roadmaps/network-implementation-plan.md#1-araknis-520-router-access-control-lists-acl-hierarchy)):
+The router evaluates **36 granular rules** (see full rule list in [`network-implementation-plan.md`](../roadmaps/network-implementation-plan.md#1-araknis-520-router-access-control-lists-acl-hierarchy)):
 
 1. **DNS & Security (Rules 1–6)**: Permits UDP/TCP 53, HTTPS DoH (443), and DoQ (853) to/from AdGuard Primary (`192.168.40.185`) and Secondary (`192.168.40.186`).
 2. **Automation & Smart Home (Rules 7–10)**: Permits IoT & Media to Control4 CA-10 (`192.168.10.200`), and IoT to Home Assistant / Homebridge (`192.168.40.249`).
 3. **Mainsail 3D Printing (Rules 11–14, 16, 20–21)**: Permits bidirectional traffic between Mainsail (`192.168.30.90`) and Trusted LAN (`192.168.10.0/24`), Management (`192.168.1.0/24`), and Servers (`192.168.40.0/24`) for Moonraker API (7125), HTTP (80), and SSH (22).
 4. **Media & Entertainment (Rules 15, 17)**: Permits Media (VLAN 20) to Plex (`192.168.40.247:32400`) and Home Assistant (`192.168.40.249:8123`).
-5. **Sonos Bidirectional Inter-VLAN (Rules 18–19)**: Permits All Traffic between the Sonos block (`192.168.20.140–.225`, tightening to dedicated sequential block `192.168.20.201–.205` in Part 7.5) and Trusted LAN (`192.168.10.0/24`), enabling SSDP/SDDP discovery, TCP 1400 control, and reverse UPnP event callbacks without dropouts.
+5. **Sonos Bidirectional Inter-VLAN (Rules 18–19)**: Permits All Traffic between tightened Sonos block (`192.168.20.201–192.168.20.205`) and Trusted LAN (`192.168.10.0/24`), enabling SSDP/mDNS discovery, TCP 1400 control, and reverse UPnP event callbacks without dropouts.
 6. **Testbench mDNS Isolation (Rules 22–25)**: Explicitly drops mDNS (UDP 5353) to/from VLAN 150 (CA-1 Test) and VLAN 200 (Core-5 Test) to prevent Bonjour repeater hostname leaks.
 7. **Strict Isolation & Segmentation (Rules 26–32)**: Explicitly denies all other cross-VLAN initiation:
    - IoT (VLAN 30) BLOCKED to Management, Trusted LAN, Guest/Media, and Servers.
    - Guest/Media (VLAN 20) BLOCKED to Management, Trusted LAN, and Servers.
+8. **DNS Hardening (Rules 33–34)**: Blocks outbound DNS-over-TLS (TCP 853) on VLAN 20 and VLAN 30 to prevent devices from bypassing AdGuard Home filtering.
+9. **WAN Ingress Keepalive Suppression (Rules 35–36)**: Drops inbound WAN1 cloud sweeps destined for idle testbench controllers (`192.168.150.200` CA-1 and `192.168.200.200` Core-5), silencing 5.25M router ARP broadcast floods.
 
 > [!NOTE]
 > **24-Hour Empirical Packet Validation (2026-10-03)**:
 > Ingestion of 32,038,778 packets over 23.97 continuous hours across all 109 ring-buffer captures confirmed **100% boundary integrity**:
 > - **VLAN 30 (IoT)**: 0 packets initiated to VLAN 10 or VLAN 1.
 > - **VLAN 20 (Guest Media)**: 0 packets initiated to VLAN 1 or VLAN 40; inter-VLAN flows strictly confined to legitimate Sonos-to-Control4 CA-10 communications under Rules 18–19.
-> - **Testbench Ingress Gap**: Discovered that inbound Control4 AWS cloud keepalives to dormant testbench controllers (`192.168.150.200`, `192.168.200.200`) triggered 5.25 million router broadcast ARPs while the testbench switch is powered off by WattBox. Remediated via WAN drop ACL rules in `lan-hygiene-pcap-remediation-plan.md`.
+> - **Testbench Ingress Gap**: Remediated via Rules 35 & 36 dropping inbound cloud sweeps on WAN1.
 
 ---
 

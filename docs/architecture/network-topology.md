@@ -9,8 +9,8 @@ This document details the physical hardware, virtual bridges, dual-WAN egress pa
 ```text
                        ┌─────────────────────────────────────────────────────────────┐
                        │           Araknis 520 Dual-WAN Router (192.168.1.1)          │
-                       │           • OvrC Cloud Agent (66 Stale MAC Sweeps)          │
-                       │           • Inter-VLAN Firewall (32 ACL Rules)              │
+                       │           • OvrC Cloud Agent (Auto-Claim OFF, Manual Only)  │
+                       │           • Inter-VLAN Firewall (36 ACL Rules)              │
                        │           • WAN1 (ISP) + WAN2 (10.25.25.1 Discovery Ingress)│
                        └──────────────────────────────┬──────────────────────────────┘
                                                       │ 802.1Q Trunk (VLANs 1,10,20,30,40,100,150,200)
@@ -50,7 +50,14 @@ This document details the physical hardware, virtual bridges, dual-WAN egress pa
 * **Dual-WAN Configuration**:
   * **WAN1 (Primary)**: Connects primary ISP. Serves all general household traffic across `Management` (VLAN 1), `Main - Trusted` (VLAN 10), `Guest - Media` (VLAN 20), `Isolated - IOT` (VLAN 30), and `Servers - Admin` (VLAN 40).
   * **WAN2 (`10.25.25.1`)**: Dedicated secondary internet egress route. Serves `discovery-server` (`10.25.25.246`) to isolate heavy VPN and torrent traffic from household internet usage.
-* **DHCP Scope Configuration**:
+* **DHCP Scope & Tiering Configuration**:
+  * Dynamic DHCP pools are strictly bounded to **`.20–.99`** (80 leases) across all 7 VLANs.
+  * Deterministic enterprise static reservations reside in dedicated functional tiers:
+    * Workstations: `.100–.149`
+    * Smart Hubs & Security: `.150–.179`
+    * Network Printers: `.180–.182`
+    * AV, Sonos & Automation: `.200–.239`
+    * Hypervisors & Servers: `.240–.254`
   * All active DHCP scopes configure **DHCP Option 6 (DNS)** to point to:
     * Primary DNS: **`192.168.40.185`** (`nexus-server` on `pve`)
     * Secondary DNS: **`192.168.40.186`** (`nexus-server2` on `pve3`)
