@@ -657,7 +657,7 @@
     {
       "enable": true,
       "macAddress": "00:0F:FF:0C:41:CA",
-      "staticIPAddress": "192.168.200.201",
+      "staticIPAddress": "192.168.175.201",
       "name": "SA-1 Ryff"
     },
     {

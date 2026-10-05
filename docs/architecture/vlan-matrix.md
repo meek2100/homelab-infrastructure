@@ -1,4 +1,4 @@
-# 🏷️ Homelab 8-VLAN Segmentation Matrix
+# 🏷️ Homelab 9-VLAN Segmentation Matrix
 
 This document provides the authoritative network segmentation specification for the homelab, defined on the **Araknis 520 Dual-WAN Router**, distributed via 802.1Q trunks on the **Araknis 920 Switch**, and broadcast via **Araknis 830 APs**.
 
@@ -14,9 +14,22 @@ This document provides the authoritative network segmentation specification for 
 | **30** | `Isolated - IOT` | `192.168.30.0/24` | `192.168.30.1` | Untrusted | `192.168.40.185`, `192.168.40.186` | Smart plugs, smart bulbs, Wi-Fi sensors, Tuya/ESPHome/Shelly devices (no return LAN access) |
 | **40** | `Servers - Admin` | `192.168.40.0/24` | `192.168.40.1` | Protected Server | `192.168.40.185`, `192.168.40.186` | Core identity & server infrastructure: Primary DNS/NPM (`.185`), Secondary DNS (`.186`), Home Automation (`.249`), NAS Admin (`.248`) |
 | **100** | `Wireshark - Debug` | Dynamic / Sniff | - | Inspection | `192.168.40.185`, `192.168.40.186` | Dedicated network traffic inspection, SPAN mirror destination, and packet capture analysis |
-| **150** | `CA-1 Test` | Dynamic / Test | - | Isolated Lab | `192.168.40.185`, `192.168.40.186` | Control4 CA-1 Automation Controller lab network (tunneled to OpenWrt via `vxlan150` on VM 107; trunked to Pakedge SX-8P on SW920 Port 1/0/7) |
-| **200** | `Core-5 Test` | Dynamic / Test | - | Isolated Lab | `192.168.40.185`, `192.168.40.186` | Control4 CORE 5 Flagship Automation Controller testing and multi-room AVoIP integration (trunked to Pakedge SX-8P on SW920 Port 1/0/7) |
+| **150** | `CA-1 Test` | Dynamic / Test | - | Isolated Lab | `192.168.40.185`, `192.168.40.186` | Control4 CA-1 Automation Controller lab network (OvrC location `CA1 Test`; tunneled via `vxlan150` on VM 107; trunked to Pakedge SX-8P on SW920 Port 1/0/7) |
+| **175** | `Ryff Standalone Test`| `192.168.175.0/24` | - | Isolated Lab | `192.168.40.185`, `192.168.40.186` | Triad SA1 Streaming Amp / Ryff audio test network (OvrC location `Ryff Standalone Test`; SW920 Port 1/0/5 access VLAN 175) |
+| **200** | `Core-5 Test` | Dynamic / Test | - | Isolated Lab | `192.168.40.185`, `192.168.40.186` | Control4 CORE 5 Flagship Automation Controller testing and multi-room AVoIP (OvrC location `Core5 Test`; SW920 Port 1/0/8 access VLAN 200) |
 | **WAN2** | `Storage & WAN2` | `10.25.25.0/24` | `10.25.25.1` | Dedicated Transit | Local / Unbound | Dedicated WAN2 internet egress for `discovery-server` (`.246`) and L2 line-rate storage to `nas-server` (`.248`) |
+
+---
+
+## ☁️ OvrC Cloud Location Mapping
+
+| OvrC Location Name | OvrC Location ID | Target Subnet / VLAN | Scope & Purpose |
+| :--- | :--- | :--- | :--- |
+| **Theurer Home** | `67acffbe603da2cec1e44bc0` | VLAN 1, 10, 20, 30, 40 | Main Homelab & Residential Network Fleet (83 devices) |
+| **CA1 Test** | `6abaa48bd63369a5ab17f7bb` | VLAN 150 (`192.168.150.0/24`) | Control4 CA-1 Controller Testbench (`00:0F:FF:51:92:2F`) |
+| **Ryff Standalone Test** | `6ac3c311513ad591c2c579d9` | VLAN 175 (`192.168.175.0/24`) | Triad SA1 Streaming Amp Ryff Testbench (`00:0F:FF:0C:41:CA`) |
+| **Core5 Test** | `6a3a51c86985286df96ff09d` | VLAN 200 (`192.168.200.0/24`) | Control4 Core-5 Flagship Controller Testbench (`00:0F:FF:0C:33:AE`) |
+| *Nicola Home* | `67c75f3c260e087d0a02ba18` | External / Remote | **EXCLUDED** (External client/dealer location, not part of this homelab repo) |
 
 ---
 

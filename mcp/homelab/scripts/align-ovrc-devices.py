@@ -40,6 +40,16 @@ SECRET_FILE = os.path.join(REPO_ROOT, "infrastructure", "secrets", "ovrc.enc.yam
 OVRC_API_BASE = "https://api.ovrc.com/v1"
 DEFAULT_CLIENT_API_KEY = "lefqsmukfgrfr2cvxya6cxnlc22i79h97a4bcp76"
 
+PROJECT_LOCATIONS = ["Theurer Home", "CA1 Test", "Core5 Test", "Ryff Standalone Test"]
+EXCLUDED_LOCATIONS = ["Nicola Home"]
+
+LOCATION_VLAN_MAP = {
+    "theurer home": "VLAN 1, 10, 20, 30, 40",
+    "ca1 test": "VLAN 150 (CA-1 Test)",
+    "ryff standalone test": "VLAN 175 (SA-1 Ryff)",
+    "core5 test": "VLAN 200 (Core-5 Test)"
+}
+
 
 def normalize_mac(mac):
     if not mac:
@@ -216,16 +226,22 @@ class OvrCClient:
             return True, res.get("items", [])
         return ok, res
 
-    def find_target_location(self, location_name="Theurer Home"):
+    def get_homelab_locations(self, target_name="all"):
         ok, locs = self.get_locations()
         if not ok:
             return None, f"Failed to retrieve locations: {locs}"
+        
+        filtered = []
         for loc in locs:
-            if location_name.lower() in loc.get("name", "").lower():
-                return loc, ""
-        if locs:
-            return locs[0], ""
-        return None, "No locations found in OvrC account"
+            name = loc.get("name", "")
+            if any(ex.lower() in name.lower() for ex in EXCLUDED_LOCATIONS):
+                continue
+            if target_name.lower() == "all":
+                if any(p.lower() in name.lower() for p in PROJECT_LOCATIONS):
+                    filtered.append(loc)
+            elif target_name.lower() in name.lower():
+                filtered.append(loc)
+        return filtered, ""
 
     def get_rooms(self, location_id):
         url = f"{OVRC_API_BASE}/locations/rooms?locationId={location_id}"
@@ -261,14 +277,14 @@ class OvrCClient:
 
 
 def align_ovrc(action="preview", token=None, username=None, password=None,
-               location_name="Theurer Home",
+               location_name="all",
                ovrc_csv_path=DEFAULT_OVRC_CSV, reservations_path=DEFAULT_RESERVATIONS,
                output_csv_path=OUTPUT_ALIGNED_CSV):
     """
     Correlates and aligns OvrC device names with authoritative DHCP reservations.
     Actions:
-      - 'status' : Display OvrC location details, device count, and Unspecified count.
-      - 'scan'   : Trigger a fresh network discovery scan via OvrC Cloud API.
+      - 'status' : Display multi-location homelab status, device count, and Unspecified count.
+      - 'scan'   : Trigger a fresh network discovery scan across homelab locations.
       - 'preview': Non-destructive dry-run showing devices to rename and room assignments.
       - 'csv'    : Generates the updated ovrc-device-list-aligned.csv blueprint.
       - 'apply'  : Connects to live OvrC Cloud API and applies aligned names and rooms.
@@ -302,55 +318,77 @@ def align_ovrc(action="preview", token=None, username=None, password=None,
 
     # 1. Action: scan
     if action == "scan":
-        loc, loc_err = client.find_target_location(location_name)
-        if not loc:
-            return f"Error locating site: {loc_err}"
-        loc_id = loc.get("locationId")
-        ok, res = client.trigger_scan(loc_id)
-        if ok:
-            return f"Successfully initiated network scan for location '{loc.get('name')}' (ID: {loc_id})."
-        return f"Failed to initiate network scan: {res}"
+        locs, loc_err = client.get_homelab_locations(location_name)
+        if not locs:
+            return f"Error locating site(s): {loc_err}"
+        results = []
+        for loc in locs:
+            loc_id = loc.get("locationId")
+            name = loc.get("name")
+            ok, res = client.trigger_scan(loc_id)
+            if ok:
+                results.append(f"  ✓ Initiated scan for '{name}' (ID: {loc_id})")
+            else:
+                results.append(f"  ✗ Failed scan for '{name}': {res}")
+            time.sleep(0.5)
+        return "=== OvrC Homelab Multi-Location Scan Initiation ===\n" + "\n".join(results)
 
     # 2. Action: status
     if action == "status":
-        loc, loc_err = client.find_target_location(location_name)
-        if not loc:
-            return f"Error locating site: {loc_err}"
-        loc_id = loc.get("locationId")
-        ok_dev, devs = client.get_devices(loc_id)
-        if not ok_dev:
-            return f"Failed to retrieve devices: {devs}"
+        locs, loc_err = client.get_homelab_locations(location_name)
+        if not locs:
+            return f"Error locating site(s): {loc_err}"
 
-        unspecified = [d for d in devs if d.get("name") in ("Unspecified", "Unknown", "") or not d.get("name")]
         out = [
-            f"=== OvrC Location Status ===",
-            f"Location Name: {loc.get('name')}",
-            f"Location ID  : {loc_id}",
-            f"Address      : {loc.get('address')}",
-            f"Total Devices: {len(devs)}",
-            f"Unspecified  : {len(unspecified)}",
-            f"Degraded Devs: {loc.get('degradedDeviceCount', 0)}"
+            f"=== OvrC Homelab Multi-Location Status ===",
+            f"{'Location Name':<24} {'Location ID':<26} {'VLAN / Subnet':<28} {'Devices':<9} {'Unspecified'}",
+            "-" * 105
         ]
+        total_devs = 0
+        total_unspec = 0
+        for loc in locs:
+            loc_id = loc.get("locationId")
+            lname = loc.get("name", "")
+            vlan_desc = LOCATION_VLAN_MAP.get(lname.lower(), "Homelab Scope")
+            ok_dev, devs = client.get_devices(loc_id)
+            d_count = len(devs) if ok_dev else 0
+            u_count = len([d for d in devs if d.get("name") in ("Unspecified", "Unknown", "") or not d.get("name")]) if ok_dev else 0
+            total_devs += d_count
+            total_unspec += u_count
+            out.append(f"{lname:<24} {loc_id:<26} {vlan_desc:<28} {d_count:<9} {u_count}")
+            time.sleep(0.2)
+
+        out.append("-" * 105)
+        out.append(f"Total Fleet: {total_devs} devices across {len(locs)} homelab locations ({total_unspec} unspecified).")
+        out.append(f"[Excluded External Location: Nicola Home]")
+        out.append("=" * 105)
         return "\n".join(out)
 
     # For preview / apply / csv: Fetch live devices if authenticated, else fallback to CSV
     live_mode = auth_ok
     devices_to_process = []
-    location_id = None
-    rooms_map = {}  # name.lower() -> roomId
+    location_rooms_map = {}  # loc_id -> {room_name.lower(): room_id}
 
     if live_mode:
-        loc, loc_err = client.find_target_location(location_name)
-        if loc:
-            location_id = loc.get("locationId")
-            ok_rooms, rooms_list = client.get_rooms(location_id)
-            if ok_rooms:
-                for rm in rooms_list:
-                    rooms_map[rm.get("name", "").strip().lower()] = rm.get("roomId") or rm.get("id")
+        locs, loc_err = client.get_homelab_locations(location_name)
+        if locs:
+            for loc in locs:
+                loc_id = loc.get("locationId")
+                lname = loc.get("name", "")
+                rooms_map = {}
+                ok_rooms, rooms_list = client.get_rooms(loc_id)
+                if ok_rooms:
+                    for rm in rooms_list:
+                        rooms_map[rm.get("name", "").strip().lower()] = rm.get("roomId") or rm.get("id")
+                location_rooms_map[loc_id] = rooms_map
 
-            ok_dev, live_devs = client.get_devices(location_id)
-            if ok_dev:
-                devices_to_process = live_devs
+                ok_dev, live_devs = client.get_devices(loc_id)
+                if ok_dev:
+                    for d in live_devs:
+                        d["_locationId"] = loc_id
+                        d["_locationName"] = lname
+                        devices_to_process.append(d)
+                time.sleep(0.3)
 
     # Fallback to local CSV if live query was not possible
     if not devices_to_process:
@@ -365,16 +403,19 @@ def align_ovrc(action="preview", token=None, username=None, password=None,
                     "lanAddress": r.get("IP Address", ""),
                     "name": r.get("Device Name", ""),
                     "roomName": r.get("Room", ""),
+                    "_locationId": "local",
+                    "_locationName": "Theurer Home",
                     "_is_csv": True
                 })
 
     output_lines = [
         f"=== OvrC Device Inventory Alignment ({action.upper()}) ===",
+        f"Scope: {location_name.upper()} ({len(location_rooms_map)} locations queried)",
         f"Source: {'Live OvrC Cloud API' if live_mode else 'Local Blueprint CSV'}",
         f"Total Devices Evaluated: {len(devices_to_process)}",
         f"Authoritative Reservations: {len(reservations)}\n",
-        f"{'IP Address':<16} {'MAC Address':<18} {'Current OvrC Name':<28} {'Target Authoritative Name':<35} {'Result / Action'}",
-        "-" * 125
+        f"{'Location':<18} {'IP Address':<16} {'MAC Address':<18} {'Current OvrC Name':<28} {'Target Authoritative Name':<30} {'Result / Action'}",
+        "-" * 135
     ]
 
     aligned_csv_rows = []
@@ -388,14 +429,17 @@ def align_ovrc(action="preview", token=None, username=None, password=None,
         ip = (dev.get("lanAddress") or dev.get("ipAddress") or "").split(":")[0].strip()
         curr_name = (dev.get("name") or "").strip()
         dev_id = dev.get("deviceId")
+        dev_loc_id = dev.get("_locationId")
+        dev_loc_name = dev.get("_locationName", "Theurer Home")
         curr_room_id = dev.get("roomId")
 
         matched = res_by_mac.get(mac) or res_by_ip.get(ip)
 
         if not matched:
-            output_lines.append(f"{ip:<16} {mac:<18} {curr_name:<28} {'(No DHCP Reservation)':<35} [UNTRACKED]")
+            output_lines.append(f"{dev_loc_name:<18} {ip:<16} {mac:<18} {curr_name:<28} {'(No DHCP Reservation)':<30} [UNTRACKED]")
             untracked_count += 1
             aligned_csv_rows.append({
+                "Location": dev_loc_name,
                 "Device Name": curr_name,
                 "Room": "Unassigned",
                 "IP Address": ip,
@@ -406,12 +450,13 @@ def align_ovrc(action="preview", token=None, username=None, password=None,
 
         auth_name = matched.get("name", "").strip()
         target_room_name = get_room_from_name(auth_name)
+        rooms_map = location_rooms_map.get(dev_loc_id, {})
         target_room_id = rooms_map.get(target_room_name.lower())
 
         is_generic = (
             curr_name.lower() in ("unspecified", "unknown", "") or
             curr_name.startswith("NPID") or
-            curr_name.lower() in ("samsung", "tuya smart inc.", "apple, inc.", "pakedge-hostname")
+            curr_name.lower() in ("samsung", "tuya smart inc.", "apple, inc.", "pakedge-hostname", "sa1", "core5")
         )
         needs_rename = is_generic or (curr_name != auth_name)
 
@@ -432,8 +477,8 @@ def align_ovrc(action="preview", token=None, username=None, password=None,
                 status_text.append("NAME_ALIGNED")
                 matched_count += 1
 
-            if target_room_id and location_id and (curr_room_id != target_room_id):
-                ok_rm, err_rm = client.assign_room(dev_id, location_id, target_room_id)
+            if target_room_id and dev_loc_id and (curr_room_id != target_room_id):
+                ok_rm, err_rm = client.assign_room(dev_id, dev_loc_id, target_room_id)
                 if ok_rm:
                     status_text.append(f"ROOM->{target_room_name}")
                 else:
@@ -441,18 +486,19 @@ def align_ovrc(action="preview", token=None, username=None, password=None,
                 mutated = True
                 time.sleep(0.75)
 
-            output_lines.append(f"{ip:<16} {mac:<18} {curr_name:<28} {auth_name:<35} [{', '.join(status_text)}]")
+            output_lines.append(f"{dev_loc_name:<18} {ip:<16} {mac:<18} {curr_name:<28} {auth_name:<30} [{', '.join(status_text)}]")
 
         else:
             # Preview / CSV mode
             if needs_rename:
-                output_lines.append(f"{ip:<16} {mac:<18} {curr_name:<28} {auth_name:<35} [RENAME -> {target_room_name}]")
+                output_lines.append(f"{dev_loc_name:<18} {ip:<16} {mac:<18} {curr_name:<28} {auth_name:<30} [RENAME -> {target_room_name}]")
                 renamed_count += 1
             else:
-                output_lines.append(f"{ip:<16} {mac:<18} {curr_name:<28} {auth_name:<35} [MATCHED]")
+                output_lines.append(f"{dev_loc_name:<18} {ip:<16} {mac:<18} {curr_name:<28} {auth_name:<30} [MATCHED]")
                 matched_count += 1
 
         aligned_csv_rows.append({
+            "Location": dev_loc_name,
             "Device Name": auth_name,
             "Room": target_room_name,
             "IP Address": ip,
@@ -461,21 +507,21 @@ def align_ovrc(action="preview", token=None, username=None, password=None,
         })
 
     if action == "csv":
-        fieldnames = ["Device Name", "Room", "IP Address", "MAC Address", "Status"]
+        fieldnames = ["Location", "Device Name", "Room", "IP Address", "MAC Address", "Status"]
         with open(output_csv_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(aligned_csv_rows)
         output_lines.append(f"\nAligned blueprint CSV saved to: {output_csv_path}")
 
-    output_lines.append("-" * 125)
+    output_lines.append("-" * 135)
     output_lines.append(
         f"Summary: {renamed_count} to rename/renamed, {matched_count} already matched, "
         f"{untracked_count} untracked, {error_count} errors."
     )
     if action == "preview":
         output_lines.append("To push these updates live to OvrC Cloud, run with action='apply'.")
-    output_lines.append("=" * 125)
+    output_lines.append("=" * 135)
 
     return "\n".join(output_lines)
 
@@ -487,7 +533,7 @@ def main():
     parser.add_argument("--token", default=None, help="OvrC Bearer token or API key")
     parser.add_argument("--user", default=None, help="OvrC username")
     parser.add_argument("--password", default=None, help="OvrC password")
-    parser.add_argument("--location", default="Theurer Home", help="Target location name (default: 'Theurer Home')")
+    parser.add_argument("--location", default="all", help="Target location name (or 'all' for all 4 project locations)")
     parser.add_argument("--ovrc-csv", default=DEFAULT_OVRC_CSV, help="Path to input OvrC CSV")
     parser.add_argument("--reservations", default=DEFAULT_RESERVATIONS, help="Path to DHCP reservations JSON")
     parser.add_argument("--output", default=OUTPUT_ALIGNED_CSV, help="Path to output aligned CSV")
