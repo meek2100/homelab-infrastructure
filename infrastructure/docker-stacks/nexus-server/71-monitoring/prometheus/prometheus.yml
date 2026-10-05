@@ -122,14 +122,14 @@ scrape_configs:
   - job_name: 'snmp_printers'
     static_configs:
       - targets:
-        - 192.168.10.195
+        - 192.168.10.181
         labels:
           device_name: 'hp-color-laserjet-m283cdw'
           device_type: 'printer'
           model: 'HP Color LaserJet MFP M283cdw'
           __param_auth: 'public_v2'  # homelab-metrics community (auth name predates the rename)
       - targets:
-        - 192.168.10.196
+        - 192.168.10.182
         labels:
           device_name: 'brother-ql-1110nwb'
           device_type: 'label_printer'
