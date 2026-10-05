@@ -31,3 +31,13 @@
 2. **Araknis 920 Switch & Netgear Switch**: Power on core switches; verify Port 1/0/1 link is up.
 3. **Araknis 830 APs & Proxmox Hypervisors (`pve`, `pve2`, `pve3`)**: Boot APs and server hosts so core DNS and admin services become ready.
 4. **End Devices, Smart Home & AV (Sonos, Control4, TVs, Printers)**: Power up end clients to adopt their clean `.20–.99` dynamic leases and reserved static IPs.
+
+---
+
+## 🔬 Forensic PCAP Review & Open Remediation Items (2026-10-05)
+
+A subsequent deep-packet inspection of the overnight capture (documented in [`capture-review-2026-10-05.md`](capture-review-2026-10-05.md)) identified 3 follow-up action items refining tasks 005, 007, and 008:
+1. **WAN Port 53 Open Resolver (`TASK_005` refinement)**: The router port forward for UDP/TCP 53 forwards external WAN traffic to `192.168.40.185`. Must be removed in the Araknis web UI to close the public open resolver.
+2. **Control4 CA-10 DNS Query Loop (`TASK_007` refinement)**: `stats.grafana.org` resolves to `0.0.0.0` rather than `NXDOMAIN` (RCODE 3), causing CA-10 to query 188,416 times. AdGuard filter rule needs updating to return true `NXDOMAIN`.
+3. **TCP MSS Clamping Verification (`TASK_008` refinement)**: Certain host chains still show un-clamped SYNs. Ongoing validation tracked in `capture-review-2026-10-05.md`.
+

@@ -8,7 +8,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 
 | Part | Title | Status |
 | :--- | :--- | :---: |
-| **Part 1** | Core Router & Switch ACL Configuration (32 live rules) | ✅ 100% Verified — 2026-10-02: mDNS testbench isolation (rules 22-25), Sonos bidirectional rules (18-19), and Mainsail access rules (11-14, 16, 20-21) active |
+| **Part 1** | Core Router & Switch ACL Configuration (36 live rules) | ✅ 100% Verified — 2026-10-02: mDNS testbench isolation (rules 22-25), Sonos bidirectional rules (18-19), and Mainsail access rules (11-14, 16, 20-21) active |
 | **Part 2** | End-to-End Verification & Testing Runbook (5 tests) | ✅ 100% Verified |
 | **Part 2.5** | Multicast & Discovery Architecture (Native Bonjour/IGMP) | ✅ Settled — 2026-09-29: IGMP snooping + querier added for VLAN 30; AP mDNS gate off on MGMT SSID; 2026-09-30: luna HA/Homebridge bound to ens18 (verified), Vivint panel mDNS blocked on SW920 1/0/17; 2026-10-02: Sonos cross-VLAN discovery & control fully verified (>50k frames) |
 | **Part 2.6** | WAN2 & Storage SAN Isolation (untagged vmbr1) | ✅ Settled |
@@ -46,7 +46,8 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Test Switch**  | Pakedge SX-8P Managed | `192.168.1.205` | VLAN 1 (trunk tagged 10/150/200) | Work Automation Lab / Testbench — **powered on demand by the Control4 **Office → All Test Equipment** button (WattBox 11 relay; 90 min auto-off)** | 🟡 On-Demand |
 | **Office Router**| Belkin AX3200 (OpenWrt) | `192.168.1.226` (`br-lan`), `192.168.1.225` (`wl1-sta0`), `10.99.99.1` (out-of-band mgmt on `lan1`/`br-mgmt`) | VLAN 1 (+ tagged 10/30 bridged to VXLAN VNI 150) | 3-Priority Failover (Wire, VXLAN VNI 150, Wi-Fi repeater). BusyBox `ash` only — no bash | 🟢 Active |
 | **WAN2 Router** | Asus RT-N66U (DD-WRT Aurora)| `10.25.25.1` & `10.20.20.2` | WAN2 / `10.25.25.0/24` | Torrent/discovery isolation with PIA VPN auto-watchdog | 🟢 Active |
-| **Upstream GW** | DD-WRT Luna | `10.20.20.1` | `10.20.20.0/24` | Upstream transit gateway (firewalled from WAN) | 🟢 Active |
+| **Upstream GW** | DD-WRT Luna | `10.20.20.1` | `10.20.20.0/24` | Upstream transit gateway (user: root, firewalled from WAN) | 🟢 Active |
+| **Backup Server**| pbs-server (pve3:105) | `192.168.1.244` & `10.25.25.244` | VLAN 1 & SAN | Proxmox Backup Server (LXC CT 105, port 8007) | 🟢 Active |
 | **Admin VM** | nexus-server (pve:100)| `192.168.40.185` | VLAN 40 (Servers) | WireGuard (:51820), Tailscale (:69), AdGuard Home Primary (:53), NPM | 🟢 Active |
 | **DNS2 VM** | nexus-server2 (pve3:100)| `192.168.40.186` | VLAN 40 (Servers) | AdGuard Home Secondary (:53) | 🟢 Active |
 | **Smart Home VM**| luna-server (pve:102) | `192.168.40.249` | VLAN 40 (Servers) | Home Assistant (:8123), Homebridge (:8581), Spoolman (:7912), Syncthing (:22000), SPAN Mirror (:ens19) | 🟢 Active |

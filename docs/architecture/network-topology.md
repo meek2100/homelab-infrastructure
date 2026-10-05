@@ -137,7 +137,7 @@ This document details the physical hardware, virtual bridges, dual-WAN egress pa
   * **Role**: Local desktop distribution switch connecting office PCs, printers, and test benches to the OpenWrt router.
   * **⚠️ No Official API or CLI**: The GS108Ev2 is a Netgear "Easy Smart" switch with **no HTTP REST API, no SSH, and no official programmatic interface**. It is exclusively managed via the **Netgear ProSAFE Plus Configuration Utility** (Windows/macOS desktop app).
   * **Protocol**: The ProSAFE utility communicates over a **proprietary Layer 2 protocol — NSDP (Netgear Switch Discovery Protocol)** — using UDP broadcast/unicast on **ports 63321 and 63322**. Standard HTTP/TCP requests cannot reach the switch management interface.
-  * **Community Tooling**: The MCP tools (`backup_netgear_switch`, `get_netgear_switch_status`) use the open-source community libraries [`netgear-tool`](https://github.com/s-t-e-f-a-n-o/netgear-tool) and [`py-netgear-plus`](https://github.com/foxey/py-netgear-plus) which reverse-engineer the NSDP protocol. These libraries **must run on the same Layer 2 broadcast domain as the switch** (VLAN 1 / `192.168.1.0/24`) since NSDP does not route across Layer 3 boundaries. Additional candidate tools under investigation include [`nccgroup/nsdp-discover`](https://github.com/nccgroup/nsdp-discover) (protocol discovery & security assessment), [`AlbanBedel/libnsdp`](https://github.com/AlbanBedel/libnsdp) (C library & CLI), and [`yaamai/go-nsdp`](https://github.com/yaamai/go-nsdp) (Go implementation).
+  * **Native Automation Engine**: Managed via our in-house pure-Python Layer 2 NSDP engine (`mcp/homelab/scripts/manage-netgear-switch.py`) executed across the OpenWrt L2 bridge relay (`192.168.1.226`) or directly on Proxmox node 1 (`192.168.1.250`). No external third-party dependencies are required. Full protocol mechanics, 32-byte header specifications, and TLV registers are documented in [`docs/specifications/netgear-gs108ev2-nsdp.md`](../specifications/netgear-gs108ev2-nsdp.md).
 
 ### 5. Work Automation Lab Switch: Pakedge SX-8P Managed Switch
 * **Management IP**: `192.168.1.205` (VLAN 1)
@@ -155,7 +155,7 @@ This document details the physical hardware, virtual bridges, dual-WAN egress pa
   * **Powered Down When Idle**: To conserve power and isolate non-production test gear, the switch and its attached bench are powered down when active testing is not underway.
   * **Exempt from 24/7 SLA**: Prometheus synthetic probes tag the switch with `environment: 'testbench-ondemand'` to suppress alertmanager down-alerts when unpowered.
   * **Remote Lifecycle & Power Control**: Downstream bench devices can have their individual PoE ports cycled via FastMCP tool `power_cycle_pakedge_poe_port`. Switch-level power is controlled via the Control4 WattBox relay.
-  * **GitOps Backup & Telemetry**: Managed via [`mcp/homelab/scripts/manage-pakedge-switch.py`](file:///home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/manage-pakedge-switch.py) (`get_pakedge_switch_status` and `backup_pakedge_switch`), synchronizing backups into `infrastructure/network/configs/pakedge-sx8p-running.cfg`.
+  * **GitOps Backup & Telemetry**: Managed via [`mcp/homelab/scripts/manage-pakedge-switch.py`](mcp/homelab/scripts/manage-pakedge-switch.py) (`get_pakedge_switch_status` and `backup_pakedge_switch`), synchronizing backups into `infrastructure/network/configs/pakedge-sx8p-running.cfg`.
 
 ---
 
@@ -176,13 +176,14 @@ graph TD
     end
 
     subgraph WAN2_DDWRT ["WAN2 Egress & Storage Network (10.25.25.0/24 & Upstream 10.20.20.0/24)"]
-        LUNA_R["luna-router (DD-WRT: 10.20.20.1)<br>Upstream Gateway | User: meek2100<br>SSH Key: ddwrt_id_ed25519"]
+        LUNA_R["luna-router (DD-WRT: 10.20.20.1)<br>Upstream Gateway | User: root<br>SSH Key: ddwrt_id_ed25519"]
         AURORA_R["aurora-router (DD-WRT: 10.25.25.1)<br>WAN2 Isolation Router | User: root<br>SSH Key: ddwrt_id_ed25519"]
         
         LUNA_R --> AURORA_R
         AURORA_R --> WAN2
         AURORA_R --> DS["discovery-server (10.25.25.246)<br>Default Route: 10.25.25.1"]
         DS -- Direct L2 NFS/SMB Write --> NAS_DATA["nas-server (10.25.25.248)<br>/media/"]
+        AURORA_R -. SAN Backup Bus .-> PBS["pbs-server (LXC 105: 10.25.25.244)<br>Proxmox Backup Server"]
     end
 
     subgraph VLANs ["Household & Smart Home VLANs"]
@@ -202,11 +203,11 @@ graph TD
   * **Role**: Primary gateway and isolation barrier for the high-bandwidth torrent / download network (`10.25.25.0/24`) on `vmbr1`.
   * **Management IP**: `10.25.25.1` (Dropbear/SSH on port 22).
   * **User**: `root` | **Identity**: `ddwrt_id_ed25519` (`C:/Users/dtheurer/.ssh/ddwrt_id_ed25519` or `~/.ssh/ddwrt_id_ed25519`).
-  * **Clients**: `discovery-server` (`10.25.25.246`), `nas-server` (`10.25.25.248`), Araknis 520 `WAN2` port.
+  * **Clients**: `discovery-server` (`10.25.25.246`), `nas-server` (`10.25.25.248`), `pbs-server` (`10.25.25.244`), Araknis 520 `WAN2` port.
 * **Luna Router (`luna-router` — `10.20.20.1`)**:
   * **Role**: Upstream gateway from `aurora-router`, operating the upstream `10.20.20.0/24` transit subnet.
-  * **Management IP**: `10.20.20.1`.
-  * **User**: `meek2100` | **Identity**: `ddwrt_id_ed25519` (`C:/Users/dtheurer/.ssh/ddwrt_id_ed25519` or `~/.ssh/ddwrt_id_ed25519`).
+  * **Management IP**: `10.20.20.1` (Dropbear/SSH on port 22).
+  * **User**: `root` | **Identity**: `ddwrt_id_ed25519` (`C:/Users/dtheurer/.ssh/ddwrt_id_ed25519` or `~/.ssh/ddwrt_id_ed25519`).
 
 
 ---

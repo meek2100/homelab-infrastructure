@@ -1,20 +1,20 @@
 # 🔐 GitOps Drills, Disaster Recovery & Secret Rotation Runbook
 
-This runbook establishes standard operating procedures for semi-annual secret rotation, disaster recovery restore drills, and drift verification across all 3 Proxmox hypervisors, 6 VMs, 85 Docker stacks, network switches, routers, and external cloud VPS instances.
+This runbook establishes standard operating procedures for semi-annual secret rotation, disaster recovery restore drills, and drift verification across all 3 Proxmox hypervisors, 8 VMs, 1 LXC container, 91 Docker stacks, network switches, routers, and external cloud VPS instances.
 
 ---
 
 ## 📅 Schedule & Verification Cadence
 - **Monthly**: Automated GitOps configuration drift checks (`audit_infrastructure`, `verify_network_matrix`).
 - **Quarterly**: PBS backup restoration verification drill (restoring a test VM or container from `pbs-backup`).
-- **Semi-Annual**: Secret rotation drill (re-encrypting all 68 SOPS encrypted stacks with updated `age` keys).
+- **Semi-Annual**: Secret rotation drill (re-encrypting all 50 SOPS encrypted stack secret bundles with updated `age` keys).
 - **Annual**: Cold bare-metal hypervisor recovery drill using Git blueprints in `infrastructure/hosts/`.
 
 ---
 
 ## 1. Semi-Annual Secret Rotation Procedure
 
-All sensitive environment files and passwords across 68 Docker stacks are encrypted using `SOPS` with `age` encryption keys.
+All sensitive environment files and passwords across 50 Docker stack secret bundles are encrypted using `SOPS` with `age` encryption keys.
 
 ### Step 1: Generate New Age Key Pair
 ```bash
@@ -34,7 +34,7 @@ creation_rules:
     age: "age1<old_recipient>,age1<new_recipient>"
 ```
 
-### Step 3: Batch Re-Encrypt All 68 Secret Stacks
+### Step 3: Batch Re-Encrypt All 50 Secret Stacks
 Run the automated re-encryption loop across all stacks:
 ```bash
 find infrastructure/docker-stacks/ -name "secrets.enc.yaml" -exec sops updatekeys -y {} \;
@@ -100,7 +100,7 @@ In the event of hardware replacement or switch reset to factory defaults (`192.1
    ```bash
    python3 mcp/homelab/scripts/manage-araknis-router.py restore --file infrastructure/network/configs/araknis-520-backup.cfg --confirm
    ```
-   *The router uploads the encrypted OpenSSL blob, reboots, and restores all 21 ACL rules and 8 VLAN subnets.*
+   *The router uploads the encrypted OpenSSL blob, reboots, and restores all 36 ACL rules and 8 VLAN subnets.*
 
 ---
 

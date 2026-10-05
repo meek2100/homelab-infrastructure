@@ -18,9 +18,10 @@ This document outlines all physical host bridges, VLANs, static IP assignments, 
 
    - Isolated, dedicated storage network linking `pve3` (`nas-server` OpenMediaVault), `pve2` (`discovery-server`), and storage clients for direct NFS/SMB/iSCSI backup and download traffic without saturating the primary management LAN.
 
-3. **VLAN 40 (`Smart Home / IoT`) & VLAN 50 (`Isolated Security`)**:
+3. **VLAN 40 (`Servers - Admin` — `192.168.40.0/24`)**:
 
-   - Virtual local area networks defined on `pve2` (`vmbr0.40` & `vmbr0.50`) and passed to `luna-server` via `macvlan`.
+   - Core identity & infrastructure management: Primary DNS/NPM (`192.168.40.185`), Secondary DNS (`192.168.40.186`), Home Assistant controller (`192.168.40.249`), and OpenMediaVault Web Admin (`192.168.40.248`).
+   - *(Note: Legacy VLAN 50 was abolished during fleet consolidation; pve2 runs untagged VLAN 1 management on `vmbr0` and dedicated `10.25.25.240` storage on `vmbr1`).*
 
 
 --- 
@@ -71,12 +72,6 @@ default via 192.168.1.1 dev vmbr0 proto kernel onlink
 6: vmbr0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
     inet 192.168.1.240/24 scope global vmbr0
        valid_lft forever preferred_lft forever
-7: vmbr0.40@vmbr0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
-    inet 192.168.40.240/24 scope global vmbr0.40
-       valid_lft forever preferred_lft forever
-8: vmbr0.50@vmbr0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
-    inet 192.168.50.240/24 scope global vmbr0.50
-       valid_lft forever preferred_lft forever
 ```
 
 
@@ -85,9 +80,7 @@ default via 192.168.1.1 dev vmbr0 proto kernel onlink
 
 default via 192.168.1.1 dev vmbr0 proto kernel onlink 
 10.25.25.0/24 dev vmbr1 proto kernel scope link src 10.25.25.240 
-192.168.1.0/24 dev vmbr0 proto kernel scope link src 192.168.1.240 
-192.168.40.0/24 dev vmbr0.40 proto kernel scope link src 192.168.40.240 
-192.168.50.0/24 dev vmbr0.50 proto kernel scope link src 192.168.50.240
+192.168.1.0/24 dev vmbr0 proto kernel scope link src 192.168.1.240
 ```
 
 
@@ -467,13 +460,25 @@ default via 192.168.1.1 dev ens18
 ```
 
 
+### Container: `pbs-server` (`pve3` LXC 105)
+
+
+#### Interfaces & IPs
+```text
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    inet 127.0.0.1/8 scope host lo
+2: eth0@if7: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    inet 192.168.1.244/24 scope global eth0
+3: eth1@if8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    inet 10.25.25.244/24 scope global eth1
+```
+
+
 #### Routing Table
 ```text
-
-default via 192.168.40.1 dev ens18 proto static 
-default via 10.25.25.248 dev ens19 proto static metric 1 
-10.25.25.0/24 dev ens19 proto kernel scope link src 10.25.25.248 
-192.168.40.0/24 dev ens18 proto kernel scope link src 192.168.40.248 
-
+default via 192.168.1.1 dev eth0 proto static 
+10.25.25.0/24 dev eth1 proto kernel scope link src 10.25.25.244 
+192.168.1.0/24 dev eth0 proto kernel scope link src 192.168.1.244 
 ```
+
 

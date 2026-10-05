@@ -21,8 +21,8 @@ This runbook outlines the authoritative architecture and deployment playbook for
  │                                                            │
  │  ┌────────────────────────┐    ┌────────────────────────┐  │
  │  │      nas-server        │    │ Proxmox Backup Server  │  │
- │  │   (OpenMediaVault)     │    │       (PBS Core)       │  │
- │  │   IP: 10.25.25.248     │    │   IP: 10.25.25.245     │  │
+ │  │   (OpenMediaVault)     │    │   (PBS Core CT 105)    │  │
+ │  │   IP: 10.25.25.248     │    │   IP: 10.25.25.244     │  │
  │  └────────────────────────┘    └───────────┬────────────┘  │
  │                                            │               │
  │               ┌────────────────────────────▼─────────┐     │
@@ -152,5 +152,5 @@ In the Proxmox Web GUI (**Datacenter ➔ Backup ➔ Add**) or via CLI:
 
 ## 📈 Post-Deployment Verification
 1. Run a manual test backup of a VM (e.g. `qm backup 100 pbs-backup`).
-2. Verify the initial run completes and creates chunks in `/mnt/pve/backup-datastore`.
+2. Verify the initial run completes and creates chunks in `/mnt/pve/backup/pbs-datastore`.
 3. Trigger a second backup immediately afterwards: verify QEMU CBT activates and completes in **< 15 seconds**!
