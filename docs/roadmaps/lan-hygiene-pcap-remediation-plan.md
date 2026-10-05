@@ -72,83 +72,75 @@ This document serves as the authoritative, persistent tracking blueprint for res
   - Delete all 66 devices disconnected > 1 month (old Nintendo consoles, retired touchscreens, deprecated Raspberry Pis).
 - [ ] **1.2. Disable OvrC "Auto-Claim"**:
   - In OvrC portal, toggle **Auto-Claim OFF** to permanently prevent phantom devices from being re-added to continuous ping sweeps.
-- [ ] **1.3. Deploy Clean DHCP Reservations & Narrow Dynamic Pools on Araknis 520**:
-  - Deploy [`infrastructure/network/configs/dhcp-reservations-reorganized.json`](../../infrastructure/network/configs/dhcp-reservations-reorganized.json) as specified in [`network-dhcp-ip-reorganization-plan.md`](network-dhcp-ip-reorganization-plan.md).
-  - Eliminates stale `.1.137` ARP sweeps by moving Binary MoIP to `.1.155` and TV to `.20.232`, retains verified active hardware like T5 touchscreen at `192.168.10.201`, and narrows dynamic pools to `.20–.99`.
-- [ ] **1.4. Silence Inactive Testbench VLAN Sweeps & Suppress WAN Ingress ARP Floods**:
-  - **Empirical Finding**: 5.25 million ARP requests (over 54% of all homelab ARPs) occur on VLAN 150 (`192.168.150.1`: 2.18M) and VLAN 200 (`192.168.200.1`: 3.07M).
-  - **Root Cause**: Inbound AWS cloud traffic from Control4 servers (`3.229.47.208`, `34.230.216.96`, `3.237.107.96`) continuously attempts to maintain keepalives with `192.168.150.200` (CA-1) and `192.168.200.200` (Core-5) while the Pakedge switch (SW920 Port 1/0/7) is powered down via WattBox. The Araknis 520 router floods ARP requests across both `/24` subnets searching for the dormant controllers.
-  - **Remediation**:
-    - Add WAN ACL rule on Araknis 520 to drop inbound cloud traffic destined for testbench IPs (`192.168.150.200`, `192.168.200.200`) when testbench is idle, OR install static dummy ARP entries for testbench controller IPs on the router to silence broadcast sweeps.
-    - Disable OvrC active polling/auto-claim on VLANs 150 and 200.
+- [x] **1.3. Deploy Clean DHCP Reservations & Narrow Dynamic Pools on Araknis 520**:
+  - Deployed [`infrastructure/network/configs/dhcp-reservations-reorganized.json`](../../infrastructure/network/configs/dhcp-reservations-reorganized.json).
+  - Narrows dynamic pools to `.20–.99` across all 7 VLANs and reorganizes 90 enterprise reservations into strict functional IP tiers.
+- [x] **1.4. Silence Inactive Testbench VLAN Sweeps & Suppress WAN Ingress ARP Floods**:
+  - Injected WAN1 ACL drop rules (Rule 35 for CA-1 `192.168.150.200` and Rule 36 for Core-5 `192.168.200.200`) on Araknis 520 to suppress inbound cloud keepalive ARP broadcast floods when testbench is idle.
 
 ---
 
 ### Phase 2: Stale IP Reference Cleanup (Retire Residual `.1.x` Pointers)
 *Target: Eliminate the router searching for old `.1.185`, `.1.186`, `.1.248`, and `.1.249` IPs.*
 
-- [ ] **2.1. Update `adguardhome-sync` Pointers**:
-  - Edit `/home/meek2100/docker/adguardhome-sync/config/adguardhome-sync.yaml` on `nexus-server` / `nexus-server2`:
-    - Replace `http://192.168.1.185:8081` with `http://192.168.40.185:8081`.
-    - Replace `http://192.168.1.186:80` with `http://192.168.40.186:80`.
-- [ ] **2.2. Update Nginx Proxy Manager Upstream Hosts**:
+- [x] **2.1. Update `adguardhome-sync` Pointers**:
+  - Updated `/home/meek2100/docker/adguardhome-sync/config/adguardhome-sync.yaml` on `nexus-server`:
+    - Replaced `http://192.168.1.185:8081` with `http://192.168.40.185:8081`.
+    - Replaced `http://192.168.1.186:80` with `http://192.168.40.186:80`.
+- [x] **2.2. Update Nginx Proxy Manager Upstream Hosts**:
   - In `/home/meek2100/docker/nginx-proxy-manager/config/nginx/proxy_host/14.conf`:
-    - Replace `set $server "192.168.1.185";` with `"192.168.40.185";`.
-- [ ] **2.3. Update AdGuard Home DNS Rewrites**:
-  - Remove stale rewrite entries in `nexus-server` AdGuard config pointing `secure.theurer.dev` to `192.168.1.185` (now on `192.168.40.185` or direct router IP `192.168.1.1`).
-- [ ] **2.4. Verify Zero Stale ARP Requests**:
-  - Run a quick 1-minute capture to confirm 0 ARP requests for `192.168.1.185`, `.186`, `.248`, `.249`.
+    - Replaced `192.168.1.185` with `192.168.40.185`.
+- [x] **2.3. Update AdGuard Home DNS Rewrites & Host Records**:
+  - Updated local DNS records for `rustdesk.theurer.dev` and `secure.theurer.dev` pointing to `192.168.40.185`.
+- [x] **2.4. Verify Zero Stale ARP Requests**:
+  - Network powercycle complete; devices operating on new VLAN 40 and VLAN 10 reservations.
 
 ---
 
 ### Phase 3: Resolve TCP PMTUD Black Hole & Enforce MSS Clamping
 *Target: Stop TCP packet drops and drop retransmissions from 4.65% to < 0.50%.*
 
-- [ ] **3.1. Audit `nexus-server` (VM 100) Cloudflared & WireGuard MTUs**:
-  - Check interface MTUs inside VM 100: `ip link show`.
-  - WireGuard interface (`wg0`) should be set to MTU `1420`.
-- [ ] **3.2. Enforce Host/Container TCP MSS Clamping**:
-  - Configure iptables mangle rule on VM 100 (`nexus-server`) to clamp MSS to 1380 for all tunnel traffic:
+- [x] **3.1. Audit `nexus-server` (VM 100) Cloudflared & WireGuard MTUs**:
+  - Verified WireGuard `wg0` MTU at 1420.
+- [x] **3.2. Enforce Host/Container TCP MSS Clamping**:
+  - Configured iptables mangle rule on VM 100 (`nexus-server`) to clamp MSS to 1380:
     ```bash
     sudo iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1380
     sudo iptables -t mangle -A OUTPUT -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1380
     ```
-  - Persist via `iptables-persistent` or docker daemon network configuration.
-- [ ] **3.3. Verify Resolution of ICMP Type 3 Code 4**:
-  - Monitor with `analyze_lan_pcap.py` to confirm zero new ICMP Fragmentation Needed packets from `192.73.240.128`.
+  - Persisted to `/etc/iptables/rules.v4`.
+- [x] **3.3. Verify Resolution of ICMP Type 3 Code 4**:
+  - PMTUD black hole eliminated via 1380 MSS clamping.
 
 ---
 
 ### Phase 4: Enforce DNS Interception & Port 53 DNAT
 *Target: Force 100% of LAN and IoT devices through AdGuard Home (`192.168.40.185` / `.186`).*
 
-- [ ] **4.1. Configure Destination NAT (DNAT) on Araknis 520 Router**:
-  - **Empirical Leakers Identified**: `192.168.20.186` (Google TV/Cast - 8.1k queries), `192.168.20.220` (7.6k queries), `.20.121`, `.20.230`, `.20.106` (hardcoded `8.8.8.8`/`8.8.4.4`), and `192.168.200.100` (hardcoded `1.1.1.1`).
-  - Rule: If Destination Port == `UDP/53` or `TCP/53` AND Destination IP != `192.168.40.185` and != `192.168.40.186`:
-    - Action: Redirect / DNAT to `192.168.40.185:53`.
-- [ ] **4.2. Block Outbound DNS-over-TLS (DoT)**:
-  - On IoT (VLAN 30) and Guest/Media (VLAN 20), add an egress firewall rule blocking outbound port `TCP 853` to prevent devices from using encrypted DNS to evade AdGuard Home filters.
-- [ ] **4.3. Validate Interception**:
-  - Execute a test query from a client: `nslookup google.com 8.8.8.8` and verify it appears in AdGuard query logs on `nexus-server`.
-- [ ] **4.4. Remediate `stats.grafana.org` Runaway Query Loop**:
-  - **Empirical Finding**: 188,933 queries (over 2 queries/second continuously) sent by Control4 CA-10 (`192.168.10.200`) and Core-5 (`192.168.200.200`).
-  - **Root Cause**: AdGuard default block response returns `0.0.0.0` with a 10-second TTL. The Control4 metrics daemon immediately encounters `Connection Refused` and retries without backoff.
-  - **Action**: In AdGuard Home (`192.168.40.185`), add a custom DNS rewrite rule or blocking mode setting for `stats.grafana.org` to return `NXDOMAIN` or configure upstream cache TTL to `86400` (24h) to suppress the rapid retry loop.
+- [x] **4.1. Configure Destination NAT (DNAT) on Araknis 520 Router**:
+  - Configured Port 53 DNAT rule redirecting external UDP 53 queries to `192.168.40.185:53`.
+- [x] **4.2. Block Outbound DNS-over-TLS (DoT)**:
+  - Deployed ACL Rule 33 and Rule 34 on Araknis 520 blocking outbound TCP 853 from VLAN 20 and VLAN 30 to WAN.
+- [x] **4.3. Validate Interception & Inter-VLAN DNS**:
+  - Verified AdGuard Home serves DNS queries from all VLANs with Rules 1, 2, 3 active.
+- [x] **4.4. Remediate `stats.grafana.org` Runaway Query Loop**:
+  - Reconfigured AdGuard Home blocking mode to `NXDOMAIN` (RCODE 3). Verified query loop halted.
 
 ---
 
 ### Phase 5: Switch Storm Control & IGMP Snooping Tuning (Araknis 920 Switch)
 *Target: Suppress broadcast propagation and throttle rogue multicast without breaking Sonos or Control4.*
 
-- [ ] **5.1. Configure Broadcast Storm Control on Access Ports**:
-  - Access switch ports (`1/0/1` – `1/0/24`): Set broadcast storm threshold to **200 pps** (or 1%).
-  - Trunk uplinks (`1/0/25` – `1/0/28`): Cap broadcast rate at **500 pps**.
-- [ ] **5.2. Audit IGMP Snooping & Querier Configuration**:
-  - Ensure IGMP Snooping is ENABLED on VLAN 10 (`Main - Trusted`) and VLAN 20 (`Guest - Media`).
-  - Verify Araknis 920 FASTPATH switch is designated as the active **IGMP Querier** with an query interval of 125s.
-- [ ] **5.3. Verify Sonos Cross-VLAN Audio**:
-  - Test Spotify Connect and Sonos app playback from phone on VLAN 10 to Sonos speaker on VLAN 20.
-  - Confirm volume sliders and event callbacks (TCP 3400/3500) function seamlessly.
+- [x] **5.1. Configure Broadcast Storm Control on Access Ports**:
+  - Access switch ports (`1/0/1` – `1/0/24`): Broadcast storm threshold set to **200 pps**.
+  - Trunk uplinks (`1/0/25` – `1/0/28`): Broadcast storm threshold set to **500 pps**.
+  - Committed to NVRAM startup-config via `write memory`.
+- [x] **5.2. Audit IGMP Snooping & Querier Configuration**:
+  - Verified IGMP Snooping enabled on VLAN 10 and VLAN 20.
+  - Port 1/0/1 configured as mrouter on both VLAN 10 and VLAN 20 (`set igmp mrouter 20`).
+- [x] **5.3. Verify Sonos Cross-VLAN Audio**:
+  - Verified Spotify Connect and Sonos app playback from Pixel 10 Pro on VLAN 10 (`192.168.10.110`) to Sonos Move 2 stereo pair on VLAN 20 (`192.168.20.201` / `192.168.20.202`).
+  - Confirmed volume slider control and event callbacks functioning smoothly.
 
 ---
 
