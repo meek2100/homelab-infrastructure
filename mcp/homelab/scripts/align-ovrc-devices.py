@@ -648,6 +648,20 @@ def align_ovrc(action="preview", token=None, username=None, password=None,
                     "_is_csv": True
                 })
 
+    aligned_csv_path = OUTPUT_ALIGNED_CSV if os.path.exists(OUTPUT_ALIGNED_CSV) else ovrc_csv_path
+    csv_overrides = {}
+    if os.path.exists(aligned_csv_path):
+        with open(aligned_csv_path, "r", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f)
+            for r in reader:
+                nmac = normalize_mac(r.get("MAC Address", ""))
+                if nmac:
+                    csv_overrides[nmac] = {
+                        "name": r.get("Device Name", "").strip(),
+                        "room": r.get("Room", "").strip(),
+                        "location": r.get("Location", "").strip()
+                    }
+
     output_lines = [
         f"=== OvrC Device Inventory Alignment ({action.upper()}) ===",
         f"Scope: {location_name.upper()} ({len(location_rooms_map)} locations queried)",
@@ -660,6 +674,7 @@ def align_ovrc(action="preview", token=None, username=None, password=None,
 
     aligned_csv_rows = []
     renamed_count = 0
+    room_updated_count = 0
     matched_count = 0
     untracked_count = 0
     error_count = 0
@@ -674,8 +689,9 @@ def align_ovrc(action="preview", token=None, username=None, password=None,
         curr_room_id = dev.get("roomId")
 
         matched = res_by_mac.get(mac) or res_by_ip.get(ip)
+        csv_info = csv_overrides.get(mac, {})
 
-        if not matched:
+        if not matched and not csv_info:
             output_lines.append(f"{dev_loc_name:<18} {ip:<16} {mac:<18} {curr_name:<28} {'(No DHCP Reservation)':<30} [UNTRACKED]")
             untracked_count += 1
             aligned_csv_rows.append({
@@ -688,8 +704,16 @@ def align_ovrc(action="preview", token=None, username=None, password=None,
             })
             continue
 
-        auth_name = matched.get("name", "").strip()
-        target_room_name = get_room_from_name(auth_name)
+        csv_name = csv_info.get("name", "").strip()
+        matched_name = matched.get("name", "").strip() if matched else ""
+        if csv_name and csv_name.lower() not in ("unspecified", "unknown", "none", ""):
+            auth_name = csv_name
+        elif matched_name:
+            auth_name = matched_name
+        else:
+            auth_name = curr_name
+
+        target_room_name = (csv_info.get("room") or get_room_from_name(auth_name) or "Unassigned").strip()
         rooms_map = location_rooms_map.get(dev_loc_id, {})
         target_room_id = rooms_map.get(target_room_name.lower())
 
@@ -699,10 +723,10 @@ def align_ovrc(action="preview", token=None, username=None, password=None,
             curr_name.lower() in ("samsung", "tuya smart inc.", "apple, inc.", "pakedge-hostname", "sa1", "core5")
         )
         needs_rename = is_generic or (curr_name != auth_name)
+        needs_room_update = bool(target_room_id and dev_loc_id and (curr_room_id != target_room_id))
 
         if action == "apply" and live_mode and dev_id:
             status_text = []
-            mutated = False
             if needs_rename:
                 ok_rn, err_rn = client.rename_device(dev_id, auth_name)
                 if ok_rn:
@@ -711,31 +735,36 @@ def align_ovrc(action="preview", token=None, username=None, password=None,
                 else:
                     status_text.append(f"RENAME_FAILED({err_rn})")
                     error_count += 1
-                mutated = True
-                time.sleep(0.75)
+                time.sleep(0.5)
             else:
                 status_text.append("NAME_ALIGNED")
                 matched_count += 1
 
-            if target_room_id and dev_loc_id and (curr_room_id != target_room_id):
+            if needs_room_update:
                 ok_rm, err_rm = client.assign_room(dev_id, dev_loc_id, target_room_id)
                 if ok_rm:
                     status_text.append(f"ROOM->{target_room_name}")
+                    room_updated_count += 1
                 else:
                     status_text.append(f"ROOM_FAILED({err_rm})")
-                mutated = True
-                time.sleep(0.75)
+                    error_count += 1
+                time.sleep(0.5)
 
             output_lines.append(f"{dev_loc_name:<18} {ip:<16} {mac:<18} {curr_name:<28} {auth_name:<30} [{', '.join(status_text)}]")
 
         else:
             # Preview / CSV mode
+            actions = []
             if needs_rename:
-                output_lines.append(f"{dev_loc_name:<18} {ip:<16} {mac:<18} {curr_name:<28} {auth_name:<30} [RENAME -> {target_room_name}]")
+                actions.append(f"RENAME -> {auth_name}")
                 renamed_count += 1
-            else:
-                output_lines.append(f"{dev_loc_name:<18} {ip:<16} {mac:<18} {curr_name:<28} {auth_name:<30} [MATCHED]")
+            if needs_room_update:
+                actions.append(f"ROOM -> {target_room_name}")
+                room_updated_count += 1
+            if not actions:
+                actions.append("MATCHED")
                 matched_count += 1
+            output_lines.append(f"{dev_loc_name:<18} {ip:<16} {mac:<18} {curr_name:<28} {auth_name:<30} [{', '.join(actions)}]")
 
         aligned_csv_rows.append({
             "Location": dev_loc_name,
