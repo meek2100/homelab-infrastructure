@@ -67,9 +67,8 @@ This document serves as the authoritative, persistent tracking blueprint for res
 ### Phase 1: OvrC Cloud Cleanup & Router ARP Storm Suppression
 *Target: Stop the Araknis 520 router from transmitting ~120 ARP req/sec across VLANs 1, 200, 150, 10, 30.*
 
-- [ ] **1.1. Complete OvrC Disconnected Device Purge**:
-  - Reference checklist: [`ovrc-cleanup-checklist.md`](file:///mnt/c/Users/dtheurer/Downloads/Router%20pcap/ovrc-cleanup-checklist.md).
-  - Delete all 66 devices disconnected > 1 month (old Nintendo consoles, retired touchscreens, deprecated Raspberry Pis).
+- [x] **1.1. Complete OvrC Disconnected Device Purge**:
+  - Purged all 55 offline/stale devices, retired hardware, and phantom randomized MACs from OvrC portal device management. Inventory aligned with active healthy fleet.
 - [x] **1.2. Disable OvrC "Auto-Claim"**:
   - Confirmed **Auto-Claim is set to OFF** in OvrC portal; discovery scans set to manual trigger only, permanently halting background phantom IP ping sweeps.
 - [x] **1.3. Deploy Clean DHCP Reservations & Narrow Dynamic Pools on Araknis 520**:
