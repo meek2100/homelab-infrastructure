@@ -1,0 +1,33 @@
+# 🏁 Homelab Network Remediation & DHCP Reorganization: Milestone Checkpoint
+
+**Date**: 2026-10-04  
+**Status**: Pre-Powercycle Milestone Reached (Tasks 001–006, 009 Complete; Ready for Global Powercycle)
+
+---
+
+## 📊 High-Level Task Status & Execution Summary
+
+| Task ID | Description | Status | Verification & Target State |
+| :--- | :--- | :---: | :--- |
+| **`TASK_001`** | Pre-Flight Snapshots & Safety Blueprints | 🟢 **COMPLETED** | Saved `araknis-520-backup-pre-reorg.cfg`, `araknis-920-running-pre-reorg.cfg`, and timestamped JSON state files. |
+| **`TASK_002`** | Monitoring Alert Silences | 🟢 **COMPLETED** | 2-hour active silences in Alertmanager for Control4, Sonos, and printers. |
+| **`TASK_003`** | OvrC & WAN Ingress Dropping | 🟢 **COMPLETED** | Rules 35 & 36 added on Araknis 520 dropping WAN sweeps to `.150.200` & `.200.200`. |
+| **`TASK_004`** | Enterprise Subnet Tiering & DHCP | 🟢 **COMPLETED** | All 7 VLAN dynamic ranges updated to `.20–.99`; 90 static reservations applied to router NVRAM. |
+| **`TASK_005`** | Firewall Hardening & DNS Interception | 🟢 **COMPLETED** | Clamped Rule 18 down to `.20.201–.205`; Rules 33 & 34 block DoT; Port 53 DNAT active; UPnP disabled. |
+| **`TASK_006`** | Switch Multicast Router & Storm Control | 🟢 **COMPLETED** | `set igmp mrouter 20` on Port 1/0/1; Storm control active (200 pps access, 500 pps trunk); `write memory` confirmed. |
+| **`TASK_007`** | DNS Runaway Loop Remediation | 🟢 **PARTIAL** | AdGuard Home NXDOMAIN rule verified (`RCODE: 3`); container `adguardhome-sync`/NPM sed commands queued for host. |
+| **`TASK_008`** | TCP PMTUD & Host MSS Clamping | ⏳ **PENDING** | Sudo iptables commands ready for execution on `nexus-server` (VM 100). |
+| **`TASK_009`** | GitOps Monitoring Targets Alignment | 🟢 **COMPLETED** | Prometheus targets and Grafana dashboards updated for Core-1/3 and printers (`commit 25b3520`). |
+| **`TASK_010`** | Device Lease Renewals & Sonos Testing | ⏳ **PENDING** | Ready to be executed via network powercycle + Sonos/C4 app testing. |
+| **`TASK_011`** | Observability Resume & 60/60 Audit | ⏳ **PENDING** | Prometheus restart and Alertmanager unsilence post-reboot. |
+| **`TASK_012`** | Post-Remediation PCAP Telemetry Delta | ⏳ **PENDING** | 1-hour capture analysis via `scripts/analyze_lan_pcap.py`. |
+| **`TASK_013`** | Final Aggregation & Operational Sign-off | ⏳ **PENDING** | Final delivery sign-off report. |
+
+---
+
+## 🔌 Recommended Powercycle Boot Sequence
+
+1. **Araknis 520 Router**: Power on first; wait 2 minutes for WAN negotiation, LAN subnets, and DHCP reservations to initialize.
+2. **Araknis 920 Switch & Netgear Switch**: Power on core switches; verify Port 1/0/1 link is up.
+3. **Araknis 830 APs & Proxmox Hypervisors (`pve`, `pve2`, `pve3`)**: Boot APs and server hosts so core DNS and admin services become ready.
+4. **End Devices, Smart Home & AV (Sonos, Control4, TVs, Printers)**: Power up end clients to adopt their clean `.20–.99` dynamic leases and reserved static IPs.
