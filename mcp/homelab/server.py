@@ -1,4 +1,5 @@
 from fastmcp import FastMCP
+from typing import Literal, Optional
 import subprocess
 import os
 import json
@@ -92,7 +93,11 @@ def sync_fleet(apply: bool = False, diff_only: bool = True) -> str:
     return run_script("sync-live-fleet.py", args)
 
 @mcp.tool()
-def manage_hosts(action: str, node: str = None, ip: str = None) -> str:
+def manage_hosts(
+    action: Literal["audit", "backup", "restore", "restore_configs", "register"],
+    node: str | None = None,
+    ip: str | None = None
+) -> str:
     """Manage Proxmox physical hypervisor nodes (pve, pve2, pve3).
     Actions:
       - 'audit': Compare live host config & packages against Git blueprints (diff-only).
@@ -121,7 +126,12 @@ def manage_hosts(action: str, node: str = None, ip: str = None) -> str:
     return f"Unknown host action: '{action}'. Valid actions: audit, backup, restore, restore_configs, register."
 
 @mcp.tool()
-def manage_vms(action: str, node: str = None, vmid: str = None, name: str = None) -> str:
+def manage_vms(
+    action: Literal["list", "status", "start", "stop", "restore", "register"],
+    node: str | None = None,
+    vmid: str | None = None,
+    name: str | None = None
+) -> str:
     """Manage QEMU Virtual Machines and LXC Containers across Proxmox nodes.
     Actions:
       - 'list': List all running/stopped VMs and LXCs with IP and resource status.
@@ -186,7 +196,12 @@ def manage_vms(action: str, node: str = None, vmid: str = None, name: str = None
     return f"Unknown VM action: '{action}'. Valid actions: list, status, start, stop, restore, register."
 
 @mcp.tool()
-def manage_vm_snapshots(action: str, node: str, vmid: str, snapshot_name: str = None) -> str:
+def manage_vm_snapshots(
+    action: Literal["list", "create", "rollback", "delete", "vzdump"],
+    node: str,
+    vmid: str,
+    snapshot_name: str | None = None
+) -> str:
     """Manage Proxmox QEMU VM live memory/disk snapshots and vzdump archives.
     Actions:
       - 'list': List all existing snapshots for a VM.
@@ -201,7 +216,7 @@ def manage_vm_snapshots(action: str, node: str, vmid: str, snapshot_name: str = 
         code, out, err = run_ssh_cmd(ip, f"vzdump {vmid} --mode snapshot --compress zstd --storage local", timeout=300)
         return out if code == 0 else f"vzdump failed: {err}"
     
-    args = [action, "--node", node, "--vmid", str(vmid)]
+    args = ["--action", action, "--node", node, "--vmid", str(vmid)]
     if snapshot_name:
         args.extend(["--name", snapshot_name])
     return run_script("manage-vm-snapshots.py", args)
@@ -212,7 +227,11 @@ def manage_vm_snapshots(action: str, node: str, vmid: str, snapshot_name: str = 
 # ==============================================================================
 
 @mcp.tool()
-def manage_stacks(action: str, target_vm: str = None, stack_name: str = None) -> str:
+def manage_stacks(
+    action: Literal["index", "backup", "restore", "start"],
+    target_vm: str | None = None,
+    stack_name: str | None = None
+) -> str:
     """Manage 91 Portainer stacks and 188 microservices across all Docker VMs.
     Actions:
       - 'index': Rebuild infrastructure/docker-stacks/STACK-INDEX.md catalog with secrets state.
@@ -235,7 +254,11 @@ def manage_stacks(action: str, target_vm: str = None, stack_name: str = None) ->
     return f"Unknown stack action: '{action}'. Valid actions: index, backup, restore, start."
 
 @mcp.tool()
-def manage_apt_packages(action: str, node: str = None, vmid: str = None) -> str:
+def manage_apt_packages(
+    action: Literal["backup", "restore"],
+    node: str | None = None,
+    vmid: str | None = None
+) -> str:
     """Backup or restore APT software package states across Proxmox hosts and guest VMs.
     Actions:
       - 'backup': Capture installed Debian/Ubuntu package manifests to configs/apt-packages.txt.
@@ -256,7 +279,11 @@ def manage_apt_packages(action: str, node: str = None, vmid: str = None) -> str:
 # ==============================================================================
 
 @mcp.tool()
-def manage_araknis_router(action: str = "status", config_file: str = None, confirm: bool = False) -> str:
+def manage_araknis_router(
+    action: Literal["status", "backup", "restore"] = "status",
+    config_file: str | None = None,
+    confirm: bool = False
+) -> str:
     """Manage Araknis 520 Dual-WAN Router (192.168.1.1) via native REST API.
     Actions:
       - 'status': Audit router health, WAN links, subnets, DHCP leases, and 36 ACL rules.
@@ -275,7 +302,11 @@ def manage_araknis_router(action: str = "status", config_file: str = None, confi
     return f"Unknown action: '{action}'. Valid actions: status, backup, restore."
 
 @mcp.tool()
-def manage_araknis_switch(action: str = "status", port: str = None, wait_sec: int = 5) -> str:
+def manage_araknis_switch(
+    action: Literal["status", "backup", "poe_cycle"] = "status",
+    port: str | None = None,
+    wait_sec: int = 5
+) -> str:
     """Manage Araknis 920 Multi-Gig Core Managed Switch (192.168.1.215) via SSH/Telnet CLI.
     Actions:
       - 'status': Audit 24-port link status, speeds, PoE power draw, and IGMP snooping.
@@ -293,23 +324,23 @@ def manage_araknis_switch(action: str = "status", port: str = None, wait_sec: in
 
 @mcp.tool()
 def manage_netgear_switch(
-    action: str = "status",
-    relay: str = "192.168.1.226",
-    file: str = None,
+    action: Literal["status", "backup", "verify", "restore", "set_vlan", "delete_vlan", "set_pvid", "set_port", "set_features"] = "status",
+    ip: str = "192.168.1.220",
+    file: str | None = None,
     confirm: bool = False,
-    vid: int = None,
-    pvid: int = None,
-    port: int = None,
-    tagged: str = None,
-    untagged: str = None,
-    admin: str = None,
-    speed: str = None,
-    igmp: str = None,
-    loop: str = None,
+    vid: int | None = None,
+    pvid: int | None = None,
+    port: int | None = None,
+    tagged: str | None = None,
+    untagged: str | None = None,
+    admin: Literal["enable", "disable"] | None = None,
+    speed: str | None = None,
+    igmp: Literal["enable", "disable"] | None = None,
+    loop: Literal["enable", "disable"] | None = None,
     json_output: bool = False
 ) -> str:
     """Manage headless Netgear GS108Ev2 switch (192.168.1.220) via pure-Python Layer 2 NSDP protocol.
-    Relays via OpenWrt (192.168.1.226) or PVE (192.168.1.250).
+    Automatically queries directly or relays via OpenWrt (192.168.1.226) / PVE (192.168.1.250).
     Actions:
       - 'status'      : Query 8-port link state, CRC errors, VLAN table, PVIDs, and features.
       - 'backup'      : Save dual JSON state and binary payload backups to Git.
@@ -321,7 +352,7 @@ def manage_netgear_switch(
       - 'set_port'    : Configure port state (port, admin='enable'/'disable', speed='auto'/'100M').
       - 'set_features': Configure switch features (igmp='enable'/'disable', loop='enable'/'disable')."""
     action = action.lower().strip()
-    base_args = ["--relay", relay]
+    base_args = ["--ip", ip] if ip != "192.168.1.220" else []
 
     if action == "status":
         args = base_args + ["status"]
@@ -366,10 +397,10 @@ def manage_netgear_switch(
 
 @mcp.tool()
 def manage_pakedge_switch(
-    action: str = "status",
-    port: int = None,
+    action: Literal["status", "backup", "poe_cycle", "power_cycle", "configure_vlans"] = "status",
+    port: int | None = None,
     wait_sec: int = 5,
-    vlans: str = None,
+    vlans: str | None = None,
     host: str = "192.168.1.205"
 ) -> str:
     """Manage Pakedge SX-8P Managed Switch (192.168.1.205) via native Telnet/RFC854 engine.
@@ -395,7 +426,11 @@ def manage_pakedge_switch(
     return f"Unknown action: '{action}'. Valid actions: status, backup, poe_cycle, power_cycle, configure_vlans."
 
 @mcp.tool()
-def manage_openwrt(action: str = "status", config_file: str = None, host: str = "192.168.1.226") -> str:
+def manage_openwrt(
+    action: Literal["status", "backup", "restore", "deploy_vxlan"] = "status",
+    config_file: str | None = None,
+    host: str = "192.168.1.226"
+) -> str:
     """Manage Belkin AX3200 OpenWrt router (192.168.1.226).
     Actions:
       - 'status': Audit 3-priority failover state, Wi-Fi stations, interfaces, and routes.
@@ -415,7 +450,11 @@ def manage_openwrt(action: str = "status", config_file: str = None, host: str = 
     return f"Unknown action: '{action}'. Valid actions: status, backup, restore, deploy_vxlan."
 
 @mcp.tool()
-def manage_ddwrt(action: str = "status", router: str = "all", config_file: str = None) -> str:
+def manage_ddwrt(
+    action: Literal["status", "backup", "restore"] = "status",
+    router: Literal["all", "aurora", "luna"] = "all",
+    config_file: str | None = None
+) -> str:
     """Manage DD-WRT isolation routers (aurora: 10.25.25.1, luna: 10.20.20.1) over Dropbear SSH.
     Actions:
       - 'status': Check router uptime, WAN IP, WireGuard tunnel, and firewall rules.
@@ -438,7 +477,10 @@ def manage_ddwrt(action: str = "status", router: str = "all", config_file: str =
 # ==============================================================================
 
 @mcp.tool()
-def verify_network_matrix(profile: str = "quick", targets_file: str = None) -> str:
+def verify_network_matrix(
+    profile: Literal["quick", "comprehensive"] = "quick",
+    targets_file: str | None = None
+) -> str:
     """Audits comprehensive cross-VLAN network reachability and latency across all 21 core targets.
     Profiles: 'quick' (ping latency) or 'comprehensive' (full TCP/UDP and inter-VLAN ACL matrix)."""
     args = ["--profile", profile]
@@ -447,7 +489,7 @@ def verify_network_matrix(profile: str = "quick", targets_file: str = None) -> s
     return run_script("verify-network-matrix.py", args)
 
 @mcp.tool()
-def manage_wireshark(action: str = "status") -> str:
+def manage_wireshark(action: Literal["status", "sync_capture"] = "status") -> str:
     """Manage headless Wireshark SPAN sniffer on luna-server (VM 102).
     Actions:
       - 'status': Inspect ens19 SPAN packets/sec, capture daemon state, and NAS storage mount.
@@ -462,10 +504,10 @@ def manage_wireshark(action: str = "status") -> str:
 @mcp.tool()
 def analyze_pcap_telemetry(
     path: str = "",
-    focus: str = "comprehensive",
-    vlan: int = None,
-    max_files: int = None,
-    max_packets: int = None,
+    focus: Literal["comprehensive", "summary", "l2_hygiene", "routing_matrix", "transport_health", "core_services", "security_anomalies"] = "comprehensive",
+    vlan: int | None = None,
+    max_files: int | None = None,
+    max_packets: int | None = None,
     json_output: bool = False
 ) -> str:
     """High-throughput streaming diagnostic engine for PCAP/PCAPNG packet captures.
@@ -483,10 +525,10 @@ def analyze_pcap_telemetry(
 @mcp.tool()
 def query_pcap_flows(
     path: str = "",
-    host: str = None,
-    port: int = None,
-    proto: str = None,
-    vlan: int = None,
+    host: str | None = None,
+    port: int | None = None,
+    proto: Literal["tcp", "udp", "icmp", "arp"] | None = None,
+    vlan: int | None = None,
     limit: int = 50,
     max_files: int = 10
 ) -> str:
@@ -506,7 +548,10 @@ def query_pcap_flows(
 # ==============================================================================
 
 @mcp.tool()
-def manage_external_services(action: str = "status", ip: str = None) -> str:
+def manage_external_services(
+    action: Literal["status", "ssl", "email", "security", "whitelist"] = "status",
+    ip: str | None = None
+) -> str:
     """Manage external cloud services across Oracle Cloud (theurer.dev) and Google Cloud (mail.theurer.dev).
     Actions:
       - 'status'   : Comprehensive health audit (Nginx HTTP 200, Postfix SMTP :587, Dovecot IMAP :993).
@@ -529,7 +574,10 @@ def manage_external_services(action: str = "status", ip: str = None) -> str:
     return f"Unknown action: '{action}'. Valid actions: status, ssl, email, security, whitelist."
 
 @mcp.tool()
-def manage_external_hosts(action: str = "audit", target: str = "all") -> str:
+def manage_external_hosts(
+    action: Literal["audit", "backup", "deploy_promtail"] = "audit",
+    target: Literal["all", "web", "email"] = "all"
+) -> str:
     """Manage external VPS host configurations and monitoring daemons.
     Actions:
       - 'audit'          : Audit drift on external VPS instances (web-server, email-server, or all).
@@ -537,9 +585,9 @@ def manage_external_hosts(action: str = "audit", target: str = "all") -> str:
       - 'deploy_promtail': Deploy and configure Promtail log shipping to Loki on nexus-server."""
     action = action.lower().strip()
     if action == "audit":
-        return run_script("manage-external-hosts.py", ["audit", "--target", target])
+        return run_script("manage-external-hosts.py", ["audit", "--host", target])
     elif action == "backup":
-        return run_script("manage-external-hosts.py", ["backup", "--target", target])
+        return run_script("manage-external-hosts.py", ["backup", "--host", target])
     elif action == "deploy_promtail":
         return run_script("deploy-external-promtail.py")
     return f"Unknown action: '{action}'. Valid actions: audit, backup, deploy_promtail."
@@ -552,8 +600,8 @@ def manage_external_hosts(action: str = "audit", target: str = "all") -> str:
 @mcp.tool()
 def sync_adguard_clients(
     host: str = "http://192.168.40.185:8081",
-    user: str = None,
-    password: str = None,
+    user: str | None = None,
+    password: str | None = None,
     dry_run: bool = False
 ) -> str:
     """Synchronizes authoritative DHCP reservations into AdGuard Home's Persistent Clients table via REST API.
@@ -566,10 +614,10 @@ def sync_adguard_clients(
 
 @mcp.tool()
 def align_ovrc_devices(
-    action: str = "preview",
-    token: str = None,
-    user: str = None,
-    password: str = None,
+    action: Literal["preview", "csv", "apply"] = "preview",
+    token: str | None = None,
+    user: str | None = None,
+    password: str | None = None,
     ovrc_csv: str = "",
     reservations: str = "",
     output: str = ""

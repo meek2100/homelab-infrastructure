@@ -58,7 +58,7 @@ All operations run from project root (`/home/agentsvc/repos/homelab-infrastructu
 .venv/bin/python3 mcp/homelab/scripts/verify-network-matrix.py --profile comprehensive
 
 # 4. Netgear GS108Ev2 Switch Audit (NSDP via OpenWrt L2 bridge relay)
-.venv/bin/python3 mcp/homelab/scripts/manage-netgear-switch.py --relay 192.168.1.226 status
+.venv/bin/python3 mcp/homelab/scripts/manage-netgear-switch.py status
 
 # 5. Full Infrastructure Backup Routine (Zero-trust capture)
 .venv/bin/python3 -c "
