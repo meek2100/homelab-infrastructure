@@ -52,7 +52,7 @@ All operations run from project root (`/home/agentsvc/repos/homelab-infrastructu
 .venv/bin/python3 mcp/homelab/scripts/sync-live-fleet.py --diff-only
 
 # 2. Rebuild Master Stack Catalog (91 Portainer stacks, 188 services)
-.venv/bin/python3 -c "from mcp.homelab.server import generate_stack_index; print(generate_stack_index())"
+.venv/bin/python3 mcp/homelab/scripts/generate-stack-index.py
 
 # 3. Network Matrix & ACL Audit (Verify all VLAN routes & ICMP/TCP)
 .venv/bin/python3 mcp/homelab/scripts/verify-network-matrix.py --profile comprehensive
@@ -62,7 +62,8 @@ All operations run from project root (`/home/agentsvc/repos/homelab-infrastructu
 
 # 5. Full Infrastructure Backup Routine (Zero-trust capture)
 .venv/bin/python3 -c "
-from mcp.homelab.server import *
+import sys; sys.path.insert(0, 'mcp/homelab')
+from server import *
 backup_araknis_router(); backup_araknis_switch(); backup_netgear_switch()
 backup_pakedge_switch(); backup_openwrt(); backup_ddwrt('aurora'); backup_ddwrt('luna')
 sync_fleet(apply=True); backup_apt_packages(); sync_wireshark_capture()
