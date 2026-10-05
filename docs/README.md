@@ -16,6 +16,7 @@ docs/
 │   └── network-interfaces-map.md                # Empirical OS interfaces, bridges (vmbr0/1), and routing tables (Hosts, VMs, LXC 105)
 │
 ├── runbooks/                                    # Operational Runbooks & Disaster Recovery Playbooks
+│   ├── mcp-tools-reference.md                   # Complete reference for all 20 action-oriented FastMCP tools and parameters
 │   ├── network-automation.md                    # Headless Netgear NSDP commands (via OpenWrt L2 relay) & live Wireshark sniffer ops
 │   ├── proxmox-backup-server.md                 # PBS deployment (LXC 105), 10.25.25.0/24 SAN transport, CBT incremental backups
 │   ├── recovery-walkthrough.md                  # Bare-metal host and VM restoration sequencing via homelab MCP tools
@@ -46,6 +47,7 @@ Authoritative ground-truth definitions for physical and logical topology:
 
 ### 🛠️ 2. Runbooks
 Step-by-step operational and disaster-recovery execution guides:
+* [mcp-tools-reference.md](runbooks/mcp-tools-reference.md): Complete architecture and parameter reference for all 20 action-oriented FastMCP tools, their underlying scripts, and local SOPS secret management.
 * [network-automation.md](runbooks/network-automation.md): Single-click runnable commands for headless Netgear GS108Ev2 switch management via Layer 2 NSDP relays (OpenWrt `192.168.1.226` / PVE `192.168.1.250`) and live Wireshark SPAN sniffer diagnostics.
 * [proxmox-backup-server.md](runbooks/proxmox-backup-server.md): Proxmox Backup Server (LXC 105 on `pve3`) architecture, fast `10.25.25.244` SAN transport, CBT incremental backups, and verification drills.
 * [recovery-walkthrough.md](runbooks/recovery-walkthrough.md): End-to-end bare-metal recovery sequence detailing the 4 phases: Host bootstrapping, host config restoration, VM bootstrapping, and Docker stack ignition via FastMCP tools.

@@ -4,6 +4,8 @@
 
 ### Always Do
 - **Zero-Trust Secrets**: Encrypt all credentials using SOPS + age (`*.enc.yaml`, key in `homelab-infrastructure.key`). Redact keys in logs.
+- **MCP Interface First**: All committed automation, backups, restores, and telemetry must run via FastMCP tools in `.venv`. Committed scripts must reside under `mcp/homelab/scripts/` and map to FastMCP tools.
+- **Local Scratch & Exploration**: Ad-hoc scripts, prototypes, WIP tests, or temporary dumps MUST stay in `.agents/scripts/` (untracked) and never committed to Git.
 - **QGA Binary Safety**: When extracting files via `qm guest exec`, base64-encode (`base64 -w 0`) inside the VM to prevent JSON parser data corruption.
 - **Base64 Payload Streaming**: Encode payloads before piping to `qm guest exec` (`echo '<b64>' | base64 -d > target`).
 - **File Metadata & Permissions**: Capture and restore file ownership and modes (`stat -c '%a:%u:%g'`).
@@ -18,6 +20,7 @@
 
 ### Never Do
 - Never commit plaintext secrets, `.key`, `.pem`, `.env`, or unencrypted credentials to Git.
+- Never create or commit standalone scripts outside of `mcp/homelab/scripts/`.
 - Never run Docker inside unprivileged LXC containers (use full VMs to avoid overlay2 bugs).
 - Never form a Proxmox VE cluster (hosts MUST remain standalone to prevent quorum failures).
 - Never run commands requiring `sudo`/root or interactive TTY prompts yourself; hand them to the user.
@@ -71,10 +74,11 @@ sync_fleet(apply=True); backup_apt_packages(); sync_wireshark_capture()
 ## Authoritative Documentation Reference
 
 - **Full Documentation Index**: [`docs/README.md`](docs/README.md)
+- **FastMCP Tools Reference (20 Action-Oriented Tools)**: [`docs/runbooks/mcp-tools-reference.md`](docs/runbooks/mcp-tools-reference.md)
 - **Network Topology & Hardware Details**: [`docs/architecture/network-topology.md`](docs/architecture/network-topology.md)
 - **VLAN Matrix & 36 Live ACL Rules**: [`docs/architecture/vlan-matrix.md`](docs/architecture/vlan-matrix.md)
 - **OS Network Interfaces & Routing**: [`docs/architecture/network-interfaces-map.md`](docs/architecture/network-interfaces-map.md)
 - **Network Automation & NSDP Specs**: [`docs/runbooks/network-automation.md`](docs/runbooks/network-automation.md) & [`docs/specifications/netgear-gs108ev2-nsdp.md`](docs/specifications/netgear-gs108ev2-nsdp.md)
 - **Bare-Metal Recovery Guide**: [`docs/runbooks/recovery-walkthrough.md`](docs/runbooks/recovery-walkthrough.md)
 - **Proxmox Backup Server Architecture**: [`docs/runbooks/proxmox-backup-server.md`](docs/runbooks/proxmox-backup-server.md)
-- **FastMCP Tool Implementation**: [`mcp/homelab/server.py`](mcp/homelab/server.py) (50 tools cataloged)
+- **FastMCP Tool Implementation**: [`mcp/homelab/server.py`](mcp/homelab/server.py) (20 consolidated tools cataloged)

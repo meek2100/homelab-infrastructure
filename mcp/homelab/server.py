@@ -2,7 +2,6 @@ from fastmcp import FastMCP
 import subprocess
 import os
 import json
-
 import sys
 
 mcp = FastMCP("Homelab Infrastructure System")
@@ -76,444 +75,389 @@ def run_bash_script(script_name: str) -> str:
     except Exception as e:
         return f"Exception executing {script_name}: {e}"
 
-@mcp.tool()
-def register_host(node: str, ip: str) -> str:
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    host_dir = os.path.join(repo_root, "infrastructure", "hosts", node)
-    os.makedirs(host_dir, exist_ok=True)
-    meta_path = os.path.join(host_dir, "meta.json")
-    with open(meta_path, 'w') as f:
-        json.dump({"ip": ip}, f, indent=4)
-    return f"Successfully registered host {node} with IP {ip} at {host_dir}"
+
+# ==============================================================================
+# 1. FLEET & HYPERVISOR MANAGEMENT
+# ==============================================================================
 
 @mcp.tool()
-def register_vm(node: str, vmid: str, name: str) -> str:
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    vm_dir = os.path.join(repo_root, "infrastructure", "vms", f"{node}-{vmid}-{name}")
-    os.makedirs(vm_dir, exist_ok=True)
-    return f"Successfully registered VM {name} (ID: {vmid}) on node {node} at {vm_dir}"
-
-@mcp.tool()
-def list_vms(node: str = None) -> str:
-    """Lists both Virtual Machines (QEMU) and LXC Containers across Proxmox nodes."""
-    target_nodes = [node] if node else ["pve", "pve2", "pve3"]
-    results = []
-    for n in target_nodes:
-        ip = DEFAULT_NODE_IPS.get(n)
-        if not ip:
-            continue
-        code_qm, stdout_qm, _ = run_ssh_cmd(ip, "qm list")
-        code_pct, stdout_pct, _ = run_ssh_cmd(ip, "pct list")
-        node_lines = [f"🖥️ Proxmox Node {n} ({ip}):"]
-        if code_qm == 0 and stdout_qm.strip():
-            node_lines.append(f"  [QEMU VMs]\n{stdout_qm.strip()}")
-        if code_pct == 0 and stdout_pct.strip():
-            node_lines.append(f"  [LXC Containers]\n{stdout_pct.strip()}")
-        if len(node_lines) == 1:
-            node_lines.append("  (No VMs or LXCs found or node unreachable)")
-        results.append("\n".join(node_lines))
-    return "\n\n".join(results)
-
-@mcp.tool()
-def get_docker_status(node: str, vmid: int) -> str:
-    """Queries live container status and health on a VM (via QGA) or LXC (via pct exec)."""
-    ip = DEFAULT_NODE_IPS.get(node)
-    if not ip:
-        return f"Error: Unknown Proxmox node '{node}'"
-
-    code_type, out_type, _ = run_ssh_cmd(ip, f"test -f /etc/pve/qemu-server/{vmid}.conf && echo qm || (test -f /etc/pve/lxc/{vmid}.conf && echo pct || echo qm)")
-    tool = out_type.strip() if code_type == 0 and out_type.strip() in ["qm", "pct"] else "qm"
-
-    if tool == "qm":
-        cmd = f"qm guest exec {vmid} -- docker ps"
-        code, stdout, stderr = run_ssh_cmd(ip, cmd)
-        if code != 0:
-            return f"Error querying VM {vmid} on {node}: {stderr.strip()}"
-        try:
-            data = json.loads(stdout)
-            out_data = data.get("out-data", "")
-            if out_data:
-                return f"🐳 Containers on VM {vmid} ({node}):\n{out_data.strip()}"
-            return f"QGA response: {stdout}"
-        except Exception:
-            return stdout
-    else:
-        cmd = f"pct exec {vmid} -- docker ps"
-        code, stdout, stderr = run_ssh_cmd(ip, cmd)
-        if code != 0:
-            return f"Error querying LXC {vmid} on {node}: {stderr.strip()}"
-        return f"🐳 Containers on LXC {vmid} ({node}):\n{stdout.strip()}"
-
-@mcp.tool()
-def audit_infrastructure() -> str:
-    out = "Running Phase 1 Audits...\n"
-    out += run_bash_script("phase1-system-drift-audit.sh") + "\n"
-    out += run_bash_script("phase1-vm-drift-audit.sh") + "\n"
-    out += run_bash_script("extract_host_configs.sh") + "\n"
-    return out
-
-@mcp.tool()
-def backup_host(node: str) -> str:
-    return run_script("phase2-extract-custom-files.py", ["--node", node])
-
-@mcp.tool()
-def restore_host(node: str, dry_run: bool = False) -> str:
-    args = ["--node", node]
-    if dry_run: args.append("--dry-run")
-    return run_script("restore-host-drifts.py", args)
-
-@mcp.tool()
-def restore_host_configs(node: str, dry_run: bool = False) -> str:
-    args = ["--node", node]
-    if dry_run: args.append("--dry-run")
-    return run_script("restore-host-configs.py", args)
-
-@mcp.tool()
-def backup_vm(node: str, vmid: str) -> str:
-    return run_script("phase2-extract-custom-files.py", ["--node", node, "--vmid", vmid])
-
-@mcp.tool()
-def restore_vm(node: str, vmid: str, dry_run: bool = False) -> str:
-    args = ["--node", node, "--vmid", vmid]
-    if dry_run: args.append("--dry-run")
-    return run_script("restore-vm-drifts.py", args)
-
-@mcp.tool()
-def backup_stacks() -> str:
-    return run_script("phase2-split-stacks.py")
-
-@mcp.tool()
-def restore_stacks(node: str, vmid: str, stack: str = None, dry_run: bool = False) -> str:
-    """Restores Portainer Docker stacks, decrypts SOPS secrets, and restarts containers."""
-    args = ["--node", node, "--vmid", str(vmid)]
-    if stack: args.extend(["--stack", str(stack)])
-    if dry_run: args.append("--dry-run")
-    return run_script("restore-docker-stacks.py", args)
-
-@mcp.tool()
-def start_docker_stacks(node: str = None, vmid: str = None, dry_run: bool = False) -> str:
+def sync_fleet(apply: bool = False, diff_only: bool = True) -> str:
+    """Core GitOps fleet drift verification and synchronization.
+    Runs non-destructive state diff against live hypervisors and VMs when diff_only=True."""
     args = []
-    if node: args.extend(["--node", node])
-    if vmid: args.extend(["--vmid", vmid])
-    if dry_run: args.append("--dry-run")
-    return run_script("start-docker-stacks.py", args)
-
-@mcp.tool()
-def backup_apt_packages(node: str = None, vmid: str = None) -> str:
-    args = []
-    if node: args.extend(["--node", node])
-    if vmid: args.extend(["--vmid", vmid])
-    return run_script("phase2-extract-apt-packages.py", args)
-
-@mcp.tool()
-def restore_apt_packages(node: str = None, vmid: str = None, dry_run: bool = False) -> str:
-    args = []
-    if node: args.extend(["--node", node])
-    if vmid: args.extend(["--vmid", vmid])
-    if dry_run: args.append("--dry-run")
-    return run_script("restore-apt-packages.py", args)
-
-@mcp.tool()
-def sync_fleet(node: str = None, vmid: int = None, apply: bool = False, diff_only: bool = True) -> str:
-    """Discovers and synchronizes live Proxmox host configs, VM configs, and Portainer stacks."""
-    args = []
-    if node: args.extend(["--node", node])
-    if vmid: args.extend(["--vmid", str(vmid)])
     if apply:
         args.append("--apply")
-    elif diff_only:
+    if diff_only:
         args.append("--diff-only")
     return run_script("sync-live-fleet.py", args)
 
 @mcp.tool()
-def generate_stack_index() -> str:
-    """Regenerates infrastructure/docker-stacks/STACK-INDEX.md catalog."""
-    return run_script("generate-stack-index.py")
+def manage_hosts(action: str, node: str = None, ip: str = None) -> str:
+    """Manage Proxmox physical hypervisor nodes (pve, pve2, pve3).
+    Actions:
+      - 'audit': Compare live host config & packages against Git blueprints (diff-only).
+      - 'backup': Extract network interfaces, storage definitions, and cron to Git.
+      - 'restore': Restore host drift artifacts and system configs.
+      - 'restore_configs': Restore /etc/network/interfaces and storage.cfg.
+      - 'register': Register or update a host IP definition in infrastructure/hosts."""
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    action = action.lower().strip()
+    if action == "audit":
+        return run_script("sync-live-fleet.py", ["--diff-only"])
+    elif action == "backup":
+        return run_bash_script("extract_host_configs.sh")
+    elif action == "restore":
+        return run_script("restore-host-drifts.py", [node] if node else [])
+    elif action == "restore_configs":
+        return run_script("restore-host-configs.py", [node] if node else [])
+    elif action == "register":
+        if not node or not ip:
+            return "Error: Both 'node' and 'ip' are required for action='register'."
+        host_dir = os.path.join(repo_root, "infrastructure", "hosts", node)
+        os.makedirs(host_dir, exist_ok=True)
+        with open(os.path.join(host_dir, "meta.json"), "w") as f:
+            json.dump({"ip": ip}, f, indent=4)
+        return f"Successfully registered host {node} ({ip}) at {host_dir}"
+    return f"Unknown host action: '{action}'. Valid actions: audit, backup, restore, restore_configs, register."
 
 @mcp.tool()
-def snapshot_vm(node: str, vmid: int, name: str, description: str = "", include_ram: bool = False) -> str:
-    """Takes a live Proxmox snapshot of a virtual machine (QEMU) or LXC container."""
-    args = ["--node", node, "--vmid", str(vmid), "--action", "create", "--name", name]
-    if description: args.extend(["--desc", description])
-    if include_ram: args.append("--include-ram")
+def manage_vms(action: str, node: str = None, vmid: str = None, name: str = None) -> str:
+    """Manage QEMU Virtual Machines and LXC Containers across Proxmox nodes.
+    Actions:
+      - 'list': List all running/stopped VMs and LXCs with IP and resource status.
+      - 'status': Check Docker daemon and container status on a VM via QGA.
+      - 'start': Start a specific VM ID on a node.
+      - 'stop': Gracefully stop a specific VM ID on a node.
+      - 'restore': Restore custom VM configuration drift from Git blueprints.
+      - 'register': Register a VM directory definition in infrastructure/vms."""
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    action = action.lower().strip()
+
+    if action == "list":
+        target_nodes = [node] if node else ["pve", "pve2", "pve3"]
+        results = []
+        for target in target_nodes:
+            ip = DEFAULT_NODE_IPS.get(target)
+            if not ip: continue
+            code, out, _ = run_ssh_cmd(ip, "qm list")
+            if code == 0:
+                results.append(f"--- QEMU VMs on {target} ({ip}) ---\n{out.strip()}")
+            code_lxc, out_lxc, _ = run_ssh_cmd(ip, "pct list 2>/dev/null || true")
+            if code_lxc == 0 and out_lxc.strip():
+                results.append(f"--- LXC Containers on {target} ({ip}) ---\n{out_lxc.strip()}")
+        return "\n\n".join(results) if results else "No VMs or containers found."
+
+    elif action == "status":
+        if not node or not vmid:
+            return "Error: Both 'node' and 'vmid' are required for action='status'."
+        ip = DEFAULT_NODE_IPS.get(node)
+        if not ip: return f"Error: Unknown node '{node}'."
+        code, out, err = run_ssh_cmd(ip, f"qm guest exec {vmid} -- docker ps --format 'table {{{{.Names}}}}\t{{{{.Status}}}}\t{{{{.Ports}}}}'")
+        if code == 0:
+            try:
+                data = json.loads(out)
+                return data.get("out-data", "No output returned from guest agent.")
+            except Exception:
+                return out
+        return f"Failed to get Docker status for VM {vmid} on {node}: {err}"
+
+    elif action == "start":
+        if not node or not vmid: return "Error: 'node' and 'vmid' required."
+        ip = DEFAULT_NODE_IPS.get(node)
+        code, out, err = run_ssh_cmd(ip, f"qm start {vmid}")
+        return f"Successfully started VM {vmid} on {node}." if code == 0 else f"Failed to start VM {vmid}: {err}"
+
+    elif action == "stop":
+        if not node or not vmid: return "Error: 'node' and 'vmid' required."
+        ip = DEFAULT_NODE_IPS.get(node)
+        code, out, err = run_ssh_cmd(ip, f"qm shutdown {vmid}")
+        return f"Graceful shutdown initiated for VM {vmid} on {node}." if code == 0 else f"Failed to stop VM {vmid}: {err}"
+
+    elif action == "restore":
+        return run_script("restore-vm-drifts.py", [vmid] if vmid else [])
+
+    elif action == "register":
+        if not node or not vmid or not name:
+            return "Error: 'node', 'vmid', and 'name' are required for action='register'."
+        vm_dir = os.path.join(repo_root, "infrastructure", "vms", f"{node}-{vmid}-{name}")
+        os.makedirs(vm_dir, exist_ok=True)
+        return f"Successfully registered VM {name} (ID: {vmid}) on node {node} at {vm_dir}"
+
+    return f"Unknown VM action: '{action}'. Valid actions: list, status, start, stop, restore, register."
+
+@mcp.tool()
+def manage_vm_snapshots(action: str, node: str, vmid: str, snapshot_name: str = None) -> str:
+    """Manage Proxmox QEMU VM live memory/disk snapshots and vzdump archives.
+    Actions:
+      - 'list': List all existing snapshots for a VM.
+      - 'create': Create a new snapshot (snapshot_name required).
+      - 'rollback': Rollback VM to a named snapshot.
+      - 'delete': Delete an existing snapshot.
+      - 'vzdump': Trigger Proxmox vzdump backup job to local/PBS storage."""
+    action = action.lower().strip()
+    if action == "vzdump":
+        ip = DEFAULT_NODE_IPS.get(node)
+        if not ip: return f"Error: Unknown node '{node}'."
+        code, out, err = run_ssh_cmd(ip, f"vzdump {vmid} --mode snapshot --compress zstd --storage local", timeout=300)
+        return out if code == 0 else f"vzdump failed: {err}"
+    
+    args = [action, "--node", node, "--vmid", str(vmid)]
+    if snapshot_name:
+        args.extend(["--name", snapshot_name])
     return run_script("manage-vm-snapshots.py", args)
 
-@mcp.tool()
-def list_vm_snapshots(node: str, vmid: int) -> str:
-    """Lists all Proxmox snapshots for a virtual machine (QEMU) or LXC container."""
-    return run_script("manage-vm-snapshots.py", ["--node", node, "--vmid", str(vmid), "--action", "list"])
+
+# ==============================================================================
+# 2. DOCKER STACKS & SOFTWARE PACKAGES
+# ==============================================================================
 
 @mcp.tool()
-def rollback_vm(node: str, vmid: int, name: str) -> str:
-    """Rolls back a Proxmox virtual machine (QEMU) or LXC container to a previous snapshot."""
-    return run_script("manage-vm-snapshots.py", ["--node", node, "--vmid", str(vmid), "--action", "rollback", "--name", name])
+def manage_stacks(action: str, target_vm: str = None, stack_name: str = None) -> str:
+    """Manage 91 Portainer stacks and 188 microservices across all Docker VMs.
+    Actions:
+      - 'index': Rebuild infrastructure/docker-stacks/STACK-INDEX.md catalog with secrets state.
+      - 'backup': Capture all live compose files and decryptable secrets to Git.
+      - 'restore': Decrypt SOPS secrets, inject environment files, and write compose configs.
+      - 'start': Spin up all Docker compose stacks on target VM (e.g. luna-server, nexus-server)."""
+    action = action.lower().strip()
+    if action == "index":
+        return run_script("generate-stack-index.py")
+    elif action == "backup":
+        return run_script("sync-live-fleet.py", ["--apply"])
+    elif action == "restore":
+        args = []
+        if target_vm: args.extend(["--vm", target_vm])
+        if stack_name: args.extend(["--stack", stack_name])
+        return run_script("restore-docker-stacks.py", args)
+    elif action == "start":
+        args = [target_vm] if target_vm else []
+        return run_script("start-docker-stacks.py", args)
+    return f"Unknown stack action: '{action}'. Valid actions: index, backup, restore, start."
 
 @mcp.tool()
-def delete_vm_snapshot(node: str, vmid: int, name: str) -> str:
-    """Deletes a Proxmox snapshot from a virtual machine (QEMU) or LXC container."""
-    return run_script("manage-vm-snapshots.py", ["--node", node, "--vmid", str(vmid), "--action", "delete", "--name", name])
+def manage_apt_packages(action: str, node: str = None, vmid: str = None) -> str:
+    """Backup or restore APT software package states across Proxmox hosts and guest VMs.
+    Actions:
+      - 'backup': Capture installed Debian/Ubuntu package manifests to configs/apt-packages.txt.
+      - 'restore': Reinstall missing APT dependencies matching GitOps manifest."""
+    action = action.lower().strip()
+    if action == "backup":
+        return run_script("sync-live-fleet.py", ["--apply"])
+    elif action == "restore":
+        args = []
+        if node: args.extend(["--node", node])
+        if vmid: args.extend(["--vmid", str(vmid)])
+        return run_script("restore-apt-packages.py", args)
+    return f"Unknown action: '{action}'. Valid actions: backup, restore."
+
+
+# ==============================================================================
+# 3. SWITCHING & ROUTING HARDWARE AUTOMATION
+# ==============================================================================
 
 @mcp.tool()
-def backup_vm_vzdump(node: str, vmid: int, storage: str = None) -> str:
-    """Takes a full Proxmox vzdump backup archive of a virtual machine (QEMU) or LXC container."""
-    args = ["--node", node, "--vmid", str(vmid), "--action", "vzdump"]
-    if storage: args.extend(["--storage", storage])
-    return run_script("manage-vm-snapshots.py", args)
+def manage_araknis_router(action: str = "status", config_file: str = None, confirm: bool = False) -> str:
+    """Manage Araknis 520 Dual-WAN Router (192.168.1.1) via native REST API.
+    Actions:
+      - 'status': Audit router health, WAN links, subnets, DHCP leases, and 36 ACL rules.
+      - 'backup': Export running configuration blob to infrastructure/network/configs/araknis-520-backup.cfg.
+      - 'restore': Restore encrypted configuration blob from Git blueprint (confirm=True required)."""
+    action = action.lower().strip()
+    if action == "status":
+        return run_script("manage-araknis-router.py", ["status"])
+    elif action == "backup":
+        return run_script("manage-araknis-router.py", ["backup"])
+    elif action == "restore":
+        args = ["restore"]
+        if config_file: args.extend(["--file", config_file])
+        if confirm: args.append("--confirm")
+        return run_script("manage-araknis-router.py", args)
+    return f"Unknown action: '{action}'. Valid actions: status, backup, restore."
 
 @mcp.tool()
-def start_vm(node: str, vmid: int) -> str:
-    """Powers on a Proxmox virtual machine (QEMU) or LXC container."""
-    return run_script("manage-vm-snapshots.py", ["--node", node, "--vmid", str(vmid), "--action", "start"])
+def manage_araknis_switch(action: str = "status", port: str = None, wait_sec: int = 5) -> str:
+    """Manage Araknis 920 Multi-Gig Core Managed Switch (192.168.1.215) via SSH/Telnet CLI.
+    Actions:
+      - 'status': Audit 24-port link status, speeds, PoE power draw, and IGMP snooping.
+      - 'backup': Export running configuration to infrastructure/network/configs/araknis-920-running.cfg.
+      - 'poe_cycle': Power cycle an attached PoE device (e.g. port='1/0/7', wait_sec=5)."""
+    action = action.lower().strip()
+    if action == "status":
+        return run_script("manage-araknis-switch.py", ["status"])
+    elif action == "backup":
+        return run_script("manage-araknis-switch.py", ["backup"])
+    elif action == "poe_cycle":
+        if not port: return "Error: 'port' required for poe_cycle (e.g. '1/0/7')."
+        return run_script("manage-araknis-switch.py", ["poe-cycle", "--port", port, "--wait", str(wait_sec)])
+    return f"Unknown action: '{action}'. Valid actions: status, backup, poe_cycle."
 
 @mcp.tool()
-def stop_vm(node: str, vmid: int) -> str:
-    """Gracefully shuts down or stops a Proxmox virtual machine (QEMU) or LXC container."""
-    return run_script("manage-vm-snapshots.py", ["--node", node, "--vmid", str(vmid), "--action", "stop"])
+def manage_netgear_switch(
+    action: str = "status",
+    relay: str = "192.168.1.226",
+    file: str = None,
+    confirm: bool = False,
+    vid: int = None,
+    pvid: int = None,
+    port: int = None,
+    tagged: str = None,
+    untagged: str = None,
+    admin: str = None,
+    speed: str = None,
+    igmp: str = None,
+    loop: str = None,
+    json_output: bool = False
+) -> str:
+    """Manage headless Netgear GS108Ev2 switch (192.168.1.220) via pure-Python Layer 2 NSDP protocol.
+    Relays via OpenWrt (192.168.1.226) or PVE (192.168.1.250).
+    Actions:
+      - 'status'      : Query 8-port link state, CRC errors, VLAN table, PVIDs, and features.
+      - 'backup'      : Save dual JSON state and binary payload backups to Git.
+      - 'verify'      : Compare live switch state against GitOps backup JSON.
+      - 'restore'     : Restore all VLANs, ports, PVIDs, and features from backup (confirm=True).
+      - 'set_vlan'    : Configure 802.1Q VLAN membership (vid, tagged, untagged, pvid).
+      - 'delete_vlan' : Delete an 802.1Q VLAN (vid).
+      - 'set_pvid'    : Assign port default VLAN ID (port, pvid).
+      - 'set_port'    : Configure port state (port, admin='enable'/'disable', speed='auto'/'100M').
+      - 'set_features': Configure switch features (igmp='enable'/'disable', loop='enable'/'disable')."""
+    action = action.lower().strip()
+    base_args = ["--relay", relay]
+
+    if action == "status":
+        args = base_args + ["status"]
+        if json_output: args.append("--json")
+        return run_script("manage-netgear-switch.py", args)
+    elif action == "backup":
+        return run_script("manage-netgear-switch.py", base_args + ["backup"])
+    elif action == "verify":
+        args = base_args + ["verify"]
+        if file: args.extend(["--file", file])
+        return run_script("manage-netgear-switch.py", args)
+    elif action == "restore":
+        args = base_args + ["restore"]
+        if file: args.extend(["--file", file])
+        if confirm: args.append("--confirm")
+        return run_script("manage-netgear-switch.py", args)
+    elif action == "set_vlan":
+        if vid is None: return "Error: 'vid' is required."
+        args = base_args + ["set-vlan", "--vid", str(vid)]
+        if tagged: args.extend(["--tagged", tagged])
+        if untagged: args.extend(["--untagged", untagged])
+        if pvid: args.extend(["--pvid", str(pvid)])
+        return run_script("manage-netgear-switch.py", args)
+    elif action == "delete_vlan":
+        if vid is None: return "Error: 'vid' is required."
+        return run_script("manage-netgear-switch.py", base_args + ["delete-vlan", "--vid", str(vid)])
+    elif action == "set_pvid":
+        if port is None or pvid is None: return "Error: 'port' and 'pvid' required."
+        return run_script("manage-netgear-switch.py", base_args + ["set-pvid", "--port", str(port), "--pvid", str(pvid)])
+    elif action == "set_port":
+        if port is None: return "Error: 'port' is required."
+        args = base_args + ["set-port", "--port", str(port)]
+        if admin: args.extend(["--admin", admin])
+        if speed: args.extend(["--speed", speed])
+        return run_script("manage-netgear-switch.py", args)
+    elif action == "set_features":
+        args = base_args + ["set-feature"]
+        if igmp: args.extend(["--igmp", igmp])
+        if loop: args.extend(["--loop-detection", loop])
+        return run_script("manage-netgear-switch.py", args)
+    return f"Unknown action: '{action}'. Valid actions: status, backup, verify, restore, set_vlan, delete_vlan, set_pvid, set_port, set_features."
 
 @mcp.tool()
-def backup_openwrt(ip: str = "192.168.1.226", user: str = "root") -> str:
-    """Backs up OpenWrt router /etc/config/, custom scripts, daemons, and encrypts sensitive modules via SOPS."""
-    return run_script("backup-openwrt-config.py", ["--ip", ip, "--user", user])
+def manage_pakedge_switch(
+    action: str = "status",
+    port: int = None,
+    wait_sec: int = 5,
+    vlans: str = None,
+    host: str = "192.168.1.205"
+) -> str:
+    """Manage Pakedge SX-8P Managed Switch (192.168.1.205) via native Telnet/RFC854 engine.
+    Actions:
+      - 'status'         : Query 8-port link state, learned MACs, and VLAN assignments.
+      - 'backup'         : Export running configuration to infrastructure/network/configs/pakedge-sx8p-running.cfg.
+      - 'poe_cycle'      : Power-cycle individual PoE port (1-8) to reboot connected test equipment.
+      - 'power_cycle'    : Reboot entire Pakedge switch via internal CLI.
+      - 'configure_vlans': Update 802.1Q port VLAN tags across switch ports."""
+    action = action.lower().strip()
+    if action == "status":
+        return run_script("manage-pakedge-switch.py", ["status", "--host", host])
+    elif action == "backup":
+        return run_script("manage-pakedge-switch.py", ["backup", "--host", host])
+    elif action == "poe_cycle":
+        if port is None: return "Error: 'port' (1-8) required."
+        return run_script("manage-pakedge-switch.py", ["poe-port-cycle", "--port", str(port), "--wait", str(wait_sec), "--host", host])
+    elif action == "power_cycle":
+        return run_script("manage-pakedge-switch.py", ["power-cycle", "--wait", str(wait_sec), "--host", host])
+    elif action == "configure_vlans":
+        if not vlans: return "Error: 'vlans' definition string required."
+        return run_script("manage-pakedge-switch.py", ["vlan-config", "--vlans", vlans, "--host", host])
+    return f"Unknown action: '{action}'. Valid actions: status, backup, poe_cycle, power_cycle, configure_vlans."
 
 @mcp.tool()
-def restore_openwrt(ip: str = "192.168.1.226", user: str = "root", dry_run: bool = False) -> str:
-    """Restores OpenWrt router configurations, daemons, failover scripts, and decrypts SOPS modules."""
-    args = ["--ip", ip, "--user", user]
-    if dry_run: args.append("--dry-run")
-    return run_script("restore-openwrt-config.py", args)
+def manage_openwrt(action: str = "status", config_file: str = None, host: str = "192.168.1.226") -> str:
+    """Manage Belkin AX3200 OpenWrt router (192.168.1.226).
+    Actions:
+      - 'status': Audit 3-priority failover state, Wi-Fi stations, interfaces, and routes.
+      - 'backup': Export UCI firewall, network, and wireless configs to Git.
+      - 'restore': Restore UCI configurations from Git backup archive.
+      - 'deploy_vxlan': Deploy VXLAN MSS clamping and priority routing hardening."""
+    action = action.lower().strip()
+    if action == "status":
+        return run_script("get-openwrt-status.py")
+    elif action == "backup":
+        return run_script("backup-openwrt-config.py")
+    elif action == "restore":
+        args = ["--file", config_file] if config_file else []
+        return run_script("restore-openwrt-config.py", args)
+    elif action == "deploy_vxlan":
+        return run_script("deploy-vxlan-hardening.py")
+    return f"Unknown action: '{action}'. Valid actions: status, backup, restore, deploy_vxlan."
 
 @mcp.tool()
-def deploy_vxlan_hardening() -> str:
-    """Deploys hardened failover scripts to OpenWrt and passive responder to VM 107, locking P1 split-trunking."""
-    return run_script("deploy-vxlan-hardening.py", [])
+def manage_ddwrt(action: str = "status", router: str = "all", config_file: str = None) -> str:
+    """Manage DD-WRT isolation routers (aurora: 10.25.25.1, luna: 10.20.20.1) over Dropbear SSH.
+    Actions:
+      - 'status': Check router uptime, WAN IP, WireGuard tunnel, and firewall rules.
+      - 'backup': Export NVRAM variables and rc_firewall startup scripts encrypted via SOPS.
+      - 'restore': Restore NVRAM configurations from Git backup."""
+    action = action.lower().strip()
+    if action == "status":
+        return run_script("get-ddwrt-status.py")
+    elif action == "backup":
+        return run_script("backup-ddwrt-config.py", ["--router", router])
+    elif action == "restore":
+        args = ["--router", router]
+        if config_file: args.extend(["--file", config_file])
+        return run_script("restore-ddwrt-config.py", args)
+    return f"Unknown action: '{action}'. Valid actions: status, backup, restore."
 
-def backup_ddwrt(router: str = "all") -> str:
-    """Backs up DD-WRT routers (aurora: 10.25.25.1, luna: 10.20.20.1) NVRAM configs and scripts encrypted via SOPS."""
-    return run_script("backup-ddwrt-config.py", ["--router", router])
 
-@mcp.tool()
-def restore_ddwrt(router: str = "aurora", ip: str = "10.25.25.1", dry_run: bool = False) -> str:
-    """Restores DD-WRT NVRAM settings, startup/firewall scripts, cron jobs, and PIA VPN watchdogs."""
-    args = ["--router", router, "--ip", ip]
-    if dry_run: args.append("--dry-run")
-    return run_script("restore-ddwrt-config.py", args)
-
-@mcp.tool()
-def get_openwrt_status(ip: str = "192.168.1.226") -> str:
-    """Queries live OpenWrt router status, uptime, active routes, and failover daemon state."""
-    return run_script("get-openwrt-status.py", ["--ip", ip])
-
-@mcp.tool()
-def get_ddwrt_status(ip: str = "10.25.25.1") -> str:
-    """Queries DD-WRT router (aurora: 10.25.25.1) system status, WAN route, and PIA watchdog status."""
-    return run_script("get-ddwrt-status.py", ["--ip", ip])
+# ==============================================================================
+# 4. NETWORK DIAGNOSTICS & TELEMETRY
+# ==============================================================================
 
 @mcp.tool()
-def get_wireshark_status(vmid: int = 102) -> str:
-    """Queries luna-server (VM 102) ens19 SPAN mirror interface packet counters and capture archives."""
-    return run_script("get-wireshark-status.py", ["--vmid", str(vmid)])
+def verify_network_matrix(profile: str = "quick", targets_file: str = None) -> str:
+    """Audits comprehensive cross-VLAN network reachability and latency across all 21 core targets.
+    Profiles: 'quick' (ping latency) or 'comprehensive' (full TCP/UDP and inter-VLAN ACL matrix)."""
+    args = ["--profile", profile]
+    if targets_file:
+        args.extend(["--targets", targets_file])
+    return run_script("verify-network-matrix.py", args)
 
 @mcp.tool()
-def verify_network_matrix(profile: str = "all") -> str:
-    """Runs a complete ICMP and TCP port matrix reachability test across all VLANs and targets."""
-    return run_script("verify-network-matrix.py", ["--profile", profile])
-
-@mcp.tool()
-def sync_wireshark_capture() -> str:
-    """Discovers and synchronizes headless Wireshark capture scripts from luna-server (VM 102)."""
-    return run_script("sync-wireshark-capture-script.py", [])
-
-@mcp.tool()
-def backup_araknis_switch() -> str:
-    """Backs up Araknis 920 switch running-config over SSH into infrastructure/network/configs/."""
-    return run_script("manage-araknis-switch.py", ["backup"])
-
-@mcp.tool()
-def get_araknis_switch_status() -> str:
-    """Queries live Araknis 920 switch ports, link speeds, learned MAC table, STP, and IGMP snooping."""
-    return run_script("manage-araknis-switch.py", ["status"])
-
-@mcp.tool()
-def power_cycle_switch_poe_port(port: str) -> str:
-    """Power cycles PoE power on an Araknis 920 switch port (e.g. '1/0/3' to reboot an AP or camera)."""
-    return run_script("manage-araknis-switch.py", ["poe-cycle", port])
-
-@mcp.tool()
-def backup_araknis_router() -> str:
-    """Exports the Araknis 520 router full configuration via REST API and saves to infrastructure/network/configs/araknis-520-backup.cfg."""
-    return run_script("manage-araknis-router.py", ["backup"])
-
-@mcp.tool()
-def get_araknis_router_status() -> str:
-    """Queries the Araknis 520 router REST API for system info, WAN status, LAN subnets, DHCP reservations, and firewall config."""
-    return run_script("manage-araknis-router.py", ["status"])
-
-@mcp.tool()
-def restore_araknis_router(backup_file: str = "") -> str:
-    """Restores the Araknis 520 router configuration from a blueprint file via REST API. Uses the default backup if backup_file is empty."""
-    args = ["restore"]
-    if backup_file:
-        args += ["--backup-file", backup_file]
-    return run_script("manage-araknis-router.py", args)
-
-@mcp.tool()
-def backup_netgear_switch(ip: str = "192.168.1.220") -> str:
-    """Backs up Netgear GS108Ev2 switch configuration (system info, ports, VLANs, PVIDs) into infrastructure/network/configs/.
-
-    NOTE: The GS108Ev2 has NO official API or CLI and NO web GUI. Communication uses NSDP (Netgear Switch Discovery Protocol),
-    a proprietary Layer 2 UDP protocol on ports 63321/63322. Uses pure-Python native NSDP packet driver with OpenWrt L2
-    adjacent relay (Belkin AX3200 on br-lan / 192.168.1.226).
-    """
-    args = ["backup"]
-    if ip != "192.168.1.220":
-        args.extend(["--ip", ip])
-    return run_script("manage-netgear-switch.py", args)
-
-@mcp.tool()
-def get_netgear_switch_status(ip: str = "192.168.1.220") -> str:
-    """Queries live Netgear GS108Ev2 switch ports, link speed, packet counters, and CRC error statistics.
-
-    NOTE: The GS108Ev2 has NO official API or CLI and NO web GUI. Communication uses NSDP (Netgear Switch Discovery Protocol),
-    a proprietary Layer 2 UDP protocol on ports 63321/63322. Uses pure-Python native NSDP packet driver with OpenWrt L2
-    adjacent relay (Belkin AX3200 on br-lan / 192.168.1.226).
-    """
-    args = ["status"]
-    if ip != "192.168.1.220":
-        args.extend(["--ip", ip])
-    return run_script("manage-netgear-switch.py", args)
-
-@mcp.tool()
-def set_netgear_vlan(vid: int, tagged_ports: str = "", untagged_ports: str = "", pvid_ports: str = "", force_uplink: bool = False, ip: str = "192.168.1.220") -> str:
-    """Atomically provisions an 802.1Q VLAN and assigns member ports and PVIDs on the Netgear GS108Ev2.
-
-    Safety: Port 8 (uplink) is protected against management lockout; use force_uplink=True if intentional.
-    """
-    args = ["set-vlan", "--vid", str(vid)]
-    if tagged_ports: args.extend(["--tagged", tagged_ports])
-    if untagged_ports: args.extend(["--untagged", untagged_ports])
-    if pvid_ports: args.extend(["--pvid", pvid_ports])
-    if force_uplink: args.append("--force-uplink")
-    if ip != "192.168.1.220": args.extend(["--ip", ip])
-    return run_script("manage-netgear-switch.py", args)
-
-@mcp.tool()
-def delete_netgear_vlan(vid: int, ip: str = "192.168.1.220") -> str:
-    """Deletes an 802.1Q VLAN from the Netgear switch and reverts affected PVIDs to 1 (VLAN 1 is protected)."""
-    args = ["delete-vlan", "--vid", str(vid)]
-    if ip != "192.168.1.220": args.extend(["--ip", ip])
-    return run_script("manage-netgear-switch.py", args)
-
-@mcp.tool()
-def set_netgear_pvid(port: int, pvid: int, force_uplink: bool = False, ip: str = "192.168.1.220") -> str:
-    """Sets the default Port VLAN ID (PVID) for a specific physical port on the Netgear GS108Ev2."""
-    args = ["set-pvid", "--port", str(port), "--pvid", str(pvid)]
-    if force_uplink: args.append("--force-uplink")
-    if ip != "192.168.1.220": args.extend(["--ip", ip])
-    return run_script("manage-netgear-switch.py", args)
-
-@mcp.tool()
-def set_netgear_port(port: int, admin: str = "enable", speed: str = "auto", force_uplink: bool = False, ip: str = "192.168.1.220") -> str:
-    """Configures port administrative state (enable/disable) and speed (auto/10h/10f/100h/100f/1000f) on the Netgear switch."""
-    args = ["set-port", "--port", str(port)]
-    if admin: args.extend(["--admin", admin])
-    if speed: args.extend(["--speed", speed])
-    if force_uplink: args.append("--force-uplink")
-    if ip != "192.168.1.220": args.extend(["--ip", ip])
-    return run_script("manage-netgear-switch.py", args)
-
-@mcp.tool()
-def set_netgear_features(igmp: str = None, loop_detection: str = None, ip: str = "192.168.1.220") -> str:
-    """Configures hardware features (IGMP snooping, loop detection) on the Netgear GS108Ev2."""
-    args = ["set-feature"]
-    if igmp: args.extend(["--igmp", igmp])
-    if loop_detection: args.extend(["--loop-detection", loop_detection])
-    if ip != "192.168.1.220": args.extend(["--ip", ip])
-    return run_script("manage-netgear-switch.py", args)
-
-@mcp.tool()
-def restore_netgear_switch(config_file: str = "", confirm: bool = False, ip: str = "192.168.1.220") -> str:
-    """Restores Netgear switch configuration from official ProSAFE .cfg binary or JSON backup."""
-    args = ["restore"]
-    if config_file: args.extend(["--file", config_file])
-    if confirm: args.append("--confirm")
-    if ip != "192.168.1.220": args.extend(["--ip", ip])
-    return run_script("manage-netgear-switch.py", args)
-
-@mcp.tool()
-def verify_netgear_switch(baseline_file: str = "", ip: str = "192.168.1.220") -> str:
-    """Verifies live Netgear switch state against GitOps baseline backup and reports drift."""
-    args = ["verify"]
-    if baseline_file: args.extend(["--file", baseline_file])
-    if ip != "192.168.1.220": args.extend(["--ip", ip])
-    return run_script("manage-netgear-switch.py", args)
-
-@mcp.tool()
-def get_external_services_status() -> str:
-    """Zero-trust synthetic health audit for theurer.dev web and mail.theurer.dev mail infrastructure."""
-    return run_script("manage-external-services.py", ["status"])
-
-@mcp.tool()
-def check_ssl_certificates() -> str:
-    """Audits TLS/SSL certificate lifecycles and days remaining for theurer.dev and mail.theurer.dev."""
-    return run_script("manage-external-services.py", ["ssl"])
-
-@mcp.tool()
-def audit_email_pipeline() -> str:
-    """Audits email submission (SMTP :587), IMAPS (:993), and webmail health for mail.theurer.dev."""
-    return run_script("manage-external-services.py", ["mail"])
-
-@mcp.tool()
-def audit_external_hosts(host: str = "all") -> str:
-    """Executes non-destructive baseline audit on external cloud hosts (web, email, or all)."""
-    return run_script("manage-external-hosts.py", ["audit", "--host", host])
-
-@mcp.tool()
-def backup_external_host(host: str = "all") -> str:
-    """Creates clean GitOps configuration backup bundles for external cloud hosts (web, email, or all)."""
-    return run_script("manage-external-hosts.py", ["backup", "--host", host])
-
-@mcp.tool()
-def get_external_security_status(host: str = "all") -> str:
-    """Audits Fail2Ban active jails, banned IPs, UFW firewall rules, and listening ports on external cloud hosts."""
-    return run_script("manage-external-hosts.py", ["security", "--host", host])
-
-@mcp.tool()
-def deploy_external_promtail(host: str = "all", url: str = "https://logs.theurer.dev/loki/api/v1/push", tenant_id: str = "external-cloud-vps", dry_run: bool = False) -> str:
-    """Deploys or previews Promtail log shipping agent on external cloud hosts (web, email, or all)."""
-    args = ["--host", host, "--url", url, "--tenant-id", tenant_id]
-    if dry_run:
-        args.append("--dry-run")
-    return run_script("deploy-external-promtail.py", args)
-
-@mcp.tool()
-def whitelist_external_ip(ip: str = "24.22.108.194", host: str = "all") -> str:
-    """Whitelists an IP address in Fail2Ban ignoreip across external cloud hosts (web, email, or all)."""
-    return run_script("manage-external-hosts.py", ["whitelist", "--host", host, "--ip", ip])
-
-@mcp.tool()
-def get_pakedge_switch_status(host: str = "192.168.1.205") -> str:
-    """Audits Pakedge SX-8P testbench switch status, open services, and Araknis 920 Port 1/0/7 learned MACs."""
-    return run_script("manage-pakedge-switch.py", ["status", "--host", host])
-
-@mcp.tool()
-def backup_pakedge_switch(host: str = "192.168.1.205") -> str:
-    """Exports and backs up the Pakedge SX-8P testbench switch running configuration to GitOps."""
-    return run_script("manage-pakedge-switch.py", ["backup", "--host", host])
-
-@mcp.tool()
-def power_cycle_pakedge_switch(port: int = 7) -> str:
-    """Power-cycles the Pakedge SX-8P testbench switch via upstream Araknis 920 Port 1/0/7 PoE."""
-    return run_script("manage-pakedge-switch.py", ["poe-cycle", "--port", str(port)])
-
-@mcp.tool()
-def configure_pakedge_vlans(host: str = "192.168.1.205") -> str:
-    """Configures VLANs (10, 150, 200), trunk uplink gi1, and access ports on Pakedge SX-8P switch."""
-    return run_script("manage-pakedge-switch.py", ["configure-vlans", "--host", host])
-
-@mcp.tool()
-def power_cycle_pakedge_poe_port(port: int, wait_sec: float = 3.0, host: str = "192.168.1.205") -> str:
-    """Power-cycles an individual PoE port (1-8) on the Pakedge SX-8P switch to reboot attached test gear."""
-    return run_script("manage-pakedge-switch.py", ["poe-port-cycle", "--port", str(port), "--wait", str(wait_sec), "--host", host])
+def manage_wireshark(action: str = "status") -> str:
+    """Manage headless Wireshark SPAN sniffer on luna-server (VM 102).
+    Actions:
+      - 'status': Inspect ens19 SPAN packets/sec, capture daemon state, and NAS storage mount.
+      - 'sync_capture': Re-sync running capture loop script to latest GitOps version."""
+    action = action.lower().strip()
+    if action == "status":
+        return run_script("get-wireshark-status.py")
+    elif action == "sync_capture":
+        return run_script("sync-wireshark-capture-script.py")
+    return f"Unknown action: '{action}'. Valid actions: status, sync_capture."
 
 @mcp.tool()
 def analyze_pcap_telemetry(
@@ -524,7 +468,7 @@ def analyze_pcap_telemetry(
     max_packets: int = None,
     json_output: bool = False
 ) -> str:
-    """Principal Network Diagnostic & Telemetry Engine for PCAP/PCAPNG packet captures.
+    """High-throughput streaming diagnostic engine for PCAP/PCAPNG packet captures.
     Streams continuous ring buffers at >100,000 pkts/s using zero-copy binary unpacking.
     Focus options: 'comprehensive', 'summary', 'l2_hygiene', 'routing_matrix', 'transport_health', 'core_services', 'security_anomalies'.
     Optionally filter by VLAN ID (e.g. 10, 20, 30, 40, 150, 200)."""
@@ -546,7 +490,7 @@ def query_pcap_flows(
     limit: int = 50,
     max_files: int = 10
 ) -> str:
-    """Forensic flow search tool for querying matching packet flows across PCAP/PCAPNG captures.
+    """Targeted flow query tool for matching packet conversations across PCAP/PCAPNG captures.
     Filter by host IP (e.g. '192.168.10.200'), port (e.g. 53), protocol ('tcp', 'udp', 'icmp', 'arp'), or VLAN ID."""
     args = ["--focus", "query_flows", "--limit", str(limit), "--max-files", str(max_files)]
     if path: args.extend(["--path", path])
@@ -555,6 +499,55 @@ def query_pcap_flows(
     if proto: args.extend(["--query-proto", proto])
     if vlan is not None: args.extend(["--vlan", str(vlan)])
     return run_script("analyze-pcap-telemetry.py", args)
+
+
+# ==============================================================================
+# 5. EXTERNAL SERVICES & CLOUD VPS MANAGEMENT
+# ==============================================================================
+
+@mcp.tool()
+def manage_external_services(action: str = "status", ip: str = None) -> str:
+    """Manage external cloud services across Oracle Cloud (theurer.dev) and Google Cloud (mail.theurer.dev).
+    Actions:
+      - 'status'   : Comprehensive health audit (Nginx HTTP 200, Postfix SMTP :587, Dovecot IMAP :993).
+      - 'ssl'      : Verify Let's Encrypt TLS certificate validity and expiration dates.
+      - 'email'    : End-to-end email pipeline delivery audit (DNS SPF, DKIM, DMARC, SASL).
+      - 'security' : Audit VPS firewall rules, fail2ban active jails, and SSH key enforcement.
+      - 'whitelist': Whitelist an IP address across external VPS UFW and fail2ban firewalls."""
+    action = action.lower().strip()
+    if action == "status":
+        return run_script("manage-external-services.py", ["status"])
+    elif action == "ssl":
+        return run_script("manage-external-services.py", ["ssl"])
+    elif action == "email":
+        return run_script("manage-external-services.py", ["email"])
+    elif action == "security":
+        return run_script("manage-external-services.py", ["security"])
+    elif action == "whitelist":
+        if not ip: return "Error: 'ip' is required for whitelist action."
+        return run_script("manage-external-services.py", ["whitelist", "--ip", ip])
+    return f"Unknown action: '{action}'. Valid actions: status, ssl, email, security, whitelist."
+
+@mcp.tool()
+def manage_external_hosts(action: str = "audit", target: str = "all") -> str:
+    """Manage external VPS host configurations and monitoring daemons.
+    Actions:
+      - 'audit'          : Audit drift on external VPS instances (web-server, email-server, or all).
+      - 'backup'         : Backup Nginx configs, Postfix/Dovecot configs, and databases to Git.
+      - 'deploy_promtail': Deploy and configure Promtail log shipping to Loki on nexus-server."""
+    action = action.lower().strip()
+    if action == "audit":
+        return run_script("manage-external-hosts.py", ["audit", "--target", target])
+    elif action == "backup":
+        return run_script("manage-external-hosts.py", ["backup", "--target", target])
+    elif action == "deploy_promtail":
+        return run_script("deploy-external-promtail.py")
+    return f"Unknown action: '{action}'. Valid actions: audit, backup, deploy_promtail."
+
+
+# ==============================================================================
+# 6. IDENTITY, OVRC & DHCP CLIENT ALIGNMENT
+# ==============================================================================
 
 @mcp.tool()
 def sync_adguard_clients(
@@ -573,24 +566,64 @@ def sync_adguard_clients(
 
 @mcp.tool()
 def align_ovrc_devices(
+    action: str = "preview",
+    token: str = None,
+    user: str = None,
+    password: str = None,
     ovrc_csv: str = "",
     reservations: str = "",
     output: str = ""
 ) -> str:
-    """Correlates and aligns OvrC device list against authoritative DHCP reservations.
-    Resolves 'Unspecified' and generic device names into accurate human-friendly names and rooms,
-    generating an enriched CSV blueprint (ovrc-device-list-aligned.csv)."""
-    args = []
+    """Correlates, aligns, and synchronizes OvrC device names with authoritative DHCP reservations.
+    Credentials can be loaded automatically from infrastructure/secrets/ovrc.enc.yaml via SOPS.
+    Actions:
+      - 'preview': Non-destructive correlation diff showing devices to rename (default).
+      - 'csv'    : Export enriched blueprint (ovrc-device-list-aligned.csv) with accurate names & rooms.
+      - 'apply'  : Connect to live OvrC Cloud API and apply device names & room assignments."""
+    args = [action]
+    if token: args.extend(["--token", token])
+    if user: args.extend(["--user", user])
+    if password: args.extend(["--password", password])
     if ovrc_csv: args.extend(["--ovrc-csv", ovrc_csv])
     if reservations: args.extend(["--reservations", reservations])
     if output: args.extend(["--output", output])
     return run_script("align-ovrc-devices.py", args)
 
+
+# ==============================================================================
+# BACKWARDS-COMPATIBLE HELPER EXPORTS
+# ==============================================================================
+# Allows scripts and runbooks to import top-level functions directly from server:
+def generate_stack_index():
+    return manage_stacks(action="index")
+
+def backup_araknis_router():
+    return manage_araknis_router(action="backup")
+
+def backup_araknis_switch():
+    return manage_araknis_switch(action="backup")
+
+def backup_netgear_switch():
+    return manage_netgear_switch(action="backup")
+
+def backup_pakedge_switch():
+    return manage_pakedge_switch(action="backup")
+
+def backup_openwrt():
+    return manage_openwrt(action="backup")
+
+def backup_ddwrt(router: str = "all"):
+    return manage_ddwrt(action="backup", router=router)
+
+def backup_apt_packages():
+    return manage_apt_packages(action="backup")
+
+def sync_wireshark_capture():
+    return manage_wireshark(action="sync_capture")
+
+def backup_external_host(target: str = "all"):
+    return manage_external_hosts(action="backup", target=target)
+
+
 if __name__ == "__main__":
     mcp.run()
-
-
-
-
-
-

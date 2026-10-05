@@ -8,7 +8,7 @@ This document serves as the authoritative, persistent tracking blueprint for res
 
 - **Source Dataset**: `C:\Users\dtheurer\Downloads\Router pcap` (`router_baseline_00116` through `router_baseline_00224`)
 - **Packets Ingested**: `32,038,778 packets` (`5.69 GB`, complete 23.97-hour continuous baseline)
-- **Telemetry Engine**: [`scripts/analyze_all_pcaps.py`](../../scripts/analyze_all_pcaps.py) & [`scripts/analyze_lan_pcap.py`](../../scripts/analyze_lan_pcap.py)
+- **Telemetry Engine**: [`analyze-pcap-telemetry.py`](../../mcp/homelab/scripts/analyze-pcap-telemetry.py) (FastMCP: `analyze_pcap_telemetry`)
 
 | Metric | Measured Baseline (24-Hour) | Target Health State | Severity | Primary Root Cause |
 |---|---|---|---|---|

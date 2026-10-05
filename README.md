@@ -113,7 +113,7 @@ homelab-infrastructure/
 │       ├── pve3-101-nas-server/
 │       └── pve3-105-pbs-server/
 └── mcp/
-    └── homelab/                    # Homelab infrastructure FastMCP server (50 native tools)
+    └── homelab/                    # Homelab infrastructure FastMCP server (20 action-oriented tools)
         ├── server.py               # FastMCP server entrypoint & tool registry
         └── scripts/                # Automated audit, extraction, sync, NSDP, and matrix tools
 ```
