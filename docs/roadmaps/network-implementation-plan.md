@@ -827,6 +827,42 @@ The 520's stale DHCP leases were cleared by the user; OvrC needs manual clean-up
   - only the capture archive (`/mnt/captures`) is `soft`
 - **Not used:** virtiofs pass-through (Proxmox 8.4+). It stacks on NFS, blocks live migration and keeps the host exposed to NFS hangs.
 
+### Capture Review — 2026-10-04 23:58 → 10-05 08:00 (first overnight after the 10-04 reorganization; files 00003–00030)
+
+Full report with frame references, filters and playbook: [`capture-review-2026-10-05.md`](capture-review-2026-10-05.md). Open items are also in `.agents/docs/network-todo.md`.
+
+| Metric | 2026-10-05 | Pre-reorg baseline |
+|---|---|---|
+| Window / frames | 8.03 h; 7,252,262 frames; avg 250.8 pps, peak 5,751 pps | 24 h; 32.0M |
+| Broadcast/multicast share | 19.82% (VLAN 1 46.5%, VLAN 150 97.2%) | 33.06% |
+| Router ARP | 36.6 req/s (VLAN 1 sweep 25.2/s) | 111.9 req/s |
+| TCP retransmissions | 0.583% LAN; 1.32% / 2.64% WAN (≤ 1200 B segments) | 4.653% |
+| External DNS | 9,995 queries / 8 h | 36,950 / 24 h |
+| Health | 0 IP fragments, 0 STP changes, 0 rogue DHCP, 0 inbound TCP from internet, no unattributed beaconing | |
+
+**Findings that change the 10-04 sign-off:**
+- **Open resolver (P0).** WAN UDP/53 is forwarded to AdGuard `.40.185`, and internet scanners got answers. This is the TASK_005 "Port 53 DNAT": the 520's port forwarding only acts on WAN ingress, so no LAN-side redirect exists.
+- **Storm control on the router port (P0).** 200 pps broadcast storm control on 920 1/0/1 correlates with router ARP answers dropping from 99.99% to 93.47% in seconds above 200 router broadcasts.
+- **Not in effect, though marked done:**
+  - The VLAN 1 sweep of `.2–.154` every ~6.6 s still runs (OvrC scan range, not the DHCP pool).
+  - `stats.grafana.org` is still answered `0.0.0.0` (~44k/day, re-queried every ~12 s ≈ the 10 s blocked TTL).
+  - MSS 1380 clamp absent on nexus (and not needed).
+- **New:**
+  - `name_query` / `wpad.internal` lookups that are never answered.
+  - Private and link-local destinations leaving via the WAN (SA-1 → `192.168.80.150`; Tailscale → nexus Docker bridge IPs).
+  - Bonjour reflector still feeding VLANs 150/200.
+  - Work laptop leasing on VLAN 1.
+  - `.1.237` answered by two MACs (router ARP-cache alternation).
+- **Note:** `lan-hygiene-pcap-remediation-plan.md` has been reconciled and restored to preserve the pre-remediation 24h baseline and Phase 1–5 history, with Phase 6 updated to track these 10-05 review findings (remediation playbook below).
+
+**Open (from this review):**
+- [ ] Remove the 520 WAN UDP/TCP 53 → `192.168.40.185` forward; restrict AdGuard *Allowed clients* to private ranges; verify `dig @24.22.108.194` times out from outside
+- [ ] Remove/raise broadcast storm control on 920 1/0/1 only; refresh `araknis-920-running.cfg` (current backup has no storm-control lines)
+- [x] **Stop the OvrC VLAN 1 scan range (Disabled 2026-10-05)**; user disabled 24-hour periodic OvrC discovery scan to eliminate background ARP sweep noise until network stabilization is complete (to be re-enabled last for extended capture); cleared stale 520 client entries (`.40.185` on VLAN 10, `10.25.25.1` on VLAN 40)
+- [ ] AdGuard: NXDOMAIN rules for `stats.grafana.org`, `name_query`, `name_query.internal`, `wpad.internal`; Blocked response TTL 3600
+- [ ] Enforce DNS with per-VLAN ACLs (permit 53 to AdGuard, deny 53/853 elsewhere; Vivint DoH to 1.1.1.1)
+- [ ] Bogon-egress ACL on the 520, exempting the routed private ranges above (`10.8.0.0/24`, `10.20.20.0/24`, `10.25.25.0/24`, `100.64.0.0/10`, `192.168.2.0/24`); re-provision SA-1
+
 ### Pending Checklist
 > **Session handoff (2026-10-02):** the short running list, with a "Handoff: start here" section, is `.agents/docs/network-todo.md` (local-only, gitignored), next to `docker-leftover-cleanup-checklist.md`; the session log is in `.agents/docs/session-state.md`. Pakedge SX-8P tooling committed in `a7ff9c6` and verified live; live configs snapshotted to `infrastructure/network/configs/`. Stale-IP sweep v2 re-run on pve + nas-server completed.
 

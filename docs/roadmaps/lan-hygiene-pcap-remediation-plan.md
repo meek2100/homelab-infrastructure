@@ -143,25 +143,87 @@ This document serves as the authoritative, persistent tracking blueprint for res
 
 ---
 
-### Phase 6: Post-Remediation Verification & Telemetry Delta
+### Phase 6: Post-Remediation Verification & Telemetry Delta (2026-10-05 Overnight Audit)
 *Target: Quantitatively prove network health improvements with before-and-after data.*
 
-- [ ] **6.1. Collect New 1-Hour Baseline PCAP**:
-  - Capture new ring-buffer slices on the router trunk or SPAN mirror port (`ens19` on `luna-server`).
-- [ ] **6.2. Run Telemetry Engine**:
-  ```bash
-  python3 scripts/analyze_lan_pcap.py /path/to/new_capture.pcapng --json /tmp/post_remediation.json --md /tmp/post_remediation.md
-  ```
-- [ ] **6.3. Confirm Target Exit Criteria**:
-  - [ ] Non-unicast frame ratio drops from 34.36% to **< 5.0%**.
-  - [ ] Router ARP rate drops from 734/s burst to **< 20/s**.
-  - [ ] TCP retransmission rate drops from 4.65% to **< 0.50%**.
-  - [ ] External DNS leak drops from 1,597 queries to **0**.
-  - [ ] 0 ICMP MTU Fragmentation events.
+- [x] **6.1. Collect New Baseline PCAP**:
+  - Captured 8.03-hour overnight baseline (files `router_baseline_00003_20261004235803.pcapng` through `router_baseline_00030_20261005074733.pcapng`, 7,252,262 frames) from `2026-10-04 23:58` to `2026-10-05 08:00`.
+- [x] **6.2. Run Forensic Telemetry Suite**:
+  - Executed stdlib forensic pipeline ([`pcapng_fast.py`](../../mcp/homelab/scripts/pcap-analysis/pcapng_fast.py), [`deep.py`](../../mcp/homelab/scripts/pcap-analysis/deep.py), [`stormcheck.py`](../../mcp/homelab/scripts/pcap-analysis/stormcheck.py), [`targeted.py`](../../mcp/homelab/scripts/pcap-analysis/targeted.py)).
+  - Full report with exact frame references, timestamps, and actionable remediation playbook: [`capture-review-2026-10-05.md`](capture-review-2026-10-05.md).
+
+#### 📊 Empirical Delta: 24-Hour Pre-Reorg Baseline vs. 8.03-Hour Overnight Capture
+
+| Metric | 24-Hour Pre-Reorg Baseline | 2026-10-05 Overnight (8.03h) | Target Health State | Status & Empirical Finding |
+|---|---|---|---|---|
+| **Non-Unicast L2 Frame Ratio** | **`33.06%`** (10,593,081 frames) | **`19.82%`** (1,437,557 frames) | `< 5.00%` | 🟡 Improved (-40%); Router ARP sweeps & mDNS reflection are remaining drivers |
+| **Router ARP Rate** | **111.9 req/s** (9.65M / 24h) | **36.6 req/s** (1.06M / 8h) | `< 20 req/s` | 🟡 Improved (-67%); VLAN 1 sweep (`.2–.154`) accounts for 25.2/s |
+| **TCP Retransmissions (LAN)** | **`4.653%`** | **`0.583%`** (LAN data segments) | `< 0.50%` | 🟢 Substantially improved (near target) |
+| **TCP Retransmissions (WAN)** | N/A | **`1.32%`** LAN→WAN, **`2.64%`** WAN→LAN | `< 1.00%` | 🟡 Concentrated in sleeping/battery devices (segments ≤ 1200 B) |
+| **TCP RST:SYN Ratio** | **0.805** (388,088 RSTs) | **0.973** (116,835 RSTs / 120,080 SYNs) | `< 0.20` | ⚠️ 59% of resets are nexus closing its :8006 Proxmox API poll connections |
+| **External DNS Bypasses** | **36,950 queries / 24h** | **9,995 queries / 8h** | `0` | ⚠️ Hardcoded DNS on Google Cast (`.20.210–216`), SA-1 testbench, AP (`.1.231`) |
+| **`stats.grafana.org` Churn** | **188,933 queries / 24h** | **~14,783 unique / 8h (~44k/d)** | `< 100/day` | ⚠️ Down 77%, but still looping (AdGuard answers `0.0.0.0` with 10s TTL, not NXDOMAIN) |
+| **STP/RSTP Topology Flapping**| **0 TCNs** (43,087 BPDUs) | **0 TCNs** (14,455 BPDUs) | `0 TCNs` | 🟢 STP root `00:14:3f:c3:91:0f` (Araknis 920) is 100% rock-solid |
+| **Rogue DHCP Servers** | **0 collisions** | **0 collisions** | `0 collisions` | 🟢 DHCP strictly confined to official gateways |
+| **Inbound WAN TCP Attacks** | **0 inbound** | **0 inbound** | `0 inbound` | 🟢 Zero unsolicited inbound TCP connections from internet |
+
+- [ ] **6.3. Execute Empirical Audit Remediation Playbook**:
+  - [ ] **P0: Close WAN Port 53 Open Resolver**: Remove Araknis 520 WAN UDP/TCP 53 port forward to `192.168.40.185` (port forwarding only applies to WAN ingress, creating an open resolver to the internet). Restrict AdGuard *Allowed clients* to private CIDRs (`192.168.0.0/16`, `10.0.0.0/8`, `172.16.0.0/12`). Verify `dig @24.22.108.194 example.com` times out from outside.
+  - [ ] **P0: Lift Router Port Storm Control**: Remove/raise the 200 pps broadcast storm limit on Araknis 920 Port `1/0/1` (router trunk), which caused router ARP reply rates to drop from 99.99% to 93.47% during broadcast bursts. Keep storm control on access ports.
+  - [x] **P1: Suppress OvrC VLAN 1 Scan Range (Disabled 2026-10-05)**: Disabled 24-hour periodic discovery scan in OvrC portal to eliminate ~728k background router ARP sweeps. Maintained OFF while completing core remediations; will only be re-enabled at the very end for final extended baseline verification. Stale client entries (`.40.185` on VLAN 10, `10.25.25.1` on VLAN 40) cleared.
+  - [ ] **P1: Stop Grafana / WPAD DNS Retry Loops**: In AdGuard Home (*Filters → Custom filtering rules*), add NXDOMAIN rewrites for `stats.grafana.org`, `name_query`, `name_query.internal`, and `wpad.internal`; set Blocked response TTL to 3600 seconds.
+  - [ ] **P1: Enforce DNS via Per-VLAN ACLs**: Permit UDP/TCP 53 to AdGuard (`.40.185` / `.186`), then drop UDP/TCP 53 and 853 to all other destinations per VLAN (replacing port forwarding). Deny TCP 443 to 1.1.1.1 from Vivint panel (`.10.151`).
+  - [ ] **P1: Deploy Egress Bogon / Martian ACLs**: Drop unrouted private subnets egressing WAN on the 520, while exempting routed subnets (`10.8.0.0/24`, `10.20.20.0/24`, `10.25.25.0/24`, `100.64.0.0/10`, `192.168.2.0/24`). Re-provision SA-1 (`.200.100` / `.200.201`).
+
+---
+
+## 🛠️ Reusable Diagnostic Command Suite
+
+### Wireshark Display Filters
+```wireshark
+// 1. Isolate ICMP Path MTU Discovery Fragmentation Issues
+icmp.type == 3 && icmp.code == 4
+
+// 2. Isolate Time Exceeded Errors & Malformed TTL
+(ip.ttl <= 1 && !ip.dst in {224.0.0.0/4, 255.255.255.255}) || (icmp.type == 11 && icmp.code == 0)
+
+// 3. Isolate TCP Resets Generated by Nexus Server and Associated Ports
+(tcp.flags.reset == 1 && ip.src == 192.168.40.185) || tcp.port in {21114, 8006, 21116}
+
+// 4. Isolate Runaway Grafana DNS Loop & DNS External Bypasses (Bypassing AdGuard .40.185 / .40.186)
+(dns.qry.name contains "grafana.org") || (udp.port == 53 && !ip.dst in {192.168.40.185, 192.168.40.186, 192.168.1.1})
+
+// 5. Isolate Cleartext Control Protocols (Telnet, FTP, Insecure Admin)
+tcp.port in {21, 23} || (tcp.port == 80 && ip.dst in {23.171.9.237, 84.33.245.10})
+
+// 6. Isolate Dual-MAC Address Flapping for AP Backhaul (.1.237)
+arp && (arp.src.proto_ipv4 == 192.168.1.237 || arp.dst.proto_ipv4 == 192.168.1.237)
+```
+
+### Tshark Fast CLI Audit Commands
+```bash
+# 1. Audit PMTUD Next-Hop MTUs across capture
+tshark -r input.pcapng -Y "icmp.type == 3 && icmp.code == 4" \
+  -T fields -e frame.number -e frame.time_relative -e ip.src -e ip.dst \
+  -e icmp.mtu -e ip.len -E header=y -E separator=,
+
+# 2. Audit Grafana DNS queries and RCODEs
+tshark -r input.pcapng -Y "dns.qry.name contains \"grafana\"" \
+  -T fields -e frame.number -e frame.time_relative -e ip.src -e ip.dst \
+  -e dns.id -e dns.qry.name -e dns.flags.rcode -E header=y -E separator=,
+
+# 3. Audit Zero-Window and Reset flows on nexus-server
+tshark -r input.pcapng -Y "ip.addr == 192.168.40.185 && (tcp.analysis.zero_window || tcp.flags.reset == 1)" \
+  -T fields -e frame.number -e frame.time_relative -e ip.src -e ip.dst \
+  -e tcp.srcport -e tcp.dstport -e tcp.flags.str -e tcp.window_size -E header=y -E separator=,
+```
 
 ---
 
 ## 🔄 Rollback Procedures
-- **OvrC / Router Config**: Backup snapshot exists at [`infrastructure/network/configs/araknis-520-backup.cfg`](../../infrastructure/network/configs/araknis-520-backup.cfg).
-- **Switch Config**: Backup snapshot exists at [`infrastructure/network/configs/araknis-920-running.cfg`](../../infrastructure/network/configs/araknis-920-running.cfg).
-- **Prometheus Alert Rules**: Rollback via `/home/meek2100/docker/monitoring/prometheus/alert_rules.yml.bak`.
+- **Araknis 520 Router Backup**: [`infrastructure/network/configs/araknis-520-backup.cfg`](../../infrastructure/network/configs/araknis-520-backup.cfg)
+- **Araknis 920 Switch Running Config**: [`infrastructure/network/configs/araknis-920-running.cfg`](../../infrastructure/network/configs/araknis-920-running.cfg)
+- **Pakedge SX-8P Switch Running Config**: [`infrastructure/network/configs/pakedge-sx8p-running.cfg`](../../infrastructure/network/configs/pakedge-sx8p-running.cfg)
+- **Reorganized DHCP Reservations**: [`infrastructure/network/configs/dhcp-reservations-reorganized.json`](../../infrastructure/network/configs/dhcp-reservations-reorganized.json)
+- **Prometheus Alert Rules**: Rollback via `/home/meek2100/docker/monitoring/prometheus/alert_rules.yml.bak`
+
