@@ -37,7 +37,7 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", 
 CONFIG_BACKUP_FILE = os.path.join(REPO_ROOT, "infrastructure", "network", "configs", "araknis-520-backup.cfg")
 SECRET_FILE = os.path.join(REPO_ROOT, "infrastructure", "secrets", "araknis-switch.enc.yaml")
 
-DEFAULT_ROUTER_IP = "192.168.1.1"
+DEFAULT_ROUTER_IP = "192.168.10.1"
 DEFAULT_USER = "meek2100"
 BASE_PATH = "/api/cgi-bin/v1"
 
@@ -307,11 +307,32 @@ def cmd_restore(s, host, backup_file=None):
     return {"status": "error", "http_status": resp.status_code, "response": resp.text[:300]}
 
 
+def cmd_get_vlans(s, host):
+    """Retrieve 802.1Q port and inter-zone routing configuration (v2 API)."""
+    url = f"http://{host}/api/cgi-bin/v2/config/vlans"
+    resp = s.get(url, timeout=10)
+    resp.raise_for_status()
+    return {"status": "success", "vlans": resp.json()}
+
+
+def cmd_apply_vlans(s, host, payload_file):
+    """Apply 802.1Q port and inter-zone routing configuration from JSON file (v2 API)."""
+    with open(payload_file, "r") as f:
+        payload = json.load(f)
+    url = f"http://{host}/api/cgi-bin/v2/config/vlans"
+    resp = s.put(url, json=payload, timeout=20)
+    resp.raise_for_status()
+    try:
+        return {"status": "success", "response": resp.json()}
+    except Exception:
+        return {"status": "success", "status_code": resp.status_code, "text": resp.text}
+
+
 def main():
     parser = argparse.ArgumentParser(description="Araknis 520 Router REST API Management Tool")
-    parser.add_argument("action", choices=["backup", "status", "dhcp-table", "get-acls", "apply-acls", "apply-dhcp", "apply-subnets", "enable-upnp", "restore"])
+    parser.add_argument("action", choices=["backup", "status", "dhcp-table", "get-acls", "apply-acls", "apply-dhcp", "apply-subnets", "get-vlans", "apply-vlans", "enable-upnp", "restore"])
     parser.add_argument("--backup-file", help="Path to backup file (for restore)")
-    parser.add_argument("--payload-file", help="Path to JSON file containing payload (for apply-acls, apply-dhcp, apply-subnets)")
+    parser.add_argument("--payload-file", help="Path to JSON file containing payload (for apply-acls, apply-dhcp, apply-subnets, apply-vlans)")
     parser.add_argument("--json", action="store_true", help="Output raw JSON")
     args = parser.parse_args()
 
@@ -340,6 +361,12 @@ def main():
             if not args.payload_file:
                 raise ValueError("--payload-file required for apply-subnets")
             result = cmd_apply_subnets(s, host, args.payload_file)
+        elif args.action == "get-vlans":
+            result = cmd_get_vlans(s, host)
+        elif args.action == "apply-vlans":
+            if not args.payload_file:
+                raise ValueError("--payload-file required for apply-vlans")
+            result = cmd_apply_vlans(s, host, args.payload_file)
         elif args.action == "enable-upnp":
             result = cmd_set_upnp(s, host, enable=True)
         elif args.action == "restore":

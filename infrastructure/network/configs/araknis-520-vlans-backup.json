@@ -1,0 +1,258 @@
+{
+  "vlanConfigV2": [
+    {
+      "vlanID": 1,
+      "description": "Management",
+      "deviceManagement": true,
+      "tokenIndex": 1,
+      "port": [
+        {
+          "interface": "LAN1",
+          "tagState": "Untagged"
+        },
+        {
+          "interface": "LAN2",
+          "tagState": "Untagged"
+        }
+      ],
+      "interZoneFrom": [
+        {
+          "zone": 10
+        },
+        {
+          "zone": 40
+        }
+      ],
+      "interZoneTo": [
+        {
+          "zone": 10
+        },
+        {
+          "zone": 40
+        }
+      ]
+    },
+    {
+      "vlanID": 10,
+      "description": "Main - Trusted",
+      "deviceManagement": true,
+      "tokenIndex": 10,
+      "port": [
+        {
+          "interface": "LAN1",
+          "tagState": "Tagged"
+        },
+        {
+          "interface": "LAN2",
+          "tagState": "Excluded"
+        }
+      ],
+      "interZoneFrom": [
+        {
+          "zone": 1
+        },
+        {
+          "zone": 20
+        },
+        {
+          "zone": 40
+        }
+      ],
+      "interZoneTo": [
+        {
+          "zone": 1
+        },
+        {
+          "zone": 20
+        },
+        {
+          "zone": 30
+        },
+        {
+          "zone": 40
+        }
+      ]
+    },
+    {
+      "vlanID": 20,
+      "description": "Guest - Media",
+      "deviceManagement": false,
+      "tokenIndex": 20,
+      "port": [
+        {
+          "interface": "LAN1",
+          "tagState": "Tagged"
+        },
+        {
+          "interface": "LAN2",
+          "tagState": "Excluded"
+        }
+      ],
+      "interZoneFrom": [
+        {
+          "zone": 10
+        },
+        {
+          "zone": 40
+        }
+      ],
+      "interZoneTo": [
+        {
+          "zone": 10
+        },
+        {
+          "zone": 40
+        }
+      ]
+    },
+    {
+      "vlanID": 30,
+      "description": "Isolated - IOT",
+      "deviceManagement": false,
+      "tokenIndex": 30,
+      "port": [
+        {
+          "interface": "LAN1",
+          "tagState": "Tagged"
+        },
+        {
+          "interface": "LAN2",
+          "tagState": "Excluded"
+        }
+      ],
+      "interZoneFrom": [
+        {
+          "zone": 10
+        },
+        {
+          "zone": 40
+        }
+      ],
+      "interZoneTo": [
+        {
+          "zone": 40
+        }
+      ]
+    },
+    {
+      "vlanID": 40,
+      "description": "Servers - Admin",
+      "deviceManagement": true,
+      "tokenIndex": 40,
+      "port": [
+        {
+          "interface": "LAN1",
+          "tagState": "Tagged"
+        },
+        {
+          "interface": "LAN2",
+          "tagState": "Excluded"
+        }
+      ],
+      "interZoneFrom": [
+        {
+          "zone": 1
+        },
+        {
+          "zone": 10
+        },
+        {
+          "zone": 20
+        },
+        {
+          "zone": 30
+        }
+      ],
+      "interZoneTo": [
+        {
+          "zone": 1
+        },
+        {
+          "zone": 10
+        },
+        {
+          "zone": 20
+        },
+        {
+          "zone": 30
+        }
+      ]
+    },
+    {
+      "vlanID": 100,
+      "description": "Wireshark - Debug",
+      "deviceManagement": false,
+      "tokenIndex": 100,
+      "port": [
+        {
+          "interface": "LAN1",
+          "tagState": "Excluded"
+        },
+        {
+          "interface": "LAN2",
+          "tagState": "Excluded"
+        }
+      ],
+      "interZoneFrom": [],
+      "interZoneTo": []
+    },
+    {
+      "vlanID": 150,
+      "description": "CA-1 Test",
+      "deviceManagement": false,
+      "tokenIndex": 150,
+      "port": [
+        {
+          "interface": "LAN1",
+          "tagState": "Tagged"
+        },
+        {
+          "interface": "LAN2",
+          "tagState": "Excluded"
+        }
+      ],
+      "interZoneFrom": [],
+      "interZoneTo": []
+    },
+    {
+      "vlanID": 200,
+      "description": "Core-5 Test",
+      "deviceManagement": false,
+      "tokenIndex": 200,
+      "port": [
+        {
+          "interface": "LAN1",
+          "tagState": "Tagged"
+        },
+        {
+          "interface": "LAN2",
+          "tagState": "Excluded"
+        }
+      ],
+      "interZoneFrom": [],
+      "interZoneTo": []
+    },
+    {
+      "vlanID": 175,
+      "description": "Ryff Standalone Test",
+      "deviceManagement": false,
+      "tokenIndex": 175,
+      "port": [
+        {
+          "interface": "LAN1",
+          "tagState": "Excluded"
+        },
+        {
+          "interface": "LAN2",
+          "tagState": "Excluded"
+        }
+      ],
+      "interZoneFrom": [],
+      "interZoneTo": []
+    }
+  ],
+  "resultMessage": {
+    "code": 0,
+    "message": "OK"
+  }
+}
