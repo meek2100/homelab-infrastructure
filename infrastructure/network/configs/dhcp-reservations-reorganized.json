@@ -640,7 +640,7 @@
       "enable": true,
       "macAddress": "00:0F:FF:51:92:2F",
       "staticIPAddress": "192.168.150.201",
-      "name": "ca1-000FFF51922F"
+      "name": "Control4 CA-1 Controller"
     },
     {
       "enable": true,
@@ -658,7 +658,7 @@
       "enable": true,
       "macAddress": "00:0F:FF:0C:41:CA",
       "staticIPAddress": "192.168.175.201",
-      "name": "SA-1 Ryff"
+      "name": "Triad SA1 Streaming Amp"
     },
     {
       "enable": true,
@@ -670,7 +670,7 @@
       "enable": true,
       "macAddress": "00:0F:FF:0C:33:AE",
       "staticIPAddress": "192.168.200.205",
-      "name": "core5-000FFF0C33AE"
+      "name": "Control4 Core-5 Controller"
     }
   ]
 }

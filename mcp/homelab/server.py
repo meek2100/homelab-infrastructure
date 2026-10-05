@@ -614,7 +614,7 @@ def sync_adguard_clients(
 
 @mcp.tool()
 def align_ovrc_devices(
-    action: Literal["preview", "csv", "apply", "scan", "status"] = "preview",
+    action: Literal["preview", "csv", "apply", "scan", "status", "topology", "topology-apply"] = "preview",
     token: str | None = None,
     user: str | None = None,
     password: str | None = None,
@@ -622,14 +622,16 @@ def align_ovrc_devices(
     reservations: str = "",
     output: str = ""
 ) -> str:
-    """Correlates, aligns, and synchronizes OvrC device names with authoritative DHCP reservations.
+    """Correlates, aligns, and synchronizes OvrC device names, rooms, and Connected To / Powered By topology.
     Credentials can be loaded automatically from infrastructure/secrets/ovrc.enc.yaml via SOPS.
     Actions:
-      - 'status' : Display OvrC location details, device count, and Unspecified device count.
-      - 'scan'   : Trigger a fresh network discovery scan via OvrC Cloud API.
-      - 'preview': Non-destructive correlation diff showing devices to rename (default).
-      - 'csv'    : Export enriched blueprint (ovrc-device-list-aligned.csv) with accurate names & rooms.
-      - 'apply'  : Connect to live OvrC Cloud API and apply device names & room assignments."""
+      - 'status'        : Display OvrC location details, device count, and Unspecified device count.
+      - 'scan'          : Trigger a fresh network discovery scan via OvrC Cloud API.
+      - 'preview'       : Non-destructive correlation diff showing devices to rename (default).
+      - 'csv'           : Export enriched blueprint (ovrc-device-list-aligned.csv) with accurate names & rooms.
+      - 'apply'         : Connect to live OvrC Cloud API and apply device names & room assignments.
+      - 'topology'      : Audit and preview 'Connected To' (switch ports) and 'Powered By' (Wattbox/PoE) topology.
+      - 'topology-apply': Connect to live OvrC Cloud API and write authoritative network & power relationships."""
     args = [action]
     if token: args.extend(["--token", token])
     if user: args.extend(["--user", user])

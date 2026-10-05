@@ -275,6 +275,84 @@ class OvrCClient:
             "roomId": room_id
         })
 
+    def get_relationship_types(self):
+        if hasattr(self, "_relationship_types") and self._relationship_types:
+            return True, self._relationship_types
+        url = f"{OVRC_API_BASE}/devices/relationships/types"
+        ok, res = self._request(url, method="GET")
+        if ok and isinstance(res, dict):
+            types_list = res.get("types", [])
+            types_map = {t.get("code"): t.get("id") for t in types_list}
+            self._relationship_types = types_map
+            return True, types_map
+        return False, res
+
+    def get_device_relationships(self, device_id):
+        url = f"{OVRC_API_BASE}/devices/{device_id}/relationships"
+        return self._request(url, method="GET")
+
+    def set_device_relationship(self, device_id, parent_device_id, relationship_type_code, details, is_manual=True):
+        ok, types = self.get_relationship_types()
+        if not ok:
+            return False, f"Failed to get relationship types: {types}"
+        type_id = types.get(relationship_type_code)
+        if not type_id:
+            return False, f"Unknown relationship type code: {relationship_type_code}"
+        url = f"{OVRC_API_BASE}/devices/{device_id}/relationships"
+        body = {
+            "parent_device_id": parent_device_id,
+            "relationship_type_id": type_id,
+            "is_manual": is_manual,
+            "details": details
+        }
+        return self._request(url, method="POST", data=body)
+
+    def delete_device_relationship(self, device_id, relationship_id):
+        url = f"{OVRC_API_BASE}/devices/{device_id}/relationships"
+        return self._request(url, method="DELETE", data={"relationshipId": relationship_id})
+
+
+AUTHORITATIVE_TOPOLOGY = {
+    # Wattbox WB-800 PDU (MAC: 14:3F:C3:02:25:71) Outlets:
+    "power": {
+        "14:3F:C3:91:50:8C": {"parent_mac": "14:3F:C3:02:25:71", "parent_name": "Wattbox WB-800 PDU", "outlet": 2},   # Araknis 520 Router
+        "14:3F:C3:91:0F:8B": {"parent_mac": "14:3F:C3:02:25:71", "parent_name": "Wattbox WB-800 PDU", "outlet": 3},   # Araknis 920 Switch
+        "8C:DC:D4:3E:A7:D8": {"parent_mac": "14:3F:C3:02:25:71", "parent_name": "Wattbox WB-800 PDU", "outlet": 4},   # pve3 HP EliteDesk
+        "9C:EB:E8:96:11:44": {"parent_mac": "14:3F:C3:02:25:71", "parent_name": "Wattbox WB-800 PDU", "outlet": 5},   # pve Dell Precision
+        "EC:B5:FA:8D:E0:05": {"parent_mac": "14:3F:C3:02:25:71", "parent_name": "Wattbox WB-800 PDU", "outlet": 6},   # Philips Hue Bridge
+        "38:F7:CD:C1:67:E0": {"parent_mac": "14:3F:C3:02:25:71", "parent_name": "Wattbox WB-800 PDU", "outlet": 8},   # pve2 Awow Mini PC
+        "38:2C:4A:69:90:90": {"parent_mac": "14:3F:C3:02:25:71", "parent_name": "Wattbox WB-800 PDU", "outlet": 9},   # Asus RT-N66U (DD-WRT Aurora)
+        "00:0F:FF:20:74:D0": {"parent_mac": "14:3F:C3:02:25:71", "parent_name": "Wattbox WB-800 PDU", "outlet": 10},  # Control4 CA-10 Director
+        "90:A7:C1:9E:D9:26": {"parent_mac": "14:3F:C3:02:25:71", "parent_name": "Wattbox WB-800 PDU", "outlet": 11},  # Pakedge SX-8P Switch
+        "00:0F:FF:0C:33:AE": {"parent_mac": "14:3F:C3:02:25:71", "parent_name": "Wattbox WB-800 PDU", "outlet": 11},  # Control4 Core-5 Test
+        "00:0F:FF:0C:41:CA": {"parent_mac": "14:3F:C3:02:25:71", "parent_name": "Wattbox WB-800 PDU", "outlet": 11},  # Triad SA1 Ryff Test
+        "88:6A:E3:D8:EB:1C": {"parent_mac": "14:3F:C3:02:25:71", "parent_name": "Wattbox WB-800 PDU", "outlet": 12},  # Vivint Security Panel
+    },
+    # Switch Port Topology:
+    "network": {
+        # Araknis AN-920-SW-F-24-POE (MAC: 14:3F:C3:91:0F:8B)
+        "9C:EB:E8:96:11:44": {"parent_mac": "14:3F:C3:91:0F:8B", "parent_name": "Araknis 920 POE Switch", "port": 2, "has_poe": False},   # pve Dell
+        "14:3F:C3:E8:B9:93": {"parent_mac": "14:3F:C3:91:0F:8B", "parent_name": "Araknis 920 POE Switch", "port": 3, "has_poe": True},    # AP Front
+        "14:3F:C3:E8:B9:A2": {"parent_mac": "14:3F:C3:91:0F:8B", "parent_name": "Araknis 920 POE Switch", "port": 4, "has_poe": True},    # AP Back
+        "00:0F:FF:0C:41:CA": {"parent_mac": "14:3F:C3:91:0F:8B", "parent_name": "Araknis 920 POE Switch", "port": 5, "has_poe": False},   # Triad SA1 Ryff
+        "90:A7:C1:9E:D9:26": {"parent_mac": "14:3F:C3:91:0F:8B", "parent_name": "Araknis 920 POE Switch", "port": 7, "has_poe": False},   # Pakedge SX-8P
+        "00:0F:FF:0C:33:AE": {"parent_mac": "14:3F:C3:91:0F:8B", "parent_name": "Araknis 920 POE Switch", "port": 8, "has_poe": False},   # Core-5 Test
+        "00:0F:FF:20:74:D0": {"parent_mac": "14:3F:C3:91:0F:8B", "parent_name": "Araknis 920 POE Switch", "port": 11, "has_poe": False},  # CA-10 Director
+        "14:3F:C3:02:25:71": {"parent_mac": "14:3F:C3:91:0F:8B", "parent_name": "Araknis 920 POE Switch", "port": 12, "has_poe": False},  # Wattbox PDU
+        "00:0F:FF:0B:31:AF": {"parent_mac": "14:3F:C3:91:0F:8B", "parent_name": "Araknis 920 POE Switch", "port": 13, "has_poe": False},  # Core-5 Dev
+        "EC:B5:FA:8D:E0:05": {"parent_mac": "14:3F:C3:91:0F:8B", "parent_name": "Araknis 920 POE Switch", "port": 14, "has_poe": False},  # Hue Bridge
+        "88:6A:E3:D8:EB:1C": {"parent_mac": "14:3F:C3:91:0F:8B", "parent_name": "Araknis 920 POE Switch", "port": 17, "has_poe": False},  # Vivint Panel
+        "8C:DC:D4:3E:A7:D8": {"parent_mac": "14:3F:C3:91:0F:8B", "parent_name": "Araknis 920 POE Switch", "port": 21, "has_poe": False},  # pve3 HP
+        "38:F7:CD:C1:67:E0": {"parent_mac": "14:3F:C3:91:0F:8B", "parent_name": "Araknis 920 POE Switch", "port": 23, "has_poe": False},  # pve2 Awow
+        # Pakedge SX-8P Switch (MAC: 90:A7:C1:9E:D9:26)
+        "7C:1E:B3:F0:26:55": {"parent_mac": "90:A7:C1:9E:D9:26", "parent_name": "Pakedge SX-8P Switch", "port": 2, "has_poe": True},     # Control4 DS2
+        "D4:6A:91:9C:00:69": {"parent_mac": "90:A7:C1:9E:D9:26", "parent_name": "Pakedge SX-8P Switch", "port": 3, "has_poe": True},     # Luma X20 Cam 3
+        "D4:6A:91:9C:00:8A": {"parent_mac": "90:A7:C1:9E:D9:26", "parent_name": "Pakedge SX-8P Switch", "port": 4, "has_poe": True},     # Luma X20 Cam 2
+        "D4:6A:91:9C:00:67": {"parent_mac": "90:A7:C1:9E:D9:26", "parent_name": "Pakedge SX-8P Switch", "port": 5, "has_poe": True},     # Luma X20 Cam 1
+        "00:0F:FF:51:92:2F": {"parent_mac": "90:A7:C1:9E:D9:26", "parent_name": "Pakedge SX-8P Switch", "port": 8, "has_poe": True},     # Control4 CA-1 Test
+    }
+}
+
 
 def align_ovrc(action="preview", token=None, username=None, password=None,
                location_name="all",
@@ -362,6 +440,168 @@ def align_ovrc(action="preview", token=None, username=None, password=None,
         out.append(f"Total Fleet: {total_devs} devices across {len(locs)} homelab locations ({total_unspec} unspecified).")
         out.append(f"[Excluded External Location: Nicola Home]")
         out.append("=" * 105)
+        return "\n".join(out)
+
+    # 3. Action: topology / topology-apply
+    if action in ("topology", "topology-apply"):
+        if not auth_ok:
+            return (
+                f"Error: Unable to authenticate with OvrC Cloud ({auth_msg}).\n"
+                f"Please verify {SECRET_FILE} exists and is decryptable, or pass valid credentials."
+            )
+        locs, loc_err = client.get_homelab_locations(location_name)
+        if not locs:
+            return f"Error locating site(s): {loc_err}"
+
+        all_devices = []
+        dev_by_mac = {}
+        dev_by_id = {}
+        for loc in locs:
+            loc_id = loc.get("locationId")
+            lname = loc.get("name")
+            ok_dev, devs = client.get_devices(loc_id)
+            if ok_dev:
+                for d in devs:
+                    d["_locationId"] = loc_id
+                    d["_locationName"] = lname
+                    all_devices.append(d)
+                    dev_by_id[d.get("deviceId")] = d
+                    nmac = normalize_mac(d.get("macAddress", ""))
+                    if nmac:
+                        dev_by_mac[nmac] = d
+            time.sleep(0.2)
+
+        apply_mode = (action == "topology-apply")
+        out = [
+            f"=== OvrC Network & Power Topology Alignment ({'APPLY' if apply_mode else 'DRY-RUN PREVIEW'}) ===",
+            f"{'Device Name':<28} {'Location':<14} {'Connected To (Switch/Port)':<34} {'Powered By (Outlet/PoE)':<30} {'Status'}",
+            "-" * 125
+        ]
+
+        aligned_count = 0
+        updated_count = 0
+        error_count = 0
+
+        target_macs = sorted(list(set(list(AUTHORITATIVE_TOPOLOGY["network"].keys()) + list(AUTHORITATIVE_TOPOLOGY["power"].keys()))))
+
+        for mac in target_macs:
+            dev = dev_by_mac.get(mac)
+            if not dev:
+                continue
+
+            did = dev.get("deviceId")
+            dname = dev.get("name", "Unknown")
+            dloc = dev.get("_locationName", "Homelab")
+
+            ok_r, rels = client.get_device_relationships(did)
+            time.sleep(0.2)
+            r_data = rels.get("relationships", {}) if ok_r and isinstance(rels, dict) else {}
+            curr_power = r_data.get("power", {}).get("parent")
+            curr_network = r_data.get("wired_network", {}).get("parent")
+
+            target_net = AUTHORITATIVE_TOPOLOGY["network"].get(mac)
+            target_pwr = AUTHORITATIVE_TOPOLOGY["power"].get(mac)
+
+            curr_net_str = "None"
+            if curr_network:
+                p_dev = dev_by_id.get(curr_network.get("device_id"), {})
+                p_name = p_dev.get("name", f"Dev {curr_network.get('device_id')[-6:]}")
+                curr_net_str = f"{p_name} Port {curr_network.get('details', {}).get('port')}"
+
+            curr_pwr_str = "None"
+            if curr_power:
+                p_dev = dev_by_id.get(curr_power.get("device_id"), {})
+                p_name = p_dev.get("name", f"Dev {curr_power.get('device_id')[-6:]}")
+                curr_pwr_str = f"{p_name} Outlet {curr_power.get('details', {}).get('outlet')}"
+            elif curr_network and curr_network.get("details", {}).get("hasPoe"):
+                p_dev = dev_by_id.get(curr_network.get("device_id"), {})
+                p_name = p_dev.get("name", f"Dev {curr_network.get('device_id')[-6:]}")
+                curr_pwr_str = f"PoE ({p_name})"
+
+            target_net_str = "Unchanged"
+            target_pwr_str = "Unchanged"
+            needs_net_update = False
+            needs_pwr_update = False
+
+            if target_net:
+                target_net_str = f"{target_net['parent_name']} Port {target_net['port']}"
+                parent_dev = dev_by_mac.get(normalize_mac(target_net["parent_mac"]))
+                if not parent_dev:
+                    target_net_str += " (Parent Not Found)"
+                else:
+                    if (not curr_network or 
+                        curr_network.get("device_id") != parent_dev.get("deviceId") or 
+                        curr_network.get("details", {}).get("port") != target_net["port"] or 
+                        bool(curr_network.get("details", {}).get("hasPoe")) != bool(target_net.get("has_poe", False))):
+                        needs_net_update = True
+
+            if target_pwr:
+                target_pwr_str = f"{target_pwr['parent_name']} Outlet {target_pwr['outlet']}"
+                parent_dev = dev_by_mac.get(normalize_mac(target_pwr["parent_mac"]))
+                if not parent_dev:
+                    target_pwr_str += " (Parent Not Found)"
+                else:
+                    if (not curr_power or 
+                        curr_power.get("device_id") != parent_dev.get("deviceId") or 
+                        curr_power.get("details", {}).get("outlet") != target_pwr["outlet"]):
+                        needs_pwr_update = True
+
+            if target_net and target_net.get("has_poe"):
+                target_pwr_str = f"PoE ({target_net['parent_name']})"
+
+            status = "Aligned"
+            if needs_net_update or needs_pwr_update:
+                status = "Drift (Will Align)" if not apply_mode else "Updating..."
+
+                if apply_mode:
+                    success = True
+                    if needs_net_update:
+                        p_dev = dev_by_mac.get(normalize_mac(target_net["parent_mac"]))
+                        if p_dev:
+                            if curr_network:
+                                client.delete_device_relationship(did, curr_network.get("relationship_id"))
+                                time.sleep(0.3)
+                            ok_set, set_res = client.set_device_relationship(
+                                did, p_dev.get("deviceId"), "wired_network",
+                                {"port": target_net["port"], "hasPoe": target_net.get("has_poe", False)}
+                            )
+                            if not ok_set:
+                                success = False
+                                status = f"Err Net: {set_res}"
+                            time.sleep(0.4)
+
+                    if needs_pwr_update and not (target_net and target_net.get("has_poe")):
+                        p_dev = dev_by_mac.get(normalize_mac(target_pwr["parent_mac"]))
+                        if p_dev:
+                            if curr_power:
+                                client.delete_device_relationship(did, curr_power.get("relationship_id"))
+                                time.sleep(0.3)
+                            ok_set, set_res = client.set_device_relationship(
+                                did, p_dev.get("deviceId"), "power",
+                                {"outlet": target_pwr["outlet"]}
+                            )
+                            if not ok_set:
+                                success = False
+                                status = f"Err Pwr: {set_res}"
+                            time.sleep(0.4)
+
+                    if success:
+                        status = "✓ Applied"
+                        updated_count += 1
+                    else:
+                        error_count += 1
+            else:
+                aligned_count += 1
+
+            disp_net = curr_net_str if not needs_net_update else f"{curr_net_str} -> {target_net_str}"
+            disp_pwr = curr_pwr_str if not needs_pwr_update else f"{curr_pwr_str} -> {target_pwr_str}"
+            out.append(f"{dname:<28} {dloc:<14} {disp_net:<34} {disp_pwr:<30} {status}")
+
+        out.append("-" * 125)
+        out.append(f"Topology Summary: {aligned_count} aligned, {updated_count} updated, {error_count} errors.")
+        if not apply_mode:
+            out.append("Run with action='topology-apply' to write these relationships live to OvrC Cloud.")
+        out.append("=" * 125)
         return "\n".join(out)
 
     # For preview / apply / csv: Fetch live devices if authenticated, else fallback to CSV
@@ -528,8 +768,9 @@ def align_ovrc(action="preview", token=None, username=None, password=None,
 
 def main():
     parser = argparse.ArgumentParser(description="Correlate, align, and sync OvrC devices with DHCP reservations")
-    parser.add_argument("action", nargs="?", default="preview", choices=["status", "scan", "preview", "csv", "apply"],
-                        help="Action to perform: 'status', 'scan', 'preview' (dry-run), 'csv' (export blueprint), 'apply' (push to OvrC API)")
+    parser.add_argument("action", nargs="?", default="preview",
+                        choices=["status", "scan", "preview", "csv", "apply", "topology", "topology-apply"],
+                        help="Action to perform: 'status', 'scan', 'preview' (dry-run), 'csv' (export blueprint), 'apply' (push names/rooms), 'topology' (audit network & power topology), 'topology-apply' (link switch ports & outlets)")
     parser.add_argument("--token", default=None, help="OvrC Bearer token or API key")
     parser.add_argument("--user", default=None, help="OvrC username")
     parser.add_argument("--password", default=None, help="OvrC password")
