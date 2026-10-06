@@ -79,6 +79,7 @@ The router evaluates **36 granular rules** (see full rule list in [`network-impl
    - Guest/Media (VLAN 20) BLOCKED to Management, Trusted LAN, and Servers.
 8. **DNS Hardening (Rules 33–34)**: Blocks outbound DNS-over-TLS (TCP 853) on VLAN 20 and VLAN 30 to prevent devices from bypassing AdGuard Home filtering.
 9. **WAN Ingress Keepalive Suppression (Rules 35–36)**: Drops inbound WAN1 cloud sweeps destined for idle testbench controllers (`192.168.150.200` CA-1 and `192.168.200.200` Core-5), silencing 5.25M router ARP broadcast floods.
+10. **Device Internet Quarantining (Rule 37)**: Drops outbound WAN internet from Downstairs Guest TV TCL Roku (`192.168.20.240`), preventing lockups and mandatory Roku cloud login prompts while allowing local streaming via Chromecast (`192.168.20.231`).
 
 > [!NOTE]
 > **24-Hour Empirical Packet Validation (2026-10-03)**:

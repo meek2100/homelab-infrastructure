@@ -155,15 +155,15 @@ Every `/24` subnet across the homelab adopts this standardized allocation schema
 | **Kitchen Display (Nest Hub)**| `7C:D9:5C:7C:92:F6` | `192.168.20.220` | `192.168.20.215` | Google Cast | Smart display cluster |
 | **Emmy's Landing Display** | `1C:F2:9A:35:AF:30` | `192.168.20.186` | `192.168.20.216` | Google Cast | Smart display cluster |
 | **Office Display (Nest Hub)** | `7C:D9:5C:7D:BE:0A` | `192.168.20.245` | `192.168.20.217` | Google Cast | Offline 21 days (from OvrC) |
-| **Living Room TV (Chromecast)**| `14:C1:4E:BC:1C:B6`| `192.168.20.116` | `192.168.20.230` | Smart Displays | TV streaming cluster |
-| **Guest Room TV** | `BC:DF:58:65:5A:32` | `192.168.20.236` | `192.168.20.231` | Smart Displays | TV streaming cluster |
-| **Guest Bedroom TV** | `20:1F:3B:34:8F:1A` | `192.168.1.137` | `192.168.20.232` | Smart Displays | Offline 1 month (from OvrC) |
+| **Living Room TV (Chromecast)**| `14:C1:4E:BC:1C:B6`| `192.168.20.116` | `192.168.20.230` | Smart Displays | TV streaming cluster (Living Room) |
+| **Downstairs Guest TV (Chromecast)**| `BC:DF:58:65:5A:32` | `192.168.20.236` | `192.168.20.231` | Smart Displays | Media streamer on Downstairs Guest TV |
+| **Sewing Room TV (Chromecast)** | `20:1F:3B:34:8F:1A` | `192.168.1.137` | `192.168.20.232` | Smart Displays | Chromecast with Google TV (Upstairs Sewing Room) |
 | **Office TV** | `BC:DF:58:60:0F:2E` | `192.168.1.28` | `192.168.20.233` | Smart Displays | Offline 2 months (from OvrC) |
 | **Primary Bedroom TV (Chromecast)**| `B8:7B:D4:DD:25:03` | `192.168.1.37` | `192.168.20.234` | Smart Displays | Chromecast with Google TV (Primary Bedroom) |
 | **Primary Bedroom TV (Samsung)** | `7C:0A:3F:90:8A:6E` | `192.168.20.183` | `192.168.20.235` | Smart Displays | Samsung Smart TV (Primary Bedroom) |
 | **Living Room TV (Samsung)** | `54:3A:D6:53:6A:8E` | `192.168.20.222` | `192.168.20.236` | Smart Displays | Samsung Smart TV (Living Room) |
 | **Sewing Room TV (Samsung)** | `C4:73:1E:24:DE:15` | `192.168.20.203` | `192.168.20.237` | Smart Displays | Samsung Smart TV (Upstairs Sewing Room) |
-| **Sewing Room TV (Chromecast)** | *(Pending MAC)* | *(Dynamic)* | `192.168.20.238` | Smart Displays | Chromecast with Google TV (Sewing Room) |
+| **Downstairs Guest TV (TCL Roku)** | `78:93:C3:32:A2:C9` | `192.168.20.53` | `192.168.20.240` | Smart Displays | TCL TV with built-in Roku (WAN BLOCKED via ACL Rule 37) |
 | **Guest Dynamic Wireless** | *(Dynamic)* | `.20.100–.254` | `192.168.20.20–.99` | Guest Dynamic | Isolated from internal subnets |
 
 ---

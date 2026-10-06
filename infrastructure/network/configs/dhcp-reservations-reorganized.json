@@ -418,19 +418,19 @@
       "enable": true,
       "macAddress": "14:C1:4E:BC:1C:B6",
       "staticIPAddress": "192.168.20.230",
-      "name": "Living Room TV Chromecast"
+      "name": "Living Room TV (Chromecast)"
     },
     {
       "enable": true,
       "macAddress": "BC:DF:58:65:5A:32",
       "staticIPAddress": "192.168.20.231",
-      "name": "Guest Room TV"
+      "name": "Downstairs Guest TV (Chromecast)"
     },
     {
       "enable": true,
       "macAddress": "20:1F:3B:34:8F:1A",
       "staticIPAddress": "192.168.20.232",
-      "name": "Guest Bedroom TV"
+      "name": "Sewing Room TV (Chromecast)"
     },
     {
       "enable": true,
@@ -442,7 +442,7 @@
       "enable": true,
       "macAddress": "B8:7B:D4:DD:25:03",
       "staticIPAddress": "192.168.20.234",
-      "name": "Primary Bedroom TV"
+      "name": "Primary Bedroom TV (Chromecast)"
     },
     {
       "enable": true,
@@ -461,6 +461,12 @@
       "macAddress": "C4:73:1E:24:DE:15",
       "staticIPAddress": "192.168.20.237",
       "name": "Sewing Room TV (Samsung)"
+    },
+    {
+      "enable": true,
+      "macAddress": "78:93:C3:32:A2:C9",
+      "staticIPAddress": "192.168.20.240",
+      "name": "Downstairs Guest TV (TCL Roku)"
     },
     {
       "enable": true,

@@ -33,7 +33,7 @@ Theurer Home,Netgear GS108Ev2 Switch,Office,192.168.1.220,84:1B:5E:98:F1:F4,Alig
 Theurer Home,Garage Speaker,Garage,192.168.20.211,F4:F5:D8:BD:4E:60,Aligned
 Theurer Home,Control4 T4 10 Tabletop Touchs,Downstairs Guest Room,192.168.20.73,58:D5:0A:A1:79:0A,Aligned
 Theurer Home,Rachio 3 Smart Sprinkler,Garage,192.168.30.34,70:74:14:C0:2C:6A,Aligned
-Theurer Home,Guest Room TV,Downstairs Guest Room,192.168.20.231,BC:DF:58:65:5A:32,Aligned
+Theurer Home,Downstairs Guest TV (Chromecast),Downstairs Guest Room,192.168.20.231,BC:DF:58:65:5A:32,Aligned
 Theurer Home,Guest Bedroom Speaker,Downstairs Guest Room,192.168.20.210,F4:F5:D8:D9:B2:6A,Aligned
 Theurer Home,Laird Connectivity Module,Unassigned,192.168.30.163,C0:EE:40:70:BC:9D,Aligned
 Theurer Home,Primary Bedroom TV (Samsung),Primary Bedroom,192.168.20.235,7C:0A:3F:90:8A:6E,Aligned
@@ -80,7 +80,7 @@ Theurer Home,Kimber iPad,Unassigned,192.168.10.112,96:5D:E6:EE:4E:5B,Aligned
 Theurer Home,PBS Backup,Rack Room,192.168.1.244,BC:24:11:3E:06:69,Aligned
 Theurer Home,Pixel 10 Pro,Unassigned,192.168.10.40,6E:72:FF:20:9B:AA,Aligned
 Theurer Home,Moen Smart Water Valve 2,Living Room,192.168.30.171,D0:B0:CD:03:C9:54,Aligned
-Theurer Home,Living Room TV Chromecast,Living Room,192.168.20.230,14:C1:4E:BC:1C:B6,Aligned
+Theurer Home,Living Room TV (Chromecast),Living Room,192.168.20.230,14:C1:4E:BC:1C:B6,Aligned
 Theurer Home,Samsung Galaxy S9,Unassigned,192.168.20.71,3A:BF:95:75:C9:57,Aligned
 Theurer Home,Vivint Security Panel,Rack Room,192.168.10.151,88:6A:E3:D8:EB:1C,Aligned
 Theurer Home,Kimber iPhone,Unassigned,192.168.10.111,66:AF:7A:CC:EB:E4,Aligned
