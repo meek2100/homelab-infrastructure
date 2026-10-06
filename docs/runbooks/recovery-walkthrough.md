@@ -41,8 +41,8 @@ All configuration and state files have been organized out of legacy directories 
 ## 2. 🧠 The Homelab Infrastructure MCP Server
 A custom Python Model Context Protocol (MCP) server is located in `mcp/homelab/` and configured locally in `.agents/mcp_config.json`.
 
-- **Total Tools Provided**: 50 native tools (covering hypervisor discovery, VM lifecycle, container restoration, network switching, routing, and external health audits).
-- **Execution Architecture**: All python scripts are cleanly encapsulated inside `mcp/homelab/scripts/`.
+- **Total Tools Provided**: 20 action-oriented FastMCP tools (covering hypervisor discovery, VM lifecycle, container restoration, network switching, routing, streaming PCAP telemetry, and external health audits).
+- **Execution Architecture**: All python scripts are cleanly encapsulated inside `mcp/homelab/scripts/` running under `.venv`.
 
 
 ### 🛡️ Ironclad Architectural Fixes

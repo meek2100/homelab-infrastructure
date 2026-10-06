@@ -1034,7 +1034,7 @@ graph TD
         end
         
         subgraph BridgeVM ["Zone 2b: VXLAN Bridge (QEMU VM 107)"]
-            Vxlan["1.5 GB Fixed RAM<br>• vxlan150 Failover Bridge (192.168.1.151)"]
+            Vxlan["1.5 GB Fixed RAM<br>• vxlan150 Failover Bridge (192.168.1.150)"]
         end
     end
 
@@ -1063,7 +1063,7 @@ graph TD
 | :--- | :--- | :--- | :---: | :---: | :--- |
 | **`pve`**<br>(`192.168.1.250`) | Xeon E3-1505M<br>32GB RAM<br>1TB NVMe | **Zone 1: Unified Compute & AI** | Unprivileged Nested LXC | 20 GB Dynamic RAM<br>(min 8GB, max 24GB) | **Plex** (QuickSync), **Ollama** (NVIDIA 4GB), **Open WebUI**, **Immich**, **Audiobookshelf**, **Storyteller**, **Minecraft Bedrock**, **Home Assistant** / **Luna Core**. |
 | | | **Zone 2: Primary Network Core** | QEMU VM (VM 100) | 4 GB Fixed RAM | **AdGuard Home Primary** (`192.168.40.185`), **NPM**, **WireGuard**, **Tailscale**, **Cloudflared**, **RustDesk**. Isolated kernel boundary for critical routing. |
-| | | **Zone 2b: VXLAN Bridge** | QEMU VM (VM 107) | 1.5 GB Fixed RAM | **vxlan-server** (`192.168.1.151`): Layer 2 split-trunk tunnel bridge for office failover. |
+| | | **Zone 2b: VXLAN Bridge** | QEMU VM (VM 107) | 1.5 GB Fixed RAM | **vxlan-server** (`192.168.1.150`): Layer 2 split-trunk tunnel bridge for office failover. |
 | | | *Host Overhead / Buffer* | Bare-Metal PVE | ~6.5 GB Free | Hypervisor cache, ZFS/LVM metadata buffer, dynamic compute burst headroom. |
 | **`pve2`**<br>(`192.168.1.240`) | Celeron J3455<br>6GB RAM<br>128GB SSD | **Zone 3: DMZ Download Engine** | Right-Sized VM / Nested LXC | 2.5 GB Dynamic RAM | **Gluetun VPN**, **qBittorrent**, **Audiobookbay**, **Helium**. Trapped strictly on WAN2 (`10.25.25.0/24` via `vmbr1` to DD-WRT Aurora). |
 | | | *Host Overhead / Buffer* | Bare-Metal PVE | ~3.5 GB Free | Ensures AK34 Pro never enters memory exhaustion or swap thrashing. |

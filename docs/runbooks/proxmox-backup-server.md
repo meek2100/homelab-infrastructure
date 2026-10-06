@@ -43,7 +43,7 @@ This runbook outlines the authoritative architecture and deployment playbook for
 
 ### Step 1: Install Proxmox Backup Server on Node 3 (`pve3`)
 
-Because `pve3` hypervisor runs Debian 13 (Trixie), PBS (built for Debian 12 Bookworm) is deployed inside a dedicated, lightweight Debian 12 LXC container (CT 105). This gives bare-metal speed with zero host library conflicts:
+Because `pve3` hypervisor runs Debian 13 (Trixie), PBS was deployed inside a dedicated, lightweight LXC container (CT 105) to isolate host packaging. *(Note: CT 105 initially ran Debian 12 Bookworm with PBS 3.4, and was upgraded to PBS 4.2 on Debian 13 on 2026-09-30; the initial deployment pattern remains identical)*:
 
 ```bash
 # 1. Download Debian 12 container template on pve3
@@ -113,26 +113,37 @@ proxmox-backup-manager cert info | grep Fingerprint
 proxmox-backup-manager user create pve-backup@pbs --comment "Proxmox Cluster Backup Agent"
 proxmox-backup-manager user generate-token pve-backup@pbs backup-token
 
-# Grant datastore backup permissions to the token
-proxmox-backup-manager acl update /datastore/homelab-datastore DatastoreBackup --auth-id pve-backup@pbs!backup-token
+# Grant parent user permissions, then DatastorePowerUser to token (required for post-backup prune)
+proxmox-backup-manager acl update /datastore/homelab-datastore DatastoreAdmin --auth-id pve-backup@pbs
+proxmox-backup-manager acl update /datastore/homelab-datastore DatastorePowerUser --auth-id pve-backup@pbs!backup-token
+
+# Create per-host isolated namespaces to prevent VM ID collisions (e.g. VM 100 on multiple hosts)
+proxmox-backup-manager namespace create homelab-datastore pve
+proxmox-backup-manager namespace create homelab-datastore pve2
+proxmox-backup-manager namespace create homelab-datastore pve3
 ```
 
 ---
 
 ### Step 4: Register PBS Storage Target on `pve`, `pve2`, and `pve3`
 
-Run this on each Proxmox node to add PBS as a native storage target over the `10.25.25.0/24` network:
+Run this on each Proxmox node to add PBS as a native storage target over the `10.25.25.0/24` SAN network, configuring the respective host namespace:
 
 ```bash
-# Run on pve (192.168.1.250), pve2 (10.25.25.240), and pve3 (192.168.1.245):
+# Example for pve (use respective namespace: pve, pve2, or pve3):
 pvesm add pbs pbs-backup \
     --server 10.25.25.244 \
     --datastore homelab-datastore \
+    --namespace pve \
     --username pve-backup@pbs!backup-token \
     --password "<TOKEN_SECRET>" \
     --fingerprint "<PBS_FINGERPRINT>" \
     --encryption-key autogen \
     --prune-backups keep-last=7,keep-daily=7,keep-weekly=4,keep-monthly=12
+
+# Note: Standalone PVE nodes do not share /etc/pve/priv/storage/!
+# Distribute the generated client encryption key (/etc/pve/priv/storage/pbs-backup.enc)
+# from pve to pve2 and pve3 via scp so all nodes use identical client encryption.
 ```
 
 

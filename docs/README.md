@@ -12,7 +12,7 @@ docs/
 │
 ├── architecture/                                # Core System & Network Topologies
 │   ├── network-topology.md                      # Dual-WAN, Araknis router/switch/APs, hypervisor bridges, split-horizon DNS
-│   ├── vlan-matrix.md                           # Master 8-VLAN table, subnet CIDRs, DHCP pools, 36 live interzone ACL rules
+│   ├── vlan-matrix.md                           # Master 9-VLAN table, subnet CIDRs, DHCP pools, 36 live interzone ACL rules
 │   └── network-interfaces-map.md                # Empirical OS interfaces, bridges (vmbr0/1), and routing tables (Hosts, VMs, LXC 105)
 │
 ├── runbooks/                                    # Operational Runbooks & Disaster Recovery Playbooks
@@ -42,7 +42,7 @@ docs/
 ### 🏛️ 1. Architecture
 Authoritative ground-truth definitions for physical and logical topology:
 * [network-topology.md](architecture/network-topology.md): Physical hardware layout, Araknis 520 router, Araknis 920 switch, Araknis 830 Wi-Fi 7 APs, office wireless bridge, dual-WAN routing, and split-horizon DNS.
-* [vlan-matrix.md](architecture/vlan-matrix.md): Master 8-VLAN segmentation matrix (VLANs 1, 10, 20, 30, 40, 100, 150, 200), CIDR allocations, DHCP scope options, and 36 live inter-VLAN firewall ACL rules.
+* [vlan-matrix.md](architecture/vlan-matrix.md): Master 9-VLAN segmentation matrix (VLANs 1, 10, 20, 30, 40, 100, 150, 175, 200), CIDR allocations, DHCP scope options, and 36 live inter-VLAN firewall ACL rules.
 * [network-interfaces-map.md](architecture/network-interfaces-map.md): Empirical operating system audit of all network interfaces, bridges (`vmbr0`, `vmbr1`), MAC addresses, and routing tables across Proxmox hosts, virtual machines, and LXC 105.
 
 ### 🛠️ 2. Runbooks
