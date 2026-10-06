@@ -496,7 +496,7 @@ def verify_network_matrix(
     profile: Literal["quick", "comprehensive"] = "quick",
     targets_file: str | None = None
 ) -> str:
-    """Audits comprehensive cross-VLAN network reachability and latency across all 23 core targets.
+    """Audits comprehensive cross-VLAN network reachability and latency across all 24 core targets.
     Profiles: 'quick' (ping latency) or 'comprehensive' (full TCP/UDP and inter-VLAN ACL matrix)."""
     args = ["--profile", profile]
     if targets_file:

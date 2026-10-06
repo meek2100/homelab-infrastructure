@@ -35,6 +35,7 @@ KNOWN_SUBNETS = {
     "192.168.30.": "VLAN 30 (Isolated IoT)",
     "192.168.40.": "VLAN 40 (Servers Admin)",
     "192.168.150.": "VLAN 150 (CA-1 Test)",
+    "192.168.175.": "VLAN 175 (Ryff Test)",
     "192.168.200.": "VLAN 200 (Core-5 Test)",
     "10.25.25.": "WAN2 / Storage",
     "10.8.0.": "WireGuard Subnet",
@@ -95,8 +96,16 @@ def resolve_target_files(input_path: str, max_files: int = None) -> list[str]:
     norm = normalize_path(input_path)
     if not norm:
         for candidate in [
-            normalize_path(r"C:\Users\dtheurer\Downloads\Router pcap"),
+            # In-memory live tmpfs ring buffer (Stack 48 on VM 102)
+            "/dev/shm/wireshark",
+            "/tmp/captures",
+            # NAS archive mount points (NFS / SMB / local)
+            "/mnt/captures",
+            "/mnt/media/captures",
             "/mnt/media/wireshark-captures",
+            "/opt/packet-captures",
+            # Windows 11 SMB mapped capture folders & downloads
+            normalize_path(r"C:\Users\dtheurer\Downloads\Router pcap"),
             "/captures",
         ]:
             if os.path.exists(candidate):

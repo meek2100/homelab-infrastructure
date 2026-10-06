@@ -36,6 +36,7 @@ TARGETS = [
     {"name": "luna-server (Smart Home VM 102)", "ip": "192.168.40.249", "tcp": [22, 8123, 8581], "category": "Smart Home Admin"},
     {"name": "media-server (Plex VM 103)", "ip": "192.168.40.247", "tcp": [22, 32400], "category": "Media Admin"},
     {"name": "minecraft-server (VM 109)", "ip": "192.168.40.175", "tcp": [22], "category": "Gaming VM"},
+    {"name": "vxlan-server (VM 107)", "ip": "192.168.1.150", "tcp": [22], "category": "Network Gateway"},
     {"name": "OpenMediaVault Admin (VM 101)", "ip": "192.168.40.248", "tcp": [80], "category": "Storage Admin"},
 
     # Private Storage Network & Automation Controller
