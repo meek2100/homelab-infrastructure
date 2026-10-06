@@ -139,6 +139,8 @@ Every `/24` subnet across the homelab adopts this standardized allocation schema
 | **Lenovo Yoga Tab 3 Plus** | `48:88:CA:E1:BA:DD` | `192.168.20.30` | `192.168.20.102` | Guest Mobile | Moved from VLAN 10 to Insomniac_Guest |
 | **Guest Mobile Device 1** | `56:81:3E:71:AF:5F` | `192.168.20.82` | `192.168.20.103` | Guest Mobile | Guest wireless endpoint |
 | **Guest Mobile Device 2** | `BA:98:6B:7F:13:B7` | `192.168.20.90` | `192.168.20.104` | Guest Mobile | Guest wireless endpoint |
+| **Friend Guest 1** | *[DHCP On Connect]* | — | `192.168.20.105` | Guest Personal | Tailscale `100.85.20.105`; NPM app limited |
+| **Friend Guest 2** | *[DHCP On Connect]* | — | `192.168.20.106` | Guest Personal | Tailscale `100.85.20.106`; NPM app limited |
 | **Control4 Halo Touch Remote** | `50:26:EF:26:C9:AD` | `192.168.20.87` | `192.168.20.120` | Remotes & Acc | Wi-Fi remote on Insomniac_Guest |
 | **Control4 Halo Tactile Remote** | `24:CD:8D:6F:FD:A0` | `192.168.20.34` | `192.168.20.121` | Remotes & Acc | Wi-Fi remote on Insomniac_Guest |
 | **Control4 SR-260 Remote** | `34:15:13:D2:BD:1E` | `192.168.20.85` | `192.168.20.122` | Remotes & Acc | Wi-Fi remote on Insomniac_Guest |
