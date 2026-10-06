@@ -104,6 +104,7 @@ Every `/24` subnet across the homelab adopts this standardized allocation schema
 | **Pakedge Lab AP Client** | `90:A7:C1:4B:1D:71` | `192.168.10.41` | `192.168.10.117` | Work Testbench | Pakedge test host |
 | **Nintendo Switch 1** | `A4:C1:E8:13:20:48` | `192.168.10.127` | `192.168.10.130` | Consoles | Handheld gaming block |
 | **Nintendo Switch 2** | `98:E2:55:3D:C4:B9` | `192.168.10.132` | `192.168.10.131` | Consoles | Handheld gaming block |
+| **Nex Playground** | `48:5C:2C:8C:43:7C` | `192.168.10.65` | `192.168.10.132` | Consoles | Active console in Living Room |
 | **Philips Hue Bridge** | `EC:B5:FA:8D:E0:05` | `192.168.10.101` | `192.168.10.150` | Smart Hubs | Smart home lighting bridge |
 | **Vivint Security Panel** | `88:6A:E3:D8:EB:1C` | `192.168.10.108` | `192.168.10.151` | Security | Primary security panel |
 | **Vivint Outdoor Cam (ODC350)**| `84:EB:3E:39:08:27` | `192.168.1.112` | `192.168.10.152` | Security | Pro outdoor camera (from OvrC) |
@@ -158,10 +159,11 @@ Every `/24` subnet across the homelab adopts this standardized allocation schema
 | **Guest Room TV** | `BC:DF:58:65:5A:32` | `192.168.20.236` | `192.168.20.231` | Smart Displays | TV streaming cluster |
 | **Guest Bedroom TV** | `20:1F:3B:34:8F:1A` | `192.168.1.137` | `192.168.20.232` | Smart Displays | Offline 1 month (from OvrC) |
 | **Office TV** | `BC:DF:58:60:0F:2E` | `192.168.1.28` | `192.168.20.233` | Smart Displays | Offline 2 months (from OvrC) |
-| **Primary Bedroom TV** | `B8:7B:D4:DD:25:03` | `192.168.1.37` | `192.168.20.234` | Smart Displays | Offline TV (from OvrC) |
-| **Samsung Smart TV 1** | `7C:0A:3F:90:8A:6E` | `192.168.20.183` | `192.168.20.235` | Smart Displays | TV streaming cluster |
-| **Samsung Smart TV 2** | `54:3A:D6:53:6A:8E` | `192.168.20.222` | `192.168.20.236` | Smart Displays | TV streaming cluster |
-| **Samsung Smart TV 3** | `C4:73:1E:24:DE:15` | `192.168.20.203` | `192.168.20.237` | Smart Displays | Moved from .203 to avoid Sonos clash |
+| **Primary Bedroom TV (Chromecast)**| `B8:7B:D4:DD:25:03` | `192.168.1.37` | `192.168.20.234` | Smart Displays | Chromecast with Google TV (Primary Bedroom) |
+| **Primary Bedroom TV (Samsung)** | `7C:0A:3F:90:8A:6E` | `192.168.20.183` | `192.168.20.235` | Smart Displays | Samsung Smart TV (Primary Bedroom) |
+| **Living Room TV (Samsung)** | `54:3A:D6:53:6A:8E` | `192.168.20.222` | `192.168.20.236` | Smart Displays | Samsung Smart TV (Living Room) |
+| **Sewing Room TV (Samsung)** | `C4:73:1E:24:DE:15` | `192.168.20.203` | `192.168.20.237` | Smart Displays | Samsung Smart TV (Upstairs Sewing Room) |
+| **Sewing Room TV (Chromecast)** | *(Pending MAC)* | *(Dynamic)* | `192.168.20.238` | Smart Displays | Chromecast with Google TV (Sewing Room) |
 | **Guest Dynamic Wireless** | *(Dynamic)* | `.20.100–.254` | `192.168.20.20–.99` | Guest Dynamic | Isolated from internal subnets |
 
 ---

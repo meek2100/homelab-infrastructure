@@ -170,6 +170,12 @@
     },
     {
       "enable": true,
+      "macAddress": "48:5C:2C:8C:43:7C",
+      "staticIPAddress": "192.168.10.132",
+      "name": "Nex Playground"
+    },
+    {
+      "enable": true,
       "macAddress": "EC:B5:FA:8D:E0:05",
       "staticIPAddress": "192.168.10.150",
       "name": "Philips Hue Bridge"
@@ -442,19 +448,19 @@
       "enable": true,
       "macAddress": "7C:0A:3F:90:8A:6E",
       "staticIPAddress": "192.168.20.235",
-      "name": "Samsung Smart TV 1"
+      "name": "Primary Bedroom TV (Samsung)"
     },
     {
       "enable": true,
       "macAddress": "54:3A:D6:53:6A:8E",
       "staticIPAddress": "192.168.20.236",
-      "name": "Samsung Smart TV 2"
+      "name": "Living Room TV (Samsung)"
     },
     {
       "enable": true,
       "macAddress": "C4:73:1E:24:DE:15",
       "staticIPAddress": "192.168.20.237",
-      "name": "Samsung Smart TV 3"
+      "name": "Sewing Room TV (Samsung)"
     },
     {
       "enable": true,

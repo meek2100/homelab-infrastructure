@@ -12,11 +12,12 @@ Theurer Home,Luma X20 Cam 3,Rack Room,192.168.10.163,D4:6A:91:9C:00:69,Aligned
 Theurer Home,Luma X20 Cam 1,Rack Room,192.168.10.161,D4:6A:91:9C:00:67,Aligned
 Theurer Home,Control4 Core Lite Controller,Rack Room,192.168.10.206,00:0F:FF:0B:35:E9,Aligned
 Theurer Home,Luma Bridge,Rack Room,192.168.10.160,D4:6A:91:19:00:54,Aligned
-Theurer Home,Araknis 520 Router,Rack Room,192.168.1.1,14:3F:C3:91:50:8C,Untracked
+Theurer Home,Binary MoIP 4K Controller,Rack Room,192.168.1.155,D4:6A:91:62:A2:7E,Aligned
+Theurer Home,Araknis 520 Router,Rack Room,192.168.1.1,14:3F:C3:91:50:8C,Aligned
 Theurer Home,Araknis 920 POE Switch,Rack Room,192.168.1.215,14:3F:C3:91:0F:8B,Aligned
 Theurer Home,Control4 Core-3 Controller,Office,192.168.10.203,00:0F:FF:9F:0C:72,Aligned
 Theurer Home,Triad SA1 Streaming Amp,Office,192.168.10.207,00:0F:FF:9F:33:63,Aligned
-Theurer Home,Asus RT-N66U,Rack Room,10.25.25.1,38:2C:4A:69:90:90,Untracked
+Theurer Home,Asus RT-N66U,Rack Room,10.25.25.1,38:2C:4A:69:90:90,Aligned
 Theurer Home,ProxMox VM - Luna Server,Rack Room,192.168.40.249,BC:24:11:B7:CF:A3,Aligned
 Theurer Home,Primary Bedroom Speaker,Primary Bedroom,192.168.20.212,F4:F5:D8:A6:88:D0,Aligned
 Theurer Home,Smart Appliance MXCHIP,Unassigned,192.168.30.63,04:78:63:3E:F9:25,Aligned
@@ -25,7 +26,7 @@ Theurer Home,ProxMox VM - Media Server,Rack Room,192.168.40.247,BC:24:11:40:7F:7
 Theurer Home,ecobee Smart Thermostat,Living Room,192.168.30.150,44:61:32:51:14:7E,Aligned
 Theurer Home,GE Smart Appliance 1,Laundry Room,192.168.30.176,D8:28:C9:75:63:F6,Aligned
 Theurer Home,HP LaserJet Web,Office,192.168.10.181,F8:0D:AC:D9:32:47,Aligned
-Theurer Home,Samsung Smart TV 2,Unassigned,192.168.20.236,54:3A:D6:53:6A:8E,Aligned
+Theurer Home,Living Room TV (Samsung),Living Room,192.168.20.236,54:3A:D6:53:6A:8E,Aligned
 Theurer Home,Emmy Landing Display,Emme's Play Area,192.168.20.216,1C:F2:9A:35:AF:30,Aligned
 Theurer Home,Brother QL-1110NWB Wired,Office,192.168.10.182,00:80:77:5C:F6:11,Aligned
 Theurer Home,Netgear GS108Ev2 Switch,Office,192.168.1.220,84:1B:5E:98:F1:F4,Aligned
@@ -35,7 +36,7 @@ Theurer Home,Rachio 3 Smart Sprinkler,Garage,192.168.30.34,70:74:14:C0:2C:6A,Ali
 Theurer Home,Guest Room TV,Downstairs Guest Room,192.168.20.231,BC:DF:58:65:5A:32,Aligned
 Theurer Home,Guest Bedroom Speaker,Downstairs Guest Room,192.168.20.210,F4:F5:D8:D9:B2:6A,Aligned
 Theurer Home,Laird Connectivity Module,Unassigned,192.168.30.163,C0:EE:40:70:BC:9D,Aligned
-Theurer Home,Samsung Smart TV 1,Unassigned,192.168.20.235,7C:0A:3F:90:8A:6E,Aligned
+Theurer Home,Primary Bedroom TV (Samsung),Primary Bedroom,192.168.20.235,7C:0A:3F:90:8A:6E,Aligned
 Theurer Home,Moen Flo Smart Water Shutoff,Garage,192.168.30.83,3C:E4:B0:85:D4:F6,Aligned
 Theurer Home,Chamberlain MyQ Smart Garage,Garage,192.168.30.95,2C:D2:6B:86:D7:61,Aligned
 Theurer Home,Philips Hue Bridge,Rack Room,192.168.10.150,EC:B5:FA:8D:E0:05,Aligned
@@ -45,8 +46,8 @@ Theurer Home,Hatch Rest+ Sound Machine,Emme's Bedroom,192.168.20.44,24:62:AB:BD:
 Theurer Home,Pakedge SX-8P Switch,Office,192.168.1.205,90:A7:C1:9E:D9:26,Aligned
 Theurer Home,Control4 DS2 Door Station,Foyer,192.168.10.156,7C:1E:B3:F0:26:55,Aligned
 Theurer Home,Pakedge Lab AP Client,Office,192.168.10.41,90:A7:C1:4B:1D:71,Aligned
-Theurer Home,ProxMox Host - HP EliteDesk SAN,Rack Room,10.25.25.245,00:E0:4C:60:D7:82,Untracked
-Theurer Home,ProxMox VM - OMV NAS SAN,Rack Room,10.25.25.248,BC:24:11:BD:7A:26,Untracked
+Theurer Home,ProxMox Host - HP EliteDesk SAN,Rack Room,10.25.25.245,00:E0:4C:60:D7:82,Aligned
+Theurer Home,ProxMox VM - OMV NAS SAN,Rack Room,10.25.25.248,BC:24:11:BD:7A:26,Aligned
 Theurer Home,ProxMox VM - Discovery Server,Rack Room,10.25.25.246,BC:24:11:EF:2D:13,Aligned
 Theurer Home,Tuya Smart Light 3,Unassigned,192.168.30.77,FC:3C:D7:10:D7:47,Aligned
 Theurer Home,Tuya Smart Light 5,Unassigned,192.168.30.45,FC:3C:D7:12:CE:8C,Aligned
@@ -56,7 +57,7 @@ Theurer Home,OpenWrt Wi-Fi 7 Pass-Through B,Office,192.168.1.226,E8:9F:80:50:58:
 Theurer Home,Sonos Roam 2 Office,Office,192.168.20.203,C4:38:75:C6:54:A4,Aligned
 Theurer Home,OpenWRT - Vxlan Server br-lan,Office,192.168.1.225,E8:9F:80:50:58:32,Aligned
 Theurer Home,ProxMox Host - Awow,Rack Room,192.168.1.240,38:F7:CD:C1:67:E0,Aligned
-Theurer Home,ProxMox Host - Awow (SAN),Rack Room,10.25.25.240,38:F7:CD:C1:67:F1,Untracked
+Theurer Home,ProxMox Host - Awow (SAN),Rack Room,10.25.25.240,38:F7:CD:C1:67:F1,Aligned
 Theurer Home,ProxMox - Minecraft Docker Ser,Rack Room,192.168.40.175,BC:24:11:17:C9:60,Aligned
 Theurer Home,Nintendo Switch 2,Primary Bedroom,192.168.10.131,98:E2:55:3D:C4:B9,Aligned
 Theurer Home,ProxMox Host - Nexus,Rack Room,192.168.40.185,BC:24:11:97:EB:DB,Aligned
@@ -85,7 +86,7 @@ Theurer Home,Vivint Security Panel,Rack Room,192.168.10.151,88:6A:E3:D8:EB:1C,Al
 Theurer Home,Kimber iPhone,Unassigned,192.168.10.111,66:AF:7A:CC:EB:E4,Aligned
 Theurer Home,mainsail,Garage,192.168.30.90,E4:5F:01:78:DF:81,Aligned
 Theurer Home,Desktop PC 011PRD Wired,Office,192.168.10.102,A0:29:19:8F:5D:45,Aligned
-Theurer Home,GP-Proxy,Rack Room,192.168.40.155,02:F5:58:97:8E:88,Aligned
+Theurer Home,Virtual TAP Interface Host,Rack Room,192.168.40.155,02:F5:58:97:8E:88,Aligned
 Theurer Home,Control4 Halo Touch Remote,Office,192.168.20.87,50:26:EF:26:C9:AD,Aligned
 Theurer Home,Desktop PC 011PRD Wi-Fi,Office,192.168.10.103,F4:46:37:7A:6A:7A,Aligned
 Theurer Home,iPhone Client 2,Unassigned,192.168.10.64,32:C2:B9:5F:40:56,Aligned

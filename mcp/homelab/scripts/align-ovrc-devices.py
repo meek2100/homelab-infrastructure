@@ -706,14 +706,18 @@ def align_ovrc(action="preview", token=None, username=None, password=None,
 
         csv_name = csv_info.get("name", "").strip()
         matched_name = matched.get("name", "").strip() if matched else ""
-        if csv_name and csv_name.lower() not in ("unspecified", "unknown", "none", ""):
-            auth_name = csv_name
-        elif matched_name:
+        if matched_name and matched_name.lower() not in ("unspecified", "unknown", "none", ""):
             auth_name = matched_name
+        elif csv_name and csv_name.lower() not in ("unspecified", "unknown", "none", ""):
+            auth_name = csv_name
         else:
             auth_name = curr_name
 
-        target_room_name = (csv_info.get("room") or get_room_from_name(auth_name) or "Unassigned").strip()
+        csv_room = csv_info.get("room", "").strip()
+        if csv_room and csv_room.lower() not in ("unassigned", "none", ""):
+            target_room_name = csv_room
+        else:
+            target_room_name = get_room_from_name(auth_name) or "Unassigned"
         rooms_map = location_rooms_map.get(dev_loc_id, {})
         target_room_id = rooms_map.get(target_room_name.lower())
 
