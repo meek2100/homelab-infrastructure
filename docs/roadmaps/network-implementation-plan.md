@@ -1070,14 +1070,17 @@ graph TD
 | **`pve3`**<br>(`192.168.1.245`) | Core i5-4590T<br>16GB RAM<br>240GB SSD | **Zone 4: Central Storage Node** | QEMU VM (VM 101) | 6 GB Fixed RAM | **OpenMediaVault (OMV NAS)**: Manages bulk mechanical pools, line-rate NFS v4+ and SMB network shares (`10.25.25.248`). |
 | | | **Zone 5: Wealth Vault** | Isolated VM / LXC | 3 GB Fixed RAM | **Actual Budget**, **Firefly III**, **Ghostfolio** + MariaDB/PostgreSQL. Mapped to dedicated physical 500GB HDD (`/mnt/pve/backup` on `pve3`). |
 | | | **Zone 6: Secondary Core & DNS** | Unprivileged LXC | 1 GB Dynamic RAM | **AdGuard Home Secondary** (`192.168.40.186`), **AdGuard Sync**, **Nextcloud** (Lightweight failover sync). |
-| | | **Zone 7: Proxmox Backup Server** | Unprivileged LXC (LXC 105) | 2 GB Dynamic RAM | **pbs-server** (`192.168.1.244` / `10.25.25.244`): Deduplicated snapshot vault. Datastore replicated to Node 1. |
+| | | **Zone 7: Proxmox Backup Server** | Unprivileged LXC (LXC 105) | 2 GB Dynamic RAM | **pbs-server** (`192.168.1.244` / `10.25.25.244`): Deduplicated snapshot vault. Datastore replicated offsite to Google Drive via `rclone crypt`. |
 | | | *Host Overhead / Buffer* | Bare-Metal PVE | ~4 GB Free | Guarantees stability on HP EliteDesk, preventing e1000e buffer drops. |
 
 ---
 
 ### 8.4 Physical & Virtual Storage Tiering Architecture
 
-To eliminate the shared failure domain identified in Part 7 learnings, storage is structured into three discrete, non-overlapping tiers:
+To eliminate the shared failure domain identified in Part 7 learnings, protect data with a true **3-2-1 backup strategy** (3 copies, 2 media types, 1 offsite), and maximize usable capacity across the cluster:
+* **The Single Backup Drive Invariant**: Exactly **one physical hard drive** (the dedicated 500GB HDD on Node 3 HP EliteDesk, `/mnt/pve/backup`) is reserved for the primary high-speed local Proxmox Backup Server datastore. All fleet VMs stream daily incremental CBT backups to this datastore over the isolated `10.25.25.0/24` SAN network.
+* **Decoupled Offsite Cloud Replication (Google Drive)**: Rather than tying up a second local hard drive on Node 1 for local replication, PBS CT 105 runs an automated nightly synchronization daemon (`rclone crypt`) that streams client-side encrypted, deduplicated 4MB chunks offsite to Google Drive.
+* **Consolidation & Repurposing for Shared NAS**: ALL remaining physical hard drives across the cluster (the two 1TB HDDs from Node 1 Dell and the 1TB HDD from Node 2 AWOW) are freed from legacy backup duty and repurposed directly into Node 3's OpenMediaVault shared storage pool, expanding the shared NAS capacity from 1TB to **3–4+ TB**.
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -1088,17 +1091,28 @@ To eliminate the shared failure domain identified in Part 7 learnings, storage i
 └───────────────────────────────────────────┬────────────────────────────────────────────┘
                                             │ Line-Rate NFS v4+ over SAN (10.25.25.0/24)
 ┌───────────────────────────────────────────▼────────────────────────────────────────────┐
-│ TIER 2: Bulk Network Storage & Media Pools (Node 3 HP EliteDesk OpenMediaVault)        │
-│ • Drive 1 (1TB): Media Pool (Movies, TV, Audiobookshelf library, Calibre books)        │
-│ • Drive 2 (1TB): Immich Photo Library (Family photos and raw video archives)           │
+│ TIER 2: Consolidated Bulk Network Storage & Media Pool (Node 3 OMV NAS: 3–4 TB Pool)   │
+│ • Consolidated Physical Drives (Freed from legacy backup duty & pooled via MergerFS):  │
+│   - Drive 1 (1TB Internal /dev/sda): Primary OMV Media Pool                            │
+│   - Drive 2 (1TB Repurposed from Dell): Immich Photo Library (Raw photos & videos)     │
+│   - Drive 3 (1TB Repurposed from Dell #2): Audiobookshelf, Calibre & Document Vault    │
+│   - Drive 4 (1TB Repurposed from AWOW): Completed Media & Fast Ingest Target           │
 │ • Fast Incomplete Cache: Local SSD on Node 2 AWOW; completed moves to OMV share        │
 └───────────────────────────────────────────┬────────────────────────────────────────────┘
-                                            │ Encrypted Deduplicated Backup Stream
+                                            │ Local SAN Stream (112 MB/s on 10.25.25.0/24)
 ┌───────────────────────────────────────────▼────────────────────────────────────────────┐
-│ TIER 3: Independent Proxmox Backup Vault (Decoupled Cross-Host Replication)            │
-│ • Primary PBS Datastore: Node 3 HP EliteDesk 500GB HDD (/mnt/pve/backup)               │
-│ • Secondary Sync Datastore: Node 1 Dell Precision 1TB HDD (/mnt/pve/backup2)           │
-│ • Off-Host Integrity: Node 1 holds full backup copies of Node 3; Node 3 backs up Node 1│
+│ TIER 3A: Single Dedicated Local Backup Datastore (Node 3 HP EliteDesk 500GB HDD)       │
+│ • Dedicated Path: /mnt/pve/backup bind-mounted into PBS CT 105 (/backup/pbs-datastore) │
+│ • Fast daily incremental CBT snapshots across all standalone nodes (pve, pve2, pve3)   │
+│ • Nightly deduplication, pruning & garbage collection routines                         │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │ Zero-Trust Client-Side Encrypted Sync (rclone)
+┌───────────────────────────────────────────▼────────────────────────────────────────────┐
+│ TIER 3B: Decoupled Offsite Cloud Replication Target (Google Drive Encrypted Vault)     │
+│ • Target: Google Drive (/homelab-backups/pbs-chunks/)                                   │
+│ • Security: Client-side AES-256-GCM encryption (rclone crypt) — zero plain data in cloud│
+│ • Efficiency: Only newly written 4MB immutable chunks synced; bandwidth-throttled     │
+│ • Disaster Recovery: Full bare-metal reconstitution independent of physical premises   │
 └────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -1339,9 +1353,9 @@ To ensure zero downtime for primary household DNS, routing, and automation, migr
 
 ```mermaid
 graph TD
-    S1["Stage 1: Pre-Flight Zero-Trust Capture & Snapshot"] --> S2["Stage 2: Storage Decoupling & Secondary PBS Datastore"]
+    S1["Stage 1: Pre-Flight Zero-Trust Capture & Snapshot"] --> S2["Stage 2: Single Dedicated PBS Drive, Google Drive Offsite Sync & NAS Drive Pooling"]
     S2 --> S3["Stage 3: Node 2 (pve2) DMZ Download Engine Optimization"]
-    S3 --> S4["Stage 4: Node 1 (pve) Compute LXC, Dual-GPU & Power Optimization"]
+    S2 --> S4["Stage 4: Node 1 (pve) Compute LXC, Dual-GPU & Power Optimization"]
     S4 --> S5["Stage 5: Family Second Brain & New Stacks Deployment"]
     S5 --> S6["Stage 6: Final Verification & Fleet Telemetry Audit"]
 
@@ -1363,10 +1377,25 @@ graph TD
    ```
 2. Verify all Docker compose manifests and SOPS secrets are 100% committed to Git.
 
-#### Stage 2: Storage Decoupling & Secondary PBS Datastore (`pve3` & `pve`)
-1. Create secondary PBS datastore on Node 1 (`/mnt/pve/backup2` 1TB drive) to ensure backups do not share a failure domain with Node 3.
-2. Configure PBS remote sync schedule between Node 3 and Node 1.
-3. Partition and mount the dedicated 500GB HDD on `pve3` for the Wealth Vault.
+#### Stage 2: Single Dedicated PBS Drive, Google Drive Offsite Sync & NAS Drive Pooling (`pve3`)
+1. **Preserve Single Dedicated Backup HDD**:
+   - Maintain the dedicated 500GB HDD on Node 3 HP EliteDesk (`/mnt/pve/backup`) as the cluster's sole local high-speed PBS datastore (`/backup/pbs-datastore`).
+   - Confirm all three standalone nodes (`pve`, `pve2`, `pve3`) target this single datastore with per-host namespaces (`pve/`, `pve2/`, `pve3/`).
+2. **Deploy Automated Offsite Replication (Google Drive)**:
+   - Configure `rclone` with an encrypted remote (`rclone crypt`) targeting Google Drive (`gdrive-encrypted:/homelab-backups/pbs-chunks`).
+   - Provision a systemd timer on PBS CT 105 (`/etc/systemd/system/pbs-gdrive-sync.timer`) running nightly post-prune / post-GC (e.g. at 03:00):
+     ```bash
+     rclone sync /backup/pbs-datastore/.chunks/ gdrive-encrypted:/homelab-backups/pbs-chunks/ \
+         --fast-list --bwlimit 15M --transfers 4 --checkers 8 --log-file /var/log/rclone-pbs.log
+     ```
+   - Verify that newly created 4MB deduplicated chunks are client-side encrypted and mirrored offsite.
+3. **Consolidate & Repurpose Hard Drives into Expanded Shared NAS**:
+   - Disconnect the two 1TB HDDs from Node 1 (Dell) and the 1TB HDD from Node 2 (AWOW).
+   - Attach all three 1TB HDDs to Node 3 (HP EliteDesk) via SATA / USB 3.0.
+   - In OpenMediaVault (VM 101 on `pve3`), pool the physical drives using MergerFS (`/srv/pool-nas`) alongside the primary 1TB disk.
+   - Verify that the shared media and document pool expands to **3–4+ TB** available to all network clients (SMB on Windows, NFS v4+ on Linux/Docker).
+4. **Wealth Vault Isolation**:
+   - Partition and mount dedicated encrypted partition on Node 3 for the Wealth Vault financial ledgers (`actual-budget`, `firefly-iii`, `ghostfolio`).
 
 #### Stage 3: Node 2 (`pve2`) DMZ Download Engine Optimization
 1. Move incomplete download cache to local 128GB Foresee SSD.
