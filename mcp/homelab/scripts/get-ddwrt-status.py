@@ -33,11 +33,17 @@ def run_ssh(ip, cmd, user="root", timeout=15):
     except Exception as e:
         return 1, "", str(e)
 
-def get_ddwrt_status(ip="10.25.25.1", user="root"):
+ROUTERS = {
+    "aurora": "10.25.25.1",
+    "luna": "10.20.20.1",
+}
+
+def get_single_ddwrt_status(ip: str, name: str = "", user="root"):
     query_cmd = """
 echo "=== SYSTEM INFO ==="
+echo "Model: $(nvram get DD_BOARD 2>/dev/null)"
+echo "Firmware: DD-WRT $(nvram get dist_type 2>/dev/null) build $(nvram get os_version 2>/dev/null)"
 uname -a
-nvram get os_version 2>/dev/null
 uptime
 
 echo "=== WAN & DEFAULT ROUTE ==="
@@ -54,13 +60,29 @@ echo "=== OPT STORAGE & DISK ==="
 df -h /opt 2>/dev/null
 """
     code, out, err = run_ssh(ip, query_cmd, user=user)
+    header = f"=== DD-WRT ROUTER: {name.upper() if name else ip} ({ip}) ==="
     if code != 0:
-        return f"❌ Error querying DD-WRT router at {ip}: {err.strip()}"
-    return out.strip()
+        return f"{header}\n❌ Error querying DD-WRT router at {ip}: {err.strip()}"
+    return f"{header}\n{out.strip()}"
+
+def get_ddwrt_status(router="all", ip=None, user="root"):
+    if ip:
+        return get_single_ddwrt_status(ip=ip, user=user)
+    
+    router = router.lower().strip()
+    if router in ROUTERS:
+        return get_single_ddwrt_status(ip=ROUTERS[router], name=router, user=user)
+    elif router == "all":
+        results = []
+        for r_name, r_ip in ROUTERS.items():
+            results.append(get_single_ddwrt_status(ip=r_ip, name=r_name, user=user))
+        return "\n\n".join(results)
+    return f"Unknown router: '{router}'. Valid options: aurora, luna, all."
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Query DD-WRT router status.")
-    parser.add_argument("--ip", default="10.25.25.1", help="DD-WRT IP")
+    parser.add_argument("--router", default="all", choices=["aurora", "luna", "all"], help="Target DD-WRT router")
+    parser.add_argument("--ip", default=None, help="DD-WRT IP override")
     parser.add_argument("--user", default="root", help="SSH user")
     args = parser.parse_args()
-    print(get_ddwrt_status(ip=args.ip, user=args.user))
+    print(get_ddwrt_status(router=args.router, ip=args.ip, user=args.user))

@@ -1,9 +1,181 @@
 #!/bin/sh
+# Proxmox Host Configuration Backup (Dual-Tier: Local Archive + PBS Integration)
+# Unified script across pve, pve2, and pve3.
+#
+# Resilient Philosophy:
+# 1. Captures all available host configuration targets even if individual components are missing.
+# 2. Clearly tags degraded backups with -PARTIAL- in the filename and manifest.
+# 3. Emits actionable alerts to stderr on failure or partial status for cron email delivery.
+# 4. Integrates seamlessly with Proxmox Backup Server (PBS) via proxmox-backup-client.
+
 BACKUP_PATH="/mnt/pve/backup/dump/"
 BACKUP_FILE="pve-host"
 KEEP_DAYS=7
-PVE_BACKUP_SET="/etc/pve/ /etc/lvm/ /etc/modprobe.d/ /etc/network/interfaces /etc/vzdump.conf /etc/sysctl.conf /etc/resolv.conf /etc/ksmtuned.conf /etc/hosts /etc/hostname /etc/cron* /etc/aliases"
-PVE_CUSTOM_BACKUP_SET="/etc/apt/sources* /etc/nginx/conf.d /etc/default/grub /root /etc/systemd/system/mount-backup-drive.service /usr/local/bin/mount-backup-drive.sh"
+TIMESTAMP="$(date +%Y_%m_%d-%H_%M_%S)"
+HOSTNAME="$(hostname)"
 
-tar -czf $BACKUP_PATH$BACKUP_FILE-$(date +%Y_%m_%d-%H_%M_%S).tar.gz --absolute-names $PVE_BACKUP_SET $PVE_CUSTOM_BACKUP_SET
-find $BACKUP_PATH$BACKUP_FILE-* -mindepth 0 -maxdepth 0 -depth -mtime +$KEEP_DAYS -delete
+# Core Proxmox configurations expected on every healthy host
+PVE_BACKUP_SET="/etc/pve/ /etc/lvm/ /etc/modprobe.d/ /etc/network/interfaces /etc/vzdump.conf /etc/sysctl.d/ /etc/resolv.conf /etc/ksmtuned.conf /etc/hosts /etc/hostname /etc/cron* /etc/aliases"
+
+# Standard host OS configuration & root home
+PVE_CUSTOM_BACKUP_SET="/etc/apt/sources* /etc/default/grub /root"
+
+# Optional / role-specific paths (backed up if present; omission does NOT trigger partial status)
+OPTIONAL_BACKUP_SET="/etc/sysctl.conf /etc/nginx/conf.d /etc/samba /etc/systemd/system/mount-backup-drive.service /usr/local/bin/mount-backup-drive.sh /usr/local/bin/sysprep.sh"
+
+TARGETS_TO_BACKUP=""
+MISSING_TARGETS=""
+IS_PARTIAL=0
+
+# Evaluate expected core and custom sets
+for item in $PVE_BACKUP_SET $PVE_CUSTOM_BACKUP_SET; do
+    if [ -e "$item" ]; then
+        TARGETS_TO_BACKUP="$TARGETS_TO_BACKUP $item"
+    else
+        MISSING_TARGETS="$MISSING_TARGETS $item"
+        IS_PARTIAL=1
+    fi
+done
+
+# Evaluate optional items
+for item in $OPTIONAL_BACKUP_SET; do
+    if [ -e "$item" ]; then
+        TARGETS_TO_BACKUP="$TARGETS_TO_BACKUP $item"
+    fi
+done
+
+if [ -z "$TARGETS_TO_BACKUP" ]; then
+    echo "ERROR [$HOSTNAME]: No valid backup targets found on system! Aborting backup." >&2
+    exit 1
+fi
+
+if [ $IS_PARTIAL -eq 1 ]; then
+    STATUS_TAG="PARTIAL-"
+else
+    STATUS_TAG=""
+fi
+
+ARCHIVE_NAME="${BACKUP_FILE}-${STATUS_TAG}${TIMESTAMP}.tar.gz"
+ARCHIVE_PATH="${BACKUP_PATH}${ARCHIVE_NAME}"
+MANIFEST_NAME="${BACKUP_FILE}-${STATUS_TAG}${TIMESTAMP}.manifest.txt"
+MANIFEST_PATH="${BACKUP_PATH}${MANIFEST_NAME}"
+
+# --- TIER 1: LOCAL TARBALL BACKUP ---
+LOCAL_BACKUP_OK=0
+if [ -d "$BACKUP_PATH" ]; then
+    TAR_LOG=$(mktemp /tmp/pvehost-backup-tar.XXXXXX)
+    tar -czf "$ARCHIVE_PATH" --absolute-names --warning=no-file-changed $TARGETS_TO_BACKUP 2>"$TAR_LOG"
+    TAR_RC=$?
+
+    # If tar encountered read errors, promote to PARTIAL status
+    if [ $TAR_RC -ne 0 ] && [ $IS_PARTIAL -eq 0 ]; then
+        IS_PARTIAL=1
+        NEW_ARCHIVE_NAME="${BACKUP_FILE}-PARTIAL-${TIMESTAMP}.tar.gz"
+        NEW_ARCHIVE_PATH="${BACKUP_PATH}${NEW_ARCHIVE_NAME}"
+        mv "$ARCHIVE_PATH" "$NEW_ARCHIVE_PATH"
+        ARCHIVE_NAME="$NEW_ARCHIVE_NAME"
+        ARCHIVE_PATH="$NEW_ARCHIVE_PATH"
+        MANIFEST_PATH="${BACKUP_PATH}${BACKUP_FILE}-PARTIAL-${TIMESTAMP}.manifest.txt"
+    fi
+    LOCAL_BACKUP_OK=1
+    rm -f "$TAR_LOG"
+else
+    echo "NOTICE [$HOSTNAME]: Local backup path '$BACKUP_PATH' is unmounted; skipping local tarball." >&2
+fi
+
+# --- TIER 2: PROXMOX BACKUP SERVER (PBS) INTEGRATION ---
+PBS_STATUS="SKIPPED"
+PBS_STORAGE_CFG="/etc/pve/storage.cfg"
+PBS_PW_FILE="/etc/pve/priv/storage/pbs-backup.pw"
+PBS_KEY_FILE="/etc/pve/priv/storage/pbs-backup.enc"
+
+if command -v proxmox-backup-client >/dev/null 2>&1 && [ -f "$PBS_STORAGE_CFG" ] && [ -f "$PBS_PW_FILE" ]; then
+    PBS_SERVER=$(awk '/^pbs: pbs-backup/{f=1;next}/^pbs:|^dir:|^lvm:|^lvmthin:/{f=0}f && /^[ \t]*server/{print $2}' "$PBS_STORAGE_CFG")
+    PBS_DATASTORE=$(awk '/^pbs: pbs-backup/{f=1;next}/^pbs:|^dir:|^lvm:|^lvmthin:/{f=0}f && /^[ \t]*datastore/{print $2}' "$PBS_STORAGE_CFG")
+    PBS_USER=$(awk '/^pbs: pbs-backup/{f=1;next}/^pbs:|^dir:|^lvm:|^lvmthin:/{f=0}f && /^[ \t]*username/{print $2}' "$PBS_STORAGE_CFG")
+    PBS_NS=$(awk '/^pbs: pbs-backup/{f=1;next}/^pbs:|^dir:|^lvm:|^lvmthin:/{f=0}f && /^[ \t]*namespace/{print $2}' "$PBS_STORAGE_CFG")
+    PBS_FINGERPRINT=$(awk '/^pbs: pbs-backup/{f=1;next}/^pbs:|^dir:|^lvm:|^lvmthin:/{f=0}f && /^[ \t]*fingerprint/{print $2}' "$PBS_STORAGE_CFG")
+
+    if [ -n "$PBS_SERVER" ] && [ -n "$PBS_DATASTORE" ] && [ -n "$PBS_USER" ]; then
+        STAGE_DIR=$(mktemp -d /tmp/pvehost-pbs-stage.XXXXXX)
+        for item in $TARGETS_TO_BACKUP; do
+            cp -a --parents "$item" "$STAGE_DIR" 2>/dev/null
+        done
+
+        if [ $IS_PARTIAL -eq 1 ]; then
+            {
+                echo "BACKUP STATUS: PARTIAL"
+                echo "TIMESTAMP: $TIMESTAMP"
+                echo "MISSING TARGETS:"
+                for m in $MISSING_TARGETS; do
+                    echo "  - $m"
+                done
+            } > "$STAGE_DIR/BACKUP-STATUS.txt"
+        fi
+
+        export PBS_REPOSITORY="${PBS_USER}@${PBS_SERVER}:${PBS_DATASTORE}"
+        export PBS_PASSWORD="$(cat "$PBS_PW_FILE")"
+        [ -n "$PBS_FINGERPRINT" ] && export PBS_FINGERPRINT="$PBS_FINGERPRINT"
+
+        PBS_EXTRA_ARGS=""
+        [ -n "$PBS_NS" ] && PBS_EXTRA_ARGS="$PBS_EXTRA_ARGS --ns $PBS_NS"
+        [ -f "$PBS_KEY_FILE" ] && PBS_EXTRA_ARGS="$PBS_EXTRA_ARGS --keyfile $PBS_KEY_FILE"
+
+        BACKUP_ID="$HOSTNAME"
+        [ $IS_PARTIAL -eq 1 ] && BACKUP_ID="${HOSTNAME}-partial"
+
+        PBS_LOG=$(mktemp /tmp/pvehost-pbs.XXXXXX)
+        if proxmox-backup-client backup pvehost.pxar:"$STAGE_DIR" --backup-id "$BACKUP_ID" $PBS_EXTRA_ARGS >/dev/null 2>"$PBS_LOG"; then
+            PBS_STATUS="SUCCESS"
+        else
+            PBS_STATUS="FAILED"
+            echo "WARNING [$HOSTNAME]: PBS upload encountered an error:" >&2
+            cat "$PBS_LOG" >&2
+        fi
+        rm -rf "$STAGE_DIR" "$PBS_LOG"
+    fi
+fi
+
+# --- MANIFEST GENERATION & REPORTING ---
+if [ $IS_PARTIAL -eq 1 ]; then
+    if [ $LOCAL_BACKUP_OK -eq 1 ]; then
+        {
+            echo "Proxmox Host Backup Manifest - PARTIAL BACKUP"
+            echo "Host: $HOSTNAME"
+            echo "Timestamp: $(date -R)"
+            echo "Local Archive: $ARCHIVE_NAME"
+            echo "PBS Upload: $PBS_STATUS"
+            echo ""
+            echo "--- MISSING / FAILED TARGETS ---"
+            for m in $MISSING_TARGETS; do
+                echo "MISSING: $m"
+            done
+            echo ""
+            echo "--- SUCCESSFULLY ARCHIVED TARGETS ---"
+            for ok in $TARGETS_TO_BACKUP; do
+                echo "ARCHIVED: $ok"
+            done
+        } > "$MANIFEST_PATH"
+    fi
+
+    # Emit notification to stderr for cron email alert
+    echo "================================================================================" >&2
+    echo "WARNING [$HOSTNAME]: Host backup completed with PARTIAL status." >&2
+    [ $LOCAL_BACKUP_OK -eq 1 ] && echo "Local archive: $ARCHIVE_PATH" >&2
+    echo "PBS status: $PBS_STATUS" >&2
+    echo "--------------------------------------------------------------------------------" >&2
+    echo "The following expected backup target(s) were missing from disk:" >&2
+    for m in $MISSING_TARGETS; do
+        echo "  [MISSING] $m" >&2
+    done
+    echo "Notice: All other available configurations were safely preserved." >&2
+    echo "================================================================================" >&2
+elif [ "$PBS_STATUS" = "FAILED" ]; then
+    echo "WARNING [$HOSTNAME]: Local backup succeeded ($ARCHIVE_PATH) but PBS upload failed." >&2
+fi
+
+# --- RETENTION PRUNING ---
+if [ -d "$BACKUP_PATH" ]; then
+    find "$BACKUP_PATH" -maxdepth 1 -name "${BACKUP_FILE}-*.tar.gz" -mtime +$KEEP_DAYS -delete
+    find "$BACKUP_PATH" -maxdepth 1 -name "${BACKUP_FILE}-*.manifest.txt" -mtime +$KEEP_DAYS -delete
+fi

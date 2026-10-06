@@ -14,9 +14,9 @@ This document provides the authoritative network segmentation specification for 
 | **30** | `Isolated - IOT` | `192.168.30.0/24` | `192.168.30.1` | Untrusted | `192.168.40.185`, `192.168.40.186` | Smart plugs, smart bulbs, Wi-Fi sensors, Tuya/ESPHome/Shelly devices (no return LAN access) |
 | **40** | `Servers - Admin` | `192.168.40.0/24` | `192.168.40.1` | Protected Server | `192.168.40.185`, `192.168.40.186` | Core identity & server infrastructure: Primary DNS/NPM (`.185`), Secondary DNS (`.186`), Home Automation (`.249`), NAS Admin (`.248`) |
 | **100** | `Wireshark - Debug` | Dynamic / Sniff | - | Inspection | `192.168.40.185`, `192.168.40.186` | Dedicated network traffic inspection, SPAN mirror destination, and packet capture analysis |
-| **150** | `CA-1 Test` | Dynamic / Test | - | Isolated Lab | `192.168.40.185`, `192.168.40.186` | Control4 CA-1 Automation Controller lab network (OvrC location `CA1 Test`; tunneled via `vxlan150` on VM 107; trunked to Pakedge SX-8P on SW920 Port 1/0/7) |
-| **175** | `Ryff Standalone Test`| `192.168.175.0/24` | - | Isolated Lab | `192.168.40.185`, `192.168.40.186` | Triad SA1 Streaming Amp / Ryff audio test network (OvrC location `Ryff Standalone Test`; SW920 Port 1/0/5 access VLAN 175) |
-| **200** | `Core-5 Test` | Dynamic / Test | - | Isolated Lab | `192.168.40.185`, `192.168.40.186` | Control4 CORE 5 Flagship Automation Controller testing and multi-room AVoIP (OvrC location `Core5 Test`; SW920 Port 1/0/8 access VLAN 200) |
+| **150** | `CA-1 Test` | `192.168.150.0/24` | `192.168.150.1` | Isolated Lab | `1.1.1.1`, `1.0.0.1` | Control4 CA-1 Automation Controller lab network (OvrC location `CA1 Test`; tunneled via `vxlan150` on VM 107; trunked to Pakedge SX-8P on SW920 Port 1/0/7) |
+| **175** | `Ryff Standalone Test`| `192.168.175.0/24` | `192.168.175.1` | Isolated Lab | `192.168.40.185`, `192.168.40.186` | Triad SA1 Streaming Amp / Ryff audio test network (OvrC location `Ryff Standalone Test`; SW920 Port 1/0/5 access VLAN 175) |
+| **200** | `Core-5 Test` | `192.168.200.0/24` | `192.168.200.1` | Isolated Lab | `1.1.1.1`, `1.0.0.1` | Control4 CORE 5 Flagship Automation Controller testing and multi-room AVoIP (OvrC location `Core5 Test`; SW920 Port 1/0/8 access VLAN 200) |
 | **WAN2** | `Storage & WAN2` | `10.25.25.0/24` | `10.25.25.1` | Dedicated Transit | Local / Unbound | Dedicated WAN2 internet egress for `discovery-server` (`.246`) and L2 line-rate storage to `nas-server` (`.248`) |
 
 ---

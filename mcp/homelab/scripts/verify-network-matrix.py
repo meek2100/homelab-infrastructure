@@ -16,9 +16,10 @@ TARGETS = [
     {"name": "pve2 (AK34Pro Mini PC)", "ip": "192.168.1.240", "tcp": [22, 8006], "category": "Hypervisor"},
     {"name": "pve3 (HP EliteDesk)", "ip": "192.168.1.245", "tcp": [22, 8006], "category": "Hypervisor"},
 
-    # Core Network Hardware (VLAN 1 / VLAN 40)
-    {"name": "Araknis 520 Core Router", "ip": "192.168.40.1", "tcp": [80], "category": "Network Infrastructure"},
+    # Core Network Hardware (VLAN 1 / VLAN 10)
+    {"name": "Araknis 520 Core Router", "ip": "192.168.10.1", "tcp": [80], "category": "Network Infrastructure"},
     {"name": "Araknis 920 Switch", "ip": "192.168.1.215", "tcp": [80, 443], "category": "Network Infrastructure"},
+    {"name": "Pakedge SX-8P Switch", "ip": "192.168.1.205", "tcp": [80, 23], "category": "Network Infrastructure"},
     {"name": "Araknis 830 AP 1 (Master)", "ip": "192.168.1.231", "tcp": [80, 443], "category": "Wireless Infrastructure"},
     {"name": "Araknis 830 AP 2 (Core)", "ip": "192.168.1.236", "tcp": [80, 443], "category": "Wireless Infrastructure"},
     {"name": "Araknis 830 AP 3 (Bridge)", "ip": "192.168.1.237", "tcp": [80, 443], "category": "Wireless Infrastructure"},
@@ -28,13 +29,14 @@ TARGETS = [
     {"name": "OpenWrt Belkin AX3200", "ip": "192.168.1.226", "tcp": [22], "category": "Edge Router"},
     {"name": "DD-WRT Aurora (WAN2 / SAN)", "ip": "10.25.25.1", "tcp": [22], "category": "Edge Router"},
 
-    # Core DNS & Admin Services (VLAN 40)
+    # Core DNS & Admin Services (VLAN 40 / VLAN 1)
     {"name": "AdGuard Home Primary (nexus)", "ip": "192.168.40.185", "tcp": [53, 80, 443], "category": "Core Admin Service"},
     {"name": "AdGuard Home Secondary (nexus2)", "ip": "192.168.40.186", "tcp": [53], "category": "Core Admin Service"},
+    {"name": "PBS Backup Server (pve3 LXC 105)", "ip": "192.168.1.244", "tcp": [8007], "category": "Core Admin Service"},
     {"name": "luna-server (Smart Home VM 102)", "ip": "192.168.40.249", "tcp": [22, 8123, 8581], "category": "Smart Home Admin"},
     {"name": "media-server (Plex VM 103)", "ip": "192.168.40.247", "tcp": [22, 32400], "category": "Media Admin"},
     {"name": "minecraft-server (VM 109)", "ip": "192.168.40.175", "tcp": [22], "category": "Gaming VM"},
-    {"name": "OpenMediaVault Admin (VM 101)", "ip": "192.168.40.248", "tcp": [80, 443], "category": "Storage Admin"},
+    {"name": "OpenMediaVault Admin (VM 101)", "ip": "192.168.40.248", "tcp": [80], "category": "Storage Admin"},
 
     # Private Storage Network & Automation Controller
     {"name": "OpenMediaVault Data (SAN)", "ip": "10.25.25.248", "tcp": [445], "category": "Private Storage Network"},

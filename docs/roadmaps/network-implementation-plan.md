@@ -24,6 +24,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Part 7** | 2026-09-29 / 10-02 Capture-Driven Network Remediation | 🟢 Complete / Stable — BPDU leak eliminated, Sonos inter-VLAN operating, Mainsail restored, DHCP optimized (52 active entries), 144 capture files analyzed |
 | **Part 7.5**| DHCP Reorganization, IP Tiering & Sonos Inter-VLAN | 🟢 100% Complete & Verified — All 7 VLAN dynamic ranges updated to `.20–.99`; 90 static enterprise reservations deployed; Sonos Move 2 cross-VLAN discovery & control verified; Prometheus at 60/60 UP |
 | **Part 8** | Compute Platform Review (pve hosts, VMs, LXCs, Docker, GPU) | ⏸️ Future — starts once the network is stable and all important config/state is in git |
+| **Part 9** | Edge Router Firmware Upgrade & Modernization (OpenWrt & DD-WRT) | ⏸️ Final Phase — Research, changelog audit & safety runbook for upgrading OpenWrt AX3200 & DD-WRT routers |
 
 ### Key Protocol Constraints & Architecture Settled
 - **Netgear GS108Ev2** — No HTTP REST API. Uses **NSDP** (Layer 2 UDP, ports 63321/63322). The `backup_netgear_switch` / `get_netgear_switch_status` MCP tools execute via pure Python NSDP using an automated Layer 2 adjacent relay hierarchy: primary OpenWrt router (`192.168.1.226` on `br-lan`) with fallback to Proxmox `pve` (`192.168.1.250` on `vmbr0`). Live telemetry and synchronized dual JSON/binary GitOps backups are 100% verified.
@@ -44,9 +45,9 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **AP 3 (Bridge)**| Araknis 830 Wi-Fi 7 | `192.168.1.237` | VLAN 1 (Management) | Dedicated Wireless Bridge Client (Insomniac_Bridge) | 🟢 Active |
 | **Office Switch**| Netgear GS108Ev2 | `192.168.1.220` | VLAN 1 (Management) | Desktop distribution switch behind OpenWrt — **No official API/CLI; managed via NSDP (UDP 63321/63322)** | 🟢 Active |
 | **Test Switch**  | Pakedge SX-8P Managed | `192.168.1.205` | VLAN 1 (trunk tagged 10/150/200) | Work Automation Lab / Testbench — **powered on demand by the Control4 **Office → All Test Equipment** button (WattBox 11 relay; 90 min auto-off)** | 🟡 On-Demand |
-| **Office Router**| Belkin AX3200 (OpenWrt) | `192.168.1.226` (`br-lan`), `192.168.1.225` (`wl1-sta0`), `10.99.99.1` (out-of-band mgmt on `lan1`/`br-mgmt`) | VLAN 1 (+ tagged 10/30 bridged to VXLAN VNI 150) | 3-Priority Failover (Wire, VXLAN VNI 150, Wi-Fi repeater). BusyBox `ash` only — no bash | 🟢 Active |
-| **WAN2 Router** | Asus RT-N66U (DD-WRT Aurora)| `10.25.25.1` & `10.20.20.2` | WAN2 / `10.25.25.0/24` | Torrent/discovery isolation with PIA VPN auto-watchdog | 🟢 Active |
-| **Upstream GW** | DD-WRT Luna | `10.20.20.1` | `10.20.20.0/24` | Upstream transit gateway (user: root, firewalled from WAN) | 🟢 Active |
+| **Office Router**| Belkin AX3200 (OpenWrt 24.10.0 r28427, Linux 6.6.73) | `192.168.1.226` (`br-lan`), `192.168.1.225` (`wl1-sta0`), `10.99.99.1` (out-of-band mgmt on `lan1`/`br-mgmt`) | VLAN 1 (+ tagged 10/30 bridged to VXLAN VNI 150) | 3-Priority Failover (Wire, VXLAN VNI 150, Wi-Fi repeater). BusyBox `ash` only — no bash | 🟢 Active |
+| **WAN2 Router** | Asus RT-N66U (DD-WRT mega r58070, Linux 4.4.302)| `10.25.25.1` & `10.20.20.2` | WAN2 / `10.25.25.0/24` | Torrent/discovery isolation with PIA VPN auto-watchdog | 🟢 Active |
+| **Upstream GW** | TP-Link Archer C7 v5 (DD-WRT std r56941, Linux 3.18.140)| `10.20.20.1` | `10.20.20.0/24` | Upstream transit gateway (user: root, firewalled from WAN) | 🟢 Active |
 | **Backup Server**| pbs-server (pve3:105) | `192.168.1.244` & `10.25.25.244` | VLAN 1 & SAN | Proxmox Backup Server (LXC CT 105, port 8007) | 🟢 Active |
 | **Admin VM** | nexus-server (pve:100)| `192.168.40.185` | VLAN 40 (Servers) | WireGuard (:51820), Tailscale (:69), AdGuard Home Primary (:53), NPM | 🟢 Active |
 | **DNS2 VM** | nexus-server2 (pve3:100)| `192.168.40.186` | VLAN 40 (Servers) | AdGuard Home Secondary (:53) | 🟢 Active |
@@ -1004,3 +1005,123 @@ Full report with frame references, filters and playbook: [`capture-review-2026-1
   - NAS mounts stay in-VM (see the 2026-09-30 decision in Part 7).
   - **Backups share a failure domain with the data:** the PBS datastore (CT 105) sits on pve3's local disk, on the same host as the NAS VM (101); PBS backs itself up into itself; there is no off-host copy. Plan a second datastore or sync target (another host, USB/NAS disk, or off-site PBS) plus periodic test restores.
 - Storage placement, and memory and CPU headroom per host.
+
+---
+
+## ⏸️ Part 9: Edge Router Firmware Upgrade & Modernization (OpenWrt & DD-WRT) — Final Phase
+
+**Scheduled Phase**: Final Phase (executed following network stability and compute review).
+
+### 🎯 Motivation & Objectives
+All edge routing equipment currently operates on stable, but aging firmware baselines:
+* **Belkin AX3200 / Linksys E8450 (OpenWrt)**: `OpenWrt 24.10.0 r28427-6df0e3d02a` (Linux kernel `6.6.73`, compiled Feb 2025).
+* **Asus RT-N66U (DD-WRT Aurora)**: DD-WRT v3.0-r58070 mega (Linux kernel `4.4.302-rt232-st52`, compiled Aug 2024).
+* **TP-Link Archer C7 v5 (DD-WRT Luna)**: DD-WRT v3.0-r56941 std (Linux kernel `3.18.140-d6`, compiled Jun 2024).
+
+Because these builds are over 1.5–2+ years out of date, newer releases offer significant performance, kernel security, and driver enhancements:
+1. **Security & Vulnerability Remediation**: Modern upstream kernel patches addressing networking CVEs, cryptographic weaknesses, and TCP/IP stack hardening.
+2. **Wi-Fi & Driver Performance**: MediaTek `mt76` driver improvements on the Belkin AX3200 for enhanced Wi-Fi 6 stability, lower station latency on `wl1-sta0`, and improved throughput.
+3. **Crypto & WireGuard Throughput**: Optimized crypto primitives in newer Linux kernels for WireGuard on DD-WRT Aurora (`oet1`) and VXLAN UDP encapsulations on OpenWrt.
+4. **Memory Hygiene & Daemon Stability**: Upstream fixes for Dropbear, BusyBox, and routing daemons.
+
+---
+
+### 🔬 Investigation Requirements: Upstream Changelog & Breaking Changes Audit
+Before flashing any production device, a rigorous investigation of changes between the installed baseline and candidate versions must be conducted:
+
+1. **OpenWrt Investigation Checklist**:
+   * **Kernel & Toolchain**: Audit kernel bumps (e.g. Linux 6.6.x to 6.12.x/newer) for MediaTek MT7622 architecture.
+   * **Firewall Migration**: Verify `firewall4` / `nftables` syntax and behavior changes, ensuring custom MSS clamping rules (`iptables` vs `nftables`) remain fully valid.
+   * **DSA & Network Device Drivers**: Verify distributed switch architecture (DSA) handling for the E8450 internal switch to prevent port assignment shifts.
+   * **Package Dependencies**: Confirm availability of compiled packages for candidate build: `kmod-vxlan`, `vxlan`, `relayd`, `ip-full`, `tcpdump`, `ethtool`, `dropbear`.
+   * **UBI Image Partitioning**: Confirm UBI layout compatibility so firmware sysupgrade does not corrupt flash overlay or dual-boot partitions.
+
+2. **DD-WRT Investigation Checklist**:
+   * **Architecture Compatibility**:
+     * Asus RT-N66U: Broadcom BCM5300 (`mips_mega` build). Verify NVRAM size limits (RT-N66U 64KB NVRAM bug history).
+     * TP-Link Archer C7 v5: Qualcomm Atheros QCA9563 (`mips_std` build).
+   * **WireGuard (`oet1`) Stability**: Review DD-WRT forum tracker for known regressions in WireGuard kernel modules across candidate SVN builds.
+   * **Firewall Rule Sequence**: Verify that candidate builds do not inject default reject rules that break the Aurora/Luna LAN forwarding path.
+   * **Optware / Entware USB Mount**: Verify compatibility with `/dev/sda1` ext4 mounting on `/opt` for PIA watchdog scripts.
+
+---
+
+### 🛡️ Critical Homelab Dependencies & Invariants (Must NOT Break)
+
+Any candidate upgrade must prove 100% non-disruptive to the following core production setups:
+
+| Device | Critical Homelab Invariant | Consequence if Broken | Verification Test |
+| :--- | :--- | :--- | :--- |
+| **OpenWrt AX3200** | **3-Priority Failover Script** (`/etc/scripts/failover.sh`) | Loss of resilient office internet if P1 wire or AP bridge drops | Simulate wire disconnect; verify P2 VXLAN failover |
+| **OpenWrt AX3200** | **Split-Trunking VXLAN 150 Bridge** (`vxlan150`, VNI 150) | Office devices lose access to VLAN 10 and VLAN 30 | Ping from desktop workstation (`192.168.10.102`) to servers |
+| **OpenWrt AX3200** | **MTU 1450 & MSS Clamping at 1406** | Packet fragmentation and TCP stalling over VXLAN tunnel | Run ICMP DF sweep: `ping -M do -s 1378 192.168.10.1` |
+| **OpenWrt AX3200** | **Netgear NSDP L2 Relay** (ports 63321/63322 across `lan4`) | FastMCP tool `manage_netgear_switch` loses ability to control switch | Run `.venv/bin/python3 mcp/homelab/scripts/manage-netgear-switch.py status` |
+| **OpenWrt AX3200** | **Wireless Station Backhaul** (`wl1-sta0` on `Insomniac_MGMT`) | P2 wireless tunnel cannot establish to AP 1 | Verify `192.168.1.225` reachability |
+| **OpenWrt AX3200** | **Out-of-Band Rescue IP** (`10.99.99.1` on `br-mgmt`) | Administrative lockout if main LAN bridge fails | Direct ethernet connection to LAN Port 1 |
+| **DD-WRT Aurora** | **WireGuard Tunnel (`oet1`)** | `discovery-server` loses VPN internet egress | Test outbound curl via WAN2 on VM 100 |
+| **DD-WRT Aurora** | **`10.25.25.0/24` SAN Subnet Routing** | Loss of private NAS/SAN connectivity to `nas-server` | Test line-rate SMB write from `discovery-server` |
+| **DD-WRT Aurora** | **PIA Watchdog Daemon** (`/opt/sbin/pia-watchdog`) | Torrent VPN link drops without self-healing | Verify `ps | grep pia-watchdog` |
+| **DD-WRT Luna** | **Upstream `10.20.20.0/24` Transit Route** | Aurora router loses upstream internet connectivity | Ping `10.20.20.1` from Aurora |
+
+---
+
+### 🚀 Staged Upgrade & Safety Execution Plan
+
+```mermaid
+graph TD
+    A["Step 1: Pre-Flight Zero-Trust Capture"] --> B["Step 2: Changelog & Regression Audit"]
+    B --> C["Step 3: Canary Upgrade - Luna Router (10.20.20.1)"]
+    C --> D["Step 4: Upgrade Aurora Router (10.25.25.1)"]
+    D --> E["Step 5: Upgrade OpenWrt AX3200 (192.168.1.226)"]
+    E --> F["Step 6: Network Matrix & PCAP Audit (23/23 Targets)"]
+    
+    C -. Regression .-> R1["Rollback Luna via SOPS NVRAM"]
+    D -. Regression .-> R2["Rollback Aurora via SOPS NVRAM"]
+    E -. Regression .-> R3["Rollback OpenWrt via sysupgrade / UBI backup"]
+```
+
+#### Step 1: Pre-Flight Zero-Trust Backup Routine
+1. Execute full GitOps backups via FastMCP:
+   ```bash
+   .venv/bin/python3 -c "
+   import sys; sys.path.insert(0, 'mcp/homelab')
+   from server import manage_openwrt, manage_ddwrt
+   manage_openwrt('backup')
+   manage_ddwrt('backup', router='all')
+   "
+   ```
+2. Capture full low-level MTD and flash partitions:
+   * OpenWrt: `ssh root@192.168.1.226 "dd if=/dev/mtd0 of=/tmp/mtd0-boot.bin; tar -czf /tmp/openwrt-overlay-backup.tar.gz /overlay"`
+   * DD-WRT: `nvram show > /tmp/nvram-full.txt`
+3. Commit encrypted artifacts to `infrastructure/network/` with SOPS.
+
+#### Step 2: Changelog & Regression Audit
+* Review official OpenWrt stable release notes for `mediatek/mt7622` target.
+* Check DD-WRT Broadcom and Atheros forums for community feedback on candidate SVN build.
+
+#### Step 3: Canary Deployment — Luna Gateway (`10.20.20.1`)
+* Upgrade Luna first since it sits as an upstream transit router.
+* Flash candidate DD-WRT firmware, verify boot, restore NVRAM.
+* Verify transit connectivity from Aurora (`10.25.25.1` -> `10.20.20.1`).
+
+#### Step 4: Isolation Deployment — Aurora Router (`10.25.25.1`)
+* Flash candidate DD-WRT firmware on Asus RT-N66U.
+* Verify WireGuard `oet1` initialization, `/opt` mount, and `pia-watchdog` execution.
+* Verify SAN transit between `discovery-server` and `nas-server`.
+
+#### Step 5: Edge Deployment — Belkin AX3200 OpenWrt (`192.168.1.226`)
+* Flash candidate OpenWrt release via `sysupgrade -v` with configuration preservation.
+* Verify:
+  1. Primary wire link (`br-lan` at `192.168.1.226`).
+  2. Wi-Fi station link (`wl1-sta0` at `192.168.1.225`).
+  3. VXLAN 150 encapsulation tunnel and MTU MSS clamping at 1406.
+  4. Netgear switch NSDP relay connectivity across `lan4`.
+  5. 3-priority failover daemon execution.
+
+#### Step 6: Full Fleet Network Verification & PCAP Ingestion
+* Execute FastMCP matrix verification:
+  ```bash
+  .venv/bin/python3 mcp/homelab/scripts/verify-network-matrix.py --profile comprehensive
+  ```
+  *(Must achieve 23/23 PASS across all ICMP ping and TCP socket targets).*
+* Capture 10-minute SPAN PCAP via `manage_wireshark` to confirm 0 packet fragmentation errors and 0 broadcast loops.

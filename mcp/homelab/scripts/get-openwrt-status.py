@@ -36,7 +36,9 @@ def run_ssh(ip, cmd, user="root", timeout=15):
 def get_openwrt_status(ip="192.168.1.226", user="root"):
     query_cmd = """
 echo "=== SYSTEM INFO ==="
-cat /etc/openwrt_release 2>/dev/null | grep DISTRIB_DESCRIPTION
+echo "Model: $(cat /tmp/sysinfo/model 2>/dev/null)"
+echo "Kernel: $(uname -r) ($(uname -m))"
+cat /etc/openwrt_release 2>/dev/null | grep -E "DISTRIB_DESCRIPTION|DISTRIB_REVISION"
 uptime
 
 echo "=== DEFAULT ROUTING & GATEWAY ==="

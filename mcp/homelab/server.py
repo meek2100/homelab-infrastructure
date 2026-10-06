@@ -462,7 +462,7 @@ def manage_ddwrt(
       - 'restore': Restore NVRAM configurations from Git backup."""
     action = action.lower().strip()
     if action == "status":
-        return run_script("get-ddwrt-status.py")
+        return run_script("get-ddwrt-status.py", ["--router", router])
     elif action == "backup":
         return run_script("backup-ddwrt-config.py", ["--router", router])
     elif action == "restore":

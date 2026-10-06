@@ -45,28 +45,29 @@ This document details the physical hardware, virtual bridges, dual-WAN egress pa
 ## 🏛️ Physical Network Hardware
 
 ### 1. Core Router: Araknis 520 Dual-WAN Router
-* **Management IP**: `192.168.1.1` (`secure.theurer.dev`)
+* **Management IP**: `192.168.1.1` (`secure.theurer.dev`, also reachable on `192.168.10.1` from VLAN 10)
 * **Role**: Primary Layer 3 Gateway, Inter-VLAN Firewall, Hardware NAT, DHCP Server.
 * **Dual-WAN Configuration**:
-  * **WAN1 (Primary)**: Connects primary ISP. Serves all general household traffic across `Management` (VLAN 1), `Main - Trusted` (VLAN 10), `Guest - Media` (VLAN 20), `Isolated - IOT` (VLAN 30), and `Servers - Admin` (VLAN 40).
+  * **WAN1 (Primary)**: Connects primary ISP. Serves all general household traffic across `Management` (VLAN 1), `Main - Trusted` (VLAN 10), `Guest - Media` (VLAN 20), `Isolated - IOT` (VLAN 30), `Servers - Admin` (VLAN 40), `CA-1 Test` (VLAN 150), `Ryff Standalone Test` (VLAN 175), and `Core-5 Test` (VLAN 200).
   * **WAN2 (`10.25.25.1`)**: Dedicated secondary internet egress route. Serves `discovery-server` (`10.25.25.246`) to isolate heavy VPN and torrent traffic from household internet usage.
 * **DHCP Scope & Tiering Configuration**:
-  * Dynamic DHCP pools are strictly bounded to **`.20–.99`** (80 leases) across all 7 VLANs.
+  * Dynamic DHCP pools are strictly bounded to **`.20–.99`** (80 leases) across all 8 active subnets (VLANs 1, 10, 20, 30, 40, 150, 175, 200).
   * Deterministic enterprise static reservations reside in dedicated functional tiers:
     * Workstations: `.100–.149`
     * Smart Hubs & Security: `.150–.179`
     * Network Printers: `.180–.182`
     * AV, Sonos & Automation: `.200–.239`
     * Hypervisors & Servers: `.240–.254`
-  * All active DHCP scopes configure **DHCP Option 6 (DNS)** to point to:
+  * Active DHCP scopes configure **DHCP Option 6 (DNS)** to point to:
     * Primary DNS: **`192.168.40.185`** (`nexus-server` on `pve`)
     * Secondary DNS: **`192.168.40.186`** (`nexus-server2` on `pve3`)
+    * *(Note: Testbench networks VLAN 150 and 200 configure static upstream DNS `1.1.1.1` and `1.0.0.1` to prevent lab discovery leaks).*
 
 ### 2. Distribution Switch: Araknis 920 Managed Switch
 * **Management IP**: `192.168.1.215` (VLAN 1)
 * **Role**: Multi-Gigabit (2.5GbE / 10G SFP+) Layer 2+ Core Switch.
 * **802.1Q Trunk Port Allocations**:
-  * Carries tagged VLANs: **1, 10, 20, 30, 40, 100, 150, 200**.
+  * Carries tagged VLANs: **1, 10, 20, 30, 40, 100, 150, 175, 200**.
   * Native Untagged PVID: **VLAN 1 (`Management`)**.
   * Uplinks to Proxmox Hypervisors:
     * `pve`: Dell Precision 5520 (`lan0` bound to `vmbr0`)
@@ -117,7 +118,9 @@ This document details the physical hardware, virtual bridges, dual-WAN egress pa
                                   └── Netgear Office Switch (192.168.1.220)
                                         └── Workstation PC
   ```
-* **OpenWrt Router Hardware & Profile (Belkin AX3200)**:
+* **OpenWrt Router Hardware & Profile (Belkin AX3200 / Linksys E8450)**:
+  * **Model & Architecture**: Belkin RT3200 / Linksys E8450 (UBI) | MediaTek MT7622 dual-core `aarch64_cortex-a53` (512 MB RAM).
+  * **Firmware Version**: `OpenWrt 24.10.0 r28427-6df0e3d02a` | **Kernel**: Linux `6.6.73` (SMP Mon Feb 3 2025).
   * **Primary Management IP**: `192.168.1.226` (Dropbear SSH on port 22)
   * **Out-of-Band Backup Management IP**: `10.99.99.1` (Available via optional 2.4GHz Wi-Fi or dedicated LAN port 1 if bridge/main routing drops)
   * **Authentication**: Dedicated SSH Key `pi_id_ed25519` (`/mnt/c/Users/dtheurer/.ssh/pi_id_ed25519` or `~/.ssh/pi_id_ed25519`)
@@ -144,7 +147,7 @@ This document details the physical hardware, virtual bridges, dual-WAN egress pa
 * **Physical Uplink**: Direct 802.1Q trunk from **Araknis 920 Switch (Port 1/0/7)**.
 * **Port Trunking Configuration**:
   * Native Untagged PVID: **VLAN 1 (`Management`)**.
-  * Tagged Trunks: **VLAN 10 (`Main - Trusted`)**, **VLAN 150 (`CA-1 Test`)**, and **VLAN 200 (`Core-5 Test`)**.
+  * Tagged Trunks: **VLAN 10 (`Main - Trusted`)**, **VLAN 150 (`CA-1 Test`)**, **VLAN 175 (`Ryff Standalone Test`)**, and **VLAN 200 (`Core-5 Test`)**.
   * Storm Control & BPDU Filter: Araknis 920 Port 1/0/7 operates with `storm-control broadcast level 5` and port BPDU filter enabled, completely eliminating BPDU leakage into the core switch.
 * **Hardware & Management Profile**:
   * Model: Pakedge SX-8P (8-port Gigabit Managed Switch with PoE+).
@@ -200,11 +203,15 @@ graph TD
 ### 5. Upstream DD-WRT Routing Fleet (WAN2 & Dedicated Discovery Isolation)
 
 * **Aurora Router (`aurora-router` — `10.25.25.1`)**:
+  * **Hardware Model & SoC**: Asus RT-N66U | Broadcom BCM5300 (MIPS 74Kc V4.9).
+  * **Firmware Version**: DD-WRT v3.0-r58070 mega (Build: Mon Aug 19 2024) | **Kernel**: Linux `4.4.302-rt232-st52`.
   * **Role**: Primary gateway and isolation barrier for the high-bandwidth torrent / download network (`10.25.25.0/24`) on `vmbr1`.
   * **Management IP**: `10.25.25.1` (Dropbear/SSH on port 22).
   * **User**: `root` | **Identity**: `ddwrt_id_ed25519` (`C:/Users/dtheurer/.ssh/ddwrt_id_ed25519` or `~/.ssh/ddwrt_id_ed25519`).
   * **Clients**: `discovery-server` (`10.25.25.246`), `nas-server` (`10.25.25.248`), `pbs-server` (`10.25.25.244`), Araknis 520 `WAN2` port.
 * **Luna Router (`luna-router` — `10.20.20.1`)**:
+  * **Hardware Model & SoC**: TP-Link Archer C7 v5 | Qualcomm Atheros QCA9563 (MIPS 74Kc V5.0).
+  * **Firmware Version**: DD-WRT v3.0-r56941 std (Build: Wed Jun 19 2024) | **Kernel**: Linux `3.18.140-d6`.
   * **Role**: Upstream gateway from `aurora-router`, operating the upstream `10.20.20.0/24` transit subnet.
   * **Management IP**: `10.20.20.1` (Dropbear/SSH on port 22).
   * **User**: `root` | **Identity**: `ddwrt_id_ed25519` (`C:/Users/dtheurer/.ssh/ddwrt_id_ed25519` or `~/.ssh/ddwrt_id_ed25519`).

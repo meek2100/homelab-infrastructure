@@ -37,7 +37,7 @@
 - **Network Segmentation & Routing**:
   - `192.168.1.0/24`: Primary Management & Egress LAN (VLAN 1).
   - `10.25.25.0/24`: Private High-Speed NAS/SAN Network (`vmbr1` across nodes, NAS `10.25.25.248`, PBS `10.25.25.244`).
-  - Active VLANs: 1 (Default), 10 (Office/Trusted), 20 (Audio/Video), 30 (Automation), 40 (Servers/Admin), 100 (Guest), 150 (Camera/IoT), 200 (VoIP/Streaming). *VLAN 50 abolished.*
+  - Active VLANs: 1 (Management), 10 (Main - Trusted), 20 (Guest - Media), 30 (Isolated - IOT), 40 (Servers - Admin), 100 (Wireshark - Debug), 150 (CA-1 Test), 175 (Ryff Standalone Test), 200 (Core-5 Test). *VLAN 50 abolished.*
   - DNS Servers: Primary `192.168.40.185` (`nexus-server`), Secondary `192.168.40.186` (`nexus-server2`).
   - DD-WRT Routers: Aurora `10.25.25.1`, Luna `10.20.20.1` (SSH user `root` with `ddwrt_id_ed25519`).
 
