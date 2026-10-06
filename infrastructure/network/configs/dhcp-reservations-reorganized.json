@@ -327,6 +327,20 @@
     },
     {
       "enable": true,
+      "macAddress": "02:00:00:20:01:05",
+      "staticIPAddress": "192.168.20.105",
+      "tailscaleIP": "100.85.20.105",
+      "name": "Jen iPhone"
+    },
+    {
+      "enable": true,
+      "macAddress": "02:00:00:20:01:06",
+      "staticIPAddress": "192.168.20.106",
+      "tailscaleIP": "100.85.20.106",
+      "name": "Preston iPhone"
+    },
+    {
+      "enable": true,
       "macAddress": "50:26:EF:26:C9:AD",
       "staticIPAddress": "192.168.20.120",
       "name": "Control4 Halo Touch Remote"
