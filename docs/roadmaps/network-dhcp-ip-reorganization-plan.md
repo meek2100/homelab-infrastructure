@@ -152,7 +152,7 @@ Every `/24` subnet across the homelab adopts this standardized allocation schema
 | **Primary Bedroom Speaker** | `F4:F5:D8:A6:88:D0` | `192.168.20.230` | `192.168.20.212` | Google Cast | Primary Bedroom Google Home speaker |
 | **Emme's Bedroom Speaker** | `E4:F0:42:0E:43:98` | `192.168.20.202` | `192.168.20.213` | Google Cast | Emme's Bedroom Google Home (currently idle/offline) |
 | **Emme's Bathroom Speaker** | `48:D6:D5:73:61:91` | `192.168.20.137` | `192.168.20.214` | Google Cast | Emme's Bathroom Google Home |
-| **Kitchen Display (Nest Hub)**| `7C:D9:5C:7C:92:F6` | `192.168.20.220` | `192.168.20.215` | Google Cast | Smart display cluster (Kitchen Hub) |
+| **Living Room Display (Nest Hub)**| `7C:D9:5C:7C:92:F6` | `192.168.20.220` | `192.168.20.215` | Google Cast | Smart display cluster (Living Room / Kitchen Hub) |
 | **Emme's Landing Display** | `1C:F2:9A:35:AF:30` | `192.168.20.186` | `192.168.20.216` | Google Cast | Top of stairs landing display (Nest Hub) |
 | **Office Display (Nest Hub)** | `7C:D9:5C:7D:BE:0A` | `192.168.20.245` | `192.168.20.217` | Google Cast | Offline 21 days (from OvrC) |
 | **Living Room TV (Chromecast)**| `14:C1:4E:BC:1C:B6`| `192.168.20.116` | `192.168.20.230` | Smart Displays | TV streaming cluster (Living Room) |

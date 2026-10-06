@@ -317,12 +317,7 @@
       "macAddress": "48:88:CA:E1:BA:DD",
       "staticIPAddress": "192.168.20.102",
       "name": "Lenovo Yoga Tab 3 Plus"
-    },
-    {
-      "enable": true,
-      "macAddress": "56:81:3E:71:AF:5F",
-      "staticIPAddress": "192.168.20.103",
-      "name": "Guest Mobile Device 1"
+
     },
     {
       "enable": true,
@@ -406,7 +401,7 @@
       "enable": true,
       "macAddress": "7C:D9:5C:7C:92:F6",
       "staticIPAddress": "192.168.20.215",
-      "name": "Kitchen Display (Nest Hub)"
+      "name": "Living Room Display (Nest Hub)"
     },
     {
       "enable": true,
