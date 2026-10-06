@@ -23,7 +23,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Part 6** | Comprehensive Architectural Learnings & Production Gotchas | 📚 26 Critical Learnings Documented & Fleet-Hardened |
 | **Part 7** | 2026-09-29 / 10-02 Capture-Driven Network Remediation | 🟢 Complete / Stable — BPDU leak eliminated, Sonos inter-VLAN operating, Mainsail restored, DHCP optimized (52 active entries), 144 capture files analyzed |
 | **Part 7.5**| DHCP Reorganization, IP Tiering & Sonos Inter-VLAN | 🟢 100% Complete & Verified — All 7 VLAN dynamic ranges updated to `.20–.99`; 90 static enterprise reservations deployed; Sonos Move 2 cross-VLAN discovery & control verified; Prometheus at 60/60 UP |
-| **Part 8** | Compute Platform Review (pve hosts, VMs, LXCs, Docker, GPU) | ⏸️ Future — starts once the network is stable and all important config/state is in git |
+| **Part 8** | Compute Platform Review & Resource Optimization | 📝 Planned & Specified — GPU dynamic sharing, RAM ballooning restoration, multi-node compute/storage split, and personal family second brain |
 | **Part 9** | Edge Router Firmware Upgrade & Modernization (OpenWrt & DD-WRT) | ⏸️ Final Phase — Research, changelog audit & safety runbook for upgrading OpenWrt AX3200 & DD-WRT routers |
 
 ### Key Protocol Constraints & Architecture Settled
@@ -981,30 +981,267 @@ Full report with frame references, filters and playbook: [`capture-review-2026-1
 
 ---
 
-## ⏸️ Part 8: Compute Platform Review — Future Phase (recorded 2026-09-30)
+## 🏗️ Part 8: Compute Platform Review & Resource Optimization Architecture Plan
 
-**Not started. Nothing to do now** unless a Part 7 fix requires it.
+**Status**: 📝 Planned, Specified & Architecture-Hardened (Ready for Staged Execution).  
+**Preconditions**: Network topology and ACL boundaries 100% verified (Parts 1–7.5 closed); all configurations backed up via FastMCP.
 
-**Preconditions:**
-- the network is stable (Part 7 checklist closed);
-- all important settings and state are captured and backed up in this repo.
+---
 
-**Goal:** re-evaluate the pve / pve2 / pve3 layout, VMs, LXCs and Docker stacks for performance, robustness and room to grow, especially future AI services on the **4 GB VRAM NVIDIA GPU in `pve`**.
+### 8.1 Executive Objectives, Architectural Principles & Resource Constraints
 
-**Known pain points:**
-- The **Plex** Docker container has GPU-related limitations.
-- **RAM ballooning** limits (a VM with a PCIe-passthrough GPU pins all its RAM, so it cannot balloon).
+The homelab operates 3 standalone Proxmox VE 9.1.1 hypervisors with distinct hardware capabilities and physical limitations:
+* **Node 1: `pve` (Dell Precision 5520)**: Intel Xeon E3-1505M v6 (4C/8T @ 3.0GHz), **32 GB RAM**, 1TB NVMe SSD + 2x 1TB HDDs (`/mnt/pve/backup`, `/mnt/pve/backup2`) + 64GB SD, dual-GPU (**Intel HD Graphics P630 iGPU** + **NVIDIA Quadro M1200 Mobile 4GB VRAM**).
+* **Node 2: `pve2` (AWOW AK34 PRO)**: Intel Celeron J3455 (4C/4T @ 1.5GHz), **6 GB RAM** (heavily constrained), 128GB Foresee SSD + 1TB HDD (`/mnt/pve/backup`) + 128GB SD.
+* **Node 3: `pve3` (HP EliteDesk 800 G1)**: Intel Core i5-4590T (4C/4T @ 2.0GHz), **16 GB RAM**, 240GB Kingston SSD + 1TB HDD (LVM-thin `shared-nas` pool) + 500GB HDD (`/mnt/pve/backup`).
 
-**Questions to answer then:**
-- GPU sharing model: a VM with passthrough (one owner, pinned RAM) vs LXC with the NVIDIA device shared across containers (Plex NVENC plus AI services).
-- VRAM budget: 4 GB fits Plex transcodes plus small quantized models (embeddings, speech-to-text, roughly ≤3–4B LLMs), not large models.
-- Which workloads belong in LXC vs VM vs Docker-in-VM, and on which host.
-- Host resilience lessons from Part 7:
-  - pve3's e1000e NIC hang;
-  - the NAS and PBS both live on pve3 (single point of failure);
-  - NAS mounts stay in-VM (see the 2026-09-30 decision in Part 7).
-  - **Backups share a failure domain with the data:** the PBS datastore (CT 105) sits on pve3's local disk, on the same host as the NAS VM (101); PBS backs itself up into itself; there is no off-host copy. Plan a second datastore or sync target (another host, USB/NAS disk, or off-site PBS) plus periodic test restores.
-- Storage placement, and memory and CPU headroom per host.
+#### Core Problems Addressed
+1. **GPU Pass-Through Locks Host Memory (RAM Ballooning Disabled)**:
+   * Passing a PCIe GPU directly to a QEMU VM (`vfio-pci`) requires physical hardware direct memory access (DMA). Proxmox must pin 100% of the VM's assigned RAM (`media-server` VM 103 pins 8 GB). VirtIO RAM ballooning is completely disabled by QEMU, preventing the host hypervisor from dynamically reclaiming unused pages.
+   * **Monopoly Lockout**: A passed-through PCIe device belongs to exactly *one* VM. The GPU cannot be shared between Plex video transcoding, local LLM inference (Ollama), and photo indexing (Immich).
+2. **Kernel Duplication & Memory Exhaustion on Constrained Nodes**:
+   * Running 8 monolithic virtual machines burns ~4–5 GB of RAM solely on duplicate Linux kernels and systemd supervisor overhead.
+   * On `pve2` (6 GB total RAM), running a full QEMU VM (`discovery-server`) leaves only ~1.4 GB available to the hypervisor, creating high swap pressure during torrent spikes.
+   * On `pve3` (16 GB total RAM), VM 101 (`nas-server`) consumes 10 GB, leaving barely 2–3 GB for PVE, secondary DNS, and PBS.
+3. **Single Point of Failure in Storage & Backups**:
+   * On `pve3`, the primary OpenMediaVault data pool and the Proxmox Backup Server (PBS CT 105) datastore both share the same physical host. If `pve3` hangs (e.g. historical e1000e NIC hang) or fails, both live data and backups are inaccessible simultaneously.
+
+---
+
+### 8.2 GPU Sharing & Memory Ballooning Architecture (The Core Solution)
+
+```mermaid
+graph TD
+    subgraph DellPrecisionHost ["Dell Precision 5520 (Proxmox VE 9.1.1 Host OS)"]
+        HostKernel["Host Linux 6.17 Kernel<br>• Intel i915 Driver (/dev/dri)<br>• NVIDIA 550+ Driver (/dev/nvidia*)"]
+        RAM["32 GB Dynamic Host RAM Pool<br>Full VirtIO Ballooning Restored"]
+        
+        subgraph ComputeLXC ["Zone 1: Unified Compute & AI Engine (Unprivileged LXC 100)"]
+            cgroups["cgroup2 Device Permissions<br>• c 195:* (NVIDIA Core)<br>• c 235:* (NVIDIA UVM)<br>• c 226:* (Intel DRI)"]
+            
+            subgraph DockerPool ["Docker Container Ecosystem (UID/GID 1000:1000)"]
+                Plex["Plex Media Server<br>• Hardware Transcode: Intel QuickSync (/dev/dri/renderD128)"]
+                Ollama["Ollama Local AI Engine<br>• 4GB VRAM: NVIDIA Quadro M1200 (/dev/nvidia0)<br>• Models: Qwen2.5:3b / Llama3.2:3b"]
+                Immich["Immich Photo Hub<br>• Facial Recognition / Machine Learning"]
+                OpenWebUI["Open WebUI<br>• Family AI Interface"]
+                Audiobooks["Audiobookshelf & Storyteller"]
+                Minecraft["Minecraft Bedrock Server"]
+            end
+        end
+        
+        subgraph CoreVM ["Zone 2: Primary Network Core (QEMU VM 100)"]
+            NetCore["4 GB Fixed RAM<br>• AdGuard Primary (192.168.40.185)<br>• Nginx Proxy Manager<br>• Cloudflared / WireGuard / Tailscale"]
+        end
+        
+        subgraph BridgeVM ["Zone 2b: VXLAN Bridge (QEMU VM 107)"]
+            Vxlan["1.5 GB Fixed RAM<br>• vxlan150 Failover Bridge (192.168.1.151)"]
+        end
+    end
+
+    HostKernel --> cgroups
+    cgroups --> Plex
+    cgroups --> Ollama
+    cgroups --> Immich
+```
+
+#### Technical Strategy: Dual-GPU Dynamic Split
+1. **Intel HD Graphics P630 (QuickSync)**: Dedicated to **Plex Media Server**.
+   * Passed via `/dev/dri/card0` and `/dev/dri/renderD128`.
+   * Low power, zero VRAM contention, supports multi-stream 4K H.264/HEVC hardware transcoding.
+2. **NVIDIA Quadro M1200 Mobile (4GB VRAM)**: Dedicated to **Local AI Inference (Ollama) & Immich ML**.
+   * Passed via `/dev/nvidia0`, `/dev/nvidiactl`, `/dev/nvidia-uvm`, and `/dev/nvidia-uvm-tools` using host-level driver binding and LXC cgroups.
+   * Runs local 3B quantized LLMs (`qwen2.5:3b-instruct` or `llama3.2:3b`) at 2.2–2.8 GB VRAM footprint, leaving 1.2 GB headroom for Immich facial recognition models.
+3. **RAM Ballooning Preservation**:
+   * Because the GPUs are mapped into an **unprivileged LXC container** rather than passed via PCIe DMA into a VM, QEMU memory-pinning is completely bypassed.
+   * The host retains dynamic memory management across the entire 32 GB physical RAM pool.
+
+---
+
+### 8.3 Target Fleet Topology & Node Resource Allocation Matrix
+
+| Node | Physical Specs | Zone & Target | Architecture | Allocation | Assigned Roles & Applications |
+| :--- | :--- | :--- | :---: | :---: | :--- |
+| **`pve`**<br>(`192.168.1.250`) | Xeon E3-1505M<br>32GB RAM<br>1TB NVMe | **Zone 1: Unified Compute & AI** | Unprivileged Nested LXC | 20 GB Dynamic RAM<br>(min 8GB, max 24GB) | **Plex** (QuickSync), **Ollama** (NVIDIA 4GB), **Open WebUI**, **Immich**, **Audiobookshelf**, **Storyteller**, **Minecraft Bedrock**, **Home Assistant** / **Luna Core**. |
+| | | **Zone 2: Primary Network Core** | QEMU VM (VM 100) | 4 GB Fixed RAM | **AdGuard Home Primary** (`192.168.40.185`), **NPM**, **WireGuard**, **Tailscale**, **Cloudflared**, **RustDesk**. Isolated kernel boundary for critical routing. |
+| | | **Zone 2b: VXLAN Bridge** | QEMU VM (VM 107) | 1.5 GB Fixed RAM | **vxlan-server** (`192.168.1.151`): Layer 2 split-trunk tunnel bridge for office failover. |
+| | | *Host Overhead / Buffer* | Bare-Metal PVE | ~6.5 GB Free | Hypervisor cache, ZFS/LVM metadata buffer, dynamic compute burst headroom. |
+| **`pve2`**<br>(`192.168.1.240`) | Celeron J3455<br>6GB RAM<br>128GB SSD | **Zone 3: DMZ Download Engine** | Right-Sized VM / Nested LXC | 2.5 GB Dynamic RAM | **Gluetun VPN**, **qBittorrent**, **Audiobookbay**, **Helium**. Trapped strictly on WAN2 (`10.25.25.0/24` via `vmbr1` to DD-WRT Aurora). |
+| | | *Host Overhead / Buffer* | Bare-Metal PVE | ~3.5 GB Free | Ensures AK34 Pro never enters memory exhaustion or swap thrashing. |
+| **`pve3`**<br>(`192.168.1.245`) | Core i5-4590T<br>16GB RAM<br>240GB SSD | **Zone 4: Central Storage Node** | QEMU VM (VM 101) | 6 GB Fixed RAM | **OpenMediaVault (OMV NAS)**: Manages bulk mechanical pools, line-rate NFS v4+ and SMB network shares (`10.25.25.248`). |
+| | | **Zone 5: Wealth Vault** | Isolated VM / LXC | 3 GB Fixed RAM | **Actual Budget**, **Firefly III**, **Ghostfolio** + MariaDB/PostgreSQL. Mapped to dedicated physical 500GB HDD (`/mnt/pve/backup` on `pve3`). |
+| | | **Zone 6: Secondary Core & DNS** | Unprivileged LXC | 1 GB Dynamic RAM | **AdGuard Home Secondary** (`192.168.40.186`), **AdGuard Sync**, **Nextcloud** (Lightweight failover sync). |
+| | | **Zone 7: Proxmox Backup Server** | Unprivileged LXC (LXC 105) | 2 GB Dynamic RAM | **pbs-server** (`192.168.1.244` / `10.25.25.244`): Deduplicated snapshot vault. Datastore replicated to Node 1. |
+| | | *Host Overhead / Buffer* | Bare-Metal PVE | ~4 GB Free | Guarantees stability on HP EliteDesk, preventing e1000e buffer drops. |
+
+---
+
+### 8.4 Physical & Virtual Storage Tiering Architecture
+
+To eliminate the shared failure domain identified in Part 7 learnings, storage is structured into three discrete, non-overlapping tiers:
+
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ TIER 1: High-Speed NVMe Flash Storage (Node 1 Dell Precision /dev/nvme0n1)             │
+│ • Container root filesystems, application databases (SQLite, PostgreSQL, MariaDB)       │
+│ • Ollama local AI model weights (/root/.ollama)                                        │
+│ • Active Minecraft worlds, Home Assistant runtime, Plex metadata cache                 │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │ Line-Rate NFS v4+ over SAN (10.25.25.0/24)
+┌───────────────────────────────────────────▼────────────────────────────────────────────┐
+│ TIER 2: Bulk Network Storage & Media Pools (Node 3 HP EliteDesk OpenMediaVault)        │
+│ • Drive 1 (1TB): Media Pool (Movies, TV, Audiobookshelf library, Calibre books)        │
+│ • Drive 2 (1TB): Immich Photo Library (Family photos and raw video archives)           │
+│ • Fast Incomplete Cache: Local SSD on Node 2 AWOW; completed moves to OMV share        │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │ Encrypted Deduplicated Backup Stream
+┌───────────────────────────────────────────▼────────────────────────────────────────────┐
+│ TIER 3: Independent Proxmox Backup Vault (Decoupled Cross-Host Replication)            │
+│ • Primary PBS Datastore: Node 3 HP EliteDesk 500GB HDD (/mnt/pve/backup)               │
+│ • Secondary Sync Datastore: Node 1 Dell Precision 1TB HDD (/mnt/pve/backup2)           │
+│ • Off-Host Integrity: Node 1 holds full backup copies of Node 3; Node 3 backs up Node 1│
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 8.5 New Application Capabilities Architecture
+
+#### 8.5.1 Personal & Family Second Brain (`PROJECT-personal-family-brain.md`)
+* **Zero-Cloud Privacy Invariant**: All personal, family, grocery, health, and financial data strictly remains local. No personal prompts or notes are sent to cloud LLM APIs.
+* **Decoupled Capture Path ("Mirror, Don't Proxy")**:
+  * Family members keep using native Microsoft To Do apps (instant 2-tap checkbox capture for groceries and chores).
+  * A lightweight cron job running on the homelab invokes `todocli` every 15 minutes, mirroring lists directly into markdown files in the local Obsidian vault (`_Sync/todo-groceries.md`, `_Sync/todo-family.md`).
+  * The local LLM reads the vault **as static markdown** — zero authentication tokens or APIs in the model's runtime path.
+* **Model Selection (4 GB VRAM Budget)**:
+  * Deployed on Ollama via NVIDIA Quadro M1200: **`qwen2.5:3b-instruct`** or **`llama3.2:3b`** (requiring ~2.4 GB VRAM).
+  * Task profile: Rendering daily briefing summaries, checking due dates, and organizing recurrent household maintenance (`recurs: annual` furnace filters, car service, smoke detector batteries).
+  * Delivery: Rendered into `Daily/YYYY-MM-DD.md` in Obsidian and pushed via local **ntfy** push notifications.
+
+#### 8.5.2 Visual Media & Family Photo Hub (Immich)
+* Deployed in Zone 1 compute pool.
+* Machine learning facial recognition and CLIP image search leverage NVIDIA CUDA via LXC device passthrough.
+* Raw photo/video library stored on OMV NFS storage with local NVMe caching for thumbnails and search indexes.
+
+#### 8.5.3 Isolated Wealth & Financial Ledger Vault
+* Deployed in Zone 4 on Node 3 (`actual-budget`, `firefly-iii`, `ghostfolio`).
+* Mapped directly to physical 500GB drive (`/mnt/pve/backup` on `pve3`), completely isolating family financial databases from main OS flash drives and media pools.
+
+#### 8.5.4 Audiobook & Digital Reading Hub
+* **Audiobookshelf** + **Storyteller** linked to Ollama for automatic transcription and sync.
+* Storage mapped directly from OMV bulk media share.
+
+---
+
+### 8.6 UID/GID 1000:1000 Permissions & Unprivileged Container Strategy
+
+To prevent permission drift, all Docker containers and network file shares enforce the project-standard user identity: **UID `1000` / GID `1000` (`dtheurer:dtheurer`)**.
+
+#### Host-to-Container Sub-ID Mapping Formula
+By default, unprivileged Proxmox LXCs map internal UID `1000` to `101000` on the host. To map container user `1000:1000` directly to physical host `1000:1000` without privileged container security risks:
+1. **Host `/etc/subuid` and `/etc/subgid`**:
+   ```text
+   root:1000:1
+   root:100000:65536
+   ```
+2. **Container Profile Configuration (`/etc/pve/lxc/<VMID>.conf`)**:
+   ```text
+   # Map 0-999 to host 100000-100999
+   lxc.idmap: u 0 100000 1000
+   lxc.idmap: g 0 100000 1000
+   # Map container 1000 directly to host 1000 (dtheurer)
+   lxc.idmap: u 1000 1000 1
+   lxc.idmap: g 1000 1000 1
+   # Map 1001-65535 to host 101001-165535
+   lxc.idmap: u 1001 101001 64535
+   lxc.idmap: g 1001 101001 64535
+   ```
+3. **NVIDIA & DRI Device Permissions**:
+   ```text
+   lxc.cgroup2.devices.allow: c 195:* rwm
+   lxc.cgroup2.devices.allow: c 235:* rwm
+   lxc.cgroup2.devices.allow: c 226:* rwm
+   lxc.mount.entry: /dev/nvidia0 dev/nvidia0 none bind,optional,create=file
+   lxc.mount.entry: /dev/nvidiactl dev/nvidiactl none bind,optional,create=file
+   lxc.mount.entry: /dev/nvidia-uvm dev/nvidia-uvm none bind,optional,create=file
+   lxc.mount.entry: /dev/nvidia-uvm-tools dev/nvidia-uvm-tools none bind,optional,create=file
+   lxc.mount.entry: /dev/dri dev/dri none bind,optional,create=dir
+   ```
+
+---
+
+### 8.7 Step-by-Step Staged Migration & Verification Runbook
+
+To ensure zero downtime for primary household DNS, routing, and automation, migration executes across 5 sequential, non-destructive stages:
+
+```mermaid
+graph TD
+    S1["Stage 1: Pre-Flight Zero-Trust Capture & Snapshot"] --> S2["Stage 2: Storage Decoupling & Secondary PBS Datastore"]
+    S2 --> S3["Stage 3: Node 2 (pve2) DMZ Download Engine Optimization"]
+    S3 --> S4["Stage 4: Node 1 (pve) Compute LXC & Dual-GPU Passthrough"]
+    S4 --> S5["Stage 5: Family Second Brain & New Stacks Deployment"]
+    S5 --> S6["Stage 6: Final Verification & Fleet Telemetry Audit"]
+
+    S2 -. Checkpoint .-> R2["Rollback Storage Mounts"]
+    S3 -. Checkpoint .-> R3["Rollback pve2 VM 100"]
+    S4 -. Checkpoint .-> R4["Rollback pve VM 103 (media-server)"]
+```
+
+#### Stage 1: Pre-Flight Zero-Trust Capture & Snapshot
+1. Trigger cold Proxmox VM snapshots and vzdump backups for all 8 active guests across `pve`, `pve2`, and `pve3` via FastMCP:
+   ```bash
+   .venv/bin/python3 -c "
+   import sys; sys.path.insert(0, 'mcp/homelab')
+   from server import *
+   for n in ['pve', 'pve2', 'pve3']:
+       manage_hosts(action='backup')
+   sync_fleet(apply=True)
+   "
+   ```
+2. Verify all Docker compose manifests and SOPS secrets are 100% committed to Git.
+
+#### Stage 2: Storage Decoupling & Secondary PBS Datastore (`pve3` & `pve`)
+1. Create secondary PBS datastore on Node 1 (`/mnt/pve/backup2` 1TB drive) to ensure backups do not share a failure domain with Node 3.
+2. Configure PBS remote sync schedule between Node 3 and Node 1.
+3. Partition and mount the dedicated 500GB HDD on `pve3` for the Wealth Vault.
+
+#### Stage 3: Node 2 (`pve2`) DMZ Download Engine Optimization
+1. Move incomplete download cache to local 128GB Foresee SSD.
+2. Ensure download container traffic remains strictly pinned to `vmbr1` (`10.25.25.0/24`) through DD-WRT Aurora WAN2 gateway.
+3. Validate that `pve2` host free memory increases from ~1.4 GB to >3.5 GB.
+
+#### Stage 4: Node 1 (`pve`) Compute LXC & Dual-GPU Passthrough
+1. Install NVIDIA Linux drivers on bare-metal `pve` host OS; verify `nvidia-smi` and `vainfo` on host.
+2. Deploy unprivileged compute container with sub-ID mapping and cgroup permissions for `/dev/dri` and `/dev/nvidia*`.
+3. Migrate Plex Media Server from VM 103 to the compute container.
+4. Remove PCIe passthrough device from VM 103 (`media-server`), verifying that host RAM ballooning re-enables across `pve`.
+5. Verify simultaneous hardware transcoding on Intel QuickSync and test CUDA vector compute.
+
+#### Stage 5: Family Second Brain & New Stacks Deployment
+1. Deploy Ollama inside the compute container; pull `qwen2.5:3b-instruct` and verify GPU layer offloading into NVIDIA Quadro M1200.
+2. Deploy OpenWebUI and test local inference responsiveness.
+3. Configure `todocli` cron mirror against `@live.com` personal tasks; verify markdown generation in Obsidian vault.
+4. Deploy Immich, Storyteller, and Audiobookshelf.
+5. Deploy Wealth Stack (`actual-budget`, `firefly-iii`, `ghostfolio`) on `pve3`.
+
+#### Stage 6: Fleet Verification & Telemetry Audit
+1. Execute full network matrix verification:
+   ```bash
+   .venv/bin/python3 mcp/homelab/scripts/verify-network-matrix.py --profile comprehensive
+   ```
+   *(Must achieve 23/23 PASS).*
+2. Confirm Prometheus & Blackbox synthetic probes report 100% UP across all reorganized targets.
+3. Rebuild stack catalog:
+   ```bash
+   .venv/bin/python3 mcp/homelab/scripts/generate-stack-index.py
+   ```
+
+---
+
+### 8.8 Rollback & Failure Recovery Procedures
+
+* **GPU Rollback**: If LXC cgroup passthrough encounters container runtime errors, re-attach PCIe device `00:02.0` / `01:00.0` to VM 103 in `/etc/pve/qemu-server/103.conf` and restart VM 103.
+* **Storage Rollback**: VM 101 (`nas-server`) LVM-thin disks remain untouched during Stage 1–4, ensuring zero risk of data loss.
+* **Network & DNS Immunity**: Primary Network Core (VM 100 on `pve`) and Secondary DNS (VM 100 on `pve3`) remain strictly intact throughout all compute migrations, ensuring household internet and DHCP are never interrupted.
 
 ---
 
