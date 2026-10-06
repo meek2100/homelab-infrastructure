@@ -147,19 +147,19 @@ Every `/24` subnet across the homelab adopts this standardized allocation schema
 | **Sonos Move 2 (Living Room 2)**| `74:CA:60:24:4A:50`| `192.168.20.143` | `192.168.20.202` | Sonos Block | Target of ACL Rule 18 |
 | **Sonos Roam 2 (Office)** | `C4:38:75:C6:54:A4`| `192.168.20.205` | `192.168.20.203` | Sonos Block | Target of ACL Rule 18 |
 | *[Reserved for Sonos expansion]* | — | — | `192.168.20.204–.209`| Sonos Block | Reserved for future speakers |
-| **Guest Bedroom Speaker** | `F4:F5:D8:D9:B2:6A` | `192.168.20.106` | `192.168.20.210` | Google Cast | Audio speaker cluster |
-| **Garage Speaker** | `F4:F5:D8:BD:4E:60` | `192.168.20.121` | `192.168.20.211` | Google Cast | Audio speaker cluster |
-| **Primary Bedroom Speaker** | `F4:F5:D8:A6:88:D0` | `192.168.20.230` | `192.168.20.212` | Google Cast | Audio speaker cluster |
-| **Emmy's Bedroom Speaker** | `E4:F0:42:0E:43:98` | `192.168.20.202` | `192.168.20.213` | Google Cast | Moved away from .202 to avoid Sonos clash |
-| **Emmy's Bathroom Speaker** | `48:D6:D5:73:61:91` | `192.168.20.137` | `192.168.20.214` | Google Cast | Offline 13 days (from OvrC) |
-| **Kitchen Display (Nest Hub)**| `7C:D9:5C:7C:92:F6` | `192.168.20.220` | `192.168.20.215` | Google Cast | Smart display cluster |
-| **Emmy's Landing Display** | `1C:F2:9A:35:AF:30` | `192.168.20.186` | `192.168.20.216` | Google Cast | Smart display cluster |
+| **Sewing Room Speaker** | `F4:F5:D8:D9:B2:6A` | `192.168.20.106` | `192.168.20.210` | Google Cast | Upstairs Sewing Room Google Home speaker |
+| **Downstairs Guest Room Speaker** | `F4:F5:D8:BD:4E:60` | `192.168.20.121` | `192.168.20.211` | Google Cast | Downstairs Guest Room Google Home speaker |
+| **Primary Bedroom Speaker** | `F4:F5:D8:A6:88:D0` | `192.168.20.230` | `192.168.20.212` | Google Cast | Primary Bedroom Google Home speaker |
+| **Emme's Bedroom Speaker** | `E4:F0:42:0E:43:98` | `192.168.20.202` | `192.168.20.213` | Google Cast | Emme's Bedroom Google Home (currently idle/offline) |
+| **Emme's Bathroom Speaker** | `48:D6:D5:73:61:91` | `192.168.20.137` | `192.168.20.214` | Google Cast | Emme's Bathroom Google Home |
+| **Kitchen Display (Nest Hub)**| `7C:D9:5C:7C:92:F6` | `192.168.20.220` | `192.168.20.215` | Google Cast | Smart display cluster (Kitchen Hub) |
+| **Emme's Landing Display** | `1C:F2:9A:35:AF:30` | `192.168.20.186` | `192.168.20.216` | Google Cast | Top of stairs landing display (Nest Hub) |
 | **Office Display (Nest Hub)** | `7C:D9:5C:7D:BE:0A` | `192.168.20.245` | `192.168.20.217` | Google Cast | Offline 21 days (from OvrC) |
 | **Living Room TV (Chromecast)**| `14:C1:4E:BC:1C:B6`| `192.168.20.116` | `192.168.20.230` | Smart Displays | TV streaming cluster (Living Room) |
 | **Downstairs Guest TV (Chromecast)**| `BC:DF:58:65:5A:32` | `192.168.20.236` | `192.168.20.231` | Smart Displays | Media streamer on Downstairs Guest TV |
 | **Sewing Room TV (Chromecast)** | `20:1F:3B:34:8F:1A` | `192.168.1.137` | `192.168.20.232` | Smart Displays | Chromecast with Google TV (Upstairs Sewing Room) |
 | **Office TV** | `BC:DF:58:60:0F:2E` | `192.168.1.28` | `192.168.20.233` | Smart Displays | Offline 2 months (from OvrC) |
-| **Primary Bedroom TV (Chromecast)**| `B8:7B:D4:DD:25:03` | `192.168.1.37` | `192.168.20.234` | Smart Displays | Chromecast with Google TV (Primary Bedroom) |
+| **Primary Bedroom TV (Chromecast)**| `56:81:3E:71:AF:5F` | `192.168.20.82` | `192.168.20.234` | Smart Displays | Chromecast with Google TV (Primary Bedroom) |
 | **Primary Bedroom TV (Samsung)** | `7C:0A:3F:90:8A:6E` | `192.168.20.183` | `192.168.20.235` | Smart Displays | Samsung Smart TV (Primary Bedroom) |
 | **Living Room TV (Samsung)** | `54:3A:D6:53:6A:8E` | `192.168.20.222` | `192.168.20.236` | Smart Displays | Samsung Smart TV (Living Room) |
 | **Sewing Room TV (Samsung)** | `C4:73:1E:24:DE:15` | `192.168.20.203` | `192.168.20.237` | Smart Displays | Samsung Smart TV (Upstairs Sewing Room) |

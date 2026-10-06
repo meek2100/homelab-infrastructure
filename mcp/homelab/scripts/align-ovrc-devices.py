@@ -704,8 +704,8 @@ def align_ovrc(action="preview", token=None, username=None, password=None,
             })
             continue
 
-        csv_name = csv_info.get("name", "").strip()
         matched_name = matched.get("name", "").strip() if matched else ""
+        csv_name = csv_info.get("name", "").strip()
         if matched_name and matched_name.lower() not in ("unspecified", "unknown", "none", ""):
             auth_name = matched_name
         elif csv_name and csv_name.lower() not in ("unspecified", "unknown", "none", ""):
@@ -713,11 +713,15 @@ def align_ovrc(action="preview", token=None, username=None, password=None,
         else:
             auth_name = curr_name
 
+        # If matched reservation exists, infer room from authoritative name first
+        inferred_room = get_room_from_name(auth_name)
         csv_room = csv_info.get("room", "").strip()
-        if csv_room and csv_room.lower() not in ("unassigned", "none", ""):
+        if inferred_room and inferred_room != "Unassigned":
+            target_room_name = inferred_room
+        elif csv_room and csv_room.lower() not in ("unassigned", "none", ""):
             target_room_name = csv_room
         else:
-            target_room_name = get_room_from_name(auth_name) or "Unassigned"
+            target_room_name = "Unassigned"
         rooms_map = location_rooms_map.get(dev_loc_id, {})
         target_room_id = rooms_map.get(target_room_name.lower())
 
