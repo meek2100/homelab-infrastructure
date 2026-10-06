@@ -1227,15 +1227,121 @@ By default, unprivileged Proxmox LXCs map internal UID `1000` to `101000` on the
 
 ---
 
-### 8.7 Step-by-Step Staged Migration & Verification Runbook
+---
 
-To ensure zero downtime for primary household DNS, routing, and automation, migration executes across 5 sequential, non-destructive stages:
+### 8.7 Dell Precision 5520 Laptop Power, Display & Peripheral Drain Optimization
+
+The Dell Precision 5520 is a unique hypervisor host because it is a high-performance laptop operating **without an internal battery installed** (running purely on AC adapter power as a headless server node).
+
+#### 8.7.1 The Screen & Console Failure Mode (Why it freezes when GPU is loaded)
+1. **The PCIe Passthrough Hardware Freeze**:
+   - When the Intel iGPU (`00:02.0`) was passed through via `vfio-pci` to QEMU VM 103 (`media-server`), `vfio-pci` took exclusive control of the PCI BARs and hardware display controller registers.
+   - The Linux kernel Virtual Terminal (vt / tty / fbcon) lost access to the hardware framebuffer. When `consoleblank` or DPMS attempts to blank or wake the screen, the kernel hangs the display pipe or emits kernel trace lockups, leaving the physical panel frozen on whatever artifact was last drawn, while the backlight remains permanently energized (400 nits, burning ~8–12W continuously).
+2. **The Spacebar / Keypress Wake Failure**:
+   - The laptop keyboard is an internal PS/2 or I2C HID controller (`i8042` / `intel-lpss`). Without proper event binding to ACPI backlight controls (`/sys/class/backlight/`), raw keypresses wake the software terminal buffer in kernel RAM, but cannot signal the severed display controller or power down the physical LED backlight inverter.
+3. **Ghost Battery & Power Drain**:
+   - Without an installed battery, the ACPI subsystem periodically polls for battery presence (`/sys/class/power_supply/BAT0`), triggering minor CPU wakeups. Additionally, Thunderbolt 3 (`DSL6340 Alpine Ridge`), internal Wi-Fi/Bluetooth, and audio codecs consume unneeded phantom watts.
+
+#### 8.7.2 The Solution Architecture: Dynamic Hardware Sleep with Instant Keypress Wake
+
+By migrating from VM PCIe passthrough to **Unprivileged LXC with `/dev/dri` and `/dev/nvidia*` cgroup sharing** (Section 8.2), the Proxmox host kernel **retains full ownership of the Intel i915 DRM driver**. This allows the host to directly manage panel power, DPMS blanking, and backlight hardware registers safely without freezing:
+
+```mermaid
+graph TD
+    subgraph DellPrecisionPower ["Dell Precision 5520 Headless Power Management"]
+        subgraph PowerDrains ["Extra Power Drains Disabled"]
+            TB["Thunderbolt 3 PCIe Power-Save"]
+            BT["Intel Wi-Fi / Bluetooth Module (RF-Kill)"]
+            Audio["HD Audio Codec Powerdown (/sys/module/snd_hda_intel)"]
+            PanelLED["Panel Backlight Inverter (0 nits on idle)"]
+        end
+
+        subgraph EventEngine ["Display Sleep & Wake Engine"]
+            Idle["Idle Timeout (consoleblank=60s)"] --> DPMSOff["DRM / DPMS Standby & Backlight = 0"]
+            LidClose["Lid Close Event (ACPI)"] --> ScreenOff["Turn Off Panel + Backlight Instantly"]
+            KeyHit["Spacebar / Keyboard Touch"] --> Wake["Instant DPMS Wake + Restore Backlight to 400"]
+        end
+    end
+```
+
+#### 8.7.3 Precision 5520 Systemd & ACPI Configuration Blueprint
+
+1. **Systemd Logind Policy (`/etc/systemd/logind.conf.d/pve-laptop.conf`)**:
+   Ensure lid close never suspends the node, while allowing physical power button and keyboard wake:
+   ```ini
+   [Login]
+   HandleLidSwitch=ignore
+   HandleLidSwitchExternalPower=ignore
+   HandleLidSwitchDocked=ignore
+   HandlePowerKey=poweroff
+   IdleAction=ignore
+   ```
+2. **ACPI Lid & Display Power Management (`/etc/acpi/events/laptop-lid` & `/etc/acpi/lid-backlight.sh`)**:
+   Automatically power off the panel and set backlight brightness to 0 when the lid is closed, and restore on lid open:
+   ```bash
+   #!/bin/bash
+   # /etc/acpi/lid-backlight.sh
+   BACKLIGHT_PATH="/sys/class/backlight/intel_backlight"
+   grep -q closed /proc/acpi/button/lid/LID0/state
+   if [ $? -eq 0 ]; then
+       # Lid is closed: completely turn off panel backlight
+       echo 0 > "${BACKLIGHT_PATH}/brightness"
+       # Set TTY console blanking
+       setterm --blank force --powersave powerdown < /dev/tty1 > /dev/tty1 2>/dev/null || true
+   else
+       # Lid is open: restore working brightness
+       echo 400 > "${BACKLIGHT_PATH}/brightness"
+       setterm --blank poke < /dev/tty1 > /dev/tty1 2>/dev/null || true
+   fi
+   ```
+3. **Kernel Console Auto-Blank & DPMS (`/etc/default/grub`)**:
+   Enable aggressive console blanking on boot so that if the lid is open or left unattended, the screen powers down within 60 seconds:
+   ```text
+   GRUB_CMDLINE_LINUX_DEFAULT="quiet consoleblank=60 intel_iommu=on iommu=pt i915.enable_guc=3 i915.enable_fbc=1"
+   ```
+   *Note: `i915.enable_guc=3` (GuC/HuC firmware load) and `i915.enable_fbc=1` (Frame Buffer Compression) reduce Intel display engine power draw by ~3–5W while enabling hardware power-down states.*
+4. **Disable Extraneous Hardware & Radio Transceivers (`/etc/modprobe.d/dell-power-save.conf`)**:
+   Disable radios and unneeded laptop peripherals to eliminate vampire battery drain:
+   ```text
+   # Disable Bluetooth and unneeded laptop audio
+   blacklist btusb
+   blacklist bluetooth
+   blacklist snd_hda_intel
+   blacklist snd_soc_core
+
+   # Enable aggressive PCIe ASPM and SATA link power management
+   options pcie_aspm force
+   options snd_hda_intel power_save=1 power_save_controller=Y
+   ```
+
+---
+
+### 8.8 Fleet-Wide BIOS, OS, Hypervisor & Virtualization Tuning Matrix
+
+To achieve peak design performance, robust reliability, and deterministic scalability across all three standalone nodes, apply the following unified hardware and virtualization parameters:
+
+| Component / Layer | Node 1: `pve` (Dell Precision 5520) | Node 2: `pve2` (AWOW AK34 Pro) | Node 3: `pve3` (HP EliteDesk 800 G1) | Rationale & Objective |
+| :--- | :--- | :--- | :--- | :--- |
+| **BIOS: Power Management** | AC Recovery: **Power On**; C-States: **Enabled**; Intel SpeedStep: **Enabled**; Hyper-Threading: **Enabled** | State After G3: **Power On**; CPU C-States: **Enabled** | AC Back: **Always On**; Intel SpeedStep: **Enabled**; Active State Power Mgmt: **Enabled** | Guarantees automatic boot after power outage; optimizes idle CPU wattage without sacrificing single-core burst. |
+| **BIOS: Virtualization** | VT-x: **Enabled**; VT-d: **Enabled** | Intel Virtualization Tech: **Enabled** | Intel VT-x: **Enabled**; Intel VT-d: **Enabled** | Mandatory hardware hypervisor support for KVM and IOMMU grouping. |
+| **Kernel CPU Governor** | `performance` (compute node) or `schedutil` | `schedutil` (prevents Celeron thermal lockup) | `performance` (storage & database host) | Lowers database transaction latency on storage node; maintains thermal stability on mini-PC. |
+| **Disk I/O & Schedulers** | NVMe: `none`; HDDs: `mq-deadline` | SSD: `none` | SSD: `none`; HDDs: `bfq` (smooths streaming) | Eliminates I/O queuing overhead on flash; prevents head thrashing on bulk OMV mechanical drives. |
+| **VirtIO RAM Ballooning** | Restored via LXC GPU sharing (Section 8.2) | Enabled (`balloon=512`) | Enabled (`balloon=1024`) | Allows PVE host to dynamically reclaim unused memory from idle guests. |
+| **Virtual Disk Storage Controller** | `virtio-scsi-single` + `iothread=1` | `virtio-scsi-single` + `iothread=1` | `virtio-scsi-single` + `iothread=1` | Grants each virtual disk its own dedicated QEMU I/O event thread for maximum IOPS and lowest latency. |
+| **SSD TRIM & Discard** | `discard=on` + `ssd=1` on all virtual disks | `discard=on` + `ssd=1` | `discard=on` + `ssd=1` | Prevents SSD write amplification; allows CBT dirty-bitmaps in PBS to skip zero-blocks. |
+| **Network Interfaces** | `virtio` (multiqueue=2 on core VM) | `virtio` | `virtio` (offloading tuned: TSO/GSO disabled on physical `eno1`) | Prevents e1000e physical ring buffer overflow hangs on HP EliteDesk (Part 6 Learning 3). |
+
+---
+
+### 8.9 Step-by-Step Staged Migration & Verification Runbook
+
+To ensure zero downtime for primary household DNS, routing, and automation, migration executes across 6 sequential, non-destructive stages:
 
 ```mermaid
 graph TD
     S1["Stage 1: Pre-Flight Zero-Trust Capture & Snapshot"] --> S2["Stage 2: Storage Decoupling & Secondary PBS Datastore"]
     S2 --> S3["Stage 3: Node 2 (pve2) DMZ Download Engine Optimization"]
-    S3 --> S4["Stage 4: Node 1 (pve) Compute LXC & Dual-GPU Passthrough"]
+    S3 --> S4["Stage 4: Node 1 (pve) Compute LXC, Dual-GPU & Power Optimization"]
     S4 --> S5["Stage 5: Family Second Brain & New Stacks Deployment"]
     S5 --> S6["Stage 6: Final Verification & Fleet Telemetry Audit"]
 
@@ -1267,12 +1373,13 @@ graph TD
 2. Ensure download container traffic remains strictly pinned to `vmbr1` (`10.25.25.0/24`) through DD-WRT Aurora WAN2 gateway.
 3. Validate that `pve2` host free memory increases from ~1.4 GB to >3.5 GB.
 
-#### Stage 4: Node 1 (`pve`) Compute LXC & Dual-GPU Passthrough
+#### Stage 4: Node 1 (`pve`) Compute LXC, Dual-GPU & Power Optimization
 1. Install NVIDIA Linux drivers on bare-metal `pve` host OS; verify `nvidia-smi` and `vainfo` on host.
-2. Deploy unprivileged compute container with sub-ID mapping and cgroup permissions for `/dev/dri` and `/dev/nvidia*`.
-3. Migrate Plex Media Server from VM 103 to the compute container.
-4. Remove PCIe passthrough device from VM 103 (`media-server`), verifying that host RAM ballooning re-enables across `pve`.
-5. Verify simultaneous hardware transcoding on Intel QuickSync and test CUDA vector compute.
+2. Deploy Dell Precision 5520 power, screen-blanking (`consoleblank=60`, DPMS), and ACPI lid-script rules (Section 8.7).
+3. Deploy unprivileged compute container with sub-ID mapping and cgroup permissions for `/dev/dri` and `/dev/nvidia*`.
+4. Migrate Plex Media Server from VM 103 to the compute container.
+5. Remove PCIe passthrough device from VM 103 (`media-server`), verifying that host RAM ballooning re-enables across `pve` and screen console remains responsive upon keypress.
+6. Verify simultaneous hardware transcoding on Intel QuickSync and test CUDA vector compute.
 
 #### Stage 5: Family Second Brain & New Stacks Deployment
 1. Deploy Ollama inside the compute container; pull `qwen2.5:3b-instruct` and verify GPU layer offloading into NVIDIA Quadro M1200.
@@ -1295,9 +1402,10 @@ graph TD
 
 ---
 
-### 8.8 Rollback & Failure Recovery Procedures
+### 8.10 Rollback & Failure Recovery Procedures
 
 * **GPU Rollback**: If LXC cgroup passthrough encounters container runtime errors, re-attach PCIe device `00:02.0` / `01:00.0` to VM 103 in `/etc/pve/qemu-server/103.conf` and restart VM 103.
+* **Display Rollback**: If console blanking interferes with administrative access, remove `consoleblank` and restore standard logind settings via `/etc/systemd/logind.conf`.
 * **Storage Rollback**: VM 101 (`nas-server`) LVM-thin disks remain untouched during Stage 1–4, ensuring zero risk of data loss.
 * **Network & DNS Immunity**: Primary Network Core (VM 100 on `pve`) and Secondary DNS (VM 100 on `pve3`) remain strictly intact throughout all compute migrations, ensuring household internet and DHCP are never interrupted.
 
