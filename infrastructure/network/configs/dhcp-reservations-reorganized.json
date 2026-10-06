@@ -94,13 +94,13 @@
       "enable": true,
       "macAddress": "A0:29:19:8F:5D:45",
       "staticIPAddress": "192.168.10.102",
-      "name": "Desktop PC 011PRD Wired"
+      "name": "Laptop 011PRD Wired"
     },
     {
       "enable": true,
       "macAddress": "F4:46:37:7A:6A:7A",
       "staticIPAddress": "192.168.10.103",
-      "name": "Desktop PC 011PRD Wi-Fi"
+      "name": "Laptop 011PRD Wi-Fi"
     },
     {
       "enable": true,

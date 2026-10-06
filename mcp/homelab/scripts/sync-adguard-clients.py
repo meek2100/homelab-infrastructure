@@ -12,6 +12,8 @@ import argparse
 import base64
 import json
 import os
+import shutil
+import subprocess
 import sys
 import urllib.error
 import urllib.parse
@@ -20,6 +22,37 @@ import urllib.request
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 DEFAULT_RESERVATIONS_PATH = os.path.join(REPO_ROOT, "infrastructure", "network", "configs", "dhcp-reservations-reorganized.json")
 DEFAULT_HOST = "http://192.168.40.185:8081"
+SECRET_FILE = os.path.join(REPO_ROOT, "infrastructure", "secrets", "araknis-switch.enc.yaml")
+
+def get_age_key_path():
+    for candidate in [
+        os.path.join(REPO_ROOT, "homelab-infrastructure.key"),
+        os.path.join(REPO_ROOT, "master-age-key.txt"),
+        os.path.expanduser("~/.config/sops/age/keys.txt"),
+    ]:
+        if os.path.exists(candidate):
+            return candidate
+    return None
+
+def load_credentials():
+    """Load AdGuard Home credentials from environment or SOPS-encrypted secret file."""
+    user = os.environ.get("ADGUARD_USER", os.environ.get("ADGUARD_USERNAME"))
+    password = os.environ.get("ADGUARD_PASSWORD")
+
+    if (not user or not password) and os.path.exists(SECRET_FILE):
+        sops_bin = shutil.which("sops") or os.path.expanduser("~/.local/bin/sops")
+        if sops_bin and os.path.exists(sops_bin):
+            key_file = get_age_key_path()
+            env = os.environ.copy()
+            if key_file:
+                env["SOPS_AGE_KEY_FILE"] = key_file
+            res = subprocess.run([sops_bin, "-d", SECRET_FILE], capture_output=True, text=True, env=env)
+            if res.returncode == 0 and res.stdout:
+                creds = dict(line.split(":", 1) for line in res.stdout.splitlines() if ":" in line)
+                user = user or creds.get("username", "").strip()
+                password = password or creds.get("password", "").strip()
+
+    return user, password
 
 def get_auth_header(user, password):
     if user and password:
@@ -58,8 +91,10 @@ def sync_clients(reservations_path=DEFAULT_RESERVATIONS_PATH, host=DEFAULT_HOST,
     reservations = res_data.get("dhcpReservations", [])
     output_lines = [f"Loaded {len(reservations)} DHCP reservations from GitOps blueprint."]
 
-    user = user or os.environ.get("ADGUARD_USER", os.environ.get("ADGUARD_USERNAME"))
-    password = password or os.environ.get("ADGUARD_PASSWORD")
+    if not user or not password:
+        loaded_user, loaded_password = load_credentials()
+        user = user or loaded_user
+        password = password or loaded_password
     auth_headers = get_auth_header(user, password)
 
     # 1. Fetch current clients
@@ -96,11 +131,25 @@ def sync_clients(reservations_path=DEFAULT_RESERVATIONS_PATH, host=DEFAULT_HOST,
         if not matched_client and mac:
             matched_client = by_id.get(mac)
         if not matched_client:
-            matched_client = by_id.get(ip.lower())
+            cand = by_id.get(ip.lower())
+            # Don't match if candidate is a dedicated Tailscale host with a completely different name
+            if cand and not (cand.get("name", "").endswith(".local") and not cand.get("name", "").lower().startswith(name.lower()[:5])):
+                matched_client = cand
+
+        # Identify user_admin clients (Pixel 10 Pro and Laptop 011PRD wired/wifi)
+        is_user_admin = any(k in name.lower() for k in ["pixel 10 pro", "laptop 011prd", "011prd"])
 
         if matched_client:
             curr_ids = [cid.strip().lower() for cid in matched_client.get("ids", [])]
-            if ip.lower() not in curr_ids or (mac and mac not in curr_ids):
+            curr_tags = list(matched_client.get("tags", []))
+            target_tags = list(curr_tags)
+            if is_user_admin and "user_admin" not in target_tags:
+                target_tags.append("user_admin")
+
+            needs_id_update = ip.lower() not in curr_ids or (mac and mac not in curr_ids)
+            needs_tag_update = set(curr_tags) != set(target_tags)
+
+            if needs_id_update or needs_tag_update:
                 other_ids = [cid for cid in matched_client.get("ids", []) if not cid.startswith("192.168.") and ":" not in cid]
                 merged_ids = list(dict.fromkeys(target_ids + other_ids))
                 payload = {
@@ -114,21 +163,22 @@ def sync_clients(reservations_path=DEFAULT_RESERVATIONS_PATH, host=DEFAULT_HOST,
                         "safesearch_enabled": matched_client.get("safesearch_enabled", False),
                         "use_global_blocked_services": matched_client.get("use_global_blocked_services", True),
                         "upstreams": matched_client.get("upstreams", []),
-                        "tags": matched_client.get("tags", [])
+                        "tags": target_tags
                     }
                 }
                 if dry_run:
-                    output_lines.append(f"[DRY-RUN UPDATE] '{matched_client['name']}' -> '{name}' IDs: {merged_ids}")
+                    output_lines.append(f"[DRY-RUN UPDATE] '{matched_client['name']}' -> '{name}' IDs: {merged_ids} Tags: {target_tags}")
                 else:
                     up_status, up_resp = api_request(f"{host}/control/clients/update", method="POST", data=payload, headers=auth_headers)
                     if up_status == 200:
-                        output_lines.append(f"[UPDATED] '{name}' -> IDs: {merged_ids}")
+                        output_lines.append(f"[UPDATED] '{name}' -> IDs: {merged_ids} Tags: {target_tags}")
                     else:
                         output_lines.append(f"[ERROR UPDATING] '{name}': HTTP {up_status} {up_resp}")
                 updated_count += 1
             else:
                 unchanged_count += 1
         else:
+            initial_tags = ["user_admin"] if is_user_admin else []
             payload = {
                 "name": name,
                 "ids": target_ids,
@@ -138,10 +188,10 @@ def sync_clients(reservations_path=DEFAULT_RESERVATIONS_PATH, host=DEFAULT_HOST,
                 "safesearch_enabled": False,
                 "use_global_blocked_services": True,
                 "upstreams": [],
-                "tags": []
+                "tags": initial_tags
             }
             if dry_run:
-                output_lines.append(f"[DRY-RUN ADD] '{name}' IDs: {target_ids}")
+                output_lines.append(f"[DRY-RUN ADD] '{name}' IDs: {target_ids} Tags: {initial_tags}")
             else:
                 add_status, add_resp = api_request(f"{host}/control/clients/add", method="POST", data=payload, headers=auth_headers)
                 if add_status == 200:
