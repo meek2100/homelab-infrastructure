@@ -119,6 +119,7 @@ def sync_clients(reservations_path=DEFAULT_RESERVATIONS_PATH, host=DEFAULT_HOST,
         name = r.get("name", "").strip()
         ip = r.get("staticIPAddress", "").strip()
         mac = r.get("macAddress", "").strip().lower()
+        ts_ip = r.get("tailscaleIP", "").strip()
 
         if not name or not ip:
             continue
@@ -126,6 +127,8 @@ def sync_clients(reservations_path=DEFAULT_RESERVATIONS_PATH, host=DEFAULT_HOST,
         target_ids = [ip]
         if mac:
             target_ids.append(mac)
+        if ts_ip:
+            target_ids.append(ts_ip)
 
         matched_client = by_name.get(name.lower())
         if not matched_client and mac:
@@ -136,8 +139,9 @@ def sync_clients(reservations_path=DEFAULT_RESERVATIONS_PATH, host=DEFAULT_HOST,
             if cand and not (cand.get("name", "").endswith(".local") and not cand.get("name", "").lower().startswith(name.lower()[:5])):
                 matched_client = cand
 
-        # Identify user_admin clients (Pixel 10 Pro and Laptop 011PRD wired/wifi)
+        # Identify tags
         is_user_admin = any(k in name.lower() for k in ["pixel 10 pro", "laptop 011prd", "011prd"])
+        is_user_regular = "kimber" in name.lower()
 
         if matched_client:
             curr_ids = [cid.strip().lower() for cid in matched_client.get("ids", [])]
@@ -145,12 +149,14 @@ def sync_clients(reservations_path=DEFAULT_RESERVATIONS_PATH, host=DEFAULT_HOST,
             target_tags = list(curr_tags)
             if is_user_admin and "user_admin" not in target_tags:
                 target_tags.append("user_admin")
+            if is_user_regular and "user_regular" not in target_tags:
+                target_tags.append("user_regular")
 
-            needs_id_update = ip.lower() not in curr_ids or (mac and mac not in curr_ids)
+            needs_id_update = any(cid.lower() not in curr_ids for cid in target_ids)
             needs_tag_update = set(curr_tags) != set(target_tags)
 
             if needs_id_update or needs_tag_update:
-                other_ids = [cid for cid in matched_client.get("ids", []) if not cid.startswith("192.168.") and ":" not in cid]
+                other_ids = [cid for cid in matched_client.get("ids", []) if not cid.startswith("192.168.") and not cid.startswith("10.85.") and not cid.startswith("100.85.") and ":" not in cid]
                 merged_ids = list(dict.fromkeys(target_ids + other_ids))
                 payload = {
                     "name": matched_client["name"],
@@ -178,7 +184,11 @@ def sync_clients(reservations_path=DEFAULT_RESERVATIONS_PATH, host=DEFAULT_HOST,
             else:
                 unchanged_count += 1
         else:
-            initial_tags = ["user_admin"] if is_user_admin else []
+            initial_tags = []
+            if is_user_admin:
+                initial_tags.append("user_admin")
+            if is_user_regular:
+                initial_tags.append("user_regular")
             payload = {
                 "name": name,
                 "ids": target_ids,

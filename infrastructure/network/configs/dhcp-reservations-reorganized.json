@@ -94,12 +94,14 @@
       "enable": true,
       "macAddress": "A0:29:19:8F:5D:45",
       "staticIPAddress": "192.168.10.102",
+      "tailscaleIP": "10.85.10.102",
       "name": "Laptop 011PRD Wired"
     },
     {
       "enable": true,
       "macAddress": "F4:46:37:7A:6A:7A",
       "staticIPAddress": "192.168.10.103",
+      "tailscaleIP": "10.85.10.103",
       "name": "Laptop 011PRD Wi-Fi"
     },
     {
@@ -112,24 +114,28 @@
       "enable": true,
       "macAddress": "6E:72:FF:20:9B:AA",
       "staticIPAddress": "192.168.10.110",
+      "tailscaleIP": "10.85.10.110",
       "name": "Pixel 10 Pro"
     },
     {
       "enable": true,
       "macAddress": "66:AF:7A:CC:EB:E4",
       "staticIPAddress": "192.168.10.111",
+      "tailscaleIP": "10.85.10.111",
       "name": "Kimber iPhone"
     },
     {
       "enable": true,
       "macAddress": "96:5D:E6:EE:4E:5B",
       "staticIPAddress": "192.168.10.112",
+      "tailscaleIP": "10.85.10.112",
       "name": "Kimber iPad"
     },
     {
       "enable": true,
       "macAddress": "BA:07:67:57:ED:7D",
       "staticIPAddress": "192.168.10.113",
+      "tailscaleIP": "10.85.10.113",
       "name": "Kimber iPad Pro"
     },
     {

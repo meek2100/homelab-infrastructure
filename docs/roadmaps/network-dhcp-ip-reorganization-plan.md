@@ -91,13 +91,13 @@ Every `/24` subnet across the homelab adopts this standardized allocation schema
 | Device Name | MAC Address | Current IP | Proposed IP | Functional Tier | Notes & Dependencies |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Araknis 520 Gateway** | — | `192.168.10.1` | `192.168.10.1` | Gateway | Primary interface |
-| **Laptop (011PRD Wired)** | `A0:29:19:8F:5D:45` | `192.168.1.117` | `192.168.10.102` | Workstations | Aligns wired NIC with Netgear port 2 (VLAN 10) |
-| **Laptop (011PRD Wi-Fi)** | `F4:46:37:7A:6A:7A` | `192.168.10.118` | `192.168.10.103` | Workstations | Sequential with wired NIC |
+| **Laptop (011PRD Wired)** | `A0:29:19:8F:5D:45` | `192.168.1.117` | `192.168.10.102` | Workstations | Aligns wired NIC with Netgear port 2 (VLAN 10); TS `10.85.10.102` |
+| **Laptop (011PRD Wi-Fi)** | `F4:46:37:7A:6A:7A` | `192.168.10.118` | `192.168.10.103` | Workstations | Sequential with wired NIC; TS `10.85.10.103` |
 | **Mac Mini** | `14:98:77:3E:4E:8D` | `192.168.10.126` | `192.168.10.104` | Workstations | Workstation block |
-| **Pixel 10 Pro** | `6E:72:FF:20:9B:AA` | `192.168.10.40` | `192.168.10.110` | Personal Mobile | Live Wi-Fi MAC updated |
-| **Kimber iPhone** | `66:AF:7A:CC:EB:E4` | `192.168.10.123` | `192.168.10.111` | Personal Mobile | Mobile phone block |
-| **Kimber iPad** | `96:5D:E6:EE:4E:5B` | `192.168.10.124` | `192.168.10.112` | Personal Mobile | Tablet block |
-| **Kimber iPad Pro** | `BA:07:67:57:ED:7D` | `192.168.10.124` | `192.168.10.113` | Personal Mobile | Distinct MAC from OvrC |
+| **Pixel 10 Pro** | `6E:72:FF:20:9B:AA` | `192.168.10.40` | `192.168.10.110` | Personal Mobile | Live Wi-Fi MAC updated; TS `10.85.10.110` |
+| **Kimber iPhone** | `66:AF:7A:CC:EB:E4` | `192.168.10.123` | `192.168.10.111` | Personal Mobile | Mobile phone block; TS `10.85.10.111` |
+| **Kimber iPad** | `96:5D:E6:EE:4E:5B` | `192.168.10.124` | `192.168.10.112` | Personal Mobile | Tablet block; TS `10.85.10.112` |
+| **Kimber iPad Pro** | `BA:07:67:57:ED:7D` | `192.168.10.124` | `192.168.10.113` | Personal Mobile | Distinct MAC from OvrC; TS `10.85.10.113` |
 | **Darin iPhone** | `F0:C3:71:4A:8A:27` | `192.168.10.45` | `192.168.10.114` | Personal Mobile | Mobile phone block |
 | **iPhone Client 1** | `EE:A8:80:16:D5:A9` | `192.168.10.42` | `192.168.10.115` | Personal Mobile | Guest / family mobile |
 | **iPhone Client 2** | `32:C2:B9:5F:40:56` | `192.168.10.64` | `192.168.10.116` | Personal Mobile | Guest / family mobile |
