@@ -89,11 +89,11 @@ def determine_client_tags(name):
     tags = []
 
     # 1. User group
-    if any(k in nl for k in ["pixel 10 pro", "laptop 011prd", "011prd", "darin iphone"]):
+    if any(k in nl for k in ["pixel 10 pro", "laptop 011prd", "011prd"]):
         tags.append("user_admin")
     elif "kimber" in nl:
         tags.append("user_regular")
-    elif "emme" in nl:
+    elif "emme" in nl or "galaxy s9" in nl or "samsung s9" in nl:
         tags.append("user_child")
 
     # 2. Device type
@@ -202,7 +202,10 @@ def sync_clients(reservations_path=DEFAULT_RESERVATIONS_PATH, host=DEFAULT_HOST,
         if matched_client:
             curr_ids = [cid.strip().lower() for cid in matched_client.get("ids", [])]
             curr_tags = list(matched_client.get("tags", []))
-            target_tags = list(dict.fromkeys(curr_tags + expected_tags))
+            
+            # Maintain existing manual tags while enforcing expected user groups / types
+            reconciled = [t for t in curr_tags if t not in ["user_admin", "user_regular", "user_child"]]
+            target_tags = list(dict.fromkeys(reconciled + expected_tags))
 
             needs_id_update = any(cid.lower() not in curr_ids for cid in target_ids)
             needs_tag_update = set(curr_tags) != set(target_tags)
