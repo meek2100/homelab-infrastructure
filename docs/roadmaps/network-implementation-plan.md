@@ -1132,12 +1132,70 @@ To eliminate the shared failure domain identified in Part 7 learnings, storage i
 
 ---
 
-### 8.6 UID/GID 1000:1000 Permissions & Unprivileged Container Strategy
+### 8.6 Least-Privilege Security, Identity & Cross-Protocol Storage Architecture
 
-To prevent permission drift, all Docker containers and network file shares enforce the project-standard user identity: **UID `1000` / GID `1000` (`dtheurer:dtheurer`)**.
+#### 8.6.1 User Identity Clarification across Fleet
+To ensure absolute permission consistency across hypervisors, virtual machines, containers, and network shares:
+* **Infrastructure User (`1000:1000`)**: The standard non-root service account on Proxmox VE hosts, Debian/Ubuntu VMs, and LXC containers is **`meek2100:meek2100`** (`UID 1000` / `GID 1000`).
+* **Workstation Note**: `dtheurer:dtheurer` is strictly local to the user's WSL2 development environment and is NOT present or used on PVE hosts, VMs, or LXCs.
 
-#### Host-to-Container Sub-ID Mapping Formula
-By default, unprivileged Proxmox LXCs map internal UID `1000` to `101000` on the host. To map container user `1000:1000` directly to physical host `1000:1000` without privileged container security risks:
+#### 8.6.2 Least-Privilege & Rootless Container Enforcement
+Running containers as `root` (UID 0) inside Docker exposes the underlying host kernel to privilege escalation attacks and breaks file ownership on shared filesystems:
+1. **No Root by Default**: Docker containers must NOT run as root unless kernel-level privileges or capabilities are strictly required (e.g. WireGuard requiring `NET_ADMIN`, or low-level network sniffers requiring `NET_RAW`).
+2. **Explicit User Directives**: All standard application containers (Plex, Immich, Ollama, OpenWebUI, Audiobookshelf, Nextcloud, Home Assistant, Paperless, etc.) must declare non-root execution:
+   ```yaml
+   user: "1000:1000"
+   environment:
+     - PUID=1000
+     - PGID=1000
+     - UMASK=002
+   ```
+3. **Capabilities Dropping**: Drop all default capabilities where feasible (`cap_drop: [ALL]`) and add only required capabilities (`cap_add: [CHOWN, SETUID, SETGID]`).
+
+#### 8.6.3 NAS Storage Ownership & Cross-Protocol Normalization (SMB + NFS)
+OpenMediaVault (`nas-server` VM 101 on `pve3`) hosts shared bulk storage mounted concurrently by:
+* **Windows 11 Workstations**: Via Server Message Block (SMB / CIFS).
+* **Linux Hypervisors, VMs & Docker Hosts**: Via Network File System (NFS v4+).
+
+**The Problem**:
+When a Windows SMB client writes a file, Samba often creates it under Windows-specific ACLs or root mappings (e.g. `0644` with default Samba UID). When a Linux Docker container on `luna` or `media-server` accesses the share over NFS, it runs as `1000:1000` (`meek2100:meek2100`) and receives `EACCES (Permission Denied)`. Conversely, files created by Linux containers with restrictive umasks (e.g. `0600`) lock out Windows desktop editing or deletion.
+
+**The Solution (Transparent Shared Resource Normalization)**:
+Permissions on NAS shares must be completely transparent across protocols so that creating, modifying, or deleting a file from any client never locks out other clients:
+
+1. **Samba Configuration (`/etc/samba/smb.conf` on `nas-server`)**:
+   Enforce forced identity and permissive group masks across all exported shares:
+   ```ini
+   [shared-media]
+       path = /srv/dev-disk-by-uuid-.../shared-media
+       force user = meek2100
+       force group = meek2100
+       create mask = 0664
+       force create mode = 0664
+       directory mask = 0775
+       force directory mode = 0775
+       inherit permissions = yes
+       inherit acls = yes
+       read only = no
+       guest ok = no
+   ```
+2. **NFS Export Configuration (`/etc/exports` on `nas-server`)**:
+   Squash client credentials directly to `meek2100:meek2100` (`1000:1000`) over the isolated SAN network (`10.25.25.0/24`):
+   ```text
+   /export/shared-media 10.25.25.0/24(rw,sync,all_squash,anonuid=1000,anongid=1000,no_subtree_check)
+   /export/shared-media 192.168.40.0/24(rw,sync,all_squash,anonuid=1000,anongid=1000,no_subtree_check)
+   ```
+   *By specifying `all_squash,anonuid=1000,anongid=1000`, any write from any Linux client or container is written as `meek2100:meek2100` on disk regardless of the calling process UID.*
+3. **Default POSIX ACL Inheritance on Shared Directories**:
+   Set default access control lists on the underlying filesystem so new files and subdirectories automatically inherit read/write/execute permissions for user and group:
+   ```bash
+   setfacl -R -m u::rwx,g::rwx,o::r-x /srv/dev-disk-by-uuid-.../shared-media
+   setfacl -R -d -m u::rwx,g::rwx,o::r-x /srv/dev-disk-by-uuid-.../shared-media
+   chown -R meek2100:meek2100 /srv/dev-disk-by-uuid-.../shared-media
+   ```
+
+#### 8.6.4 Host-to-Container Sub-ID Mapping Formula (Unprivileged LXC)
+By default, unprivileged Proxmox LXCs map internal UID `1000` to `101000` on the host. To map container user `1000:1000` (`meek2100:meek2100`) directly to physical host `1000:1000` without privileged container security risks:
 1. **Host `/etc/subuid` and `/etc/subgid`**:
    ```text
    root:1000:1
@@ -1148,7 +1206,7 @@ By default, unprivileged Proxmox LXCs map internal UID `1000` to `101000` on the
    # Map 0-999 to host 100000-100999
    lxc.idmap: u 0 100000 1000
    lxc.idmap: g 0 100000 1000
-   # Map container 1000 directly to host 1000 (dtheurer)
+   # Map container 1000 directly to host 1000 (meek2100)
    lxc.idmap: u 1000 1000 1
    lxc.idmap: g 1000 1000 1
    # Map 1001-65535 to host 101001-165535
