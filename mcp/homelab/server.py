@@ -13,11 +13,26 @@ DEFAULT_NODE_IPS = {
     "pve3": "192.168.1.245"
 }
 
+def get_node_ip(node_name: str) -> str | None:
+    """Dynamically resolve host IP from infrastructure/hosts/<node>/meta.json with fallback."""
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    meta_path = os.path.join(repo_root, "infrastructure", "hosts", node_name, "meta.json")
+    if os.path.exists(meta_path):
+        try:
+            with open(meta_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                ip = data.get("ip")
+                if ip:
+                    return ip
+        except Exception:
+            pass
+    return DEFAULT_NODE_IPS.get(node_name)
+
 def get_ssh_key():
     for candidate in [
         os.path.expanduser("~/.ssh/proxmox_ed25519"),
-        "/home/dtheurer/.ssh/proxmox_ed25519",
         "/home/agentsvc/.ssh/proxmox_ed25519",
+        "/home/dtheurer/.ssh/proxmox_ed25519",
         os.path.expanduser("~/.ssh/id_ed25519"),
         "/home/dtheurer/.ssh/id_ed25519"
     ]:
@@ -147,7 +162,7 @@ def manage_vms(
         target_nodes = [node] if node else ["pve", "pve2", "pve3"]
         results = []
         for target in target_nodes:
-            ip = DEFAULT_NODE_IPS.get(target)
+            ip = get_node_ip(target)
             if not ip: continue
             code, out, _ = run_ssh_cmd(ip, "qm list")
             if code == 0:
@@ -160,7 +175,7 @@ def manage_vms(
     elif action == "status":
         if not node or not vmid:
             return "Error: Both 'node' and 'vmid' are required for action='status'."
-        ip = DEFAULT_NODE_IPS.get(node)
+        ip = get_node_ip(node)
         if not ip: return f"Error: Unknown node '{node}'."
         code, out, err = run_ssh_cmd(ip, f"qm guest exec {vmid} -- docker ps --format 'table {{{{.Names}}}}\t{{{{.Status}}}}\t{{{{.Ports}}}}'")
         if code == 0:
@@ -173,13 +188,13 @@ def manage_vms(
 
     elif action == "start":
         if not node or not vmid: return "Error: 'node' and 'vmid' required."
-        ip = DEFAULT_NODE_IPS.get(node)
+        ip = get_node_ip(node)
         code, out, err = run_ssh_cmd(ip, f"qm start {vmid}")
         return f"Successfully started VM {vmid} on {node}." if code == 0 else f"Failed to start VM {vmid}: {err}"
 
     elif action == "stop":
         if not node or not vmid: return "Error: 'node' and 'vmid' required."
-        ip = DEFAULT_NODE_IPS.get(node)
+        ip = get_node_ip(node)
         code, out, err = run_ssh_cmd(ip, f"qm shutdown {vmid}")
         return f"Graceful shutdown initiated for VM {vmid} on {node}." if code == 0 else f"Failed to stop VM {vmid}: {err}"
 
@@ -211,7 +226,7 @@ def manage_vm_snapshots(
       - 'vzdump': Trigger Proxmox vzdump backup job to local/PBS storage."""
     action = action.lower().strip()
     if action == "vzdump":
-        ip = DEFAULT_NODE_IPS.get(node)
+        ip = get_node_ip(node)
         if not ip: return f"Error: Unknown node '{node}'."
         code, out, err = run_ssh_cmd(ip, f"vzdump {vmid} --mode snapshot --compress zstd --storage local", timeout=300)
         return out if code == 0 else f"vzdump failed: {err}"
@@ -284,7 +299,7 @@ def manage_araknis_router(
     config_file: str | None = None,
     confirm: bool = False
 ) -> str:
-    """Manage Araknis 520 Dual-WAN Router (192.168.1.1) via native REST API.
+    """Manage Araknis 520 Dual-WAN Router (192.168.10.1 / 192.168.1.1) via native REST API.
     Actions:
       - 'status': Audit router health, WAN links, subnets, DHCP leases, and 36 ACL rules.
       - 'backup': Export running configuration blob to infrastructure/network/configs/araknis-520-backup.cfg.
@@ -481,7 +496,7 @@ def verify_network_matrix(
     profile: Literal["quick", "comprehensive"] = "quick",
     targets_file: str | None = None
 ) -> str:
-    """Audits comprehensive cross-VLAN network reachability and latency across all 21 core targets.
+    """Audits comprehensive cross-VLAN network reachability and latency across all 23 core targets.
     Profiles: 'quick' (ping latency) or 'comprehensive' (full TCP/UDP and inter-VLAN ACL matrix)."""
     args = ["--profile", profile]
     if targets_file:

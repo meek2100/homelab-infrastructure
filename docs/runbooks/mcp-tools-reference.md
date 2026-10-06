@@ -179,7 +179,7 @@ This document provides the authoritative, extensive reference for the **20 conso
 ### 4. Telemetry, Forensics & Diagnostics
 
 #### `verify_network_matrix`
-* **Purpose**: Audits latency, reachability, and inter-VLAN ACL isolation across all 21 core targets.
+* **Purpose**: Audits latency, reachability, and inter-VLAN ACL isolation across all 23 core targets.
 * **Arguments**:
   - `profile` (*str*, default: `'quick'`): `'quick'` (ICMP ping latency) or `'comprehensive'` (full TCP/UDP and inter-VLAN ACL matrix).
 
