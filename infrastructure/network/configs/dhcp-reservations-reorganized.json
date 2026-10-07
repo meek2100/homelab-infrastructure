@@ -158,8 +158,14 @@
     },
     {
       "enable": true,
-      "macAddress": "90:A7:C1:4B:1D:71",
+      "macAddress": "0C:C4:13:31:0E:4D",
       "staticIPAddress": "192.168.10.117",
+      "name": "Pixel 7"
+    },
+    {
+      "enable": true,
+      "macAddress": "90:A7:C1:4B:1D:71",
+      "staticIPAddress": "192.168.10.118",
       "name": "Pakedge Lab AP Client"
     },
     {
@@ -338,6 +344,12 @@
       "staticIPAddress": "192.168.20.106",
       "tailscaleIP": "100.85.20.106",
       "name": "Preston iPhone"
+    },
+    {
+      "enable": true,
+      "macAddress": "08:F4:AB:5A:FF:41",
+      "staticIPAddress": "192.168.20.110",
+      "name": "Darin Apple Watch"
     },
     {
       "enable": true,

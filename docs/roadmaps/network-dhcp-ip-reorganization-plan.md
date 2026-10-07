@@ -101,7 +101,8 @@ Every `/24` subnet across the homelab adopts this standardized allocation schema
 | **Darin iPhone** | `F0:C3:71:4A:8A:27` | `192.168.10.45` | `192.168.10.114` | Personal Mobile | Mobile phone block |
 | **iPhone Client 1** | `EE:A8:80:16:D5:A9` | `192.168.10.42` | `192.168.10.115` | Personal Mobile | Guest / family mobile |
 | **iPhone Client 2** | `32:C2:B9:5F:40:56` | `192.168.10.64` | `192.168.10.116` | Personal Mobile | Guest / family mobile |
-| **Pakedge Lab AP Client** | `90:A7:C1:4B:1D:71` | `192.168.10.41` | `192.168.10.117` | Work Testbench | Pakedge test host |
+| **Pixel 7** | `0C:C4:13:31:0E:4D` | `192.168.10.89` | `192.168.10.117` | Personal Mobile | Secondary mobile / test device |
+| **Pakedge Lab AP Client** | `90:A7:C1:4B:1D:71` | `192.168.10.41` | `192.168.10.118` | Work Testbench | Pakedge test host |
 | **Nintendo Switch 1** | `A4:C1:E8:13:20:48` | `192.168.10.127` | `192.168.10.130` | Consoles | Handheld gaming block |
 | **Nintendo Switch 2** | `98:E2:55:3D:C4:B9` | `192.168.10.132` | `192.168.10.131` | Consoles | Handheld gaming block |
 | **Nex Playground** | `48:5C:2C:8C:43:7C` | `192.168.10.65` | `192.168.10.132` | Consoles | Active console in Living Room |
@@ -141,6 +142,7 @@ Every `/24` subnet across the homelab adopts this standardized allocation schema
 | **Guest Mobile Device 2** | `BA:98:6B:7F:13:B7` | `192.168.20.90` | `192.168.20.104` | Guest Mobile | Guest wireless endpoint |
 | **Jen iPhone** | `02:00:00:20:01:05` *(Placeholder)* | — | `192.168.20.105` | Guest Personal | Tailscale `100.85.20.105`; NPM app limited; Insomniac_Guest |
 | **Preston iPhone** | `02:00:00:20:01:06` *(Placeholder)* | — | `192.168.20.106` | Guest Personal | Tailscale `100.85.20.106`; NPM app limited; Insomniac_Guest |
+| **Darin Apple Watch** | `08:F4:AB:5A:FF:41` | `192.168.20.98` | `192.168.20.110` | Personal Wearable | Apple Watch on Insomniac_Guest |
 | **Control4 Halo Touch Remote** | `50:26:EF:26:C9:AD` | `192.168.20.87` | `192.168.20.120` | Remotes & Acc | Wi-Fi remote on Insomniac_Guest |
 | **Control4 Halo Tactile Remote** | `24:CD:8D:6F:FD:A0` | `192.168.20.34` | `192.168.20.121` | Remotes & Acc | Wi-Fi remote on Insomniac_Guest |
 | **Control4 SR-260 Remote** | `34:15:13:D2:BD:1E` | `192.168.20.85` | `192.168.20.122` | Remotes & Acc | Wi-Fi remote on Insomniac_Guest |
