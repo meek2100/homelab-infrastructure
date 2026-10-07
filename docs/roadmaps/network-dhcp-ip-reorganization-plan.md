@@ -252,11 +252,9 @@ Every `/24` subnet across the homelab adopts this standardized allocation schema
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Araknis 520 Gateway** | — | `192.168.150.1` | `192.168.150.1` | VLAN 150 | No change |
 | **ca1-000FFF51922F** | `00:0F:FF:51:92:2F` | `192.168.150.200` | `192.168.150.201` | VLAN 150 | Standardized into .200-.239 tier |
-| **core3-000FFF0C347F** | `00:0F:FF:0C:34:7F` | `192.168.150.150` | `192.168.150.203` | VLAN 150 | Standardized into .200-.239 tier |
 | **Araknis 520 Gateway** | — | `192.168.200.1` | `192.168.200.1` | VLAN 200 | No change |
 | **Josh.ai System** | `F8:8A:3C:70:A3:DE` | `192.168.200.151` | `192.168.200.151` | VLAN 200 | Voice automation server (from OvrC) |
 | **SA-1 (Ryff Test Controller)** | `00:0F:FF:0C:41:CA` | `192.168.200.100` | `192.168.200.201` | VLAN 200 | Standardized into .200-.239 tier |
-| **ea3-000FFF928C21** | `00:0F:FF:92:8C:21` | `192.168.200.150` | `192.168.200.202` | VLAN 200 | Standardized into .200-.239 tier |
 | **core5-000FFF0C33AE** | `00:0F:FF:0C:33:AE` | `192.168.200.200` | `192.168.200.205` | VLAN 200 | Standardized into .200-.239 tier |
 
 ---

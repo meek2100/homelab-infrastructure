@@ -677,12 +677,6 @@
     },
     {
       "enable": true,
-      "macAddress": "00:0F:FF:0C:34:7F",
-      "staticIPAddress": "192.168.150.203",
-      "name": "core3-000FFF0C347F"
-    },
-    {
-      "enable": true,
       "macAddress": "F8:8A:3C:70:A3:DE",
       "staticIPAddress": "192.168.200.151",
       "name": "Josh.ai System"
@@ -692,12 +686,6 @@
       "macAddress": "00:0F:FF:0C:41:CA",
       "staticIPAddress": "192.168.175.201",
       "name": "Triad SA1 Streaming Amp"
-    },
-    {
-      "enable": true,
-      "macAddress": "00:0F:FF:92:8C:21",
-      "staticIPAddress": "192.168.200.202",
-      "name": "ea3-000FFF928C21"
     },
     {
       "enable": true,

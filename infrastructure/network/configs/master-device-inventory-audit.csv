@@ -110,8 +110,6 @@ ProxMox VM - Media Server,192.168.40.247,,BC:24:11:40:7F:72,VLAN 40 (Servers),Ra
 ProxMox VM - OMV NAS Server,192.168.40.248,,BC:24:11:1A:56:46,VLAN 40 (Servers),Rack Room,device_nas; os_linux,[ ] Verified,
 ProxMox VM - Luna Server,192.168.40.249,,BC:24:11:B7:CF:A3,VLAN 40 (Servers),Rack Room,os_linux,[ ] Verified,
 Control4 CA-1 Controller,192.168.150.201,,00:0F:FF:51:92:2F,VLAN 150 (CA1 Test),Rack Room,None,[ ] Verified,
-core3-000FFF0C347F,192.168.150.203,,00:0F:FF:0C:34:7F,VLAN 150 (CA1 Test),Unassigned,None,[ ] Verified,
 Josh.ai System,192.168.200.151,,F8:8A:3C:70:A3:DE,VLAN 200 (Core5 Test),Unassigned,None,[ ] Verified,
 Triad SA1 Streaming Amp,192.168.175.201,,00:0F:FF:0C:41:CA,VLAN 175 (Ryff Test),Rack Room,device_audio,[ ] Verified,
-ea3-000FFF928C21,192.168.200.202,,00:0F:FF:92:8C:21,VLAN 200 (Core5 Test),Unassigned,None,[ ] Verified,
 Control4 Core-5 Controller,192.168.200.205,,00:0F:FF:0C:33:AE,VLAN 200 (Core5 Test),Rack Room,None,[ ] Verified,
