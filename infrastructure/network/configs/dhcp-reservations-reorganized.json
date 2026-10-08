@@ -309,7 +309,7 @@
     {
       "enable": true,
       "macAddress": "58:D5:0A:A1:79:0A",
-      "staticIPAddress": "192.168.10.208",
+      "staticIPAddress": "192.168.20.123",
       "name": "Control4 T4 10 Tabletop Touchs"
     },
     {
@@ -323,7 +323,6 @@
       "macAddress": "48:88:CA:E1:BA:DD",
       "staticIPAddress": "192.168.20.102",
       "name": "Lenovo Yoga Tab 3 Plus"
-
     },
     {
       "enable": true,

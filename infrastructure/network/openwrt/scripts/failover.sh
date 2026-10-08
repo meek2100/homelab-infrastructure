@@ -15,7 +15,7 @@ LAN_TRUNK_PORTS="lan2 lan3 lan4"
 # Tagged VLANs carried over vxlan150 and the LAN trunk ports. Must match TAGGED_VLANS in
 # vxlan-server's /usr/local/bin/vxlan-nm. VLAN 100 (Wireshark SPAN isolation) is deliberately
 # excluded: it must exist only on SW920 1/0/24.
-TAGGED_VLANS="10 30"  # office devices: 10 (Control4, printers) and 30 (Apple TV) per Netgear VLAN table
+TAGGED_VLANS="10 20"  # office devices: 10 (Control4, printers) and 30 (Apple TV) per Netgear VLAN table
 FAIL_COUNT_FILE="/tmp/failover_p1_fails"
 P1_DOWN_SINCE_FILE="/tmp/failover_p1_down_since"
 P2_DOWN_SINCE_FILE="/tmp/failover_p2_down_since"

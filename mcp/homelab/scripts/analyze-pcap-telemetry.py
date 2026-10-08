@@ -96,6 +96,11 @@ def resolve_target_files(input_path: str, max_files: int = None) -> list[str]:
     norm = normalize_path(input_path)
     if not norm:
         for candidate in [
+            # Windows 11 mapped NAS drive (N: -> \\nas-server\media)
+            "/mnt/n/wireshark-captures",
+            "/mnt/n/captures",
+            normalize_path(r"N:\wireshark-captures"),
+            normalize_path(r"N:\captures"),
             # In-memory live tmpfs ring buffer (Stack 48 on VM 102)
             "/dev/shm/wireshark",
             "/tmp/captures",
@@ -104,9 +109,6 @@ def resolve_target_files(input_path: str, max_files: int = None) -> list[str]:
             "/mnt/media/captures",
             "/mnt/media/wireshark-captures",
             "/opt/packet-captures",
-            # Windows 11 SMB mapped capture folders & downloads
-            normalize_path(r"C:\Users\dtheurer\Downloads\Router pcap"),
-            "/captures",
         ]:
             if os.path.exists(candidate):
                 norm = candidate
@@ -119,14 +121,14 @@ def resolve_target_files(input_path: str, max_files: int = None) -> list[str]:
     if os.path.isdir(norm):
         for ext in ("*.pcapng", "*.pcap", "*.cap"):
             files.extend(glob.glob(os.path.join(norm, ext)))
-    elif "*" in norm or "?" in norm:
+    elif "*" in norm or "?" in norm or "[" in norm:
         files.extend(glob.glob(norm))
     elif os.path.isfile(norm):
         files.append(norm)
 
     files.sort()
     if max_files and len(files) > max_files:
-        files = files[:max_files]
+        files = files[-max_files:]
     return files
 
 def run_diagnostic_engine(

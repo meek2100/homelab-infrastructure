@@ -3,7 +3,7 @@
 These are offline analysis helpers for the `router_baseline_*.pcapng` files produced by the luna capture stack (stack 48, SPAN of SW920 1/0/1 = the 520 router port, VLAN-tagged). They only read pcaps. Requires Python 3 + `dpkt`; run them from WSL, e.g.:
 
 ```bash
-python3 -W ignore overnight.py "/mnt/c/Users/dtheurer/Downloads/Router pcap" /tmp/report.txt
+python3 -W ignore overnight.py "/mnt/n/wireshark-captures" /tmp/report.txt
 ```
 
 Times are printed in **PDT (UTC−7)**. Untagged frames are reported as VLAN 1 (or 0 in `loopcheck.py`).
@@ -29,7 +29,7 @@ Stdlib-only (no `dpkt`): `pcapng_fast.py` reads pcapng blocks directly, and each
 
 ```bash
 cd /home/agentsvc/repos/homelab-infrastructure/mcp/homelab/scripts/pcap-analysis
-D="/mnt/c/Users/dtheurer/Downloads/Router pcap"
+D="/mnt/n/wireshark-captures"
 python3 -W ignore deep.py "$D" /tmp/deep.pkl
 python3 -W ignore deep_report.py /tmp/deep.pkl basic     # also: l2, l3, l4, app, all
 python3 -W ignore deep_behavior.py /tmp/deep.pkl

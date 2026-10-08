@@ -4,26 +4,26 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 
 ---
 
-## 📈 Progress Summary — Last Updated 2026-10-02
+## 📈 Progress Summary — Last Updated 2026-10-08
 
 | Part | Title | Status |
 | :--- | :--- | :---: |
-| **Part 1** | Core Router & Switch ACL Configuration (36 live rules) | ✅ 100% Verified — 2026-10-02: mDNS testbench isolation (rules 22-25), Sonos bidirectional rules (18-19), and Mainsail access rules (11-14, 16, 20-21) active |
+| **Part 1** | Core Router & Switch ACL Configuration (36 live rules) | ✅ 100% Verified — 2026-10-08: All 36 live rules synchronized in GitOps (rules 20-21 Mainsail pruned, rule 32 DNS WAN block added, rule 36 Roku isolation added) |
 | **Part 2** | End-to-End Verification & Testing Runbook (5 tests) | ✅ 100% Verified |
-| **Part 2.5** | Multicast & Discovery Architecture (Native Bonjour/IGMP) | ✅ Settled — 2026-09-29: IGMP snooping + querier added for VLAN 30; AP mDNS gate off on MGMT SSID; 2026-09-30: luna HA/Homebridge bound to ens18 (verified), Vivint panel mDNS blocked on SW920 1/0/17; 2026-10-02: Sonos cross-VLAN discovery & control fully verified (>50k frames) |
+| **Part 2.5** | Multicast & Discovery Architecture (Native Bonjour/IGMP) | ✅ Settled — 2026-09-29: IGMP snooping + querier added for VLAN 30; AP mDNS gate off on MGMT SSID; 2026-10-02: Sonos cross-VLAN discovery & control fully verified (>50k frames); 2026-10-08: Vivint SDDP (UDP 1902) & Google TV/Cast multicast operational across VLAN 10/20 |
 | **Part 2.6** | WAN2 & Storage SAN Isolation (untagged vmbr1) | ✅ Settled |
 | **Part 2.7** | vxlan-server Split Trunking Architecture (VM 107) | 🟢 Complete — 2026-09-29: fixed 30 s tunnel-rebuild loop (59–73% office loss → 0%); VLAN 100 removed from tunnel; 2026-09-30: `TAGGED_VLANS="10 30"` deployed on both ends; 2026-10-01: fail-back via probe VLAN 4094 verified |
 | **Part 2.8** | Netgear GS108Ev2 Office Switch GitOps & Backup | 🟢 Complete — Native NSDP packet driver, L2 relay, and binary/JSON backups verified; 2026-10-02: desktop PC port aligned to VLAN 10 (`192.168.10.102`) |
-| **Part 2.9** | Wireshark Headless SPAN Sniffer & Storage Engine (Stack 48) | 🟢 Hardened — 2026-09-30: vmbr1 hub mode + GRO off persisted, 512 B snaplen, VLAN-aware filter, open-file-safe background NAS worker as `abc`, soft `/mnt/captures` mount; 2026-10-01: capture truncation fixed and bulk internet filter active; 2026-10-02: 144 capture chunks analyzed |
+| **Part 2.9** | Wireshark Headless SPAN Sniffer & Storage Engine (Stack 48) | 🟢 Hardened — 2026-09-30: vmbr1 hub mode + GRO off persisted, 512 B snaplen, VLAN-aware filter, open-file-safe background NAS worker as `abc`, soft `/mnt/captures` mount; 2026-10-01: capture truncation fixed; 2026-10-08: 141 clean ~50MB slices actively rotating on `/mnt/n/wireshark-captures` |
 | **Part 2.10**| Pakedge SX-8P Managed Switch & Work Testbench Lifecycle | 🟢 Complete — 2026-10-02: Switch recovered, raw socket Telnet engine verified, STP off + BPDU flooding, SW920 1/0/7 storm control broadcast level 5 applied, 0 BPDUs confirmed in captures; WattBox mains-powered |
 | **Part 3** | Observability Engine & Synthetic Probing (Stack 71) | 🟢 100% Deployed & Active (10 containers, Alertmanager, Blackbox, external targets; 2026-10-02: alert duration threshold relaxed to 5m to eliminate transient noise) |
 | **Part 4** | Unified Full-Fleet Control Center, External Systems & PBS Foundation | 🟢 100% Deployed & Active (60/60 targets UP, distributed agent pods active on 5 VMs, Loki streaming all containers) |
 | **Part 5** | Production Operationalization, PBS Migration & External GitOps | 🟢 100% Operationalized (PBS Active Cluster-Wide, Backups Verified, Alerts Active, External VPS FastMCP Active) |
 | **Part 5.6** | Phase 2 Automation, External Log Shipping & GitOps Drills | 🟢 100% Complete & Operationalized (Snapshot FastMCP, Device Auto-Sync, Promtail Tooling, GitOps Drills) |
 | **Part 6** | Comprehensive Architectural Learnings & Production Gotchas | 📚 26 Critical Learnings Documented & Fleet-Hardened |
-| **Part 7** | 2026-09-29 / 10-02 Capture-Driven Network Remediation | 🟢 Complete / Stable — BPDU leak eliminated, Sonos inter-VLAN operating, Mainsail restored, DHCP optimized (52 active entries), 144 capture files analyzed |
-| **Part 7.5**| DHCP Reorganization, IP Tiering & Sonos Inter-VLAN | 🟢 100% Complete & Verified — All 7 VLAN dynamic ranges updated to `.20–.99`; 90 static enterprise reservations deployed; Sonos Move 2 cross-VLAN discovery & control verified; Prometheus at 60/60 UP |
-| **Part 8** | Compute Platform Review & Resource Optimization | 📝 Planned & Specified — GPU dynamic sharing, RAM ballooning restoration, multi-node compute/storage split, and personal family second brain |
+| **Part 7** | 2026-09-29 / 10-08 Forensic Capture-Driven Network Remediation | 🟢 Hardened & Verified — 2026-10-08: WAN port 53 forward deleted (public open resolver closed); native AdGuard DNS rewrites active (`stats.grafana.org` -> NXDOMAIN); SW920 1/0/1 storm control removed; OvrC ARP sweeps disabled |
+| **Part 7.5**| DHCP Reorganization, IP Tiering & Sonos Inter-VLAN | 🟡 In Final Reconciliation — All 7 VLAN dynamic ranges updated to `.20–.99`; 90 static enterprise reservations deployed in router NVRAM; final IP/MAC reconciliation in progress via user's `Home-Lan-Audit.xlsx` |
+| **Part 8** | Compute Platform Review & Resource Optimization | ⏸️ Paused — Gated on completing authoritative IP/MAC table verification from `Home-Lan-Audit.xlsx` before execution |
 | **Part 9** | Edge Router Firmware Upgrade & Modernization (OpenWrt & DD-WRT) | ⏸️ Final Phase — Research, changelog audit & safety runbook for upgrading OpenWrt AX3200 & DD-WRT routers |
 
 ### Key Protocol Constraints & Architecture Settled
@@ -978,6 +978,18 @@ Full report with frame references, filters and playbook: [`capture-review-2026-1
   - Netgear GS108Ev2 switch port for desktop workstation moved to access VLAN 10 (`192.168.10.102`), eliminating split-routing and aligning wired with Wi-Fi (`Insomniac` on VLAN 10).
 - [x] **Prometheus alerting threshold relaxation (verified 2026-10-02 19:40):**
   - Adjusted `alert_rules.yml`: `TargetDown`, `BlackboxProbeFailed`, `SwitchPortLinkDown`, `SwitchPortCRCErrors` duration increased from 2m to `for: 5m` (`DNSResolutionFailed` `for: 2m`). Prevents transient Wi-Fi drops or test reboots from triggering premature alerts. Committed in repo.
+- [x] **Araknis 520 WAN Port 53 Open Resolver Remediation (verified 2026-10-08):**
+  - Deleted router port forwarding rule mapping public WAN UDP/TCP 53 to AdGuard Home (`192.168.40.185`). Confirmed via live router API query `/config/port-forwarding`: only WireGuard (UDP 51820) remains forwarded.
+- [x] **AdGuard Home NXDOMAIN Rewrites & CA-10 DNS Loop Eradication (verified 2026-10-08):**
+  - Deployed native DNS rewrite rules in AdGuard Home:
+    - `stats.grafana.org` -> `NXDOMAIN`
+    - `stats.grafana.org.internal` -> `NXDOMAIN`
+    - `geo.hivebedrock.cloud` -> CNAME `minecraftconnect.secure.theurer.dev` -> `192.168.40.175`
+  - Verified live via raw UDP DNS query probes to Primary (`192.168.40.185`) and Secondary (`192.168.40.186`): both return clean `RCODE 3 (NXDOMAIN)`, eradicating the ~44k/day retry loop from Control4 CA-10 Director and Core controllers.
+- [x] **Araknis 920 Port 1/0/1 Storm Control Tuning (verified 2026-10-08):**
+  - Removed 200 pps broadcast storm control from router trunk port 1/0/1 (`no storm-control broadcast` staged in `araknis-920-running.cfg`), eliminating dropped router ARP broadcasts. Edge AP/CA-10 ports configured to 1000 pps.
+- [ ] **Authoritative IP/MAC Table Reconciliation (in progress 2026-10-08):**
+  - Reconciling 115 live network assets across Araknis 520 DHCP reservations, Araknis 920 switch ports, OvrC inventory, and AdGuard persistent clients against user's authoritative `Home-Lan-Audit.xlsx`. Execution of Part 8 gated on completion of this audit.
 
 ---
 

@@ -1,7 +1,7 @@
 # 🏁 Homelab Network Remediation & DHCP Reorganization: Milestone Checkpoint
 
-**Date**: 2026-10-04  
-**Status**: Post-Powercycle Verification Complete (Tasks 001–011 Complete; Prometheus 60/60 UP; Sonos/Printers/RustDesk Verified)
+**Date**: 2026-10-08 (Updated following live verification of WAN port-forward removal & DNS rewrites)  
+**Status**: 🟢 Core Network Stabilized — WAN 53 Closed; DNS Rewrites Active (NXDOMAIN Confirmed); IP/MAC Reconciliation In Progress via `Home-Lan-Audit.xlsx`
 
 ---
 
@@ -10,18 +10,18 @@
 | Task ID | Description | Status | Verification & Target State |
 | :--- | :--- | :---: | :--- |
 | **`TASK_001`** | Pre-Flight Snapshots & Safety Blueprints | 🟢 **COMPLETED** | Saved `araknis-520-backup-pre-reorg.cfg`, `araknis-920-running-pre-reorg.cfg`, and timestamped JSON state files. |
-| **`TASK_002`** | Monitoring Alert Silences | 🟢 **COMPLETED** | 2-hour active silences in Alertmanager for Control4, Sonos, and printers (now cleanly expired; 0 active alerts). |
-| **`TASK_003`** | OvrC & WAN Ingress Dropping | 🟢 **COMPLETED** | Rules 35 & 36 added on Araknis 520 dropping WAN sweeps to `.150.200` & `.200.200`. OvrC Auto-Claim disabled. |
-| **`TASK_004`** | Enterprise Subnet Tiering & DHCP | 🟢 **COMPLETED** | All 7 VLAN dynamic ranges updated to `.20–.99`; 90 static reservations applied to router NVRAM; 77 clients verified active. |
-| **`TASK_005`** | Firewall Hardening & DNS Interception | 🟢 **COMPLETED** | Clamped Rule 18 down to `.20.201–.205`; Rules 33 & 34 block DoT; Port 53 DNAT active; UPnP disabled. |
-| **`TASK_006`** | Switch Multicast Router & Storm Control | 🟢 **COMPLETED** | `set igmp mrouter 20` on Port 1/0/1; Storm control active (200 pps access, 500 pps trunk); `write memory` confirmed. |
-| **`TASK_007`** | DNS Runaway Loop Remediation | 🟢 **COMPLETED** | AdGuard Home NXDOMAIN rule verified (`RCODE: 3`); container `adguardhome-sync` and NPM host 14 updated to `.40.185`/`.40.186`. |
-| **`TASK_008`** | TCP PMTUD & Host MSS Clamping | 🟢 **COMPLETED** | TCPMSS clamped to 1380 on FORWARD and OUTPUT; saved to `/etc/iptables/rules.v4` on `nexus-server`. |
-| **`TASK_009`** | GitOps Monitoring Targets Alignment | 🟢 **COMPLETED** | Prometheus targets and Grafana dashboards updated for Core-1/3 and printers (`commit 25b3520` & `commit 5249763`). |
-| **`TASK_010`** | Device Lease Renewals & Functional Testing | 🟢 **COMPLETED** | Global powercycle complete; Sonos Move 2 discovery, playback & volume slider verified; HP & Brother printers verified; RustDesk relay verified. |
-| **`TASK_011`** | Observability Resume & 60/60 Audit | 🟢 **COMPLETED** | Stack 71 updated and restarted on `nexus-server`; Prometheus reached **60/60 UP (100% healthy)**; Alertmanager core probe alerts resolved. |
-| **`TASK_012`** | Post-Remediation PCAP Telemetry Delta | 🟢 **COMPLETED** | High-performance telemetry engine executed across post-reorganization slices (`00010`, `00011`, `00018`, `00001`). Confirmed: ICMP MTU drops = 0; STP TCNs = 0; legacy printer & controller ARPs completely eradicated; non-unicast frame ratio dropped from 33.06% to ~20%. |
-| **`TASK_013`** | Final Aggregation & Operational Sign-off | 🟢 **COMPLETED** | OvrC inventory 100% healthy (78/78); Prometheus 60/60 UP; Sonos/Printers/RustDesk verified; all 13 tasks signed off. |
+| **`TASK_002`** | Monitoring Alert Silences | 🟢 **COMPLETED** | 2-hour active silences in Alertmanager for Control4, Sonos, and printers expired cleanly. Alert rules adjusted to `5m` duration to eliminate transient Wi-Fi alerts. |
+| **`TASK_003`** | OvrC & WAN Ingress Dropping | 🟢 **COMPLETED** | Rules 35 & 36 added on Araknis 520 dropping WAN sweeps to `.150.200` & `.200.200`. OvrC 24-hr auto-claim/scan disabled on 2026-10-05 to eliminate ARP sweep noise. |
+| **`TASK_004`** | Enterprise Subnet Tiering & DHCP | 🟡 **AUDIT IN PROGRESS** | All 7 VLAN dynamic ranges set to `.20–.99`. 90+ static reservations in router NVRAM. **Current step**: Final IP/MAC reconciliation against user's authoritative `Home-Lan-Audit.xlsx` before pushing to AdGuard Home. |
+| **`TASK_005`** | Firewall Hardening & DNS Interception | 🟢 **VERIFIED RESOLVED** | Rule 18 clamped to `.20.201–.205`. Rules 33 & 34 block DoT. UPnP disabled. **VERIFIED 2026-10-08**: Queried live Araknis 520 `/config/port-forwarding` via API. The WAN UDP/TCP 53 forward was deleted by the user. Only WireGuard (UDP 51820) remains forwarded. Port 53 open resolver risk is closed. |
+| **`TASK_006`** | Switch Multicast Router & Storm Control | 🟢 **REMEDIATED** | `set igmp mrouter 20` active on Port 1/0/1. **CORRECTED**: Port 1/0/1 storm control relaxed/removed (`no storm-control broadcast` staged in `araknis-920-running.cfg`) preventing router ARP drops. APs/CA-10 ports tuned to 1000 pps. |
+| **`TASK_007`** | DNS Runaway Loop Remediation | 🟢 **VERIFIED RESOLVED** | AdGuard Home sync and NPM host 14 updated to `.40.185`/`.40.186`. **VERIFIED 2026-10-08**: User deployed native AdGuard DNS rewrite rules. Live query testing confirms:<br>• `stats.grafana.org` -> **NXDOMAIN (RCODE 3)**<br>• `stats.grafana.org.internal` -> **NXDOMAIN (RCODE 3)**<br>• `geo.hivebedrock.cloud` -> CNAME `minecraftconnect.secure.theurer.dev` -> `192.168.40.175`<br>Both primary (`.40.185`) and secondary (`.40.186`) DNS resolvers return clean RCODE 3, stopping the 44k/day loop. |
+| **`TASK_008`** | TCP PMTUD & Host MSS Clamping | ⚪ **RE-EVALUATED / UNNECESSARY** | Forensic review showed 0/85,111 nexus SYNs carrying MSS 1380 (all 1460). Only 12 ICMP frag-needed packets observed across 8 hours (none for nexus TCP). Clamping is not active and not needed. |
+| **`TASK_009`** | GitOps Monitoring Targets Alignment | 🟢 **COMPLETED** | Prometheus targets and Grafana dashboards updated for Core-1/3 and network printers (`commit 25b3520` & `commit 5249763`). |
+| **`TASK_010`** | Device Lease Renewals & Functional Testing | 🟢 **COMPLETED** | Sonos Move 2 & Roam 2 inter-VLAN discovery (SSDP/mDNS), playback, and volume control verified from VLAN 10. Vivint panel SDDP active on Port 1902. Google TV remote / cast multicast operational without packet drops. |
+| **`TASK_011`** | Observability Resume & 60/60 Audit | 🟢 **COMPLETED** | Stack 71 updated and healthy on `nexus-server`; Prometheus at 60/60 UP (100% healthy); Alertmanager probe alerts resolved. |
+| **`TASK_012`** | Post-Remediation PCAP Telemetry Delta | 🟢 **COMPLETED** | Telemetry engine executed across capture archives (`router_baseline_*.pcapng`). Confirmed: ICMP MTU drops = 0; STP TCNs = 0; legacy printer & controller ARPs eradicated; headless capture engine streaming ~48MB chunks reliably to `/mnt/n/wireshark-captures`. |
+| **`TASK_013`** | Final Aggregation & Operational Sign-off | ⏸️ **PAUSED** | Awaiting completion of the IP/MAC table verification from user's `Home-Lan-Audit.xlsx`. Once synchronized across router, switches, OvrC, and AdGuard Home, Part 8 can officially begin. |
 
 ---
 
@@ -34,10 +34,10 @@
 
 ---
 
-## 🔬 Forensic PCAP Review & Open Remediation Items (2026-10-05)
+## 🔬 Next Milestone Actions Prior to Part 8
 
-A subsequent deep-packet inspection of the overnight capture (documented in [`capture-review-2026-10-05.md`](capture-review-2026-10-05.md)) identified 3 follow-up action items refining tasks 005, 007, and 008:
-1. **WAN Port 53 Open Resolver (`TASK_005` refinement)**: The router port forward for UDP/TCP 53 forwards external WAN traffic to `192.168.40.185`. Must be removed in the Araknis web UI to close the public open resolver.
-2. **Control4 CA-10 DNS Query Loop (`TASK_007` refinement)**: `stats.grafana.org` resolves to `0.0.0.0` rather than `NXDOMAIN` (RCODE 3), causing CA-10 to query 188,416 times. AdGuard filter rule needs updating to return true `NXDOMAIN`.
-3. **TCP MSS Clamping Verification (`TASK_008` refinement)**: Certain host chains still show un-clamped SYNs. Ongoing validation tracked in `capture-review-2026-10-05.md`.
-
+1. **Authoritative IP/MAC Synchronization (`TASK_004` & `TASK_013`)**:
+   - Complete verification of `Home-Lan-Audit.xlsx`.
+   - Update `dhcp-reservations-reorganized.json` and sync to AdGuard Home persistent clients via `sync-adguard-clients.py`.
+   - Verify alignment across router, switches, OvrC, and AdGuard Home.
+2. **Proceed to Part 8 (Compute Platform Review & Resource Optimization)**.
