@@ -66,9 +66,9 @@ Full service catalog and container port mapping available in [`infrastructure/do
 
 | Node | Hostname | IP | Host Config Directory | Portainer Stacks Backup | Detailed Breakdown |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`pve`** | Dell Precision 5520 | `192.168.1.250` | [`infrastructure/hosts/pve/configs/`](infrastructure/hosts/pve/configs/) | **54 Stacks** ([`luna`](infrastructure/docker-stacks/luna-server/): 34, [`media`](infrastructure/docker-stacks/media-server/): 9, [`nexus`](infrastructure/docker-stacks/nexus-server/): 9, [`mc`](infrastructure/docker-stacks/minecraft-server/): 2) | [`vm-102-breakdown.md`](infrastructure/vms/pve-102-luna-server/vm-102-breakdown.md) |
+| **`pve`** | Dell Precision 5520 | `192.168.1.250` | [`infrastructure/hosts/pve/configs/`](infrastructure/hosts/pve/configs/) | **59 Stacks** ([`luna`](infrastructure/docker-stacks/luna-server/): 34, [`media`](infrastructure/docker-stacks/media-server/): 10, [`nexus`](infrastructure/docker-stacks/nexus-server/): 12, [`mc`](infrastructure/docker-stacks/minecraft-server/): 3) | [`vm-102-breakdown.md`](infrastructure/vms/pve-102-luna-server/vm-102-breakdown.md) |
 | **`pve2`** | Awow AK34Pro | `192.168.1.240` | [`infrastructure/hosts/pve2/configs/`](infrastructure/hosts/pve2/configs/) | **24 Stacks** ([`discovery-server`](infrastructure/docker-stacks/discovery-server/): 24) | [`vm-100-breakdown.md`](infrastructure/vms/pve2-100-discovery-server/vm-100-breakdown.md) |
-| **`pve3`** | HP EliteDesk | `192.168.1.245` | [`infrastructure/hosts/pve3/configs/`](infrastructure/hosts/pve3/configs/) | **13 Stacks** ([`nexus-server2`](infrastructure/docker-stacks/nexus-server2/): 13) | [`vm-100-breakdown.md`](infrastructure/vms/pve3-100-nexus-server2/vm-100-breakdown.md), [`vm-101-breakdown.md`](infrastructure/vms/pve3-101-nas-server/vm-101-breakdown.md) |
+| **`pve3`** | HP EliteDesk | `192.168.1.245` | [`infrastructure/hosts/pve3/configs/`](infrastructure/hosts/pve3/configs/) | **8 Stacks** ([`nexus-server2`](infrastructure/docker-stacks/nexus-server2/): 8) | [`vm-100-breakdown.md`](infrastructure/vms/pve3-100-nexus-server2/vm-100-breakdown.md), [`vm-101-breakdown.md`](infrastructure/vms/pve3-101-nas-server/vm-101-breakdown.md) |
 | **Total** | | | | **91 Stacks (188 Services)** | See [`STACK-INDEX.md`](infrastructure/docker-stacks/STACK-INDEX.md) |
 
 ---
