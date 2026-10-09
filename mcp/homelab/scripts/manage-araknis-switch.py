@@ -213,11 +213,36 @@ def cmd_poe_cycle(chan, port):
 
     return {"status": "success", "message": f"PoE power-cycled on port {port}"}
 
+def cmd_save(chan):
+    """Save running-config to startup-config (write memory)."""
+    # Flush existing buffer
+    while chan.recv_ready():
+        chan.recv(4096)
+
+    chan.send("write memory\n")
+    # Wait for the confirmation prompt "(y/n)"
+    buf = ""
+    start_time = time.time()
+    while time.time() - start_time < 15:
+        if chan.recv_ready():
+            chunk = chan.recv(4096).decode("utf-8", errors="ignore")
+            buf += chunk
+            if "(y/n)" in buf:
+                chan.send("y")
+                break
+        time.sleep(0.1)
+
+    # Wait for completion prompt
+    out = _read_until_prompt(chan, timeout=30)
+    buf += out
+    return {"status": "success", "message": "Configuration saved to flash", "output": buf.strip()}
+
 def main():
     parser = argparse.ArgumentParser(description="Manage Araknis 920 Switch via FASTPATH CLI")
     subparsers = parser.add_subparsers(dest="action", required=True)
 
     subparsers.add_parser("backup", help="Backup running-config to gitops repository")
+    subparsers.add_parser("save", help="Save running-config to startup-config (write memory)")
     subparsers.add_parser("status", help="Get operational status (ports, MACs, STP, IGMP, SPAN)")
 
     poe_parser = subparsers.add_parser("poe-cycle", help="Power cycle PoE on a specific port")
@@ -234,6 +259,9 @@ def main():
     try:
         if args.action == "backup":
             res = cmd_backup(chan)
+            print(json.dumps(res, indent=2))
+        elif args.action == "save":
+            res = cmd_save(chan)
             print(json.dumps(res, indent=2))
         elif args.action == "status":
             res = cmd_status(chan)
