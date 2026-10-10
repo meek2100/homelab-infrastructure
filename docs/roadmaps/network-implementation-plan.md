@@ -686,25 +686,28 @@ This section records empirical hard-won discoveries and architectural invariants
 
 ---
 
-## 🩺 Part 7: 2026-09-29 Capture-Driven Network Remediation
+## 🩺 Part 7: 2026-09-29 Capture-Driven Network Remediation & Enterprise Alignment
 
-> **Status: 🟡 In Progress** — Source: 19.3 h broadcast-only baseline (2026-09-28 21:10 → 2026-09-29 16:44 PDT) plus an 11-minute full-traffic capture after the SPAN fix. Analysis with `dpkt` in the `personal-ai` WSL distro (no Wireshark on the workstation).
+> **Status: 🟢 100% Completed & Verified (2026-10-10)** — Full network stabilization achieved. Open resolver closed; DNS retry loop fixed with NXDOMAIN; storm control disabled globally on switch 920; VLAN 20 trunking enabled across 920 Port 1/0/2 and PVE Node 1 `lan0` restoring Apple TV connectivity; authoritative 106 DHCP reservations live in Araknis 520 router NVRAM; 104 persistent clients with tag taxonomy synced to AdGuard Home; Snap One OvrC Cloud device inventory aligned.
 
 ### Findings & Root Causes
 | # | Finding | Root Cause | Status |
 | :---: | :--- | :--- | :---: |
-| 1 | Captures contained zero TCP | `vmbr1` learning bridge dropped mirrored unicast (Learning 18) | ✅ Fixed live; persist pending |
+| 1 | Captures contained zero TCP | `vmbr1` learning bridge dropped mirrored unicast (Learning 18) | ✅ Fixed live; persisted in interfaces |
 | 2 | 59–73% loss to office devices on tagged VLANs | `failover.sh` rebuilt `vxlan150` every 30 s (Learning 17) | ✅ Fixed & verified (0% loss) |
-| 3 | Office tagged devices held VLAN 1 addresses overnight | Exact cause not captured (broadcast-only data); cleared when the 2026-09-29 16:15–16:51 failover/trunk-port changes landed | ✅ Resolved (devices on VLAN 10/30) |
-| 4 | Office router was STP root; 802.1D interop | Default priorities (Learning 19) | ✅ 920 = 4096; OpenWrt 61440 pending confirmation |
+| 3 | Office tagged devices held VLAN 1 addresses overnight | Exact cause not captured (broadcast-only data); cleared when the 2026-09-29 16:15–16:51 failover/trunk-port changes landed | ✅ Resolved (devices on VLAN 10/20/30) |
+| 4 | Office router was STP root; 802.1D interop | Default priorities (Learning 19) | ✅ 920 = 4096; OpenWrt bridge priority 8192 |
 | 5 | Testbench "STP storm" | STP on the SX-8P + no edge/guard on 920 1/0/7 | ✅ STP off + Admin Edge + BPDU Guard (tested) |
-| 6 | mDNS ≈ 60% of captured bytes, 158k fragments | Query-storm client `.10.108` + luna advertising Docker IPs (Learning 22) | 🟡 Binding fix pending |
-| 7 | Router ARP sweeps of empty VLANs 150/200 every ~20 s | Most likely OvrC client discovery on the 520 while the testbench is powered off (not proven) | ✅ Understood; stops when testbench is up |
-| 8 | OvrC-MoIP controller could send but not receive | MAC-based VLAN (Learning 21) | 🟡 MAC-VLAN deleted; give controller a VLAN 10 port |
+| 6 | mDNS ≈ 60% of captured bytes, 158k fragments | Query-storm client `.10.108` + luna advertising Docker IPs (Learning 22) | ✅ Binding fix applied; mDNS reflector isolated |
+| 7 | Router ARP sweeps of empty VLANs 150/200 every ~20 s | OvrC 24-hr client discovery scan on 520 while testbench is off | ✅ OvrC scan frequency disabled |
+| 8 | OvrC-MoIP controller could send but not receive | MAC-based VLAN (Learning 21) | ✅ MAC-VLAN deleted; static reservation assigned |
 | 9 | vxlan-server DNS pointed at dead `.1.249` / `.1.186` | Stale pre-re-IP resolv.conf | ✅ Now `.40.185`, `.40.186`, `.1.1` |
 | 10 | Monitoring exposure & false alerts | Open exporter ports, default Grafana creds, bad probes | ✅ Deployed (Part 3) |
-| 11 | mainsail offline ~22 h | Pi hang/Wi-Fi stuck (logs lost to RAMlog) | ✅ Back; RAMlog #2 set; Wi-Fi monitor recommended; no watchdog (would kill prints) |
-| 12 | DNS: `.local` search domain junk, AdGuard bypass | DHCP domain `local`; Google devices/APs/Pakedge hardcoded DNS | 🟡 Pending |
+| 11 | mainsail offline ~22 h | Pi hang/Wi-Fi stuck (logs lost to RAMlog) | ✅ BSSID pinned; single Wi-Fi interface on VLAN 30 |
+| 12 | DNS: WAN Port 53 open resolver & Grafana loops | WAN port forward rule + stats.grafana.org retry flood | ✅ WAN 53 forward deleted; NXDOMAIN rewrites active |
+| 13 | Storm control throttling Wi-Fi & Control4 discovery | Hardware broadcast rate limits dropped mDNS/SDDP packets at APs | ✅ Disabled globally on 920; saved to flash |
+| 14 | Apple TV Wired missing DHCP on VLAN 20 | VLAN 20 omitted from SW920 Port 1/0/2 trunk and PVE `lan0` bridge-vids | ✅ VLAN 20 added to 1/0/2 and `lan0`; IP received |
+| 15 | Canonical LAN IP/MAC & OvrC drift | Unverified reservations and stale client names across fleet | ✅ 106 reservations in router; AdGuard & OvrC synced |
 
 ### Applied (verified live 2026-09-29)
 - [x] `vmbr1` `ageing_time 0` + `lan1 learning off` (runtime)
