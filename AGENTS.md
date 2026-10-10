@@ -4,7 +4,7 @@
 
 ### Always Do
 - **Zero-Trust Secrets**: Encrypt all credentials using SOPS + age (`*.enc.yaml`, key in `homelab-infrastructure.key`). Redact keys in logs.
-- **MCP Interface First**: All committed automation, backups, restores, and telemetry must run via FastMCP tools in `.venv`. Committed scripts must reside under `mcp/homelab/scripts/` and map to FastMCP tools.
+- **FastMCP Tool Calls First (Mandatory)**: All fleet automation, backups, restores, network changes, DNS sync, and telemetry MUST be executed directly via FastMCP tools using `call_mcp_tool` (ServerName: `homelab`). NEVER bypass registered MCP tools to execute underlying scripts via `run_command` or shell when an MCP tool exists for that operation!
 - **Local Scratch & Exploration**: Ad-hoc scripts, prototypes, WIP tests, or temporary dumps MUST stay in `.agents/scripts/` (untracked) and never committed to Git.
 - **QGA Binary Safety**: When extracting files via `qm guest exec`, base64-encode (`base64 -w 0`) inside the VM to prevent JSON parser data corruption.
 - **Base64 Payload Streaming**: Encode payloads before piping to `qm guest exec` (`echo '<b64>' | base64 -d > target`).
@@ -19,6 +19,7 @@
 - Deploying or re-deploying Portainer stacks on live VMs.
 
 ### Never Do
+- Never bypass registered FastMCP tools (`ServerName: homelab`) to run Python scripts or shell commands when a corresponding MCP tool exists.
 - Never commit plaintext secrets, `.key`, `.pem`, `.env`, or unencrypted credentials to Git.
 - Never create or commit standalone scripts outside of `mcp/homelab/scripts/`.
 - Never run Docker inside unprivileged LXC containers (use full VMs to avoid overlay2 bugs).
