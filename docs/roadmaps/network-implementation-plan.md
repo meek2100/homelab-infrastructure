@@ -991,8 +991,11 @@ Full report with frame references, filters and playbook: [`capture-review-2026-1
   - Verified live via raw UDP DNS query probes to Primary (`192.168.40.185`) and Secondary (`192.168.40.186`): both return clean `RCODE 3 (NXDOMAIN)`, eradicating the ~44k/day retry loop from Control4 CA-10 Director and Core controllers.
 - [x] **Araknis 920 Port 1/0/1 Storm Control Tuning (verified 2026-10-08):**
   - Removed 200 pps broadcast storm control from router trunk port 1/0/1 (`no storm-control broadcast` staged in `araknis-920-running.cfg`), eliminating dropped router ARP broadcasts. Edge AP/CA-10 ports configured to 1000 pps.
-- [ ] **Authoritative IP/MAC Table Reconciliation (in progress 2026-10-08):**
-  - Reconciling 115 live network assets across Araknis 520 DHCP reservations, Araknis 920 switch ports, OvrC inventory, and AdGuard persistent clients against user's authoritative `Home-Lan-Audit.xlsx`. Execution of Part 8 gated on completion of this audit.
+- [x] **Authoritative IP/MAC Table Reconciliation (VERIFIED RESOLVED 2026-10-10):**
+  - Reconciled 115 live network assets across Araknis 520 DHCP reservations, Araknis 920 switch ports, OvrC inventory, and AdGuard persistent clients against authoritative `.agents/lan-audit.csv`.
+  - 106 clean authoritative reservations applied and verified live in router NVRAM via API.
+  - 104 persistent clients with tag taxonomy synced to AdGuard Home via FastMCP.
+  - 32 device names and room assignments synced to live Snap One OvrC Cloud API via FastMCP. Parts 1–7.5 fully closed and verified.
 
 ---
 
