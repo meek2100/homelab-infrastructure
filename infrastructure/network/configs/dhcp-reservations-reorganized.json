@@ -3,7 +3,7 @@
     {
       "enable": true,
       "macAddress": "36:CF:D5:50:A0:FC",
-      "staticIPAddress": "192.168.1.151",
+      "staticIPAddress": "192.168.1.150",
       "name": "ProxMox VM - Vxlan Server br0"
     },
     {
@@ -82,79 +82,55 @@
       "enable": true,
       "macAddress": "9C:EB:E8:96:11:44",
       "staticIPAddress": "192.168.1.250",
-      "name": "ProxMox Host - Dell Precision "
+      "name": "ProxMox Host - Dell Precision"
     },
     {
       "enable": true,
-      "macAddress": "00:24:9B:55:A0:49",
-      "staticIPAddress": "192.168.1.251",
-      "name": "pve-wireshark"
+      "macAddress": "14:98:77:3E:4E:8D",
+      "staticIPAddress": "192.168.10.21",
+      "name": "Mac Mini Wifi"
+    },
+    {
+      "enable": true,
+      "macAddress": "88:66:5A:67:E8:12",
+      "staticIPAddress": "192.168.10.25",
+      "name": "Kimbers iPad Pro"
+    },
+    {
+      "enable": true,
+      "macAddress": "14:98:77:38:D9:03",
+      "staticIPAddress": "192.168.10.67",
+      "name": "Mac Mini Wired"
+    },
+    {
+      "enable": true,
+      "macAddress": "68:EF:DC:62:0D:4B",
+      "staticIPAddress": "192.168.10.95",
+      "name": "Kimbers iPhone"
     },
     {
       "enable": true,
       "macAddress": "A0:29:19:8F:5D:45",
       "staticIPAddress": "192.168.10.102",
-      "tailscaleIP": "10.85.10.102",
       "name": "Laptop 011PRD Wired"
     },
     {
       "enable": true,
       "macAddress": "F4:46:37:7A:6A:7A",
       "staticIPAddress": "192.168.10.103",
-      "tailscaleIP": "10.85.10.103",
       "name": "Laptop 011PRD Wi-Fi"
     },
     {
       "enable": true,
-      "macAddress": "14:98:77:3E:4E:8D",
-      "staticIPAddress": "192.168.10.104",
-      "name": "Mac Mini"
-    },
-    {
-      "enable": true,
-      "macAddress": "6E:72:FF:20:9B:AA",
+      "macAddress": "B0:D5:FB:9C:4D:22",
       "staticIPAddress": "192.168.10.110",
-      "tailscaleIP": "10.85.10.110",
       "name": "Pixel 10 Pro"
-    },
-    {
-      "enable": true,
-      "macAddress": "66:AF:7A:CC:EB:E4",
-      "staticIPAddress": "192.168.10.111",
-      "tailscaleIP": "10.85.10.111",
-      "name": "Kimber iPhone"
-    },
-    {
-      "enable": true,
-      "macAddress": "96:5D:E6:EE:4E:5B",
-      "staticIPAddress": "192.168.10.112",
-      "tailscaleIP": "10.85.10.112",
-      "name": "Kimber iPad"
-    },
-    {
-      "enable": true,
-      "macAddress": "BA:07:67:57:ED:7D",
-      "staticIPAddress": "192.168.10.113",
-      "tailscaleIP": "10.85.10.113",
-      "name": "Kimber iPad Pro"
     },
     {
       "enable": true,
       "macAddress": "F0:C3:71:4A:8A:27",
       "staticIPAddress": "192.168.10.114",
       "name": "Darin iPhone"
-    },
-    {
-      "enable": true,
-      "macAddress": "EE:A8:80:16:D5:A9",
-      "staticIPAddress": "192.168.10.115",
-      "name": "iPhone Client 1"
-    },
-    {
-      "enable": true,
-      "macAddress": "32:C2:B9:5F:40:56",
-      "staticIPAddress": "192.168.10.116",
-      "name": "iPhone Client 2"
     },
     {
       "enable": true,
@@ -166,19 +142,19 @@
       "enable": true,
       "macAddress": "90:A7:C1:4B:1D:71",
       "staticIPAddress": "192.168.10.118",
-      "name": "Pakedge Lab AP Client"
+      "name": "Pakedge 4MP IP Camera"
     },
     {
       "enable": true,
       "macAddress": "A4:C1:E8:13:20:48",
       "staticIPAddress": "192.168.10.130",
-      "name": "Nintendo Switch 1"
+      "name": "Kimber Nintendo Switch 2"
     },
     {
       "enable": true,
       "macAddress": "98:E2:55:3D:C4:B9",
       "staticIPAddress": "192.168.10.131",
-      "name": "Nintendo Switch 2"
+      "name": "Darin Nintendo Switch 2"
     },
     {
       "enable": true,
@@ -197,12 +173,6 @@
       "macAddress": "88:6A:E3:D8:EB:1C",
       "staticIPAddress": "192.168.10.151",
       "name": "Vivint Security Panel"
-    },
-    {
-      "enable": true,
-      "macAddress": "84:EB:3E:39:08:27",
-      "staticIPAddress": "192.168.10.152",
-      "name": "Vivint Outdoor Cam ODC350"
     },
     {
       "enable": true,
@@ -308,15 +278,27 @@
     },
     {
       "enable": true,
-      "macAddress": "58:D5:0A:A1:79:0A",
-      "staticIPAddress": "192.168.20.123",
-      "name": "Control4 T4 10 Tabletop Touchs"
+      "macAddress": "F8:8A:3C:70:A3:DE",
+      "staticIPAddress": "192.168.10.208",
+      "name": "Josh.ai System"
     },
     {
       "enable": true,
-      "macAddress": "3A:BF:95:75:C9:57",
-      "staticIPAddress": "192.168.20.101",
+      "macAddress": "10:98:C3:14:DD:EA",
+      "staticIPAddress": "192.168.20.90",
       "name": "Samsung Galaxy S9"
+    },
+    {
+      "enable": true,
+      "macAddress": "90:DD:5D:E3:8A:43",
+      "staticIPAddress": "192.168.20.96",
+      "name": "Apple TV WiFi"
+    },
+    {
+      "enable": true,
+      "macAddress": "90:DD:5D:E1:E5:FE",
+      "staticIPAddress": "192.168.20.97",
+      "name": "Apple TV Wired"
     },
     {
       "enable": true,
@@ -326,22 +308,14 @@
     },
     {
       "enable": true,
-      "macAddress": "BA:98:6B:7F:13:B7",
-      "staticIPAddress": "192.168.20.104",
-      "name": "Guest Mobile Device 2"
-    },
-    {
-      "enable": true,
       "macAddress": "02:00:00:20:01:05",
       "staticIPAddress": "192.168.20.105",
-      "tailscaleIP": "100.85.20.105",
       "name": "Jen iPhone"
     },
     {
       "enable": true,
       "macAddress": "02:00:00:20:01:06",
       "staticIPAddress": "192.168.20.106",
-      "tailscaleIP": "100.85.20.106",
       "name": "Preston iPhone"
     },
     {
@@ -366,13 +340,19 @@
       "enable": true,
       "macAddress": "34:15:13:D2:BD:1E",
       "staticIPAddress": "192.168.20.122",
-      "name": "Control4 SR-260 Remote"
+      "name": "Control4 Neeo Remote"
+    },
+    {
+      "enable": true,
+      "macAddress": "58:D5:0A:A1:79:0A",
+      "staticIPAddress": "192.168.20.123",
+      "name": "Control4 T4 10 Tabletop Touchs"
     },
     {
       "enable": true,
       "macAddress": "24:62:AB:BD:94:8C",
       "staticIPAddress": "192.168.20.125",
-      "name": "Hatch Rest+ Sound Machine"
+      "name": "Hatch Rest Plus Sound Machine"
     },
     {
       "enable": true,
@@ -396,31 +376,31 @@
       "enable": true,
       "macAddress": "F4:F5:D8:D9:B2:6A",
       "staticIPAddress": "192.168.20.210",
-      "name": "Sewing Room Speaker (Google Home)"
+      "name": "Sewing Room Speaker"
     },
     {
       "enable": true,
       "macAddress": "F4:F5:D8:BD:4E:60",
       "staticIPAddress": "192.168.20.211",
-      "name": "Downstairs Guest Room Speaker (Google Home)"
+      "name": "Downstairs Guest Room Speaker"
     },
     {
       "enable": true,
       "macAddress": "F4:F5:D8:A6:88:D0",
       "staticIPAddress": "192.168.20.212",
-      "name": "Primary Bedroom Speaker (Google Home)"
+      "name": "Primary Bedroom Speaker"
     },
     {
       "enable": true,
       "macAddress": "E4:F0:42:0E:43:98",
       "staticIPAddress": "192.168.20.213",
-      "name": "Emme Bedroom Speaker (Google Home)"
+      "name": "Emme Bedroom Speaker"
     },
     {
       "enable": true,
       "macAddress": "48:D6:D5:73:61:91",
       "staticIPAddress": "192.168.20.214",
-      "name": "Emme Bathroom Speaker (Google Home)"
+      "name": "Emme Bathroom Speaker"
     },
     {
       "enable": true,
@@ -450,7 +430,7 @@
       "enable": true,
       "macAddress": "BC:DF:58:65:5A:32",
       "staticIPAddress": "192.168.20.231",
-      "name": "Downstairs Guest TV (Chromecast)"
+      "name": "Downstairs Guest TV (Chromecast"
     },
     {
       "enable": true,
@@ -498,7 +478,7 @@
       "enable": true,
       "macAddress": "E4:5F:01:78:DF:81",
       "staticIPAddress": "192.168.30.90",
-      "name": "mainsail"
+      "name": "Mainsail 3D Printer (Ender3 v2)"
     },
     {
       "enable": true,
@@ -514,27 +494,15 @@
     },
     {
       "enable": true,
-      "macAddress": "90:DD:5D:E1:E5:FE",
-      "staticIPAddress": "192.168.30.160",
-      "name": "Apple Office Hub HomePod"
-    },
-    {
-      "enable": true,
       "macAddress": "C0:EE:40:70:BC:9D",
       "staticIPAddress": "192.168.30.163",
       "name": "Laird Connectivity Module"
     },
     {
       "enable": true,
-      "macAddress": "D0:B0:CD:03:2C:88",
-      "staticIPAddress": "192.168.30.170",
-      "name": "Moen Smart Water Valve 1"
-    },
-    {
-      "enable": true,
       "macAddress": "D0:B0:CD:03:C9:54",
       "staticIPAddress": "192.168.30.171",
-      "name": "Moen Smart Water Valve 2"
+      "name": "Moen Smart Faucet"
     },
     {
       "enable": true,
@@ -546,43 +514,43 @@
       "enable": true,
       "macAddress": "D8:28:C9:75:63:F6",
       "staticIPAddress": "192.168.30.176",
-      "name": "GE Smart Appliance 1"
+      "name": "GE Smart Washer"
     },
     {
       "enable": true,
       "macAddress": "D8:28:C9:61:57:A5",
       "staticIPAddress": "192.168.30.177",
-      "name": "GE Smart Appliance 2"
+      "name": "GE Smart Dryer"
     },
     {
       "enable": true,
       "macAddress": "FC:3C:D7:0F:E0:84",
       "staticIPAddress": "192.168.30.180",
-      "name": "Tuya Smart Light 1"
+      "name": "Tuya Light (Primary Bedroom)"
     },
     {
       "enable": true,
       "macAddress": "FC:3C:D7:10:A4:93",
       "staticIPAddress": "192.168.30.181",
-      "name": "Tuya Smart Light 2"
+      "name": "Tuya Light (Office Right)"
     },
     {
       "enable": true,
       "macAddress": "FC:3C:D7:10:D7:47",
       "staticIPAddress": "192.168.30.182",
-      "name": "Tuya Smart Light 3"
+      "name": "Tuya Light (Office Left)"
     },
     {
       "enable": true,
       "macAddress": "FC:3C:D7:11:19:D6",
       "staticIPAddress": "192.168.30.183",
-      "name": "Tuya Smart Light 4"
+      "name": "Tuya Light (Upstairs Landing)"
     },
     {
       "enable": true,
       "macAddress": "FC:3C:D7:12:CE:8C",
       "staticIPAddress": "192.168.30.184",
-      "name": "Tuya Smart Light 5"
+      "name": "Tuya Light (Sewing Room)"
     },
     {
       "enable": true,
@@ -606,31 +574,19 @@
       "enable": true,
       "macAddress": "04:78:63:3E:F9:25",
       "staticIPAddress": "192.168.30.193",
-      "name": "Smart Appliance MXCHIP"
+      "name": "Tempest WeatherFlow Hub"
     },
     {
       "enable": true,
       "macAddress": "02:F5:58:97:8E:88",
       "staticIPAddress": "192.168.40.155",
-      "name": "Virtual TAP Interface Host"
-    },
-    {
-      "enable": true,
-      "macAddress": "BC:24:11:5B:43:43",
-      "staticIPAddress": "192.168.40.165",
-      "name": "Debian 12 VM"
+      "name": "GP-Proxy Docker Host"
     },
     {
       "enable": true,
       "macAddress": "BC:24:11:17:C9:60",
       "staticIPAddress": "192.168.40.175",
       "name": "ProxMox - Minecraft Docker Ser"
-    },
-    {
-      "enable": true,
-      "macAddress": "BC:24:11:17:B9:4F",
-      "staticIPAddress": "192.168.40.176",
-      "name": "ProxMox - Docker Dev and Testi"
     },
     {
       "enable": true,
@@ -643,12 +599,6 @@
       "macAddress": "BC:24:11:BB:08:AD",
       "staticIPAddress": "192.168.40.186",
       "name": "ProxMox Host - Nexus2"
-    },
-    {
-      "enable": true,
-      "macAddress": "BC:24:11:EF:2D:13",
-      "staticIPAddress": "192.168.40.246",
-      "name": "ProxMox VM - Discovery Server"
     },
     {
       "enable": true,
@@ -673,12 +623,6 @@
       "macAddress": "00:0F:FF:51:92:2F",
       "staticIPAddress": "192.168.150.201",
       "name": "Control4 CA-1 Controller"
-    },
-    {
-      "enable": true,
-      "macAddress": "F8:8A:3C:70:A3:DE",
-      "staticIPAddress": "192.168.200.151",
-      "name": "Josh.ai System"
     },
     {
       "enable": true,
