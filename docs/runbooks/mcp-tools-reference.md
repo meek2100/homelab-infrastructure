@@ -26,7 +26,7 @@ This document provides the authoritative, extensive reference for the **20 conso
 | # | Tool Name | Functional Domain | Primary Actions | Underlying Script |
 | :-: | :--- | :--- | :--- | :--- |
 | **1** | `sync_fleet` | Fleet GitOps Drift | `diff_only`, `apply` | `sync-live-fleet.py` |
-| **2** | `manage_hosts` | Physical Hypervisors | `audit`, `backup`, `restore`, `restore_configs`, `register` | `extract_host_configs.sh`, `restore-host-drifts.py`, `restore-host-configs.py` |
+| **2** | `manage_hosts` | Physical Hypervisors | `audit`, `backup`, `restore`, `restore_configs`, `register`, `bios_snapshot` | `extract_host_configs.sh`, `snapshot-fleet-bios.sh`, `restore-host-drifts.py` |
 | **3** | `manage_vms` | QEMU VMs & LXCs | `list`, `status`, `start`, `stop`, `restore`, `register` | Native SSH / QGA / `restore-vm-drifts.py` |
 | **4** | `manage_vm_snapshots` | VM Snapshots & PBS | `list`, `create`, `rollback`, `delete`, `vzdump` | `manage-vm-snapshots.py` |
 | **5** | `manage_stacks` | Portainer Stacks (91) | `index`, `backup`, `restore`, `start` | `generate-stack-index.py`, `restore-docker-stacks.py`, `start-docker-stacks.py` |
@@ -65,13 +65,15 @@ This document provides the authoritative, extensive reference for the **20 conso
 #### `manage_hosts`
 * **Purpose**: Lifecycle, drift audit, and configuration capture for physical Proxmox nodes (`pve`, `pve2`, `pve3`).
 * **Arguments**:
-  - `action` (*str*, required): `'audit'`, `'backup'`, `'restore'`, `'restore_configs'`, or `'register'`.
-  - `node` (*str*, optional): Target host (e.g. `'pve'`, `'pve2'`, `'pve3'`).
+  - `action` (*str*, required): `'audit'`, `'backup'`, `'restore'`, `'restore_configs'`, `'register'`, or `'bios_snapshot'`.
+  - `node` (*str*, optional): Target host (e.g. `'pve'`, `'pve2'`, `'pve3'`, or omit/pass `'all'` for fleet-wide).
   - `ip` (*str*, optional): Host IP address when registering.
 * **Example**:
   ```python
   manage_hosts(action="backup")
   manage_hosts(action="restore", node="pve")
+  manage_hosts(action="bios_snapshot", node="pve")   # Single host audit
+  manage_hosts(action="bios_snapshot")               # Fleet-wide audit (all 3 hosts)
   ```
 
 #### `manage_vms`
