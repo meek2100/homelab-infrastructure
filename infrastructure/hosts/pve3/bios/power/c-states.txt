@@ -1,0 +1,6 @@
+[state0] name=POLL desc=CPUIDLE CORE POLL IDLE disable=0
+[state1] name=C1 desc=MWAIT 0x00 disable=0
+[state2] name=C1E desc=MWAIT 0x01 disable=0
+[state3] name=C3 desc=MWAIT 0x10 disable=0
+[state4] name=C6 desc=MWAIT 0x20 disable=0
+[state5] name=C7s desc=MWAIT 0x32 disable=0

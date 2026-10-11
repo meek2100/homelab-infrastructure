@@ -1,0 +1,50 @@
+[    0.000000] Command line: BOOT_IMAGE=/boot/vmlinuz-6.17.2-2-pve root=/dev/mapper/pve-root ro consoleblank=60 pcie_aspm=off intel_iommu=on iommu=pt
+[    0.009530] ACPI: DMAR 0x0000000077F006D0 0000F0 (v01 INTEL  KBL      00000001 INTL 00000001)
+[    0.009561] ACPI: Reserving DMAR table memory at [mem 0x77f006d0-0x77f007bf]
+[    0.056079] Kernel command line: BOOT_IMAGE=/boot/vmlinuz-6.17.2-2-pve root=/dev/mapper/pve-root ro consoleblank=60 pcie_aspm=off intel_iommu=on iommu=pt
+[    0.056155] DMAR: IOMMU enabled
+[    0.166154] DMAR: Host address width 39
+[    0.166157] DMAR: DRHD base: 0x000000fed90000 flags: 0x0
+[    0.166171] DMAR: dmar0: reg_base_addr fed90000 ver 1:0 cap 1c0000c40660462 ecap 19e2ff0505e
+[    0.166176] DMAR: DRHD base: 0x000000fed91000 flags: 0x1
+[    0.166181] DMAR: dmar1: reg_base_addr fed91000 ver 1:0 cap d2008c40660462 ecap f050da
+[    0.166186] DMAR: RMRR base: 0x00000077bd6000 end: 0x00000077bf5fff
+[    0.166189] DMAR: RMRR base: 0x0000007b000000 end: 0x0000007f7fffff
+[    0.166192] DMAR: ANDD device: 1 name: \_SB.PCI0.I2C0
+[    0.166195] DMAR: ANDD device: 2 name: \_SB.PCI0.I2C1
+[    0.166198] DMAR-IR: IOAPIC id 2 under DRHD base  0xfed91000 IOMMU 1
+[    0.166201] DMAR-IR: HPET id 0 under DRHD base 0xfed91000
+[    0.166204] DMAR-IR: Queued invalidation will be enabled to support x2apic and Intr-remapping.
+[    0.167999] DMAR-IR: Enabled IRQ remapping in x2apic mode
+[    0.482933] iommu: Default domain type: Passthrough (set via kernel command line)
+[    0.537859] DMAR: ACPI device "device:78" under DMAR at fed91000 as 00:15.0
+[    0.537867] DMAR: ACPI device "device:79" under DMAR at fed91000 as 00:15.1
+[    0.537881] DMAR: No ATSR found
+[    0.537884] DMAR: No SATC found
+[    0.537886] DMAR: dmar0: Using Queued invalidation
+[    0.537892] DMAR: dmar1: Using Queued invalidation
+[    0.538456] pci 0000:00:02.0: Adding to iommu group 0
+[    0.538508] pci 0000:00:00.0: Adding to iommu group 1
+[    0.538530] pci 0000:00:01.0: Adding to iommu group 2
+[    0.538544] pci 0000:00:04.0: Adding to iommu group 3
+[    0.538567] pci 0000:00:14.0: Adding to iommu group 4
+[    0.538581] pci 0000:00:14.2: Adding to iommu group 4
+[    0.538604] pci 0000:00:15.0: Adding to iommu group 5
+[    0.538617] pci 0000:00:15.1: Adding to iommu group 5
+[    0.538635] pci 0000:00:16.0: Adding to iommu group 6
+[    0.538649] pci 0000:00:17.0: Adding to iommu group 7
+[    0.538667] pci 0000:00:1c.0: Adding to iommu group 8
+[    0.538682] pci 0000:00:1d.0: Adding to iommu group 9
+[    0.538704] pci 0000:00:1d.4: Adding to iommu group 10
+[    0.538721] pci 0000:00:1d.6: Adding to iommu group 11
+[    0.538749] pci 0000:00:1f.0: Adding to iommu group 12
+[    0.538763] pci 0000:00:1f.2: Adding to iommu group 12
+[    0.538778] pci 0000:00:1f.4: Adding to iommu group 12
+[    0.538786] pci 0000:01:00.0: Adding to iommu group 2
+[    0.538802] pci 0000:02:00.0: Adding to iommu group 13
+[    0.538818] pci 0000:03:00.0: Adding to iommu group 14
+[    0.538834] pci 0000:05:00.0: Adding to iommu group 15
+[    0.538867] pci 0000:06:00.0: Adding to iommu group 16
+[    0.538895] pci 0000:06:01.0: Adding to iommu group 17
+[    0.538922] pci 0000:06:02.0: Adding to iommu group 18
+[    0.538937] pci 0000:3d:00.0: Adding to iommu group 18

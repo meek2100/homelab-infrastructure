@@ -1,0 +1,50 @@
+# dmidecode 3.6
+Getting SMBIOS data from sysfs.
+SMBIOS 2.7 present.
+
+Handle 0x0000, DMI type 0, 24 bytes
+BIOS Information
+	Vendor: Hewlett-Packard
+	Version: L04 v02.33
+	Release Date: 04/17/2019
+	Address: 0xF0000
+	Runtime Size: 64 kB
+	ROM Size: 16 MB
+	Characteristics:
+		PCI is supported
+		PNP is supported
+		BIOS is upgradeable
+		BIOS shadowing is allowed
+		Boot from CD is supported
+		Selectable boot is supported
+		EDD is supported
+		Print screen service is supported (int 5h)
+		8042 keyboard services are supported (int 9h)
+		Serial services are supported (int 14h)
+		Printer services are supported (int 17h)
+		ACPI is supported
+		USB legacy is supported
+		BIOS boot specification is supported
+		Function key-initiated network boot is supported
+		Targeted content distribution is supported
+		UEFI is supported
+	BIOS Revision: 2.33
+
+Handle 0x001F, DMI type 13, 22 bytes
+BIOS Language Information
+	Language Description Format: Long
+	Installable Languages: 12
+		en|US|iso8859-1
+		fr|FR|iso8859-1
+		es|ES|iso8859-1
+		de|DE|iso8859-1
+		it|IT|iso8859-1
+		da|DK|iso8859-1
+		fi|FI|iso8859-1
+		nl|NL|iso8859-1
+		no|NO|iso8859-1
+		pt|PT|iso8859-1
+		sv|SE|iso8859-1
+		ja|JP|unicode
+	Currently Installed Language: en|US|iso8859-1
+

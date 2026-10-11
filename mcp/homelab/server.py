@@ -109,7 +109,7 @@ def sync_fleet(apply: bool = False, diff_only: bool = True) -> str:
 
 @mcp.tool()
 def manage_hosts(
-    action: Literal["audit", "backup", "restore", "restore_configs", "register"],
+    action: Literal["audit", "backup", "restore", "restore_configs", "register", "bios_snapshot"],
     node: str | None = None,
     ip: str | None = None
 ) -> str:
@@ -119,7 +119,8 @@ def manage_hosts(
       - 'backup': Extract network interfaces, storage definitions, and cron to Git.
       - 'restore': Restore host drift artifacts and system configs.
       - 'restore_configs': Restore /etc/network/interfaces and storage.cfg.
-      - 'register': Register or update a host IP definition in infrastructure/hosts."""
+      - 'register': Register or update a host IP definition in infrastructure/hosts.
+      - 'bios_snapshot': Extract firmware, BIOS WMI attributes, DMI tables, and C-state snapshots."""
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     action = action.lower().strip()
     if action == "audit":
@@ -130,6 +131,8 @@ def manage_hosts(
         return run_script("restore-host-drifts.py", [node] if node else [])
     elif action == "restore_configs":
         return run_script("restore-host-configs.py", [node] if node else [])
+    elif action == "bios_snapshot":
+        return run_bash_script("snapshot-fleet-bios.sh", [node] if node else ["all"])
     elif action == "register":
         if not node or not ip:
             return "Error: Both 'node' and 'ip' are required for action='register'."
@@ -138,7 +141,7 @@ def manage_hosts(
         with open(os.path.join(host_dir, "meta.json"), "w") as f:
             json.dump({"ip": ip}, f, indent=4)
         return f"Successfully registered host {node} ({ip}) at {host_dir}"
-    return f"Unknown host action: '{action}'. Valid actions: audit, backup, restore, restore_configs, register."
+    return f"Unknown host action: '{action}'. Valid actions: audit, backup, restore, restore_configs, register, bios_snapshot."
 
 @mcp.tool()
 def manage_vms(

@@ -1,0 +1,48 @@
+# dmidecode 3.6
+Getting SMBIOS data from sysfs.
+SMBIOS 3.0.0 present.
+
+Handle 0x0001, DMI type 1, 27 bytes
+System Information
+	Manufacturer: Dell Inc.
+	Product Name: Precision 5520
+	Version: Not Specified
+	Serial Number: 3W0NSQ2
+	UUID: 4c4c4544-0057-3010-804e-b3c04f535132
+	Wake-up Type: Power Switch
+	SKU Number: 07BF
+	Family: Precision
+
+Handle 0x002B, DMI type 12, 5 bytes
+System Configuration Options
+	Option 1: Default string
+
+Handle 0x002C, DMI type 15, 35 bytes
+System Event Log
+	Area Length: 4 bytes
+	Header Start Offset: 0x0000
+	Header Length: 2 bytes
+	Data Start Offset: 0x0002
+	Access Method: Indexed I/O, one 16-bit index port, one 8-bit data port
+	Access Address: Index 0x046A, Data 0x046C
+	Status: Invalid, Not Full
+	Change Token: 0x00000000
+	Header Format: No Header
+	Supported Log Type Descriptors: 6
+	Descriptor 1: End of log
+	Data Format 1: OEM-specific
+	Descriptor 2: End of log
+	Data Format 2: OEM-specific
+	Descriptor 3: End of log
+	Data Format 3: OEM-specific
+	Descriptor 4: End of log
+	Data Format 4: OEM-specific
+	Descriptor 5: End of log
+	Data Format 5: OEM-specific
+	Descriptor 6: End of log
+	Data Format 6: OEM-specific
+
+Handle 0x0033, DMI type 32, 20 bytes
+System Boot Information
+	Status: No errors detected
+

@@ -1,0 +1,25 @@
+=== ADP1 ===
+==> /sys/class/power_supply/ADP1/device <==
+
+==> /sys/class/power_supply/ADP1/extensions <==
+
+==> /sys/class/power_supply/ADP1/hwmon0 <==
+
+==> /sys/class/power_supply/ADP1/online <==
+0
+
+==> /sys/class/power_supply/ADP1/power <==
+
+==> /sys/class/power_supply/ADP1/subsystem <==
+
+==> /sys/class/power_supply/ADP1/type <==
+Mains
+
+==> /sys/class/power_supply/ADP1/uevent <==
+DEVTYPE=power_supply
+POWER_SUPPLY_NAME=ADP1
+POWER_SUPPLY_TYPE=Mains
+POWER_SUPPLY_ONLINE=0
+POWER_SUPPLY_TYPE=Mains
+
+==> /sys/class/power_supply/ADP1/wakeup21 <==

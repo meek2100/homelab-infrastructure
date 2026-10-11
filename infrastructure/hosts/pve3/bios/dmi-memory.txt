@@ -1,0 +1,55 @@
+# dmidecode 3.6
+Getting SMBIOS data from sysfs.
+SMBIOS 2.7 present.
+
+Handle 0x000D, DMI type 16, 23 bytes
+Physical Memory Array
+	Location: System Board Or Motherboard
+	Use: System Memory
+	Error Correction Type: None
+	Maximum Capacity: 16 GB
+	Error Information Handle: Not Provided
+	Number Of Devices: 2
+
+Handle 0x000E, DMI type 17, 34 bytes
+Memory Device
+	Array Handle: 0x000D
+	Error Information Handle: Not Provided
+	Total Width: 64 bits
+	Data Width: 64 bits
+	Size: 8 GB
+	Form Factor: SODIMM
+	Set: None
+	Locator: DIMM3
+	Bank Locator: BANK 2
+	Type: DDR3
+	Type Detail: Synchronous
+	Speed: 1600 MT/s
+	Manufacturer: Ramaxel
+	Serial Number: 68121509
+	Asset Tag: 9876543210
+	Part Number: RMT3160EB68FAW1600
+	Rank: 2
+	Configured Memory Speed: 1600 MT/s
+
+Handle 0x0010, DMI type 17, 34 bytes
+Memory Device
+	Array Handle: 0x000D
+	Error Information Handle: Not Provided
+	Total Width: 64 bits
+	Data Width: 64 bits
+	Size: 8 GB
+	Form Factor: SODIMM
+	Set: None
+	Locator: DIMM1
+	Bank Locator: BANK 0
+	Type: DDR3
+	Type Detail: Synchronous
+	Speed: 1600 MT/s
+	Manufacturer: Samsung
+	Serial Number: 18242346
+	Asset Tag: 9876543210
+	Part Number: M471B1G73QH0-YK0  
+	Rank: 2
+	Configured Memory Speed: 1600 MT/s
+

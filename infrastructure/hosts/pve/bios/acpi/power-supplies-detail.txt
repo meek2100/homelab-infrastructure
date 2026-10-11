@@ -1,0 +1,25 @@
+=== AC ===
+==> /sys/class/power_supply/AC/device <==
+
+==> /sys/class/power_supply/AC/extensions <==
+
+==> /sys/class/power_supply/AC/hwmon0 <==
+
+==> /sys/class/power_supply/AC/online <==
+1
+
+==> /sys/class/power_supply/AC/power <==
+
+==> /sys/class/power_supply/AC/subsystem <==
+
+==> /sys/class/power_supply/AC/type <==
+Mains
+
+==> /sys/class/power_supply/AC/uevent <==
+DEVTYPE=power_supply
+POWER_SUPPLY_NAME=AC
+POWER_SUPPLY_TYPE=Mains
+POWER_SUPPLY_ONLINE=1
+POWER_SUPPLY_TYPE=Mains
+
+==> /sys/class/power_supply/AC/wakeup32 <==

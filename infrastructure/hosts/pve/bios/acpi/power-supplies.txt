@@ -1,0 +1,4 @@
+total 0
+drwxr-xr-x  2 root root 0 Oct 11 01:07 .
+drwxr-xr-x 76 root root 0 Oct  7 16:09 ..
+lrwxrwxrwx  1 root root 0 Oct  7 16:09 AC -> ../../devices/platform/ACPI0003:00/power_supply/AC

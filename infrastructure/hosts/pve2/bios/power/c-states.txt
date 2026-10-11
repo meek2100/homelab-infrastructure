@@ -1,0 +1,4 @@
+[state0] name=POLL desc=CPUIDLE CORE POLL IDLE disable=0
+[state1] name=C1 desc=ACPI HLT disable=0
+[state2] name=C2 desc=ACPI IOPORT 0x415 disable=0
+[state3] name=C3 desc=ACPI IOPORT 0x419 disable=0
