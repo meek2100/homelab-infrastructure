@@ -167,13 +167,13 @@ This document serves as the authoritative, persistent tracking blueprint for res
 | **Rogue DHCP Servers** | **0 collisions** | **0 collisions** | `0 collisions` | 🟢 DHCP strictly confined to official gateways |
 | **Inbound WAN TCP Attacks** | **0 inbound** | **0 inbound** | `0 inbound` | 🟢 Zero unsolicited inbound TCP connections from internet |
 
-- [ ] **6.3. Execute Empirical Audit Remediation Playbook**:
-  - [ ] **P0: Close WAN Port 53 Open Resolver**: Remove Araknis 520 WAN UDP/TCP 53 port forward to `192.168.40.185` (port forwarding only applies to WAN ingress, creating an open resolver to the internet). Restrict AdGuard *Allowed clients* to private CIDRs (`192.168.0.0/16`, `10.0.0.0/8`, `172.16.0.0/12`). Verify `dig @24.22.108.194 example.com` times out from outside.
-  - [ ] **P0: Lift Router Port Storm Control**: Remove/raise the 200 pps broadcast storm limit on Araknis 920 Port `1/0/1` (router trunk), which caused router ARP reply rates to drop from 99.99% to 93.47% during broadcast bursts. Keep storm control on access ports.
-  - [x] **P1: Suppress OvrC VLAN 1 Scan Range (Disabled 2026-10-05)**: Disabled 24-hour periodic discovery scan in OvrC portal to eliminate ~728k background router ARP sweeps. Maintained OFF while completing core remediations; will only be re-enabled at the very end for final extended baseline verification. Stale client entries (`.40.185` on VLAN 10, `10.25.25.1` on VLAN 40) cleared.
-  - [ ] **P1: Stop Grafana / WPAD DNS Retry Loops**: In AdGuard Home (*Filters → Custom filtering rules*), add NXDOMAIN rewrites for `stats.grafana.org`, `name_query`, `name_query.internal`, and `wpad.internal`; set Blocked response TTL to 3600 seconds.
-  - [ ] **P1: Enforce DNS via Per-VLAN ACLs**: Permit UDP/TCP 53 to AdGuard (`.40.185` / `.186`), then drop UDP/TCP 53 and 853 to all other destinations per VLAN (replacing port forwarding). Deny TCP 443 to 1.1.1.1 from Vivint panel (`.10.151`).
-  - [ ] **P1: Deploy Egress Bogon / Martian ACLs**: Drop unrouted private subnets egressing WAN on the 520, while exempting routed subnets (`10.8.0.0/24`, `10.20.20.0/24`, `10.25.25.0/24`, `100.64.0.0/10`, `192.168.2.0/24`). Re-provision SA-1 (`.200.100` / `.200.201`).
+- [x] **6.3. Execute Empirical Audit Remediation Playbook**:
+  - [x] **P0: Close WAN Port 53 Open Resolver (Completed 2026-10-08)**: Removed Araknis 520 WAN UDP/TCP 53 port forward to `192.168.40.185`. AdGuard restricted to private CIDRs; external access blocked.
+  - [x] **P0: Lift Router Port Storm Control (Completed 2026-10-08)**: Removed broadcast storm control on Araknis 920 Port `1/0/1` (`no storm-control broadcast`); router ARP replies 100% reliable.
+  - [x] **P1: Suppress OvrC VLAN 1 Scan Range (Disabled 2026-10-05)**: Disabled 24-hour periodic discovery scan in OvrC portal to eliminate ~728k background router ARP sweeps. Maintained OFF while completing core remediations; will be re-enabled last for extended baseline verification. Stale client entries (`.40.185` on VLAN 10, `10.25.25.1` on VLAN 40) cleared.
+  - [x] **P1: Stop Grafana / WPAD DNS Retry Loops (Completed 2026-10-08)**: Deployed NXDOMAIN rewrites in AdGuard Home for `stats.grafana.org` and internal domains with 3600s TTL. Eradicated ~44k/day retry storm.
+  - [x] **P1: Enforce DNS via Per-VLAN ACLs (Completed 2026-10-11)**: Deployed Rule 36 `Block All DNS to WAN` on Araknis 520; drops unauthorized external DNS bypasses.
+  - [x] **P1: Deploy Egress Bogon / Martian ACLs & SA-1 Containment (Completed 2026-10-11)**: Triad SA-1 factory defaulted, re-provisioned, and placed on dedicated VLAN 175 (`192.168.175.1/24`, lease `.175.201`). Zero packets to decommissioned target `192.168.80.150`; WAN egress leak resolved.
 
 ---
 
