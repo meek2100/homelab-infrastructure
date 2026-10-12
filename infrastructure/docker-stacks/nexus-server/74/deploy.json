@@ -1,7 +1,0 @@
-{
-  "node": "pve",
-  "vmid": 100,
-  "stack_id": "74",
-  "stack_name": "chrony",
-  "remote_path": "/home/meek2100/docker/chrony/docker-compose.yml"
-}
