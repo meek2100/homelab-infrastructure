@@ -298,26 +298,38 @@ def manage_apt_packages(
 
 @mcp.tool()
 def manage_araknis_router(
-    action: Literal["status", "backup", "restore"] = "status",
+    action: Literal["status", "backup", "restore", "get_acls", "apply_acls"] = "status",
     config_file: str | None = None,
+    payload_file: str | None = None,
     confirm: bool = False
 ) -> str:
     """Manage Araknis 520 Dual-WAN Router (192.168.10.1 / 192.168.1.1) via native REST API.
     Actions:
       - 'status': Audit router health, WAN links, subnets, DHCP leases, and 36 ACL rules.
       - 'backup': Export running configuration blob to infrastructure/network/configs/araknis-520-backup.cfg.
-      - 'restore': Restore encrypted configuration blob from Git blueprint (confirm=True required)."""
+      - 'restore': Restore encrypted configuration blob from Git blueprint (confirm=True required).
+      - 'get_acls': Fetch live ACL rules and service definitions in JSON.
+      - 'apply_acls': Apply ACL rules from JSON payload_file (confirm=True required)."""
     action = action.lower().strip()
     if action == "status":
         return run_script("manage-araknis-router.py", ["status"])
     elif action == "backup":
         return run_script("manage-araknis-router.py", ["backup"])
+    elif action == "get_acls":
+        return run_script("manage-araknis-router.py", ["get-acls", "--json"])
+    elif action == "apply_acls":
+        if not payload_file:
+            return "Error: 'payload_file' required for apply_acls."
+        if not confirm:
+            return "Error: 'confirm=True' required to apply live router ACLs."
+        return run_script("manage-araknis-router.py", ["apply-acls", "--payload-file", payload_file])
     elif action == "restore":
         args = ["restore"]
         if config_file: args.extend(["--file", config_file])
         if confirm: args.append("--confirm")
         return run_script("manage-araknis-router.py", args)
-    return f"Unknown action: '{action}'. Valid actions: status, backup, restore."
+    return f"Unknown action: '{action}'. Valid actions: status, backup, restore, get_acls, apply_acls."
+
 
 @mcp.tool()
 def manage_araknis_switch(

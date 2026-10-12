@@ -885,13 +885,13 @@
       "service_id": 1
     },
     {
-      "aclName": "Quarantine Roku TV WAN",
+      "aclName": "Block All DNS to WAN",
       "action": "Deny",
-      "serviceName": "All Traffic",
+      "serviceName": "DNS",
       "incomingInterface": "LAN",
       "outgoingInterface": "WAN1",
-      "sourceType": "Single IP",
-      "sourceValue": "192.168.20.240",
+      "sourceType": "Any",
+      "sourceValue": "",
       "destinationType": "Any",
       "destinationValue": "",
       "enable": true,
@@ -901,7 +901,7 @@
       "startTime": "00:00",
       "endTime": "00:00",
       "weekDay": "1,2,3,4,5,6,7",
-      "service_id": 1
+      "service_id": 2
     }
   ]
 }
