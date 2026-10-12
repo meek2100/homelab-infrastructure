@@ -1,0 +1,12 @@
+services:
+  chrony:
+    image: cturra/ntp:latest
+    container_name: chrony
+    restart: unless-stopped
+    cap_add:
+      - SYS_TIME
+    ports:
+      - "123:123/udp"
+    environment:
+      - NTP_SERVERS=time.cloudflare.com,time.google.com,pool.ntp.org
+      - LOG_LEVEL=0

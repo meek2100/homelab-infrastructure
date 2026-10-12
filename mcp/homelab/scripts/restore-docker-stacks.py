@@ -153,8 +153,12 @@ def restore_stacks(target_node=None, target_vmid=None, target_stack=None, dry_ru
 
         if target_node and node_name != target_node:
             continue
-        if target_vmid and int(vmid) != int(target_vmid):
-            continue
+        if target_vmid:
+            if str(target_vmid).isdigit():
+                if int(vmid) != int(target_vmid):
+                    continue
+            elif vm_name != str(target_vmid):
+                continue
         if target_stack and str(stack_id) != str(target_stack):
             continue
 
@@ -241,7 +245,7 @@ def restore_stacks(target_node=None, target_vmid=None, target_stack=None, dry_ru
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Homelab Docker Stacks Restoration Tool")
     parser.add_argument("--node", help="Specific Proxmox node (pve, pve2, pve3)", default=None)
-    parser.add_argument("--vmid", help="Specific VMID (e.g. 109)", default=None)
+    parser.add_argument("--vm", "--vmid", dest="vmid", help="Specific VMID or VM name (e.g. 100, nexus-server)", default=None)
     parser.add_argument("--stack", help="Specific Stack ID (e.g. 3)", default=None)
     parser.add_argument("--dry-run", action="store_true", help="Simulate restoration without changes")
     parser.add_argument("-i", "--identity-file", help="Path to SSH identity key", default=None)

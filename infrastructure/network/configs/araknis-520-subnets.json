@@ -16,6 +16,9 @@
       "dhcpOptions": [
         {
           "name": "Domain Search List"
+        },
+        {
+          "name": "Local NTP Server"
         }
       ]
     },
@@ -35,6 +38,9 @@
       "dhcpOptions": [
         {
           "name": "Domain Search List"
+        },
+        {
+          "name": "Local NTP Server"
         }
       ]
     },
@@ -54,6 +60,9 @@
       "dhcpOptions": [
         {
           "name": "Domain Search List"
+        },
+        {
+          "name": "Local NTP Server"
         }
       ]
     },
@@ -72,7 +81,7 @@
       "dns2": "192.168.40.186",
       "dhcpOptions": [
         {
-          "name": "Local IoT NTP Gateway"
+          "name": "Local NTP Server"
         }
       ]
     },
@@ -92,6 +101,9 @@
       "dhcpOptions": [
         {
           "name": "Domain Search List"
+        },
+        {
+          "name": "Local NTP Server"
         }
       ]
     },
@@ -108,7 +120,11 @@
       "dnsServerMode": "Static",
       "dns1": "1.1.1.1",
       "dns2": "1.0.0.1",
-      "dhcpOptions": []
+      "dhcpOptions": [
+        {
+          "name": "Local NTP Server"
+        }
+      ]
     },
     {
       "vlanID": 175,
@@ -123,7 +139,11 @@
       "dnsServerMode": "Static",
       "dns1": "192.168.40.185",
       "dns2": "192.168.40.186",
-      "dhcpOptions": []
+      "dhcpOptions": [
+        {
+          "name": "Local NTP Server"
+        }
+      ]
     },
     {
       "vlanID": 200,
@@ -138,7 +158,11 @@
       "dnsServerMode": "Static",
       "dns1": "1.1.1.1",
       "dns2": "1.0.0.1",
-      "dhcpOptions": []
+      "dhcpOptions": [
+        {
+          "name": "Local NTP Server"
+        }
+      ]
     }
   ]
 }
