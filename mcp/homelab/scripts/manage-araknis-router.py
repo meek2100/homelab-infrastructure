@@ -268,6 +268,16 @@ def cmd_apply_dhcp(s, host, payload_file):
     return {"status": "success", "response": resp}
 
 
+def cmd_get_subnets(s, host):
+    """Fetch live LAN subnets and assigned DHCP options."""
+    return api_get(s, host, "/config/lan/subnets")
+
+
+def cmd_get_dhcp_options(s, host):
+    """Fetch global DHCP options catalog."""
+    return api_get(s, host, "/config/lan/dhcp-options")
+
+
 def cmd_apply_subnets(s, host, payload_file):
     """Apply LAN subnet configurations from a JSON file."""
     with open(payload_file, "r") as f:
@@ -330,7 +340,7 @@ def cmd_apply_vlans(s, host, payload_file):
 
 def main():
     parser = argparse.ArgumentParser(description="Araknis 520 Router REST API Management Tool")
-    parser.add_argument("action", choices=["backup", "status", "dhcp-table", "get-acls", "apply-acls", "apply-dhcp", "apply-subnets", "get-vlans", "apply-vlans", "enable-upnp", "restore"])
+    parser.add_argument("action", choices=["backup", "status", "dhcp-table", "get-acls", "apply-acls", "apply-dhcp", "get-subnets", "apply-subnets", "get-dhcp-options", "get-vlans", "apply-vlans", "enable-upnp", "restore"])
     parser.add_argument("--backup-file", help="Path to backup file (for restore)")
     parser.add_argument("--payload-file", help="Path to JSON file containing payload (for apply-acls, apply-dhcp, apply-subnets, apply-vlans)")
     parser.add_argument("--json", action="store_true", help="Output raw JSON")
@@ -357,10 +367,14 @@ def main():
             if not args.payload_file:
                 raise ValueError("--payload-file required for apply-dhcp")
             result = cmd_apply_dhcp(s, host, args.payload_file)
+        elif args.action == "get-subnets":
+            result = cmd_get_subnets(s, host)
         elif args.action == "apply-subnets":
             if not args.payload_file:
                 raise ValueError("--payload-file required for apply-subnets")
             result = cmd_apply_subnets(s, host, args.payload_file)
+        elif args.action == "get-dhcp-options":
+            result = cmd_get_dhcp_options(s, host)
         elif args.action == "get-vlans":
             result = cmd_get_vlans(s, host)
         elif args.action == "apply-vlans":

@@ -298,7 +298,7 @@ def manage_apt_packages(
 
 @mcp.tool()
 def manage_araknis_router(
-    action: Literal["status", "backup", "restore", "get_acls", "apply_acls"] = "status",
+    action: Literal["status", "backup", "restore", "get_acls", "apply_acls", "get_subnets", "apply_subnets", "get_dhcp_options"] = "status",
     config_file: str | None = None,
     payload_file: str | None = None,
     confirm: bool = False
@@ -309,7 +309,10 @@ def manage_araknis_router(
       - 'backup': Export running configuration blob to infrastructure/network/configs/araknis-520-backup.cfg.
       - 'restore': Restore encrypted configuration blob from Git blueprint (confirm=True required).
       - 'get_acls': Fetch live ACL rules and service definitions in JSON.
-      - 'apply_acls': Apply ACL rules from JSON payload_file (confirm=True required)."""
+      - 'apply_acls': Apply ACL rules from JSON payload_file (confirm=True required).
+      - 'get_subnets': Fetch live LAN subnets and assigned DHCP options in JSON.
+      - 'apply_subnets': Apply updated subnet and DHCP option assignments from JSON payload_file (confirm=True required).
+      - 'get_dhcp_options': Fetch global DHCP options definitions in JSON."""
     action = action.lower().strip()
     if action == "status":
         return run_script("manage-araknis-router.py", ["status"])
@@ -323,12 +326,22 @@ def manage_araknis_router(
         if not confirm:
             return "Error: 'confirm=True' required to apply live router ACLs."
         return run_script("manage-araknis-router.py", ["apply-acls", "--payload-file", payload_file])
+    elif action == "get_subnets":
+        return run_script("manage-araknis-router.py", ["get-subnets", "--json"])
+    elif action == "apply_subnets":
+        if not payload_file:
+            return "Error: 'payload_file' required for apply_subnets."
+        if not confirm:
+            return "Error: 'confirm=True' required to apply live router subnets."
+        return run_script("manage-araknis-router.py", ["apply-subnets", "--payload-file", payload_file])
+    elif action == "get_dhcp_options":
+        return run_script("manage-araknis-router.py", ["get-dhcp-options", "--json"])
     elif action == "restore":
         args = ["restore"]
         if config_file: args.extend(["--file", config_file])
         if confirm: args.append("--confirm")
         return run_script("manage-araknis-router.py", args)
-    return f"Unknown action: '{action}'. Valid actions: status, backup, restore, get_acls, apply_acls."
+    return f"Unknown action: '{action}'. Valid actions: status, backup, restore, get_acls, apply_acls, get_subnets, apply_subnets, get_dhcp_options."
 
 
 @mcp.tool()
