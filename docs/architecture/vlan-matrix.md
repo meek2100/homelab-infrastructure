@@ -70,16 +70,17 @@ The router evaluates **36 granular rules** (see full rule list in [`network-impl
 
 1. **DNS & Security (Rules 1–6)**: Permits UDP/TCP 53, HTTPS DoH (443), and DoQ (853) to/from AdGuard Primary (`192.168.40.185`) and Secondary (`192.168.40.186`).
 2. **Automation & Smart Home (Rules 7–10)**: Permits IoT & Media to Control4 CA-10 (`192.168.10.200`), and IoT to Home Assistant / Homebridge (`192.168.40.249`).
-3. **Mainsail 3D Printing (Rules 11–14, 16, 20–21)**: Permits bidirectional traffic between Mainsail (`192.168.30.90`) and Trusted LAN (`192.168.10.0/24`), Management (`192.168.1.0/24`), and Servers (`192.168.40.0/24`) for Moonraker API (7125), HTTP (80), and SSH (22).
+3. **Mainsail 3D Printing (Rules 11–14, 16)**: Permits bidirectional traffic between Mainsail (`192.168.30.90`) and Trusted LAN (`192.168.10.0/24`), Management (`192.168.1.0/24`), and Servers (`192.168.40.0/24`) for Moonraker API, HTTP, and SSH.
 4. **Media & Entertainment (Rules 15, 17)**: Permits Media (VLAN 20) to Plex (`192.168.40.247:32400`) and Home Assistant (`192.168.40.249:8123`).
 5. **Sonos Bidirectional Inter-VLAN (Rules 18–19)**: Permits All Traffic between tightened Sonos block (`192.168.20.201–192.168.20.205`) and Trusted LAN (`192.168.10.0/24`), enabling SSDP/mDNS discovery, TCP 1400 control, and reverse UPnP event callbacks without dropouts.
-6. **Testbench mDNS Isolation (Rules 22–25)**: Explicitly drops mDNS (UDP 5353) to/from VLAN 150 (CA-1 Test) and VLAN 200 (Core-5 Test) to prevent Bonjour repeater hostname leaks.
-7. **Strict Isolation & Segmentation (Rules 26–32)**: Explicitly denies all other cross-VLAN initiation:
-   - IoT (VLAN 30) BLOCKED to Management, Trusted LAN, Guest/Media, and Servers.
-   - Guest/Media (VLAN 20) BLOCKED to Management, Trusted LAN, and Servers.
-8. **DNS Hardening (Rules 33–34)**: Blocks outbound DNS-over-TLS (TCP 853) on VLAN 20 and VLAN 30 to prevent devices from bypassing AdGuard Home filtering.
-9. **WAN Ingress Keepalive Suppression (Rules 35–36)**: Drops inbound WAN1 cloud sweeps destined for idle testbench controllers (`192.168.150.200` CA-1 and `192.168.200.200` Core-5), silencing 5.25M router ARP broadcast floods.
-10. **Device Internet Quarantining (Rule 37)**: Drops outbound WAN internet from Downstairs Guest TV TCL Roku (`192.168.20.240`), preventing lockups and mandatory Roku cloud login prompts while allowing local streaming via Chromecast (`192.168.20.231`).
+6. **Testbench mDNS Isolation (Rules 20–23)**: Explicitly drops mDNS (UDP 5353) to/from VLAN 150 (CA-1 Test) and VLAN 200 (Core-5 Test) to prevent Bonjour repeater hostname leaks.
+7. **Strict Isolation & Segmentation (Rules 24–30)**: Explicitly denies all other cross-VLAN initiation:
+   - IoT (VLAN 30) BLOCKED to Management, Trusted LAN, Guest/Media, and Servers (Rules 24–27).
+   - Guest/Media (VLAN 20) BLOCKED to Management, Trusted LAN, and Servers (Rules 28–30).
+8. **DNS Hardening (Rules 31–33)**: Blocks outbound DNS-over-TLS (TCP 853) on VLAN 20 (Rule 31) and VLAN 30 (Rule 33), and outbound DNS (UDP 53) on VLAN 20 (Rule 32).
+9. **WAN Ingress Keepalive Suppression (Rules 34–35)**: Drops inbound WAN1 cloud sweeps destined for idle testbench controllers (`192.168.150.200` CA-1 and `192.168.200.200` Core-5), silencing 5.25M router ARP broadcast floods.
+10. **Global WAN DNS Enforcement (Rule 36)**: Drops all outbound UDP 53 to WAN1 (`Deny | In: LAN -> Out: WAN1 | Svc: DNS | Src: Any -> Dst: Any`), completely sealing external DNS bypasses and forcing all network clients across all VLANs through AdGuard Home (`192.168.40.185` / `192.168.40.186`).
+
 
 > [!NOTE]
 > **24-Hour Empirical Packet Validation (2026-10-03)**:
@@ -105,7 +106,8 @@ The router evaluates **36 granular rules** (see full rule list in [`network-impl
      - Rule 6 (`ALLOW-SONOS-CALLBACK`) permits this exact return traffic, preventing volume slider freezing and connection drops.
 
 3. **Switch & AP Multicast Performance Tuning (Araknis 920 Switch & 830 APs)**:
-   - **IGMP Snooping & Querier**: Enable IGMP Snooping on VLAN 10, 20, and 40. Configure the Araknis 920 switch as the **IGMP Querier** for these VLANs.
+   - **IGMP Snooping & Querier**: Enable IGMP Snooping on VLAN 1, 10, 20, 30, and 40. Configure the Araknis 920 switch as the **IGMP Querier** for these VLANs (`address 192.168.1.215`).
+   - **Static Multicast Router (mrouter) on AP Trunk Ports**: Configure `set igmp mrouter 10` and `set igmp mrouter 20` on switchports `1/0/3` (Front AP) and `1/0/4` (Back AP). This guarantees that both APs receive mDNS (`224.0.0.251`) and SSDP (`239.255.255.250`) without IGMP snooping pruning, enabling seamless cross-VLAN Spotify Connect and native Sonos app discovery.
    - **Multicast-to-Unicast**: Enable Multicast-to-Unicast conversion on the Araknis 830 APs. This prevents high-frequency discovery multicasts from degrading 2.4 GHz and 5 GHz wireless throughput.
 
 ---
