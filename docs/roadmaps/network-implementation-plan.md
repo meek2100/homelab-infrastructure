@@ -67,46 +67,49 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 ## 📋 Part 1: Core Router & Switch Authoritative Configuration
 
 ### 1. Araknis 520 Router Access Control Lists (ACL Hierarchy)
-Audited and verified live via `GET /api/cgi-bin/v1/config/acls`. 36 rules active with strict evaluation order:
+Audited and verified live via `GET /api/cgi-bin/v1/config/acls`. 39 rules active with strict evaluation order:
 
 | Priority | Rule Name | Action | Service | Source | Destination | Status |
 | :---: | :--- | :---: | :--- | :--- | :--- | :---: |
 | **1** | Inter-VLAN DNS | Permit | DNS (UDP:53) | Any | `192.168.40.185-186` | 🟢 Active |
-| **2** | AdGuard Local DNS (DoH) | Permit | HTTPS (DoH) (TCP:443) | Any | `192.168.40.185-186` | 🟢 Active |
-| **3** | AdGuard Local DNS (DoQ) | Permit | DNS over QUIC (UDP:853) | Any | `192.168.40.185-186` | 🟢 Active |
-| **4** | Inter-VLAN DNS | Permit | DNS (UDP:53) | `192.168.40.185-186` | Any | 🟢 Active |
-| **5** | DNS over HTTPS (DoH) | Permit | HTTPS (DoH) (TCP:443) | `192.168.40.185-186` | Any | 🟢 Active |
-| **6** | DNS over QUIC (DoQ) | Permit | DNS over QUIC (UDP:853) | `192.168.40.185-186` | Any | 🟢 Active |
-| **7** | Unblock C4 | Permit | All Traffic | `192.168.30.0/24` (IoT) | `192.168.10.200` (C4 CA-10) | 🟢 Active |
-| **8** | Media to Control4 | Permit | All Traffic | `192.168.20.0/24` (Media) | `192.168.10.200` (C4 CA-10) | 🟢 Active |
-| **9** | IoT to Home Assistant | Permit | Home-Assistant (TCP:8123) | `192.168.30.0/24` (IoT) | `192.168.40.249` (luna-server) | 🟢 Active |
-| **10** | IoT to Homebridge | Permit | Homebridge (TCP:8581) | `192.168.30.0/24` (IoT) | `192.168.40.249` (luna-server) | 🟢 Active |
-| **11** | Mainsail to Servers (Docker) | Permit | All Traffic | `192.168.30.90` (mainsail) | `192.168.40.0/24` (Servers) | 🟢 Active |
-| **12** | Mainsail to Trusted LAN | Permit | All Traffic | `192.168.30.90` (mainsail) | `192.168.10.0/24` (Trusted) | 🟢 Active |
-| **13** | Mainsail to Management | Permit | All Traffic | `192.168.30.90` (mainsail) | `192.168.1.0/24` (Management) | 🟢 Active |
-| **14** | Trusted LAN to Mainsail | Permit | All Traffic | `192.168.10.0/24` (Trusted) | `192.168.30.90` (mainsail) | 🟢 Active |
+| **2** | Inter-VLAN NTP | Permit | NTP (UDP:123) | Any | `192.168.40.185-186` | 🟢 Active |
+| **3** | AdGuard Local DNS (DoH) | Permit | HTTPS (DoH) (TCP:443) | Any | `192.168.40.185-186` | 🟢 Active |
+| **4** | AdGuard Local DNS (DoQ) | Permit | DNS over QUIC (UDP:853) | Any | `192.168.40.185-186` | 🟢 Active |
+| **5** | Inter-VLAN DNS | Permit | DNS (UDP:53) | `192.168.40.185-186` | Any | 🟢 Active |
+| **6** | DNS over HTTPS (DoH) | Permit | HTTPS (DoH) (TCP:443) | `192.168.40.185-186` | Any | 🟢 Active |
+| **7** | DNS over QUIC (DoQ) - (Primary) | Permit | DNS over QUIC (UDP:853) | `192.168.40.185-186` | Any | 🟢 Active |
+| **8** | Unblock C4 | Permit | All Traffic | `192.168.30.0/24` (IoT) | `192.168.10.200` (C4 CA-10) | 🟢 Active |
+| **9** | Media to Control4 | Permit | All Traffic | `192.168.20.0/24` (Media) | `192.168.10.200` (C4 CA-10) | 🟢 Active |
+| **10** | IoT to Home Assistant | Permit | Home-Assistant (TCP:8123) | `192.168.30.0/24` (IoT) | `192.168.40.249` (luna-server) | 🟢 Active |
+| **11** | IoT to Homebridge | Permit | Homebridge (TCP:8581) | `192.168.30.0/24` (IoT) | `192.168.40.249` (luna-server) | 🟢 Active |
+| **12** | Trusted LAN to Mainsail HTTP | Permit | HTTP (TCP:80) | `192.168.10.0/24` (Trusted) | `192.168.30.90` (mainsail) | 🟢 Active |
+| **13** | Trusted LAN to Mainsail Moonraker | Permit | Moonraker (TCP:7125) | `192.168.10.0/24` (Trusted) | `192.168.30.90` (mainsail) | 🟢 Active |
+| **14** | Trusted LAN to Mainsail SSH | Permit | SSH (TCP:22) | `192.168.10.0/24` (Trusted) | `192.168.30.90` (mainsail) | 🟢 Active |
 | **15** | Media to Plex Server | Permit | Plex-Media (TCP:32400) | `192.168.20.0/24` (Media) | `192.168.40.247` (media-server) | 🟢 Active |
-| **16** | Management to Mainsail | Permit | All Traffic | `192.168.1.0/24` (Management) | `192.168.30.90` (mainsail) | 🟢 Active |
-| **17** | Media to Home Assistant | Permit | Home-Assistant (TCP:8123) | `192.168.20.0/24` (Media) | `192.168.40.249` (luna-server) | 🟢 Active |
-| **18** | Sonos to Trusted LAN | Permit | All Traffic | `192.168.20.201-205` (Sonos) | `192.168.10.1-254` (Trusted) | 🟢 Active |
-| **19** | Trusted LAN to Sonos & Media | Permit | All Traffic | `192.168.10.1-254` (Trusted) | `192.168.20.1-254` (Media) | 🟢 Active |
-| **20** | Block mDNS to CA-1 (150) | Deny | mDNS (UDP:5353) | Any | `192.168.150.1-254` (CA-1 Test) | 🟢 Active |
-| **21** | Block mDNS from CA-1 (150) | Deny | mDNS (UDP:5353) | `192.168.150.1-254` (CA-1 Test) | Any | 🟢 Active |
-| **22** | Block mDNS to Core-5 (200) | Deny | mDNS (UDP:5353) | Any | `192.168.200.1-254` (Core-5 Test) | 🟢 Active |
-| **23** | Block mDNS from Core-5 (200) | Deny | mDNS (UDP:5353) | `192.168.200.1-254` (Core-5 Test) | Any | 🟢 Active |
-| **24** | Block IoT to Management | Deny | All Traffic | `192.168.30.1-254` (IoT) | `192.168.1.1-254` (Management) | 🟢 Active |
-| **25** | Block IoT to Trusted LAN | Deny | All Traffic | `192.168.30.1-254` (IoT) | `192.168.10.1-254` (Trusted) | 🟢 Active |
-| **26** | Block IoT to Guest | Deny | All Traffic | `192.168.30.1-254` (IoT) | `192.168.20.1-254` (Media/Guest) | 🟢 Active |
-| **27** | Block IoT to Servers | Deny | All Traffic | `192.168.30.1-254` (IoT) | `192.168.40.1-254` (Servers) | 🟢 Active |
-| **28** | Block Guests to Management | Deny | All Traffic | `192.168.20.1-254` (Media) | `192.168.1.1-254` (Management) | 🟢 Active |
-| **29** | Block Guests to Trusted LAN | Deny | All Traffic | `192.168.20.1-254` (Media) | `192.168.10.1-254` (Trusted) | 🟢 Active |
-| **30** | Block Guests to Servers | Deny | All Traffic | `192.168.20.1-254` (Media) | `192.168.40.1-254` (Servers) | 🟢 Active |
-| **31** | Block DoT VLAN 20 | Deny | DNS over TLS (TCP:853) | `192.168.20.1-254` (Media) | WAN1 (Internet) | 🟢 Active |
-| **32** | Block DNS WAN VLAN 20 | Deny | DNS (UDP:53) | `192.168.20.1-254` (Media) | WAN1 (Internet) | 🟢 Active |
-| **33** | Block DoT VLAN 30 | Deny | DNS over TLS (TCP:853) | `192.168.30.1-254` (IoT) | WAN1 (Internet) | 🟢 Active |
-| **34** | Drop WAN to Testbench CA-1 | Deny | All Traffic | WAN1 (Internet) | `192.168.150.200` (CA-1 Test) | 🟢 Active |
-| **35** | Drop WAN to Testbench Core-5 | Deny | All Traffic | WAN1 (Internet) | `192.168.200.200` (Core-5 Test) | 🟢 Active |
-| **36** | Block All DNS to WAN | Deny | DNS (UDP:53) | Any (LAN) | WAN1 (Internet) | 🟢 Active |
+| **16** | Management to Mainsail HTTP | Permit | HTTP (TCP:80) | `192.168.1.0/24` (Management) | `192.168.30.90` (mainsail) | 🟢 Active |
+| **17** | Management to Mainsail Moonraker | Permit | Moonraker (TCP:7125) | `192.168.1.0/24` (Management) | `192.168.30.90` (mainsail) | 🟢 Active |
+| **18** | Management to Mainsail SSH | Permit | SSH (TCP:22) | `192.168.1.0/24` (Management) | `192.168.30.90` (mainsail) | 🟢 Active |
+| **19** | Servers to Mainsail Moonraker | Permit | Moonraker (TCP:7125) | `192.168.40.0/24` (Servers) | `192.168.30.90` (mainsail) | 🟢 Active |
+| **20** | Media to Home Assistant | Permit | Home-Assistant (TCP:8123) | `192.168.20.0/24` (Media) | `192.168.40.249` (luna-server) | 🟢 Active |
+| **21** | Sonos to Trusted LAN | Permit | All Traffic | `192.168.20.201-205` (Sonos) | `192.168.10.1-254` (Trusted) | 🟢 Active |
+| **22** | Trusted LAN to Sonos & Media | Permit | All Traffic | `192.168.10.1-254` (Trusted) | `192.168.20.1-254` (Media) | 🟢 Active |
+| **23** | Block mDNS to CA-1 (150) | Deny | mDNS (UDP:5353) | Any | `192.168.150.1-254` (CA-1 Test) | 🟢 Active |
+| **24** | Block mDNS from CA-1 (150) | Deny | mDNS (UDP:5353) | `192.168.150.1-254` (CA-1 Test) | Any | 🟢 Active |
+| **25** | Block mDNS to Core-5 (200) | Deny | mDNS (UDP:5353) | Any | `192.168.200.1-254` (Core-5 Test) | 🟢 Active |
+| **26** | Block mDNS from Core-5 (200) | Deny | mDNS (UDP:5353) | `192.168.200.1-254` (Core-5 Test) | Any | 🟢 Active |
+| **27** | Block IoT to Management | Deny | All Traffic | `192.168.30.1-254` (IoT) | `192.168.1.1-254` (Management) | 🟢 Active |
+| **28** | Block IoT to Trusted LAN | Deny | All Traffic | `192.168.30.1-254` (IoT) | `192.168.10.1-254` (Trusted) | 🟢 Active |
+| **29** | Block IoT to Guest | Deny | All Traffic | `192.168.30.1-254` (IoT) | `192.168.20.1-254` (Media/Guest) | 🟢 Active |
+| **30** | Block IoT to Servers | Deny | All Traffic | `192.168.30.1-254` (IoT) | `192.168.40.1-254` (Servers) | 🟢 Active |
+| **31** | Block Guests to Management | Deny | All Traffic | `192.168.20.1-254` (Media) | `192.168.1.1-254` (Management) | 🟢 Active |
+| **32** | Block Guests to Trusted LAN | Deny | All Traffic | `192.168.20.1-254` (Media) | `192.168.10.1-254` (Trusted) | 🟢 Active |
+| **33** | Block Guests to Servers | Deny | All Traffic | `192.168.20.1-254` (Media) | `192.168.40.1-254` (Servers) | 🟢 Active |
+| **34** | Block DoT VLAN 20 | Deny | DNS over TLS (TCP:853) | `192.168.20.1-254` (Media) | WAN1 (Internet) | 🟢 Active |
+| **35** | Block DNS WAN VLAN 20 | Deny | DNS (UDP:53) | `192.168.20.1-254` (Media) | WAN1 (Internet) | 🟢 Active |
+| **36** | Block DoT VLAN 30 | Deny | DNS over TLS (TCP:853) | `192.168.30.1-254` (IoT) | WAN1 (Internet) | 🟢 Active |
+| **37** | Drop WAN to Testbench CA-1 | Deny | All Traffic | WAN1 (Internet) | `192.168.150.200` (CA-1 Test) | 🟢 Active |
+| **38** | Drop WAN to Testbench Core-5 | Deny | All Traffic | WAN1 (Internet) | `192.168.200.200` (Core-5 Test) | 🟢 Active |
+| **39** | Block All DNS to WAN | Deny | DNS (UDP:53) | Any (LAN) | WAN1 (Internet) | 🟢 Active |
 
 > **VLANs 150 / 200 (work testbench) are isolated by Interzone Forwarding, explicit mDNS Deny rules (20-23), and WAN ingress drop rules (34-35).** Both zones have every "Allow forward TO/FROM" box unchecked and Device Management off. ACL Rule 1 (Any → AdGuard DNS) still permits their DNS. The explicit mDNS rules prevent the router's Bonjour repeater from leaking local homelab service names into test environments, while Rules 34 & 35 drop inbound AWS cloud keepalive sweeps to silence 5.25M router broadcast ARPs. Rule 36 globally drops all outbound UDP 53 to WAN1, enforcing internal AdGuard Home DNS (`192.168.40.185-186`).
 

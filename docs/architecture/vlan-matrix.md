@@ -66,20 +66,21 @@ This document provides the authoritative network segmentation specification for 
 
 ### 📋 Authoritative Inter-VLAN ACL Rule Hierarchy (Araknis 520 Router)
 
-The router evaluates **36 granular rules** (see full rule list in [`network-implementation-plan.md`](../roadmaps/network-implementation-plan.md#1-araknis-520-router-access-control-lists-acl-hierarchy)):
+The router evaluates **39 granular rules** (see full rule list in [`network-implementation-plan.md`](../roadmaps/network-implementation-plan.md#1-araknis-520-router-access-control-lists-acl-hierarchy)):
 
-1. **DNS & Security (Rules 1–6)**: Permits UDP/TCP 53, HTTPS DoH (443), and DoQ (853) to/from AdGuard Primary (`192.168.40.185`) and Secondary (`192.168.40.186`).
-2. **Automation & Smart Home (Rules 7–10)**: Permits IoT & Media to Control4 CA-10 (`192.168.10.200`), and IoT to Home Assistant / Homebridge (`192.168.40.249`).
-3. **Mainsail 3D Printing (Rules 11–14, 16)**: Permits bidirectional traffic between Mainsail (`192.168.30.90`) and Trusted LAN (`192.168.10.0/24`), Management (`192.168.1.0/24`), and Servers (`192.168.40.0/24`) for Moonraker API, HTTP, and SSH.
-4. **Media & Entertainment (Rules 15, 17)**: Permits Media (VLAN 20) to Plex (`192.168.40.247:32400`) and Home Assistant (`192.168.40.249:8123`).
-5. **Sonos Bidirectional Inter-VLAN (Rules 18–19)**: Permits All Traffic between tightened Sonos block (`192.168.20.201–192.168.20.205`) and Trusted LAN (`192.168.10.0/24`), enabling SSDP/mDNS discovery, TCP 1400 control, and reverse UPnP event callbacks without dropouts.
-6. **Testbench mDNS Isolation (Rules 20–23)**: Explicitly drops mDNS (UDP 5353) to/from VLAN 150 (CA-1 Test) and VLAN 200 (Core-5 Test) to prevent Bonjour repeater hostname leaks.
-7. **Strict Isolation & Segmentation (Rules 24–30)**: Explicitly denies all other cross-VLAN initiation:
-   - IoT (VLAN 30) BLOCKED to Management, Trusted LAN, Guest/Media, and Servers (Rules 24–27).
-   - Guest/Media (VLAN 20) BLOCKED to Management, Trusted LAN, and Servers (Rules 28–30).
-8. **DNS Hardening (Rules 31–33)**: Blocks outbound DNS-over-TLS (TCP 853) on VLAN 20 (Rule 31) and VLAN 30 (Rule 33), and outbound DNS (UDP 53) on VLAN 20 (Rule 32).
-9. **WAN Ingress Keepalive Suppression (Rules 34–35)**: Drops inbound WAN1 cloud sweeps destined for idle testbench controllers (`192.168.150.200` CA-1 and `192.168.200.200` Core-5), silencing 5.25M router ARP broadcast floods.
-10. **Global WAN DNS Enforcement (Rule 36)**: Drops all outbound UDP 53 to WAN1 (`Deny | In: LAN -> Out: WAN1 | Svc: DNS | Src: Any -> Dst: Any`), completely sealing external DNS bypasses and forcing all network clients across all VLANs through AdGuard Home (`192.168.40.185` / `192.168.40.186`).
+1. **DNS & Security (Rules 1, 3–7)**: Permits UDP/TCP 53, HTTPS DoH (443), and DoQ (853) to/from AdGuard Primary (`192.168.40.185`) and Secondary (`192.168.40.186`).
+2. **Inter-VLAN NTP Redundancy (Rule 2)**: Permits UDP 123 across all VLANs to both Primary (`192.168.40.185`) and Secondary (`192.168.40.186`) Chrony NTP servers.
+3. **Automation & Smart Home (Rules 8–11)**: Permits IoT & Media to Control4 CA-10 (`192.168.10.200`), and IoT to Home Assistant / Homebridge (`192.168.40.249`).
+4. **Mainsail 3D Printing Least-Privilege (Rules 12–14, 16–19)**: Permits strictly scoped inbound traffic to Mainsail (`192.168.30.90`) from Trusted LAN (`192.168.10.0/24`), Management (`192.168.1.0/24`), and Servers (`192.168.40.0/24`) for HTTP (port 80), Moonraker (port 7125), and SSH (port 22). Outbound initiation from Mainsail to Trusted LAN and Management is dropped; stateful return packets flow via conntrack.
+5. **Media & Entertainment (Rules 15, 20)**: Permits Media (VLAN 20) to Plex (`192.168.40.247:32400`) and Home Assistant (`192.168.40.249:8123`).
+6. **Sonos Bidirectional Inter-VLAN (Rules 21–22)**: Permits All Traffic between tightened Sonos block (`192.168.20.201–192.168.20.205`) and Trusted LAN (`192.168.10.0/24`), enabling SSDP/mDNS discovery, TCP 1400 control, and reverse UPnP event callbacks without dropouts.
+7. **Testbench mDNS Isolation (Rules 23–26)**: Explicitly drops mDNS (UDP 5353) to/from VLAN 150 (CA-1 Test) and VLAN 200 (Core-5 Test) to prevent Bonjour repeater hostname leaks.
+8. **Strict Isolation & Segmentation (Rules 27–33)**: Explicitly denies all other cross-VLAN initiation:
+   - IoT (VLAN 30) BLOCKED to Management, Trusted LAN, Guest/Media, and Servers (Rules 27–30).
+   - Guest/Media (VLAN 20) BLOCKED to Management, Trusted LAN, and Servers (Rules 31–33).
+9. **DNS Hardening (Rules 34–36)**: Blocks outbound DNS-over-TLS (TCP 853) on VLAN 20 (Rule 34) and VLAN 30 (Rule 36), and outbound DNS (UDP 53) on VLAN 20 (Rule 35).
+10. **WAN Ingress Keepalive Suppression (Rules 37–38)**: Drops inbound WAN1 cloud sweeps destined for idle testbench controllers (`192.168.150.200` CA-1 and `192.168.200.200` Core-5), silencing 5.25M router ARP broadcast floods.
+11. **Global WAN DNS Enforcement (Rule 39)**: Drops all outbound UDP 53 to WAN1 (`Deny | In: LAN -> Out: WAN1 | Svc: DNS | Src: Any -> Dst: Any`), completely sealing external DNS bypasses and forcing all network clients across all VLANs through AdGuard Home (`192.168.40.185` / `192.168.40.186`).
 
 
 > [!NOTE]

@@ -3,8 +3,8 @@
 This document provides a searchable, friendly service catalog mapping every Portainer stack ID across all virtual machines to its application name, container images, exposed ports, host node, and SOPS secret encryption status.
 
 ## Summary Metrics
-- **Total Stacks Cataloged**: 92
-- **Total Docker Services Defined**: 189
+- **Total Stacks Cataloged**: 93
+- **Total Docker Services Defined**: 190
 - **Stacks with Encrypted Secrets (`secrets.enc.yaml`)**: 69
 - **Host Virtual Machines**: 6 (`discovery-server`, `luna-server`, `media-server`, `minecraft-server`, `nexus-server`, `nexus-server2`)
 
@@ -135,7 +135,7 @@ Total Stacks: **13**
 ---
 
 ## VM: `nexus-server2` (Node: `pve3`, VMID: `100`)
-Total Stacks: **8**
+Total Stacks: **9**
 
 | Stack ID | Primary Services | Container Images | Exposed Ports | Encrypted Secrets | Blueprint Path |
 | :--- | :--- | :--- | :--- | :---: | :--- |
@@ -147,5 +147,6 @@ Total Stacks: **8**
 | **59** | `adguardhome`<br>`adguardhome-certbot` | `adguard/adguardhome`<br>`certbot/dns-cloudflare` | `Internal / Host`<br>`Internal / Host` | 🔒 Yes | [nexus-server2/59](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server2/59) |
 | **62** | `nginx-proxy-manager` | `jc21/nginx-proxy-manager:latest` | `Internal / Host` | 🔒 Yes | [nexus-server2/62](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server2/62) |
 | **68** | `node-exporter`<br>`cadvisor`<br>`promtail` | `prom/node-exporter:v1.8.2`<br>`gcr.io/cadvisor/cadvisor:v0.49.1`<br>`grafana/promtail:3.0.0` | `9100:9100`<br>`8088:8080`<br>`Internal / Host` | — None | [nexus-server2/68](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server2/68) |
+| **69** | `chrony` | `cturra/ntp:latest` | `123:123/udp` | — None | [nexus-server2/69](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server2/69) |
 
 ---
