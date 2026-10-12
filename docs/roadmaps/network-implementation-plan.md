@@ -1400,24 +1400,38 @@ graph TD
    ```
 2. Verify all Docker compose manifests and SOPS secrets are 100% committed to Git.
 
-#### Stage 2: Single Dedicated PBS Drive, Google Drive Offsite Sync & NAS Drive Pooling (`pve3`)
-1. **Preserve Single Dedicated Backup HDD**:
-   - Maintain the dedicated 500GB HDD on Node 3 HP EliteDesk (`/mnt/pve/backup`) as the cluster's sole local high-speed PBS datastore (`/backup/pbs-datastore`).
-   - Confirm all three standalone nodes (`pve`, `pve2`, `pve3`) target this single datastore with per-host namespaces (`pve/`, `pve2/`, `pve3/`).
-2. **Deploy Automated Offsite Replication (Google Drive)**:
-   - Configure `rclone` with an encrypted remote (`rclone crypt`) targeting Google Drive (`gdrive-encrypted:/homelab-backups/pbs-chunks`).
-   - Provision a systemd timer on PBS CT 105 (`/etc/systemd/system/pbs-gdrive-sync.timer`) running nightly post-prune / post-GC (e.g. at 03:00):
+#### Stage 2: Google Drive Offsite Archive Relocation, PBS Offsite Mirror & PVE 9.2 Upgrade
+1. **Google Drive Cloud Vault Setup & Tooling**:
+   - Install and configure `rclone` on PBS CT 105 (and management host).
+   - Configure authenticated remote for Google Drive (5 TB capacity allocated) with client-side encryption via `rclone crypt` (`gdrive-encrypted:`).
+2. **Relocate Legacy vzdump Archives to Google Drive (Zero-Loss Archive Preservation)**:
+   - Audit all pre-PBS backup archives across local drives (~866 GB total across nodes):
+     - `pve` (`/mnt/pve/backup/dump/`): ~734 GB (historic VM snapshots 100, 101, 102, 103, 105, 106, 107, 109, 114, 200).
+     - `pve2` (`/mnt/pve/backup/dump/`): ~89 GB (historic VM 100 backups).
+     - `pve3` (`/mnt/pve/backup/dump/`): ~63 GB (`vzdump-qemu-101` NAS full disk snapshot).
+   - Stream and synchronize all `.vma.zst`, `.log`, and `.notes` files to `gdrive-encrypted:/homelab-archives/vzdumps/` with checksum verification (`--checksum`).
+   - Only after verifying file count and checksum parity on Google Drive are local host backup filesystems wiped and unmounted, freeing physical hard drives (`sda` & `sdb` on `pve`, `sdb` on `pve2`) for merger into the central NAS pool.
+3. **Deploy Automated PBS Cloud Mirror (Google Drive)**:
+   - Configure a systemd timer on PBS CT 105 (`/etc/systemd/system/pbs-gdrive-sync.timer`) running nightly post-prune / post-GC:
      ```bash
      rclone sync /backup/pbs-datastore/.chunks/ gdrive-encrypted:/homelab-backups/pbs-chunks/ \
-         --fast-list --bwlimit 15M --transfers 4 --checkers 8 --log-file /var/log/rclone-pbs.log
+         --fast-list --bwlimit 20M --transfers 4 --checkers 8 --log-file /var/log/rclone-pbs.log
      ```
-   - Verify that newly created 4MB deduplicated chunks are client-side encrypted and mirrored offsite.
-3. **Consolidate & Repurpose Hard Drives into Expanded Shared NAS**:
-   - Disconnect the two 1TB HDDs from Node 1 (Dell) and the 1TB HDD from Node 2 (AWOW).
-   - Attach all three 1TB HDDs to Node 3 (HP EliteDesk) via SATA / USB 3.0.
+   - Protect against local drive failure on `pve3` with an offsite, immutable, client-side encrypted replica of the 113 GB PBS datastore.
+4. **Standalone Proxmox VE Upgrade to PVE 9.2**:
+   - Enable `pve-no-subscription` repository on `pve`, `pve2`, and `pve3`.
+   - Update repository indices (`apt-get update`) and audit package upgrade diffs for PVE 9.2 release (`pve-manager`, Linux kernel).
+   - Execute staged, node-by-node non-disruptive upgrades:
+     1. Node 2 (`pve2` AWOW): Upgrade, reboot, and verify VM 100 (`discovery-server`) and `vmbr1` SAN connectivity.
+     2. Node 3 (`pve3` HP EliteDesk): Upgrade, reboot, and verify VM 100 (`nexus-server2`), VM 101 (`nas-server`), and LXC 105 (`pbs-server`).
+     3. Node 1 (`pve` Dell Precision): Upgrade, reboot, and verify VM 100 (`nexus-server`), VM 102 (`luna`), VM 103 (`media`), VM 107 (`vxlan`), and VM 109 (`minecraft`).
+   - Confirm all three nodes report healthy on PVE 9.2 with zero cluster state dependencies.
+5. **Consolidate & Repurpose Hard Drives into Expanded Shared NAS**:
+   - With vzdumps safely preserved in Google Drive, disconnect the two 1TB HDDs from Node 1 (Dell) and the 1TB HDD from Node 2 (AWOW).
+   - Attach physical drives to Node 3 (HP EliteDesk) via SATA / USB 3.0.
    - In OpenMediaVault (VM 101 on `pve3`), pool the physical drives using MergerFS (`/srv/pool-nas`) alongside the primary 1TB disk.
    - Verify that the shared media and document pool expands to **3–4+ TB** available to all network clients (SMB on Windows, NFS v4+ on Linux/Docker).
-4. **Wealth Vault Isolation**:
+6. **Wealth Vault Isolation**:
    - Partition and mount dedicated encrypted partition on Node 3 for the Wealth Vault financial ledgers (`actual-budget`, `firefly-iii`, `ghostfolio`).
 
 #### Stage 3: Node 2 (`pve2`) DMZ Download Engine Optimization
