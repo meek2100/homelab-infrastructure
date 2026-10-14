@@ -210,5 +210,5 @@ To achieve true 3-2-1 backup compliance, the PBS datastore is continuously mirro
 # View recent transfer logs from LXC 105
 .venv/bin/python3 mcp/homelab/scripts/sync-pbs-backup-to-gdrive.py logs
 ```
-The systemd service (`pbs-gdrive-sync.service`) and timer (`pbs-gdrive-sync.timer`) execute nightly at 03:00 UTC inside LXC 105.
+The systemd service (`pbs-gdrive-sync.service`) and timer (`pbs-gdrive-sync.timer`) execute nightly at 05:00 PDT inside LXC 105, comfortably scheduled after all PVE node backup jobs (`pve` at 02:00, `pve2` at 02:30, `pve3` at 03:00) and PBS datastore verification (04:30) have completed.
 

@@ -94,7 +94,7 @@ StandardError=journal
 Description=Nightly PBS Encrypted Google Drive Mirror Timer
 
 [Timer]
-OnCalendar=*-*-* 03:00:00
+OnCalendar=*-*-* 05:00:00
 Persistent=true
 
 [Install]
@@ -117,7 +117,7 @@ systemctl restart pbs-gdrive-sync.timer
     if code != 0:
         raise RuntimeError(f"Failed to configure systemd units: {err}")
 
-    print("✅ Successfully deployed PBS sync service and enabled nightly timer (03:00)!")
+    print("✅ Successfully deployed PBS sync service and enabled nightly timer (05:00 PDT)!")
 
 def start_sync(force=False):
     """Trigger manual run of PBS sync, enforcing mutex against vzdump unless forced."""
@@ -150,7 +150,7 @@ def main():
         print(f"Node:              pve3 ({PVE3_IP})")
         print(f"Container:         LXC {PBS_CT_ID} (pbs-server)")
         print(f"Sync Job State:    {'RUNNING' if st['running'] else 'IDLE'}")
-        print(f"Nightly Timer:     {'ACTIVE (03:00 daily)' if st['timer_active'] else 'INACTIVE'}")
+        print(f"Nightly Timer:     {'ACTIVE (05:00 PDT daily)' if st['timer_active'] else 'INACTIVE'}")
         print(f"vzdump Mutex:      {'BLOCKED by ' + ', '.join(vzdump_active) if vzdump_active else 'CLEAR (No active vzdump jobs)'}")
         print("\nRecent Logs:")
         print("-" * 65)
