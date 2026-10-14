@@ -1,0 +1,6 @@
+Netid State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess                                                                     
+tcp   LISTEN 0      100        127.0.0.1:25        0.0.0.0:*    users:(("master",pid=309,fd=13))                                           
+tcp   LISTEN 0      1024       127.0.0.1:82        0.0.0.0:*    users:(("proxmox-backup-",pid=173,fd=14),("proxmox-backup-",pid=173,fd=13))
+tcp   LISTEN 0      4096               *:22              *:*    users:(("sshd",pid=182,fd=3),("systemd",pid=1,fd=52))                      
+tcp   LISTEN 0      100            [::1]:25           [::]:*    users:(("master",pid=309,fd=14))                                           
+tcp   LISTEN 0      1024               *:8007            *:*    users:(("proxmox-backup-",pid=200,fd=16),("proxmox-backup-",pid=200,fd=11))

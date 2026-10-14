@@ -1,0 +1,13 @@
+Filesystem            Size  Used Avail Use% Mounted on
+udev                  2.8G     0  2.8G   0% /dev
+tmpfs                 576M  1.8M  574M   1% /run
+/dev/mapper/pve-root   40G   24G   14G  64% /
+tmpfs                 2.9G   46M  2.8G   2% /dev/shm
+efivarfs              128K   78K   46K  63% /sys/firmware/efi/efivars
+tmpfs                 5.0M     0  5.0M   0% /run/lock
+tmpfs                 1.0M     0  1.0M   0% /run/credentials/systemd-journald.service
+tmpfs                 2.9G   12K  2.9G   1% /tmp
+/dev/sda2            1022M  9.1M 1013M   1% /boot/efi
+/dev/fuse             128M   32K  128M   1% /etc/pve
+tmpfs                 1.0M     0  1.0M   0% /run/credentials/getty@tty1.service
+tmpfs                 576M  8.0K  576M   1% /run/user/0

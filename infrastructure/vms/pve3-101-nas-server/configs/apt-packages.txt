@@ -143,6 +143,7 @@ libacl1:amd64
 libaio1:amd64
 libapparmor1:amd64
 libapt-pkg6.0:amd64
+libarchive-zip-perl
 libargon2-1:amd64
 libassuan0:amd64
 libattr1:amd64
@@ -162,8 +163,8 @@ libc-l10n
 libc6:amd64
 libcairo2:amd64
 libcap-ng0:amd64
-libcap2:amd64
 libcap2-bin
+libcap2:amd64
 libcbor0.8:amd64
 libcfitsio10:amd64
 libcom-err2:amd64
@@ -279,8 +280,8 @@ libogg0:amd64
 libonig5:amd64
 libossp-uuid16:amd64
 libp11-kit0:amd64
-libpam-modules:amd64
 libpam-modules-bin
+libpam-modules:amd64
 libpam-runtime
 libpam0g:amd64
 libpango-1.0-0:amd64
@@ -298,15 +299,15 @@ libpopt0:amd64
 libproc2-0:amd64
 libpsl5:amd64
 libpython3-stdlib:amd64
-libpython3.11:amd64
 libpython3.11-minimal:amd64
 libpython3.11-stdlib:amd64
+libpython3.11:amd64
 libreadline8:amd64
 librrd8:amd64
 librtmp1:amd64
 libsasl2-2:amd64
-libsasl2-modules:amd64
 libsasl2-modules-db:amd64
+libsasl2-modules:amd64
 libsbig4
 libseccomp2:amd64
 libselinux1:amd64
@@ -393,6 +394,7 @@ lvm2
 mawk
 mdadm
 media-types
+mergerfs
 monit
 mount
 nano
@@ -414,6 +416,8 @@ nvidia-tesla-470-alternative
 nvidia-tesla-470-kernel-support
 openmediavault
 openmediavault-keyring
+openmediavault-mergerfs
+openmediavault-omvextrasorg
 openssh-client
 openssh-server
 openssh-sftp-server

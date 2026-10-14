@@ -86,24 +86,6 @@ def run_script(script_name: str, args: list[str] = None) -> str:
     except Exception as e:
         return f"Exception executing {script_name}: {e}"
 
-def run_bash_script(script_name: str, args: list[str] = None) -> str:
-    if args is None:
-        args = []
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    script_path = os.path.join(os.path.dirname(__file__), "scripts", script_name)
-    if not os.path.exists(script_path):
-        return f"Error: Script {script_path} not found."
-    cmd = ["bash", script_path] + args
-    try:
-        res = subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True)
-        if res.returncode == 0:
-            return res.stdout
-        else:
-            return f"Error executing {script_name}:\n{res.stderr}\n{res.stdout}"
-    except Exception as e:
-        return f"Exception executing {script_name}: {e}"
-
-
 # ==============================================================================
 # 1. FLEET & HYPERVISOR MANAGEMENT
 # ==============================================================================
@@ -121,13 +103,14 @@ def sync_fleet(apply: bool = False, diff_only: bool = True) -> str:
 
 @mcp.tool()
 def manage_hosts(
-    action: Literal["audit", "backup", "restore", "restore_configs", "register", "bios_snapshot"],
+    action: Literal["audit", "baseline", "backup", "restore", "restore_configs", "register", "bios_snapshot"],
     node: str | None = None,
     ip: str | None = None
 ) -> str:
     """Manage Proxmox physical hypervisor nodes (pve, pve2, pve3).
     Actions:
       - 'audit': Compare live host config & packages against Git blueprints (diff-only).
+      - 'baseline': Deep system, kernel, network, port, service, and firewall baseline audit across hosts and guests.
       - 'backup': Extract network interfaces, storage definitions, and cron to Git.
       - 'restore': Restore host drift artifacts and system configs.
       - 'restore_configs': Restore /etc/network/interfaces and storage.cfg.
@@ -137,14 +120,16 @@ def manage_hosts(
     action = action.lower().strip()
     if action == "audit":
         return run_script("sync-live-fleet.py", ["--diff-only"])
+    elif action == "baseline":
+        return run_script("audit-pve-fleet.py", [f"--node={node}"] if node else [])
     elif action == "backup":
-        return run_bash_script("extract_host_configs.sh")
+        return run_script("extract-host-configs.py", [f"--node={node}"] if node else [])
     elif action == "restore":
         return run_script("restore-host-drifts.py", [node] if node else [])
     elif action == "restore_configs":
         return run_script("restore-host-configs.py", [node] if node else [])
     elif action == "bios_snapshot":
-        return run_bash_script("snapshot-fleet-bios.sh", [node] if node else ["all"])
+        return run_script("snapshot-fleet-bios.py", [node] if node else ["all"])
     elif action == "register":
         if not node or not ip:
             return "Error: Both 'node' and 'ip' are required for action='register'."
@@ -153,7 +138,7 @@ def manage_hosts(
         with open(os.path.join(host_dir, "meta.json"), "w") as f:
             json.dump({"ip": ip}, f, indent=4)
         return f"Successfully registered host {node} ({ip}) at {host_dir}"
-    return f"Unknown host action: '{action}'. Valid actions: audit, backup, restore, restore_configs, register, bios_snapshot."
+    return f"Unknown host action: '{action}'. Valid actions: audit, baseline, backup, restore, restore_configs, register, bios_snapshot."
 
 @mcp.tool()
 def manage_vms(
@@ -295,7 +280,9 @@ def manage_apt_packages(
       - 'restore': Reinstall missing APT dependencies matching GitOps manifest."""
     action = action.lower().strip()
     if action == "backup":
-        return run_script("sync-live-fleet.py", ["--apply"])
+        args = []
+        if node: args.extend(["--node", node])
+        return run_script("backup-apt-packages.py", args)
     elif action == "restore":
         args = []
         if node: args.extend(["--node", node])

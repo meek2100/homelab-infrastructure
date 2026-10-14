@@ -1,0 +1,47 @@
+UNIT FILE                           STATE   PRESET
+run-proxmox\x2dbackup.mount         enabled enabled
+postfix-resolvconf.path             enabled enabled
+blk-availability.service            enabled enabled
+cron.service                        enabled enabled
+e2scrub_reap.service                enabled enabled
+lvm2-monitor.service                enabled enabled
+networking.service                  enabled enabled
+nftables.service                    enabled enabled
+pbs-network-config-commit.service   enabled enabled
+postfix-resolvconf.service          enabled enabled
+postfix.service                     enabled enabled
+proxmox-backup-banner.service       enabled enabled
+proxmox-backup-proxy.service        enabled enabled
+proxmox-backup.service              enabled enabled
+proxmox-regenerate-snakeoil.service enabled enabled
+smartmontools.service               enabled enabled
+ssh.service                         enabled enabled
+sshd-keygen.service                 enabled enabled
+systemd-network-generator.service   enabled enabled
+systemd-pstore.service              enabled enabled
+systemd-sysext.service              enabled enabled
+systemd-timesyncd.service           enabled enabled
+zfs-import-cache.service            enabled enabled
+zfs-volume-wait.service             enabled enabled
+dm-event.socket                     enabled enabled
+lvm2-lvmpolld.socket                enabled enabled
+ssh.socket                          enabled enabled
+systemd-networkd.socket             enabled enabled
+reboot.target                       enabled enabled
+remote-cryptsetup.target            enabled enabled
+remote-fs.target                    enabled enabled
+remote-veritysetup.target           enabled enabled
+zfs-import.target                   enabled enabled
+zfs-volumes.target                  enabled enabled
+zfs.target                          enabled enabled
+apt-daily-upgrade.timer             enabled enabled
+apt-daily.timer                     enabled enabled
+dpkg-db-backup.timer                enabled enabled
+e2scrub_all.timer                   enabled enabled
+fstrim.timer                        enabled enabled
+logrotate.timer                     enabled enabled
+man-db.timer                        enabled enabled
+pbs-gdrive-sync.timer               enabled enabled
+proxmox-backup-daily-update.timer   enabled enabled
+
+44 unit files listed.

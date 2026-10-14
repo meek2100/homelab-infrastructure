@@ -211,12 +211,12 @@ libc-bin
 libc-dev-bin
 libc-devtools
 libc-l10n
-libc6:amd64
 libc6-dev:amd64
+libc6:amd64
 libcairo2:amd64
 libcap-ng0:amd64
-libcap2:amd64
 libcap2-bin
+libcap2:amd64
 libcares2:amd64
 libcbor0.10:amd64
 libcbor0.8:amd64
@@ -272,8 +272,8 @@ libepoxy0:amd64
 liberror-perl
 libevent-2.1-7t64:amd64
 libevent-core-2.1-7t64:amd64
-libexpat1:amd64
 libexpat1-dev:amd64
+libexpat1:amd64
 libext2fs2t64:amd64
 libfakeroot:amd64
 libfaketime:amd64
@@ -469,8 +469,8 @@ libopeniscsiusr
 libopus0:amd64
 liborc-0.4-0t64:amd64
 libp11-kit0:amd64
-libpam-modules:amd64
 libpam-modules-bin
+libpam-modules:amd64
 libpam-runtime
 libpam-systemd:amd64
 libpam0g:amd64
@@ -517,10 +517,10 @@ libpython3-dev:amd64
 libpython3-stdlib:amd64
 libpython3.11-minimal:amd64
 libpython3.11-stdlib:amd64
-libpython3.13:amd64
 libpython3.13-dev:amd64
 libpython3.13-minimal:amd64
 libpython3.13-stdlib:amd64
+libpython3.13:amd64
 libqb-tools
 libqb100:amd64
 libqrencode4:amd64
@@ -839,6 +839,7 @@ python3.13-minimal
 qemu-server
 qrencode
 qttranslations5-l10n
+rclone
 readline-common
 reportbug
 rpcbind
@@ -853,8 +854,8 @@ sensible-utils
 sgml-base
 shared-mime-info
 shim-helpers-amd64-signed
-shim-signed:amd64
 shim-signed-common
+shim-signed:amd64
 shim-unsigned:amd64
 skopeo
 smartmontools
@@ -911,6 +912,6 @@ zfs-dkms
 zfs-initramfs
 zfs-zed
 zfsutils-linux
-zlib1g:amd64
 zlib1g-dev:amd64
+zlib1g:amd64
 zstd

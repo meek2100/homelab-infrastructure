@@ -1,0 +1,5 @@
+total 16
+drwxr-xr-x  4 vmail vmail 4096 Jan  8  2026 .
+drwxr-xr-x 16 root  root  4096 Sep 25 16:39 ..
+drwx------  3 vmail vmail 4096 Jan  8  2026 ivyhairlounge.com
+drwx------  5 vmail vmail 4096 Jul 16 14:06 theurer.dev

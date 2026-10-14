@@ -199,12 +199,12 @@ libbz2-1.0:amd64
 libc-bin
 libc-dev-bin
 libc-l10n
-libc6:amd64
 libc6-dev:amd64
+libc6:amd64
 libcairo2:amd64
 libcap-ng0:amd64
-libcap2:amd64
 libcap2-bin
+libcap2:amd64
 libcares2:amd64
 libcbor0.10:amd64
 libcbor0.8:amd64
@@ -438,8 +438,8 @@ libopeniscsiusr
 libopus0:amd64
 liborc-0.4-0t64:amd64
 libp11-kit0:amd64
-libpam-modules:amd64
 libpam-modules-bin
+libpam-modules:amd64
 libpam-runtime
 libpam-systemd:amd64
 libpam0g:amd64
@@ -792,6 +792,7 @@ python3.13-minimal
 qemu-server
 qrencode
 qttranslations5-l10n
+rclone
 readline-common
 reportbug
 rpcbind
@@ -806,8 +807,8 @@ sensible-utils
 sgml-base
 shared-mime-info
 shim-helpers-amd64-signed
-shim-signed:amd64
 shim-signed-common
+shim-signed:amd64
 shim-unsigned:amd64
 skopeo
 smartmontools

@@ -1,0 +1,8 @@
+total 28
+drwxr-xr-x  6 root     root     4096 Jul 17 15:35 .
+drwxr-xr-x 14 root     root     4096 Sep 12  2024 ..
+-rw-r-----  1 www-data www-data  418 Jan  8  2026 config.ini
+drwxr-xr-x  2 root     root     4096 Jul 19  2024 html
+drwxr-xr-x  3 root     root     4096 Jan  7  2026 ivyhairlounge.com
+drwxr-xr-x  3 root     root     4096 Jan  7  2026 theivyhairlounge.com
+drwxr-xr-x  3 root     root     4096 Jul 22  2024 theurer.dev

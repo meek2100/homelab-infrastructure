@@ -1,0 +1,21 @@
+Filesystem            Size  Used Avail Use% Mounted on
+udev                   16G     0   16G   0% /dev
+tmpfs                 3.2G  4.0M  3.2G   1% /run
+/dev/mapper/pve-root   94G   17G   73G  19% /
+tmpfs                  16G   46M   16G   1% /dev/shm
+efivarfs              384K  284K   96K  75% /sys/firmware/efi/efivars
+tmpfs                 5.0M     0  5.0M   0% /run/lock
+tmpfs                 1.0M     0  1.0M   0% /run/credentials/systemd-journald.service
+tmpfs                  16G   12K   16G   1% /tmp
+/dev/nvme0n1p2       1022M  9.1M 1013M   1% /boot/efi
+/dev/loop0             72M   72M     0 100% /snap/certbot/5893
+/dev/loop2             23M   23M     0 100% /snap/certbot-dns-cloudflare/5426
+/dev/loop1             74M   74M     0 100% /snap/certbot/5781
+/dev/loop3             25M   25M     0 100% /snap/certbot-dns-cloudflare/5538
+/dev/loop4             67M   67M     0 100% /snap/core24/1643
+/dev/loop5             67M   67M     0 100% /snap/core24/2124
+/dev/loop6             51M   51M     0 100% /snap/snapd/27738
+/dev/loop7             45M   45M     0 100% /snap/snapd/28254
+/dev/fuse             128M   36K  128M   1% /etc/pve
+tmpfs                 1.0M     0  1.0M   0% /run/credentials/getty@tty1.service
+tmpfs                 3.2G   12K  3.2G   1% /run/user/0

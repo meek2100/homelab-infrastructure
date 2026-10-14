@@ -1,0 +1,1 @@
+2026-10-14 20:30:20,593 fail2ban                [2730]: ERROR   Permission denied to socket: /var/run/fail2ban/fail2ban.sock, (you must be root)

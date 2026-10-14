@@ -115,8 +115,8 @@ libc-bin
 libc-l10n
 libc6:amd64
 libcap-ng0:amd64
-libcap2:amd64
 libcap2-bin
+libcap2:amd64
 libcbor0.8:amd64
 libcom-err2:amd64
 libcrypt1:amd64
@@ -197,8 +197,8 @@ libnss-systemd:amd64
 libnuma1:amd64
 libonig5:amd64
 libp11-kit0:amd64
-libpam-modules:amd64
 libpam-modules-bin
+libpam-modules:amd64
 libpam-runtime
 libpam-systemd:amd64
 libpam0g:amd64
@@ -218,8 +218,8 @@ libpython3.11-stdlib:amd64
 libreadline8:amd64
 librtmp1:amd64
 libsasl2-2:amd64
-libsasl2-modules:amd64
 libsasl2-modules-db:amd64
+libsasl2-modules:amd64
 libseccomp2:amd64
 libselinux1:amd64
 libsemanage-common
