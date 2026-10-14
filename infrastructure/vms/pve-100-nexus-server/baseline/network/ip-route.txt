@@ -1,0 +1,10 @@
+default via 192.168.40.1 dev ens18 
+172.17.0.0/16 dev docker0 proto kernel scope link src 172.17.0.1 
+172.18.0.0/16 dev br-532b13a1332f proto kernel scope link src 172.18.0.1 
+172.19.0.0/16 dev br-ca437d5d095e proto kernel scope link src 172.19.0.1 
+172.20.0.0/16 dev br-3bca146c5925 proto kernel scope link src 172.20.0.1 
+172.21.0.0/16 dev br-bf96ce7bc276 proto kernel scope link src 172.21.0.1 
+172.22.0.0/16 dev br-09e5ba46290e proto kernel scope link src 172.22.0.1 
+172.23.0.0/16 dev br-6998c0794406 proto kernel scope link src 172.23.0.1 
+172.24.0.0/16 dev br-20a624b5bb27 proto kernel scope link src 172.24.0.1 
+192.168.40.0/24 dev ens18 proto kernel scope link src 192.168.40.185 

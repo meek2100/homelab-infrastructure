@@ -1,0 +1,24 @@
+UNIT FILE                 STATE   PRESET
+apparmor.service          enabled enabled
+console-setup.service     enabled enabled
+containerd.service        enabled enabled
+cron.service              enabled enabled
+docker.service            enabled enabled
+e2scrub_reap.service      enabled enabled
+getty@.service            enabled enabled
+keyboard-setup.service    enabled enabled
+networking.service        enabled enabled
+ssh.service               enabled enabled
+systemd-pstore.service    enabled enabled
+systemd-timesyncd.service enabled enabled
+docker.socket             enabled enabled
+remote-fs.target          enabled enabled
+apt-daily-upgrade.timer   enabled enabled
+apt-daily.timer           enabled enabled
+dpkg-db-backup.timer      enabled enabled
+e2scrub_all.timer         enabled enabled
+fstrim.timer              enabled enabled
+logrotate.timer           enabled enabled
+man-db.timer              enabled enabled
+
+21 unit files listed.

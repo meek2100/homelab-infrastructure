@@ -110,6 +110,7 @@ services:
       - TZ=${TZ}
     volumes:
       - ${BASE_PATH}/qbittorrent/config:/config
+      - ${BASE_PATH}/qbittorrent/incomplete:/downloads/incomplete:rw
       - ${NFS_MOUNT_POINT}:/mnt/media:rw
     restart: unless-stopped
     depends_on:

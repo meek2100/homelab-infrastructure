@@ -1,0 +1,34 @@
+  UNIT                           LOAD   ACTIVE SUB     DESCRIPTION
+  avahi-daemon.service           loaded active running Avahi mDNS/DNS-SD Stack
+  chrony.service                 loaded active running chrony, an NTP client/server
+  collectd.service               loaded active running Statistics collection and monitoring daemon
+  cron.service                   loaded active running Regular background program processing daemon
+  dbus.service                   loaded active running D-Bus System Message Bus
+  getty@tty1.service             loaded active running Getty on tty1
+  monit.service                  loaded active running LSB: service and resource monitoring daemon
+  nfs-idmapd.service             loaded active running NFSv4 ID-name mapping service
+  nfs-mountd.service             loaded active running NFS Mount Daemon
+  nfsdcld.service                loaded active running NFSv4 Client Tracking Daemon
+  nginx.service                  loaded active running A high performance web server and a reverse proxy server
+  openmediavault-engined.service loaded active running The OpenMediaVault engine daemon that processes the RPC request
+  php8.2-fpm.service             loaded active running The PHP 8.2 FastCGI Process Manager
+  qemu-guest-agent.service       loaded active running QEMU Guest Agent
+  rpc-statd.service              loaded active running NFS status monitor for NFSv2/3 locking.
+  rpcbind.service                loaded active running RPC bind portmap service
+  rrdcached.service              loaded active running LSB: start or stop rrdcached
+  rsyslog.service                loaded active running System Logging Service
+  smbd.service                   loaded active running Samba SMB Daemon
+  ssh.service                    loaded active running OpenBSD Secure Shell server
+  systemd-journald.service       loaded active running Journal Service
+  systemd-logind.service         loaded active running User Login Management
+  systemd-networkd.service       loaded active running Network Configuration
+  systemd-resolved.service       loaded active running Network Name Resolution
+  systemd-udevd.service          loaded active running Rule-based Manager for Device Events and Files
+  unattended-upgrades.service    loaded active running Unattended Upgrades Shutdown
+  wpa_supplicant.service         loaded active running WPA supplicant
+  wsdd-server.service            loaded active running Web Services Dynamic Discovery host daemon
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+28 loaded units listed.

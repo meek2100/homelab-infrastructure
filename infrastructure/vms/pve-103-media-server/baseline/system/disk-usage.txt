@@ -1,0 +1,20 @@
+Filesystem                         Size  Used Avail Use% Mounted on
+tmpfs                              795M  2.2M  793M   1% /run
+/dev/mapper/ubuntu--vg-ubuntu--lv   48G   17G   29G  37% /
+tmpfs                              3.9G     0  3.9G   0% /dev/shm
+tmpfs                              5.0M     0  5.0M   0% /run/lock
+/dev/sda2                          2.0G  200M  1.6G  11% /boot
+192.168.40.248:/media              2.7T   93G  2.5T   4% /mnt/media
+overlay                             48G   17G   29G  37% /var/lib/docker/overlay2/7c7c0c1e5ac9ac3dab24b26bf39ccbe619bb67b48084521f775c60ef6a5cd976/merged
+overlay                             48G   17G   29G  37% /var/lib/docker/overlay2/87413db58c434152a35efc59187bae848de42c10136ced4d26b131f639f2ef6b/merged
+overlay                             48G   17G   29G  37% /var/lib/docker/overlay2/8c8c0ca40a58844461cb7b2a0f86dc4583efd78beadf4575b8792f6a815c0ed7/merged
+overlay                             48G   17G   29G  37% /var/lib/docker/overlay2/e37879a483a40db0065c49801f26c60684e882cd885bac16f111f22d8bc51027/merged
+overlay                             48G   17G   29G  37% /var/lib/docker/overlay2/edcadf8a811adf11a634d60697c72392b602cd7a74de7812bb35c6a9d22e8bc4/merged
+overlay                             48G   17G   29G  37% /var/lib/docker/overlay2/e62e840294a59f095cc682b1c3af582b66035993fda8763703a75e65c6a700f1/merged
+overlay                             48G   17G   29G  37% /var/lib/docker/overlay2/ce9f3f5112c02acbafb35aed3bb1f8e2fc00a1407a10fc2ca5895ff73e525af1/merged
+overlay                             48G   17G   29G  37% /var/lib/docker/overlay2/ab9b4d5f6534ea28d492bfb67babff1eae30963a8599f1425a90299cf06c9d74/merged
+overlay                             48G   17G   29G  37% /var/lib/docker/overlay2/89c9431dbb92e530fe10e1f2ee254d8d6fecd9dc6f05278198b3ddf9902d1156/merged
+overlay                             48G   17G   29G  37% /var/lib/docker/overlay2/49ffe53bd9ff3cdbee145957fc72c21a3204f48b8a397b1abef73904332b2fa8/merged
+overlay                             48G   17G   29G  37% /var/lib/docker/overlay2/47e10c9569335da19a3c05c9649fa00cc4f39f70a0d505ee5a96e9b948eb5903/merged
+overlay                             48G   17G   29G  37% /var/lib/docker/overlay2/668a6e703f17f09f107491ca577c81eef694bd366f356eda61f663cee197cb0d/merged
+overlay                             48G   17G   29G  37% /var/lib/docker/overlay2/85997bac24cb773122fa02ad52001f671485b5637b8a827df235891eaa2cddf8/merged

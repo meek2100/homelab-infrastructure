@@ -1,0 +1,16 @@
+NAMES                  IMAGE                                      STATUS                    PORTS
+watchtower             nickfedor/watchtower:latest                Up 40 minutes (healthy)   8080/tcp
+wireshark              lscr.io/linuxserver/wireshark:latest       Up 40 minutes             
+gp-proxy               ghcr.io/meek2100/gp-proxy:main             Up 40 minutes (healthy)   
+git-dietpi             alpine/git:latest                          Up 40 minutes             
+homeassistant          lscr.io/linuxserver/homeassistant:latest   Up 40 minutes             
+portainer              portainer/portainer-ee:latest              Up 40 minutes             0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp, 0.0.0.0:9443->9443/tcp, [::]:9443->9443/tcp, 9000/tcp
+syncthing              lscr.io/linuxserver/syncthing:latest       Up 40 minutes             0.0.0.0:8384->8384/tcp, 0.0.0.0:21027->21027/udp, [::]:8384->8384/tcp, [::]:21027->21027/udp, 0.0.0.0:22000->22000/tcp, [::]:22000->22000/tcp, 0.0.0.0:22000->22000/udp, [::]:22000->22000/udp
+node-exporter          prom/node-exporter:v1.8.2                  Up 40 minutes             0.0.0.0:9100->9100/tcp, [::]:9100->9100/tcp
+cadvisor               gcr.io/cadvisor/cadvisor:v0.49.1           Up 40 minutes (healthy)   0.0.0.0:8088->8080/tcp, [::]:8088->8080/tcp
+promtail               grafana/promtail:3.0.0                     Up 40 minutes             
+homebridge             homebridge/homebridge:latest               Up 40 minutes             
+spoolman2slicer        spoolman-spoolman2slicer                   Up 40 minutes             
+spoolman               ghcr.io/meek2100/spoolman:test             Up 40 minutes (healthy)   0.0.0.0:7912->8000/tcp, [::]:7912->8000/tcp
+gitwatch-orca-slicer   ghcr.io/gitwatch/gitwatch:latest           Up 40 minutes             
+gitwatch-obsidian      ghcr.io/gitwatch/gitwatch:latest           Up 40 minutes             

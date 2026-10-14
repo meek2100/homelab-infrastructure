@@ -145,7 +145,7 @@ def audit_vm(node: str, ip: str, vmid: str, name: str):
     os.makedirs(dest_dir, exist_ok=True)
 
     vm_audit_cmd = '''
-    mkdir -p /tmp/vm-baseline/{system,network,services}
+    mkdir -p /tmp/vm-baseline/system /tmp/vm-baseline/network /tmp/vm-baseline/services
     uname -a > /tmp/vm-baseline/system/uname.txt 2>&1 || true
     cat /etc/os-release > /tmp/vm-baseline/system/os-release.txt 2>&1 || true
     uptime > /tmp/vm-baseline/system/uptime.txt 2>&1 || true

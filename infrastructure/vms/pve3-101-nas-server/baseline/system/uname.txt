@@ -1,0 +1,1 @@
+Linux nas-server 6.12.95+deb12-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.12.95-1~bpo12+1 (2026-07-05) x86_64 GNU/Linux

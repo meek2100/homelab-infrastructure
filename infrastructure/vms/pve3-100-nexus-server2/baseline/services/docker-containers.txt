@@ -1,0 +1,9 @@
+NAMES                 IMAGE                              STATUS                    PORTS
+chrony                cturra/ntp:latest                  Up 41 minutes (healthy)   0.0.0.0:123->123/udp, [::]:123->123/udp
+portainer             portainer/portainer-ee:lts         Up 41 minutes             0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp, 0.0.0.0:9443->9443/tcp, [::]:9443->9443/tcp, 9000/tcp
+watchtower            nickfedor/watchtower:latest        Up 41 minutes (healthy)   8080/tcp
+promtail              grafana/promtail:3.0.0             Up 41 minutes             
+node-exporter         prom/node-exporter:v1.8.2          Up 41 minutes             0.0.0.0:9100->9100/tcp, [::]:9100->9100/tcp
+cadvisor              gcr.io/cadvisor/cadvisor:v0.49.1   Up 41 minutes (healthy)   0.0.0.0:8088->8080/tcp, [::]:8088->8080/tcp
+adguardhome-certbot   certbot/dns-cloudflare             Up 41 minutes             80/tcp, 443/tcp
+adguardhome           adguard/adguardhome                Up 41 minutes             

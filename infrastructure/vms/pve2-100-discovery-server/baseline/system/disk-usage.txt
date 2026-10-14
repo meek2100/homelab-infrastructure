@@ -1,0 +1,16 @@
+Filesystem                         Size  Used Avail Use% Mounted on
+tmpfs                              392M  1.8M  390M   1% /run
+/dev/mapper/ubuntu--vg-ubuntu--lv   48G   26G   20G  57% /
+tmpfs                              2.0G     0  2.0G   0% /dev/shm
+tmpfs                              5.0M     0  5.0M   0% /run/lock
+/dev/sda2                          2.0G  200M  1.6G  11% /boot
+10.25.25.248:/media                2.7T   93G  2.5T   4% /mnt/media
+overlay                             48G   26G   20G  57% /var/lib/docker/overlay2/92a12ddb201bd2222d695b7f7812ad089f1bd8f853c7744e771f1a218ee05aca/merged
+overlay                             48G   26G   20G  57% /var/lib/docker/overlay2/b2be3d6cdaf74d365ad7773d2bbae0174866a59aca832ded5bc78622116628e1/merged
+overlay                             48G   26G   20G  57% /var/lib/docker/overlay2/65611b701cfc6d29890684b4c141f970c80d7c2ace2a451f26815a96a986b3d5/merged
+overlay                             48G   26G   20G  57% /var/lib/docker/overlay2/d935ba618075e32bbd0e8615cf5f455fd1f4e56c1634bc9ef59ad6f5a54b298d/merged
+overlay                             48G   26G   20G  57% /var/lib/docker/overlay2/1ee350abf5d1075564e4ccb026adfa789afd8262f2794e92d45cf93d99e9a879/merged
+overlay                             48G   26G   20G  57% /var/lib/docker/overlay2/e00804a41c625a99cdb0da2a71f68546318be40d994768139a88beaa94cfbfa2/merged
+overlay                             48G   26G   20G  57% /var/lib/docker/overlay2/6f8e5c0d549bbbf160c88ace2d440e1d1ade6a71cf96d9807c9492f3353b6e08/merged
+overlay                             48G   26G   20G  57% /var/lib/docker/overlay2/312ed215d051efac4fb0ccfa0f8d04c2b60b60210433d8f18573ba543abfd293/merged
+overlay                             48G   26G   20G  57% /var/lib/docker/overlay2/219074e01d3ff16f67c4899dcc76e60a9d8ddd45ef5942dae4aaad3b62114005/merged

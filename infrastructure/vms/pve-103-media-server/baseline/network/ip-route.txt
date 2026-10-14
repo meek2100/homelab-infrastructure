@@ -1,0 +1,13 @@
+default via 192.168.40.1 dev ens18 proto dhcp src 192.168.40.247 metric 100 
+172.17.0.0/16 dev docker0 proto kernel scope link src 172.17.0.1 
+172.18.0.0/16 dev br-4e7dfc151c98 proto kernel scope link src 172.18.0.1 
+172.19.0.0/16 dev br-19349278de52 proto kernel scope link src 172.19.0.1 
+172.20.0.0/16 dev br-6d2892c642fb proto kernel scope link src 172.20.0.1 
+172.21.0.0/16 dev br-a9eac0fa2e1a proto kernel scope link src 172.21.0.1 linkdown 
+172.22.0.0/16 dev br-5df4f702f931 proto kernel scope link src 172.22.0.1 
+172.23.0.0/16 dev br-27f3f2d56ea5 proto kernel scope link src 172.23.0.1 
+172.24.0.0/16 dev br-a2ab7310aa62 proto kernel scope link src 172.24.0.1 
+192.168.40.0/24 dev ens18 proto kernel scope link src 192.168.40.247 metric 100 
+192.168.40.1 dev ens18 proto dhcp scope link src 192.168.40.247 metric 100 
+192.168.40.185 dev ens18 proto dhcp scope link src 192.168.40.247 metric 100 
+192.168.40.186 dev ens18 proto dhcp scope link src 192.168.40.247 metric 100 

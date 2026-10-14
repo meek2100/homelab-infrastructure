@@ -1,0 +1,25 @@
+NAMES                 IMAGE                                         STATUS                    PORTS
+chrony                cturra/ntp:latest                             Up 42 minutes (healthy)   0.0.0.0:123->123/udp, [::]:123->123/udp
+tailscale             tailscale/tailscale:latest                    Up 42 minutes             
+adguardhome-sync      lscr.io/linuxserver/adguardhome-sync:latest   Up 56 seconds             0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+portainer             portainer/portainer-ee:latest                 Up 42 minutes             0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp, 0.0.0.0:9443->9443/tcp, [::]:9443->9443/tcp, 9000/tcp
+watchtower            nickfedor/watchtower:latest                   Up 42 minutes (healthy)   8080/tcp
+cloudflared           cloudflare/cloudflared:latest                 Up 42 minutes             
+grafana               grafana/grafana:11.1.0                        Up 42 minutes             0.0.0.0:3030->3000/tcp, [::]:3030->3000/tcp
+prometheus            prom/prometheus:v2.53.1                       Up 42 minutes             0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp
+promtail              grafana/promtail:3.0.0                        Up 42 minutes             
+snmp-exporter         prom/snmp-exporter:v0.26.0                    Up 42 minutes             0.0.0.0:9116->9116/tcp, [::]:9116->9116/tcp
+cadvisor              gcr.io/cadvisor/cadvisor:v0.49.1              Up 42 minutes (healthy)   0.0.0.0:8088->8080/tcp, [::]:8088->8080/tcp
+pve-exporter          prompve/prometheus-pve-exporter:latest        Up 42 minutes             0.0.0.0:9221->9221/tcp, [::]:9221->9221/tcp
+alertmanager          prom/alertmanager:v0.27.0                     Up 42 minutes             0.0.0.0:9093->9093/tcp, [::]:9093->9093/tcp
+blackbox-exporter     prom/blackbox-exporter:v0.25.0                Up 42 minutes             0.0.0.0:9115->9115/tcp, [::]:9115->9115/tcp
+loki                  grafana/loki:3.0.0                            Up 42 minutes             0.0.0.0:3100->3100/tcp, [::]:3100->3100/tcp
+node-exporter         prom/node-exporter:v1.8.2                     Up 42 minutes             0.0.0.0:9100->9100/tcp, [::]:9100->9100/tcp
+rustdesk-hbbs         rustdesk/rustdesk-server:latest               Up 42 minutes             
+rustdesk-hbbr         rustdesk/rustdesk-server:latest               Up 42 minutes             
+nginx-proxy-manager   jc21/nginx-proxy-manager:latest               Up 42 minutes             
+cloudflare-ddns       oznu/cloudflare-ddns:latest                   Up 41 minutes             
+wg-easy               ghcr.io/wg-easy/wg-easy                       Up 42 minutes (healthy)   0.0.0.0:51820->51820/udp, [::]:51820->51820/udp, 0.0.0.0:51821->51821/tcp, [::]:51821->51821/tcp
+adguardhome-certbot   certbot/dns-cloudflare                        Up 42 minutes             80/tcp, 443/tcp
+adguardhome           adguard/adguardhome                           Up 42 minutes             
+openspeedtest         openspeedtest/latest                          Up 42 minutes             3001/tcp, 8080/tcp, 0.0.0.0:8082->3000/tcp, [::]:8082->3000/tcp

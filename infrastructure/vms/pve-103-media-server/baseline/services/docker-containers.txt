@@ -1,0 +1,14 @@
+NAMES                   IMAGE                                         STATUS                    PORTS
+watchtower              nickfedor/watchtower:latest                   Up 41 minutes (healthy)   8080/tcp
+homarr                  ghcr.io/homarr-labs/homarr:latest             Up 41 minutes             0.0.0.0:7575->7575/tcp, [::]:7575->7575/tcp
+heimdall                lscr.io/linuxserver/heimdall:latest           Up 41 minutes             0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp
+portainer               portainer/portainer-ee:latest                 Up 41 minutes             0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp, 0.0.0.0:9443->9443/tcp, [::]:9443->9443/tcp, 9000/tcp
+plex                    lscr.io/linuxserver/plex:latest               Up 41 minutes             0.0.0.0:8324->8324/tcp, [::]:8324->8324/tcp, 0.0.0.0:1900->1900/udp, [::]:1900->1900/udp, 0.0.0.0:32410->32410/udp, [::]:32410->32410/udp, 0.0.0.0:32400->32400/tcp, [::]:32400->32400/tcp, 0.0.0.0:32412-32414->32412-32414/udp, [::]:32412-32414->32412-32414/udp, 5353/udp, 0.0.0.0:32469->32469/tcp, [::]:32469->32469/tcp
+seerr                   ghcr.io/seerr-team/seerr:latest               Up 41 minutes (healthy)   0.0.0.0:5055->5055/tcp, [::]:5055->5055/tcp
+audiobookshelf          ghcr.io/advplyr/audiobookshelf:latest         Up 41 minutes             0.0.0.0:13378->80/tcp, [::]:13378->80/tcp
+calibre-web-automated   crocodilestick/calibre-web-automated:latest   Up 41 minutes (healthy)   0.0.0.0:8083->8083/tcp, [::]:8083->8083/tcp
+promtail                grafana/promtail:3.0.0                        Up 41 minutes             
+cadvisor                gcr.io/cadvisor/cadvisor:v0.49.1              Up 41 minutes (healthy)   0.0.0.0:8088->8080/tcp, [::]:8088->8080/tcp
+node-exporter           prom/node-exporter:v1.8.2                     Up 41 minutes             0.0.0.0:9100->9100/tcp, [::]:9100->9100/tcp
+testflight-watcher      uzurka/testflight-watcher                     Up 41 minutes             
+filebrowser             hurlenko/filebrowser:latest                   Up 41 minutes             0.0.0.0:8084->8080/tcp, [::]:8084->8080/tcp

@@ -1,0 +1,23 @@
+Filesystem                                Size  Used Avail Use% Mounted on
+udev                                      2.9G     0  2.9G   0% /dev
+tmpfs                                     593M  1.7M  591M   1% /run
+/dev/sda1                                  48G   35G   11G  77% /
+tmpfs                                     2.9G     0  2.9G   0% /dev/shm
+tmpfs                                     5.0M     0  5.0M   0% /run/lock
+192.168.40.248:/media                     2.7T   93G  2.5T   4% /mnt/media
+192.168.40.248:/media/wireshark-captures  2.7T   93G  2.5T   4% /mnt/captures
+overlay                                    48G   35G   11G  77% /var/lib/docker/overlay2/6d0cc1d7228a07c347a59097231fca92b09f2db7e9f9e03e61f8ec1f89c282a5/merged
+overlay                                    48G   35G   11G  77% /var/lib/docker/overlay2/de7efea141c7fb99efec338a023f6221415d77d1bef635196f83ca37857fd9d8/merged
+overlay                                    48G   35G   11G  77% /var/lib/docker/overlay2/61a4990397458327308c41c7734da1223a73b5dd6f71f32024eae9f81d2f7104/merged
+overlay                                    48G   35G   11G  77% /var/lib/docker/overlay2/4d193bc82f937fbb207e0ba90d75741544e8f2b6c75d96b185477f77df964af0/merged
+overlay                                    48G   35G   11G  77% /var/lib/docker/overlay2/054bc67f62ea71b4e502dbf7b2548aad21e850ea97ad677dcf41fd2149e545c7/merged
+overlay                                    48G   35G   11G  77% /var/lib/docker/overlay2/7dd7ca2cce0beb4d697ea41836a34640b725660cc1478d43475604ec1af04130/merged
+overlay                                    48G   35G   11G  77% /var/lib/docker/overlay2/54ffd0ac95fae7d027b0b3410286dcbfc73aebc15c80f4faa9461e3388126d59/merged
+overlay                                    48G   35G   11G  77% /var/lib/docker/overlay2/e97f89650f4cf2a28a5c9e1a8b1fcf73097105a4de4249836d2c61223fdc91d5/merged
+overlay                                    48G   35G   11G  77% /var/lib/docker/overlay2/c332ff75587628cdbfa298e7f66adbb10f660369a6f572721988d120273b34b8/merged
+overlay                                    48G   35G   11G  77% /var/lib/docker/overlay2/12e447d87f192659b036d026e5050d28aceedeadb95b5331bf13f3965a0a713c/merged
+overlay                                    48G   35G   11G  77% /var/lib/docker/overlay2/789f328b4e544319efbc0c2999fe72bf191aec652523cd5a30501ddd64079ede/merged
+overlay                                    48G   35G   11G  77% /var/lib/docker/overlay2/c20ec680563a0439910e76bf456a4c82fe568a3913bc2c937c828ef5505cf912/merged
+overlay                                    48G   35G   11G  77% /var/lib/docker/overlay2/1586ae6c5437189ffd160894b7eb658b9503126345c8c30bf3c235d4c9634b70/merged
+overlay                                    48G   35G   11G  77% /var/lib/docker/overlay2/2c3fdbd302b055ce0cd3f6028d7882def912c6eaa835cf3e615ccd451052c1c0/merged
+overlay                                    48G   35G   11G  77% /var/lib/docker/overlay2/781d22abe6aadb9d0e36c5a24235bb4af67fa5ce231f6a104a04dc93843d84bd/merged
