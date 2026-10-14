@@ -17,15 +17,16 @@ DIRS=()
 for src in "${DIRS[@]}"; do
     echo "📦 Syncing directory: ${src} -> ${REMOTE_PATH}"
     rclone copy "${src}" "${REMOTE_PATH}" \
-        --fast-list \
-        --transfers 4 \
-        --checkers 8 \
+        --transfers 2 \
+        --checkers 4 \
         --bwlimit 25M \
-        --stats 15s \
+        --retries 999 \
+        --retries-sleep 30m \
+        --low-level-retries 10 \
+        --stats 1m \
         --stats-one-line \
-        --checksum \
         --log-file "/var/log/rclone-vzdump-migration.log" \
-        --log-level NOTICE
+        --log-level INFO
 done
 
 echo "✅ Node ${NODE} vzdump archives successfully synchronized to Google Drive!"
