@@ -197,6 +197,17 @@ def audit_node(node_info, staging_dir, identity_file=None):
         with open(os.path.join(node_stage, "storage.cfg"), "w") as f:
             f.write(stdout)
 
+    # SMART monitoring overrides
+    code_h, stdout_h, _ = run_ssh(ip, "cat /etc/smart_local_drivedb.h 2>/dev/null", identity_file=identity_file)
+    if code_h == 0 and stdout_h.strip():
+        with open(os.path.join(node_stage, "smart_local_drivedb.h"), "w") as f:
+            f.write(stdout_h)
+
+    code_ov, stdout_ov, _ = run_ssh(ip, "cat /etc/systemd/system/smartmontools.service.d/override.conf 2>/dev/null", identity_file=identity_file)
+    if code_ov == 0 and stdout_ov.strip():
+        with open(os.path.join(node_stage, "smartmontools_override.conf"), "w") as f:
+            f.write(stdout_ov)
+
     # Qemu-server VM configs
     qemu_stage = os.path.join(node_stage, "qemu-server")
     os.makedirs(qemu_stage, exist_ok=True)
@@ -370,9 +381,14 @@ def compute_diffs(staging_dir):
         node_stage = os.path.join(staging_dir, "hosts", node)
         if not os.path.exists(node_stage): continue
 
-        for fname in ["interfaces", "storage.cfg"]:
+        for fname in ["interfaces", "storage.cfg", "smart_local_drivedb.h", "smartmontools_override.conf"]:
             staged_file = os.path.join(node_stage, fname)
-            repo_file = os.path.join(HOSTS_DIR, node, "configs", fname)
+            if fname == "smart_local_drivedb.h":
+                repo_file = os.path.join(HOSTS_DIR, node, "configs", "custom-configs", "etc", fname)
+            elif fname == "smartmontools_override.conf":
+                repo_file = os.path.join(HOSTS_DIR, node, "configs", "custom-configs", "etc", "systemd", "system", "smartmontools.service.d", "override.conf")
+            else:
+                repo_file = os.path.join(HOSTS_DIR, node, "configs", fname)
             if not os.path.exists(staged_file): continue
 
             with open(staged_file, 'r', encoding='utf-8') as f:
@@ -512,12 +528,18 @@ def apply_sync(staging_dir, diffs):
         repo_node_cfg = os.path.join(HOSTS_DIR, node, "configs")
         os.makedirs(repo_node_cfg, exist_ok=True)
 
-        for fname in ["interfaces", "storage.cfg"]:
+        for fname in ["interfaces", "storage.cfg", "smart_local_drivedb.h", "smartmontools_override.conf"]:
             src = os.path.join(node_stage, fname)
-            dst = os.path.join(repo_node_cfg, fname)
-            if os.path.exists(src):
-                shutil.copy2(src, dst)
-                print(f"  ✓ Synced {node} {fname}")
+            if not os.path.exists(src): continue
+            if fname == "smart_local_drivedb.h":
+                dst = os.path.join(repo_node_cfg, "custom-configs", "etc", fname)
+            elif fname == "smartmontools_override.conf":
+                dst = os.path.join(repo_node_cfg, "custom-configs", "etc", "systemd", "system", "smartmontools.service.d", "override.conf")
+            else:
+                dst = os.path.join(repo_node_cfg, fname)
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            shutil.copy2(src, dst)
+            print(f"  ✓ Synced {node} {fname}")
 
         # qemu-server
         qemu_stage = os.path.join(node_stage, "qemu-server")

@@ -44,9 +44,9 @@ extract_node_configs() {
     mkdir -p "${target_dir}/custom-scripts"
     $ssh_cmd "tar -czf - /usr/local/bin /usr/local/sbin /root/scripts 2>/dev/null" | tar -xzf - -C "${target_dir}/custom-scripts" --strip-components=3 2>/dev/null || true
 
-    # 7. Unowned User Configurations (Nginx, Let's Encrypt, Samba, Custom Utils)
+    # 7. Unowned User Configurations (Nginx, Let's Encrypt, Samba, Custom Utils, SMART / smartmontools)
     mkdir -p "${target_dir}/custom-configs/etc"
-    $ssh_cmd "tar -czf - /etc/nginx /etc/letsencrypt /etc/samba 2>/dev/null" | tar -xzf - -C "${target_dir}/custom-configs" 2>/dev/null || true
+    $ssh_cmd "tar -czf - /etc/nginx /etc/letsencrypt /etc/samba /etc/smart_local_drivedb.h /etc/systemd/system/smartmontools.service.d 2>/dev/null" | tar -xzf - -C "${target_dir}/custom-configs" 2>/dev/null || true
     mkdir -p "${target_dir}/custom-configs/root"
     $ssh_cmd "tar -czf - /root/Proxmox-Enhanced-Configuration-Utility 2>/dev/null" | tar -xzf - -C "${target_dir}/custom-configs" 2>/dev/null || true
 
