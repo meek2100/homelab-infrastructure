@@ -8,7 +8,7 @@
 # 3. Emits actionable alerts to stderr on failure or partial status for cron email delivery.
 # 4. Integrates seamlessly with Proxmox Backup Server (PBS) via proxmox-backup-client.
 
-BACKUP_PATH="/mnt/pve/backup/dump/"
+BACKUP_PATH="/var/backups/pve-host/"
 BACKUP_FILE="pve-host"
 KEEP_DAYS=7
 TIMESTAMP="$(date +%Y_%m_%d-%H_%M_%S)"
