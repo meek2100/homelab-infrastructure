@@ -14,7 +14,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Part 2.5** | Multicast & Discovery Architecture (Native Bonjour/IGMP) | ✅ Settled — 2026-09-29: IGMP snooping + querier added for VLAN 30; AP mDNS gate off on MGMT SSID; 2026-10-02: Sonos cross-VLAN discovery & control fully verified (>50k frames); 2026-10-08: Vivint SDDP (UDP 1902) & Google TV/Cast multicast operational across VLAN 10/20 |
 | **Part 2.6** | WAN2 & Storage SAN Isolation (untagged vmbr1) | ✅ Settled |
 | **Part 2.7** | vxlan-server Split Trunking Architecture (VM 107) | 🟢 Complete — 2026-09-29: fixed 30 s tunnel-rebuild loop (59–73% office loss → 0%); VLAN 100 removed from tunnel; 2026-09-30: `TAGGED_VLANS="10 30"` deployed on both ends; 2026-10-01: fail-back via probe VLAN 4094 verified |
-| **Part 2.8** | Netgear GS108Ev2 Office Switch GitOps & Backup | 🟢 Complete — Native NSDP packet driver, L2 relay, and binary/JSON backups verified; 2026-10-02: desktop PC port aligned to VLAN 10 (`192.168.10.102`) |
+| **Part 2.8** | Netgear GS108Ev2 Office Switch GitOps & Backup | 🟢 Complete — Native NSDP packet driver, OpenWrt L2 relay, and dual binary/JSON backups verified; 2026-10-14: 100% compliant, 0 CRC errors, 0 drops, Port 1 offline (laptop on Wi-Fi), Ports 2–8 UP |
 | **Part 2.9** | Wireshark Headless SPAN Sniffer & Storage Engine (Stack 48) | 🟢 Hardened — 2026-09-30: vmbr1 hub mode + GRO off persisted, 512 B snaplen, VLAN-aware filter, open-file-safe background NAS worker as `abc`, soft `/mnt/captures` mount; 2026-10-01: capture truncation fixed; 2026-10-08: 141 clean ~50MB slices actively rotating on `/mnt/n/wireshark-captures` |
 | **Part 2.10**| Pakedge SX-8P Managed Switch & Work Testbench Lifecycle | 🟢 Complete — 2026-10-02: Switch recovered, raw socket Telnet engine verified, STP off + BPDU flooding, SW920 1/0/7 storm control broadcast level 5 applied, 0 BPDUs confirmed in captures; WattBox mains-powered |
 | **Part 3** | Observability Engine & Synthetic Probing (Stack 71) | 🟢 100% Deployed & Active (10 containers, Alertmanager, Blackbox, external targets; 2026-10-02: alert duration threshold relaxed to 5m to eliminate transient noise) |
@@ -24,7 +24,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Part 6** | Comprehensive Architectural Learnings & Production Gotchas | 📚 26 Critical Learnings Documented & Fleet-Hardened |
 | **Part 7** | 2026-09-29 / 10-08 Forensic Capture-Driven Network Remediation | 🟢 100% Complete & Hardened — Core loops, open resolvers, AdGuard rewrites, storm control, Bogon ACL, DNS enforcement ACLs, Option 119 & Option 42 dual-NTP, and NAS off-host backup verified |
 | **Part 7.5**| DHCP Reorganization, IP Tiering & Sonos Inter-VLAN | 🟢 Complete 2026-10-10 — All 7 VLAN dynamic ranges set to `.20–.99`; 106 authoritative static reservations deployed in router NVRAM; 104 AdGuard clients & 32 OvrC devices synced via FastMCP |
-| **Part 8** | Compute Platform Review & Resource Optimization | ⏸️ Paused — Gated on reviewing and addressing prioritized Part 7 pending items before execution |
+| **Part 8** | Compute Platform Review & Resource Optimization | 🔄 In Progress — Phase 8.0/8.1: pve3 hardware upgrade & BIOS optimization complete (1TB CMR WD10SPCX + Benfei UAS, auto-recovery fstab UUID, unattended UEFI boot, nas-pool configured); Google Drive vzdump migration active on pve3 (pve/pve2 100% complete); standalone PBS mirror orchestrator deployed with concurrency mutex |
 | **Part 9** | Edge Router Firmware Upgrade & Modernization (OpenWrt & DD-WRT) | ⏸️ Final Phase — Research, changelog audit & safety runbook for upgrading OpenWrt AX3200 & DD-WRT routers |
 
 
@@ -1016,7 +1016,7 @@ Full report with frame references, filters and playbook: [`capture-review-2026-1
 The homelab operates 3 standalone Proxmox VE 9.1.1 hypervisors with distinct hardware capabilities and physical limitations:
 * **Node 1: `pve` (Dell Precision 5520)**: Intel Xeon E3-1505M v6 (4C/8T @ 3.0GHz), **32 GB RAM**, 1TB NVMe SSD + 2x 1TB HDDs (`/mnt/pve/backup`, `/mnt/pve/backup2`) + 64GB SD, dual-GPU (**Intel HD Graphics P630 iGPU** + **NVIDIA Quadro M1200 Mobile 4GB VRAM**).
 * **Node 2: `pve2` (AWOW AK34 PRO)**: Intel Celeron J3455 (4C/4T @ 1.5GHz), **6 GB RAM** (heavily constrained), 128GB Foresee SSD + 1TB HDD (`/mnt/pve/backup`) + 128GB SD.
-* **Node 3: `pve3` (HP EliteDesk 800 G1)**: Intel Core i5-4590T (4C/4T @ 2.0GHz), **16 GB RAM**, 240GB Kingston SSD + 1TB HDD (LVM-thin `shared-nas` pool) + 500GB HDD (`/mnt/pve/backup`).
+* **Node 3: `pve3` (HP EliteDesk 800 G1)**: Intel Core i5-4590T (4C/4T @ 2.0GHz), **16 GB RAM**, 240GB Kingston SSD + 1TB WD Red HDD (LVM-thin `nas-pool`) + 1TB WD CMR HDD (`/mnt/pve/backup`, `WD10SPCX` in Benfei UAS enclosure). Unattended UEFI boot locked (`Boot0000* proxmox`), PXE removed, F1 prompt bypassed, WatchDog disabled.
 
 #### Core Problems Addressed
 1. **GPU Pass-Through Locks Host Memory (RAM Ballooning Disabled)**:

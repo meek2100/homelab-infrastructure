@@ -165,3 +165,50 @@ In the Proxmox Web GUI (**Datacenter ➔ Backup ➔ Add**) or via CLI:
 1. Run a manual test backup of a VM (e.g. `qm backup 100 pbs-backup`).
 2. Verify the initial run completes and creates chunks in `/mnt/pve/backup/pbs-datastore`.
 3. Trigger a second backup immediately afterwards: verify QEMU CBT activates and completes in **< 15 seconds**!
+
+---
+
+## 💾 Hardware Upgrade & Auto-Recovery Storage Architecture (2026-10-13)
+
+### 1. Drive Failure & Hardware Replacement
+On 2026-10-12, the legacy 500GB external USB drive on `pve3` failed with persistent kernel I/O errors and entered an emergency read-only state.
+- **Decommissioned Hardware**: 500GB Seagate Thin HDD in JMicron JMS567 enclosure (bulk-only transport).
+- **Installed Production Hardware**: 1TB Western Digital CMR 2.5" HDD (`WD10SPCX`, 5400 RPM, 16MB Cache) enclosed in a Benfei USB 3.0 to SATA adapter.
+- **Kernel Transport**: Negotiating USB 3.0 SuperSpeed (5000M) via native Linux kernel `uas` (USB Attached SCSI) driver.
+
+### 2. Bulletproof `/etc/fstab` & Auto-Recovery Directives
+To eliminate boot hangs and guarantee automatic filesystem remounting if the USB bus drops or re-enumerates:
+```fstab
+UUID=010e24cd-69dc-4517-95ff-8b5feed92cfa /mnt/pve/backup ext4 defaults,noatime,nofail,x-systemd.automount,x-systemd.device-timeout=10s 0 2
+```
+- `UUID=010e24cd-69dc-4517-95ff-8b5feed92cfa`: Guarantees deterministic disk binding regardless of Linux kernel device assignment (`/dev/sdb` vs `/dev/sdc`).
+- `x-systemd.automount`: Defers physical filesystem mounting until `/mnt/pve/backup` is accessed. Recovers on demand without requiring a host reboot.
+- `nofail` & `x-systemd.device-timeout=10s`: Prevents systemd from halting boot at the emergency shell if the drive is disconnected.
+
+---
+
+## ☁️ Offsite Encrypted Google Drive Mirror (`sync-pbs-backup-to-gdrive.py`)
+
+To achieve true 3-2-1 backup compliance, the PBS datastore is continuously mirrored offsite to Google Drive (`gdrive-encrypted:homelab-backups/pbs-datastore/`) using a standalone orchestrator.
+
+### 1. Standalone Script vs Legacy vzdump Separation
+- **Legacy `vzdump` Deprecation**: Monolithic `.vma.zst` archives from `pve`, `pve2`, and `pve3` are migrated once and retired.
+- **Standalone PBS Mirror**: Proxmox Backup Server stores deduplicated 4MB chunks in `.chunks/` plus snapshot metadata in `vm/`, `ct/`, and `ns/`. The standalone orchestrator mirrors the entire datastore structure (excluding temporary `.lock` and `lost+found/` files) for instant disaster recovery.
+- **Concurrency Mutex**: `mcp/homelab/scripts/sync-pbs-backup-to-gdrive.py` verifies whether legacy vzdump migrations are active before launching, preventing bandwidth starvation and Google 750GB/day quota exhaustion.
+
+### 2. Operational CLI Reference
+```bash
+# Check PBS mirror status, timer health, and mutex state
+.venv/bin/python3 mcp/homelab/scripts/sync-pbs-backup-to-gdrive.py status
+
+# Deploy / update sync script and systemd timer in LXC 105
+.venv/bin/python3 mcp/homelab/scripts/sync-pbs-backup-to-gdrive.py deploy
+
+# Trigger manual offsite sync (honors vzdump mutex)
+.venv/bin/python3 mcp/homelab/scripts/sync-pbs-backup-to-gdrive.py start
+
+# View recent transfer logs from LXC 105
+.venv/bin/python3 mcp/homelab/scripts/sync-pbs-backup-to-gdrive.py logs
+```
+The systemd service (`pbs-gdrive-sync.service`) and timer (`pbs-gdrive-sync.timer`) execute nightly at 03:00 UTC inside LXC 105.
+
