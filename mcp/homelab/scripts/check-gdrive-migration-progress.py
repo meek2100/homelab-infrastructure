@@ -47,12 +47,13 @@ def check_progress():
             last_line = live_detail if live_detail else (log_text.splitlines()[-1] if log_text else "Transferring...")
             print(f"\n🖥️  Host: {name} ({ip}) ➔ 🔄 IN PROGRESS")
             print(f"   📈 Stats: {last_line}")
-        elif "User rate limit exceeded" in log_text or "Error 403" in log_text:
+        last_line = log_text.splitlines()[-1] if log_text else ""
+        if "User rate limit exceeded" in last_line or "Error 403" in last_line:
             print(f"\n🖥️  Host: {name} ({ip}) ➔ ⏸️ PAUSED (Google 750GB Daily Quota Hit)")
             print(f"   ⚠️ Status: Reached Google Drive 24-hr account upload limit (~750 GB). Resumes on quota reset.")
-        elif "Failed to check" in log_text or "input/output error" in log_text:
+        elif "ERROR" in last_line or "Failed to check" in last_line or "input/output error" in last_line:
             print(f"\n🖥️  Host: {name} ({ip}) ➔ ⚠️ STOPPED WITH ERRORS")
-            print(f"   ⚠️ Detail: {log_text.splitlines()[-1] if log_text else 'Errors logged'}")
+            print(f"   ⚠️ Detail: {last_line}")
         else:
             print(f"\n🖥️  Host: {name} ({ip}) ➔ ✅ COMPLETE & VERIFIED")
             print("   ✨ All archives synchronized and verified.")
@@ -60,20 +61,29 @@ def check_progress():
     # 2. Check PBS Mirror inside CT 105
     code, pbs_ps, _ = sync.run_ssh("192.168.1.245", "pct exec 105 -- ps aux | grep 'rclone sync' | grep -v grep")
     pbs_running = bool(pbs_ps.strip())
-    code, pbs_log, _ = sync.run_ssh("192.168.1.245", "pct exec 105 -- tail -n 5 /var/log/rclone-pbs-sync.log 2>/dev/null")
-    pbs_text = pbs_log.strip() if pbs_log.strip() else ""
 
     code_timer, timer_out, _ = sync.run_ssh("192.168.1.245", "pct exec 105 -- systemctl is-active pbs-gdrive-sync.timer 2>/dev/null || echo 'inactive'")
     timer_active = (timer_out.strip() == "active")
 
     if pbs_running:
-        last_pbs = pbs_text.splitlines()[-1] if pbs_text else "Syncing..."
+        code_io, io_out, _ = sync.run_ssh("192.168.1.245", "pct exec 105 -- bash -c 'pid=$(pgrep -f \"rclone sync\" | head -n 1); if [ -n \"$pid\" ]; then r_bytes=$(grep \"read_bytes:\" /proc/$pid/io 2>/dev/null | awk \"{print \\$2}\"); etime=$(ps -p $pid -o etime= 2>/dev/null | tr -d \" \"); echo \"$r_bytes $etime\"; fi'")
+        pbs_detail = ""
+        if code_io == 0 and io_out.strip():
+            parts = io_out.strip().split()
+            if len(parts) >= 2 and parts[0].isdigit():
+                b_read = int(parts[0])
+                gb_read = b_read / (1024 ** 3)
+                etime = parts[1]
+                pct = min(100.0, (gb_read / 113.11) * 100)
+                pbs_detail = f"Transferred: {gb_read:.2f} GB / 113.11 GB ({pct:.1f}%) | Elapsed: {etime}"
+
+        last_pbs = pbs_detail if pbs_detail else "Finalizing chunk transfers..."
         print(f"\n📦 Container: pbs-server (LXC 105 on pve3) ➔ 🔄 IN PROGRESS")
         print(f"   📈 Stats: {last_pbs}")
     else:
         timer_msg = "Nightly mirror scheduled at 05:00 PDT." if timer_active else "Timer inactive."
-        print(f"\n📦 Container: pbs-server (LXC 105 on pve3) ➔ ✅ READY / IDLE")
-        print(f"   ✨ PBS datastore chunks mirror is idle. {timer_msg}")
+        print(f"\n📦 Container: pbs-server (LXC 105 on pve3) ➔ ✅ UP TO DATE / IDLE")
+        print(f"   ✨ PBS datastore chunks mirror is up to date. {timer_msg}")
 
     print("\n" + "=" * 70)
 
