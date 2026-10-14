@@ -670,7 +670,8 @@ libyang3:amd64
 libyuv0:amd64
 libz3-4:amd64
 libzfs6linux:amd64
-libzpool6linux:amd64
+libzfs7linux:amd64
+libzpool7linux:amd64
 libzstd1:amd64
 linux-base
 linux-libc-dev
@@ -737,10 +738,13 @@ proxmox-backup-client
 proxmox-backup-file-restore
 proxmox-backup-restore-image
 proxmox-default-kernel
+proxmox-enterprise-support-keyring
 proxmox-firewall
+proxmox-firewall-data
 proxmox-grub
 proxmox-headers-6.8.12-4-pve
 proxmox-kernel-6.17
+proxmox-kernel-6.17.13-21-pve-signed
 proxmox-kernel-6.17.2-2-pve-signed
 proxmox-kernel-6.8
 proxmox-kernel-6.8.12-10-pve-signed
@@ -749,6 +753,8 @@ proxmox-kernel-6.8.12-12-pve-signed
 proxmox-kernel-6.8.12-13-pve-signed
 proxmox-kernel-6.8.12-17-pve-signed
 proxmox-kernel-6.8.12-4-pve-signed
+proxmox-kernel-7.0
+proxmox-kernel-7.0.14-24-pve-signed
 proxmox-kernel-helper
 proxmox-mail-forward
 proxmox-mini-journalreader
@@ -903,6 +909,7 @@ vncterm
 wamerican
 wget
 whiptail
+wireguard-tools
 xdg-user-dirs
 xfsprogs
 xkb-data

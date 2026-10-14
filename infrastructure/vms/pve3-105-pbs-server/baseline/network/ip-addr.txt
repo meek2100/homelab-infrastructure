@@ -4,13 +4,13 @@
        valid_lft forever preferred_lft forever
     inet6 ::1/128 scope host noprefixroute 
        valid_lft forever preferred_lft forever
-2: eth0@if21: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+2: eth0@if19: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
     link/ether bc:24:11:3e:06:69 brd ff:ff:ff:ff:ff:ff link-netnsid 0
     inet 192.168.1.244/24 scope global eth0
        valid_lft forever preferred_lft forever
     inet6 fe80::be24:11ff:fe3e:669/64 scope link proto kernel_ll 
        valid_lft forever preferred_lft forever
-3: eth1@if22: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+3: eth1@if20: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
     link/ether bc:24:11:f7:63:b9 brd ff:ff:ff:ff:ff:ff link-netnsid 0
     inet 10.25.25.244/24 scope global eth1
        valid_lft forever preferred_lft forever

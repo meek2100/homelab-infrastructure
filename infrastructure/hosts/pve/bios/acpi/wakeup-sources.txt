@@ -1,6 +1,7 @@
 Device	S-state	  Status   Sysfs node
 PEG0	  S4	*enabled   pci:0000:00:01.0
 PEGP	  S4	*disabled  pci:0000:01:00.0
+		*disabled  auxiliary:acpi.video_bus.1
 PEG1	  S4	*disabled
 PEGP	  S4	*disabled
 PEG2	  S4	*disabled

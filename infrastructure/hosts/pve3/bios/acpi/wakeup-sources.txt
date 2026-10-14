@@ -1,7 +1,7 @@
 Device	S-state	  Status   Sysfs node
-PS2K	  S3	*enabled   pnp:00:04
+PS2K	  S3	*enabled   pnp:00:00
 		*disabled  serio:serio0
-PS2M	  S3	*disabled  pnp:00:05
+PS2M	  S3	*disabled  pnp:00:01
 RP01	  S4	*enabled   pci:0000:00:1c.0
 PXSX	  S4	*disabled
 RP02	  S4	*disabled

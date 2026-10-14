@@ -1419,22 +1419,19 @@ graph TD
    - Disconnected physical 1TB drives from Node 1 (Dell) and Node 2 (AWOW), consolidated all drives on Node 3 (HP EliteDesk).
    - Configured LVM thin pools `nas-pool` (sdc), `nas-pool2` (sdd), and `nas-pool3` (sdb) and hotplugged into OpenMediaVault (VM 101) as `scsi1`, `scsi2`, `scsi3`.
    - Installed `openmediavault-mergerfs` and provisioned unified pool **`pool_nas`** (`/srv/mergerfs/pool_nas`) with **2.75 TB** capacity and `epmfs` policy. Existing 93 GB media preserved with zero copying.
-5. **Standalone Proxmox VE Upgrade to PVE 9.2**: [NEXT]
-   - Enable `pve-no-subscription` repository on `pve`, `pve2`, and `pve3`.
-   - Update repository indices (`apt-get update`) and audit package upgrade diffs for PVE 9.2 release (`pve-manager`, Linux kernel).
-   - Execute staged, node-by-node non-disruptive upgrades:
-     1. Node 2 (`pve2` AWOW): Upgrade, reboot, and verify VM 100 (`discovery-server`) and `vmbr1` SAN connectivity.
-     2. Node 3 (`pve3` HP EliteDesk): Upgrade, reboot, and verify VM 100 (`nexus-server2`), VM 101 (`nas-server`), and LXC 105 (`pbs-server`).
-     3. Node 1 (`pve` Dell Precision): Upgrade, reboot, and verify VM 100 (`nexus-server`), VM 102 (`luna`), VM 103 (`media`), VM 107 (`vxlan`), and VM 109 (`minecraft`).
-   - Confirm all three nodes report healthy on PVE 9.2 with zero cluster state dependencies.
+5. **Standalone Proxmox VE Upgrade to PVE 9.2**: [COMPLETE - 2026-10-14]
+   - Enabled `pve-no-subscription` repository on `pve`, `pve2`, and `pve3`.
+   - Staged node-by-node upgrades completed in order `pve2` -> `pve3` -> `pve`, each rebooted with all guests verified running.
+   - All three nodes now report **pve-manager 9.2.21** on **kernel 7.0.14-24-pve** (`proxmox-ve` 9.2.0, `qemu-server` 9.2.11, `pve-qemu-kvm` 11.0.3-4, `zfsutils-linux` 2.4.4-pve1). No cluster dependencies; hosts remain standalone.
+   - Network matrix verified 100% green post-upgrade. Post-upgrade baselines, BIOS snapshots, APT manifests, and host configs captured in Git.
 6. **Wealth Vault Isolation**: [PENDING]
    - Partition and mount dedicated encrypted partition on Node 3 for the Wealth Vault financial ledgers (`actual-budget`, `firefly-iii`, `ghostfolio`).
 
 
-#### Stage 3: Node 2 (`pve2`) DMZ Download Engine Optimization
-1. Move incomplete download cache to local 128GB Foresee SSD.
-2. Ensure download container traffic remains strictly pinned to `vmbr1` (`10.25.25.0/24`) through DD-WRT Aurora WAN2 gateway.
-3. Validate that `pve2` host free memory increases from ~1.4 GB to >3.5 GB.
+#### Stage 3: Node 2 (`pve2`) DMZ Download Engine Optimization [PARTIAL - items 1-2 done 2026-10-14, item 3 open]
+1. Move incomplete download cache to local 128GB Foresee SSD. (Done: Stack 96 maps `${BASE_PATH}/qbittorrent/incomplete` to `/downloads/incomplete`; orphaned 8 GB `/swapfile.img` removed.)
+2. Ensure download container traffic remains strictly pinned to `vmbr1` (`10.25.25.0/24`) through DD-WRT Aurora WAN2 gateway. (Verified: default route via `10.25.25.1`, Gluetun PIA egress active.)
+3. Validate that `pve2` host free memory increases from ~1.4 GB to >3.5 GB. (OPEN: post-9.2 baseline still shows 1410 MB free / 1695 MB available on the 5.7 GB host; VM 100 is allocated 4 GB. Needs follow-up, e.g. VM memory/ballooning review.)
 
 #### Stage 4: Node 1 (`pve`) Compute LXC, Dual-GPU & Power Optimization
 1. Install NVIDIA Linux drivers on bare-metal `pve` host OS; verify `nvidia-smi` and `vainfo` on host.

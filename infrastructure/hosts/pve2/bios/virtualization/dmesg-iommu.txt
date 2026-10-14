@@ -1,4 +1,4 @@
-[    0.000000] Command line: BOOT_IMAGE=/boot/vmlinuz-6.17.2-2-pve root=/dev/mapper/pve-root ro quiet intel_iommu=on iommu=pt
-[    0.039738] Kernel command line: BOOT_IMAGE=/boot/vmlinuz-6.17.2-2-pve root=/dev/mapper/pve-root ro quiet intel_iommu=on iommu=pt
-[    0.039928] DMAR: IOMMU enabled
-[    0.472533] iommu: Default domain type: Passthrough (set via kernel command line)
+[    0.000000] Command line: BOOT_IMAGE=/boot/vmlinuz-7.0.14-24-pve root=/dev/mapper/pve-root ro quiet intel_iommu=on iommu=pt
+[    0.037374] Kernel command line: BOOT_IMAGE=/boot/vmlinuz-7.0.14-24-pve root=/dev/mapper/pve-root ro quiet intel_iommu=on iommu=pt
+[    0.037537] DMAR: IOMMU enabled
+[    0.474647] iommu: Default domain type: Passthrough (set via kernel command line)

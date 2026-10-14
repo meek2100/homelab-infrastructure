@@ -62,7 +62,6 @@ sshd-keygen.service                          enabled enabled
 systemd-pstore.service                       enabled enabled
 zfs-import-cache.service                     enabled enabled
 zfs-import-scan.service                      enabled disabled
-zfs-load-module.service                      enabled enabled
 zfs-mount.service                            enabled enabled
 zfs-share.service                            enabled enabled
 zfs-volume-wait.service                      enabled enabled
@@ -93,4 +92,4 @@ pve-daily-update.timer                       enabled enabled
 snap.certbot.renew.timer                     enabled enabled
 xfs_scrub_all.timer                          enabled enabled
 
-93 unit files listed.
+92 unit files listed.

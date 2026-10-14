@@ -3,7 +3,6 @@
   cron.service                loaded active running Regular background program processing daemon
   dbus.service                loaded active running D-Bus System Message Bus
   docker.service              loaded active running Docker Application Container Engine
-  fwupd.service               loaded active running Firmware update daemon
   getty@tty1.service          loaded active running Getty on tty1
   ModemManager.service        loaded active running Modem Manager
   multipathd.service          loaded active running Device-Mapper Multipath Device Controller
@@ -12,6 +11,7 @@
   rpcbind.service             loaded active running RPC bind portmap service
   rsyslog.service             loaded active running System Logging Service
   snapd.service               loaded active running Snap Daemon
+  ssh.service                 loaded active running OpenBSD Secure Shell server
   systemd-journald.service    loaded active running Journal Service
   systemd-logind.service      loaded active running User Login Management
   systemd-networkd.service    loaded active running Network Configuration
@@ -20,10 +20,9 @@
   systemd-udevd.service       loaded active running Rule-based Manager for Device Events and Files
   udisks2.service             loaded active running Disk Manager
   unattended-upgrades.service loaded active running Unattended Upgrades Shutdown
-  upower.service              loaded active running Daemon for power management
 
 Legend: LOAD   → Reflects whether the unit definition was properly loaded.
         ACTIVE → The high-level unit activation state, i.e. generalization of SUB.
         SUB    → The low-level unit activation state, values depend on unit type.
 
-22 loaded units listed.
+21 loaded units listed.

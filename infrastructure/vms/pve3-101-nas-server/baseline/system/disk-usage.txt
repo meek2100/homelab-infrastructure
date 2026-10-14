@@ -5,7 +5,7 @@ tmpfs                                          996M  2.1M  994M   1% /run
 tmpfs                                          4.9G     0  4.9G   0% /dev/shm
 tmpfs                                          5.0M     0  5.0M   0% /run/lock
 tmpfs                                          4.9G   12K  4.9G   1% /tmp
+/dev/sdb                                       913G   28K  866G   1% /srv/dev-disk-by-uuid-2e47efba-eee8-4bf9-9de2-648f626172b7
+/dev/sdc1                                      913G   92G  822G  11% /srv/dev-disk-by-uuid-48dc7932-00a4-4aa4-81e9-ea7dd62d1626
 /dev/sdd                                       913G   28K  866G   1% /srv/dev-disk-by-uuid-f03c3247-3748-4ede-a1a9-938bd6f846c3
-/dev/sdb1                                      913G   93G  820G  11% /srv/dev-disk-by-uuid-48dc7932-00a4-4aa4-81e9-ea7dd62d1626
-/dev/sdc                                       913G   28K  866G   1% /srv/dev-disk-by-uuid-2e47efba-eee8-4bf9-9de2-648f626172b7
-pool_nas:e491b9de-0b62-4f76-a0fd-77b50dd16adf  2.7T   93G  2.5T   4% /srv/mergerfs/pool_nas
+pool_nas:e491b9de-0b62-4f76-a0fd-77b50dd16adf  2.7T   92G  2.5T   4% /srv/mergerfs/pool_nas

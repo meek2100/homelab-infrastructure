@@ -1,7 +1,7 @@
 Filesystem            Size  Used Avail Use% Mounted on
-udev                  7.8G     0  7.8G   0% /dev
+udev                  6.9G     0  6.9G   0% /dev
 tmpfs                 1.6G  3.1M  1.6G   1% /run
-/dev/mapper/pve-root   65G   11G   51G  18% /
+/dev/mapper/pve-root   65G   12G   50G  20% /
 tmpfs                 7.8G   46M  7.8G   1% /dev/shm
 efivarfs              320K   23K  293K   8% /sys/firmware/efi/efivars
 tmpfs                 5.0M     0  5.0M   0% /run/lock
@@ -10,5 +10,5 @@ tmpfs                 7.8G   12K  7.8G   1% /tmp
 /dev/sda2            1022M  9.1M 1013M   1% /boot/efi
 /dev/fuse             128M   20K  128M   1% /etc/pve
 tmpfs                 1.0M     0  1.0M   0% /run/credentials/getty@tty1.service
-/dev/sde              916G  120G  788G  14% /mnt/pve/backup
+/dev/sde              916G  125G  783G  14% /mnt/pve/backup
 tmpfs                 1.6G  4.0K  1.6G   1% /run/user/0

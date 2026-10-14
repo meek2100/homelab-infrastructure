@@ -22,4 +22,4 @@ POWER_SUPPLY_TYPE=Mains
 POWER_SUPPLY_ONLINE=1
 POWER_SUPPLY_TYPE=Mains
 
-==> /sys/class/power_supply/AC/wakeup32 <==
+==> /sys/class/power_supply/AC/wakeup30 <==

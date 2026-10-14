@@ -1,38 +1,38 @@
-[    0.022137] ACPI: DMAR 0x00000000DB925140 0000B8 (v01 INTEL  HSW      00000001 INTL 00000001)
-[    0.022163] ACPI: Reserving DMAR table memory at [mem 0xdb925140-0xdb9251f7]
-[    0.152386] DMAR: Host address width 39
-[    0.152388] DMAR: DRHD base: 0x000000fed90000 flags: 0x0
-[    0.152402] DMAR: dmar0: reg_base_addr fed90000 ver 1:0 cap c0000020660462 ecap f0101a
-[    0.152406] DMAR: DRHD base: 0x000000fed91000 flags: 0x1
-[    0.152411] DMAR: dmar1: reg_base_addr fed91000 ver 1:0 cap d2008020660462 ecap f010da
-[    0.152413] DMAR: RMRR base: 0x000000db89d000 end: 0x000000db8a9fff
-[    0.152416] DMAR: RMRR base: 0x000000dd000000 end: 0x000000df1fffff
-[    0.152419] DMAR-IR: IOAPIC id 8 under DRHD base  0xfed91000 IOMMU 1
-[    0.152421] DMAR-IR: HPET id 0 under DRHD base 0xfed91000
-[    0.152423] DMAR-IR: Queued invalidation will be enabled to support x2apic and Intr-remapping.
-[    0.153045] DMAR-IR: Enabled IRQ remapping in x2apic mode
-[    0.295218] iommu: Default domain type: Translated
-[    0.295218] iommu: DMA domain TLB invalidation policy: lazy mode
-[    0.375714] DMAR: No ATSR found
-[    0.375715] DMAR: No SATC found
-[    0.375717] DMAR: dmar0: Using Queued invalidation
-[    0.375725] DMAR: dmar1: Using Queued invalidation
-[    0.375887] pci 0000:00:02.0: Adding to iommu group 0
-[    0.376515] pci 0000:00:00.0: Adding to iommu group 1
-[    0.376529] pci 0000:00:03.0: Adding to iommu group 2
-[    0.376541] pci 0000:00:14.0: Adding to iommu group 3
-[    0.376562] pci 0000:00:16.0: Adding to iommu group 4
-[    0.376573] pci 0000:00:16.3: Adding to iommu group 4
-[    0.376586] pci 0000:00:19.0: Adding to iommu group 5
-[    0.376598] pci 0000:00:1a.0: Adding to iommu group 6
-[    0.376609] pci 0000:00:1b.0: Adding to iommu group 7
-[    0.376622] pci 0000:00:1c.0: Adding to iommu group 8
-[    0.376635] pci 0000:00:1c.2: Adding to iommu group 9
-[    0.376647] pci 0000:00:1d.0: Adding to iommu group 10
-[    0.376670] pci 0000:00:1f.0: Adding to iommu group 11
-[    0.376683] pci 0000:00:1f.2: Adding to iommu group 11
-[    0.376695] pci 0000:00:1f.3: Adding to iommu group 11
-[    0.376709] pci 0000:06:00.0: Adding to iommu group 12
-[    0.377714] DMAR: Intel(R) Virtualization Technology for Directed I/O
-[   11.520541] i915 0000:00:02.0: [drm] VT-d active for gfx access
-[   11.543978] i915 0000:00:02.0: [drm] DMAR active, disabling use of stolen memory
+[    0.022731] ACPI: DMAR 0x00000000DB925140 0000B8 (v01 INTEL  HSW      00000001 INTL 00000001)
+[    0.022757] ACPI: Reserving DMAR table memory at [mem 0xdb925140-0xdb9251f7]
+[    0.153878] DMAR: Host address width 39
+[    0.153880] DMAR: DRHD base: 0x000000fed90000 flags: 0x0
+[    0.153895] DMAR: dmar0: reg_base_addr fed90000 ver 1:0 cap c0000020660462 ecap f0101a
+[    0.153899] DMAR: DRHD base: 0x000000fed91000 flags: 0x1
+[    0.153903] DMAR: dmar1: reg_base_addr fed91000 ver 1:0 cap d2008020660462 ecap f010da
+[    0.153906] DMAR: RMRR base: 0x000000db89d000 end: 0x000000db8a9fff
+[    0.153911] DMAR: RMRR base: 0x000000dd000000 end: 0x000000df1fffff
+[    0.153914] DMAR-IR: IOAPIC id 8 under DRHD base  0xfed91000 IOMMU 1
+[    0.153917] DMAR-IR: HPET id 0 under DRHD base 0xfed91000
+[    0.153919] DMAR-IR: Queued invalidation will be enabled to support x2apic and Intr-remapping.
+[    0.154545] DMAR-IR: Enabled IRQ remapping in x2apic mode
+[    0.275892] iommu: Default domain type: Translated
+[    0.275896] iommu: DMA domain TLB invalidation policy: lazy mode
+[    0.360797] DMAR: No ATSR found
+[    0.360798] DMAR: No SATC found
+[    0.360800] DMAR: dmar0: Using Queued invalidation
+[    0.360808] DMAR: dmar1: Using Queued invalidation
+[    0.360981] pci 0000:00:02.0: Adding to iommu group 0
+[    0.361741] pci 0000:00:00.0: Adding to iommu group 1
+[    0.361754] pci 0000:00:03.0: Adding to iommu group 2
+[    0.361767] pci 0000:00:14.0: Adding to iommu group 3
+[    0.361787] pci 0000:00:16.0: Adding to iommu group 4
+[    0.361799] pci 0000:00:16.3: Adding to iommu group 4
+[    0.361813] pci 0000:00:19.0: Adding to iommu group 5
+[    0.361825] pci 0000:00:1a.0: Adding to iommu group 6
+[    0.361838] pci 0000:00:1b.0: Adding to iommu group 7
+[    0.361872] pci 0000:00:1c.0: Adding to iommu group 8
+[    0.361899] pci 0000:00:1c.2: Adding to iommu group 9
+[    0.361911] pci 0000:00:1d.0: Adding to iommu group 10
+[    0.361936] pci 0000:00:1f.0: Adding to iommu group 11
+[    0.361948] pci 0000:00:1f.2: Adding to iommu group 11
+[    0.361962] pci 0000:00:1f.3: Adding to iommu group 11
+[    0.361976] pci 0000:06:00.0: Adding to iommu group 12
+[    0.363069] DMAR: Intel(R) Virtualization Technology for Directed I/O
+[   10.494843] i915 0000:00:02.0: [drm] VT-d active for gfx access
+[   10.512305] i915 0000:00:02.0: [drm] DMAR active, disabling use of stolen memory

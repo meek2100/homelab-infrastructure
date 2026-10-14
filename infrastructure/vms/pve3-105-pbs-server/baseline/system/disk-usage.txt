@@ -1,13 +1,13 @@
 Filesystem                        Size  Used Avail Use% Mounted on
 /dev/mapper/pve-vm--105--disk--0   16G  1.6G   14G  11% /
-/dev/sde                          916G  120G  788G  14% /backup
+/dev/sde                          916G  125G  783G  14% /backup
 none                              492K  4.0K  488K   1% /dev
 tmpfs                             7.8G     0  7.8G   0% /dev/shm
-tmpfs                             3.2G   88K  3.2G   1% /run
+tmpfs                             3.2G   84K  3.2G   1% /run
 tmpfs                             5.0M     0  5.0M   0% /run/lock
 tmpfs                             7.8G   12K  7.8G   1% /tmp
 tmpfs                             1.0M     0  1.0M   0% /run/credentials/systemd-journald.service
-tmpfs                             7.8G  392K  7.8G   1% /run/proxmox-backup
+tmpfs                             7.8G  388K  7.8G   1% /run/proxmox-backup
 tmpfs                             1.0M     0  1.0M   0% /run/credentials/systemd-networkd.service
 tmpfs                             1.0M     0  1.0M   0% /run/credentials/container-getty@1.service
 tmpfs                             1.0M     0  1.0M   0% /run/credentials/container-getty@2.service
