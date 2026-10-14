@@ -1,9 +1,19 @@
+import os
+import sys
+
+# Ensure repository virtualenv site-packages is in sys.path regardless of host launcher python
+_repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+_venv_lib = os.path.join(_repo_root, ".venv", "lib")
+if os.path.exists(_venv_lib):
+    for _pyver in os.listdir(_venv_lib):
+        _sp = os.path.join(_venv_lib, _pyver, "site-packages")
+        if os.path.isdir(_sp) and _sp not in sys.path:
+            sys.path.insert(0, _sp)
+
 from fastmcp import FastMCP
 from typing import Literal, Optional
 import subprocess
-import os
 import json
-import sys
 
 mcp = FastMCP("Homelab Infrastructure System")
 
@@ -76,12 +86,14 @@ def run_script(script_name: str, args: list[str] = None) -> str:
     except Exception as e:
         return f"Exception executing {script_name}: {e}"
 
-def run_bash_script(script_name: str) -> str:
+def run_bash_script(script_name: str, args: list[str] = None) -> str:
+    if args is None:
+        args = []
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     script_path = os.path.join(os.path.dirname(__file__), "scripts", script_name)
     if not os.path.exists(script_path):
         return f"Error: Script {script_path} not found."
-    cmd = ["bash", script_path]
+    cmd = ["bash", script_path] + args
     try:
         res = subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True)
         if res.returncode == 0:
@@ -721,4 +733,4 @@ def backup_external_host(target: str = "all"):
 
 
 if __name__ == "__main__":
-    mcp.run()
+    mcp.run(transport="stdio", show_banner=False)
