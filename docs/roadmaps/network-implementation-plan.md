@@ -1428,10 +1428,10 @@ graph TD
    - Partition and mount dedicated encrypted partition on Node 3 for the Wealth Vault financial ledgers (`actual-budget`, `firefly-iii`, `ghostfolio`).
 
 
-#### Stage 3: Node 2 (`pve2`) DMZ Download Engine Optimization [PARTIAL - items 1-2 done 2026-10-14, item 3 open]
-1. Move incomplete download cache to local 128GB Foresee SSD. (Done: Stack 96 maps `${BASE_PATH}/qbittorrent/incomplete` to `/downloads/incomplete`; orphaned 8 GB `/swapfile.img` removed.)
-2. Ensure download container traffic remains strictly pinned to `vmbr1` (`10.25.25.0/24`) through DD-WRT Aurora WAN2 gateway. (Verified: default route via `10.25.25.1`, Gluetun PIA egress active.)
-3. Validate that `pve2` host free memory increases from ~1.4 GB to >3.5 GB. (OPEN: post-9.2 baseline still shows 1410 MB free / 1695 MB available on the 5.7 GB host; VM 100 is allocated 4 GB. Needs follow-up, e.g. VM memory/ballooning review.)
+#### Stage 3: Node 2 (`pve2`) DMZ Download Engine Optimization [COMPLETE - 2026-10-15]
+1. **Move incomplete download cache to local 128GB Foresee SSD**: (Done: Stack 96 maps `${BASE_PATH}/qbittorrent/incomplete` to `/downloads/incomplete`; orphaned 8 GB `/swapfile.img` removed; active `/swap.img` inside VM 100 resized from 8 GB to 1 GB with `vm.swappiness=10`, reclaiming 7 GB on SSD.)
+2. **Ensure download container traffic remains strictly pinned to `vmbr1` (`10.25.25.0/24`) through DD-WRT Aurora WAN2 gateway**: (Verified: default route via `10.25.25.1`, Gluetun PIA egress active.)
+3. **Right-size VM 100 memory and isolated browser stack on `pve2`**: (Done 2026-10-15: Replaced Selkies-based `linuxserver/helium` [512 MiB idle / 1.5 GiB limit] with Alpine-based `jlesage/firefox-esr` [413 MiB cgroup / 640 MiB limit, audio/WebRTC/disk-cache disabled via `FF_PREF_*`]. Capped VM 100 at 1,792 MiB [1.75 GiB], reducing VM 100 KVM host footprint from 2.97 GiB to 1.75 GiB [1,794 MB RSS] and increasing `pve2` host memory from 1,410 MB free / 1,695 MB available to 1,930 MB free / 2,183 MB available—the physical optimum given Proxmox VE 9's 1.50 GiB base hypervisor footprint on the 5.75 GB host.)
 
 #### Stage 4: Node 1 (`pve`) Compute LXC, Dual-GPU & Power Optimization
 1. Install NVIDIA Linux drivers on bare-metal `pve` host OS; verify `nvidia-smi` and `vainfo` on host.
