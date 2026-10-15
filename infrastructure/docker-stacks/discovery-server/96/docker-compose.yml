@@ -18,6 +18,13 @@ services:
       /bin/sh -c '
       echo "Watching Gluetun for restarts..."
       
+      # Wait for initial healthy state and lock MTU
+      while [ "$$(docker inspect -f "{{.State.Health.Status}}" gluetun 2>/dev/null)" != "healthy" ]; do
+        sleep 3
+      done
+      echo "Locking initial MTU 1280 on tun0..."
+      docker exec gluetun ip link set dev tun0 mtu 1280 2>/dev/null || true
+      
       # Grab the exact timestamp Gluetun started
       LAST_START=$$(docker inspect -f "{{.State.StartedAt}}" gluetun 2>/dev/null)
       
@@ -33,6 +40,9 @@ services:
           while [ "$$(docker inspect -f "{{.State.Health.Status}}" gluetun 2>/dev/null)" != "healthy" ]; do
             sleep 5
           done
+          
+          echo "Enforcing MTU 1280 on tun0..."
+          docker exec gluetun ip link set dev tun0 mtu 1280 2>/dev/null || true
           
           echo "Gluetun is healthy. Restarting dependent containers..."
           
@@ -59,14 +69,18 @@ services:
       - ${BASE_PATH}/pia/pia-shared:/pia-shared
     environment:
       - DNS_UPSTREAM_RESOLVER_TYPE=plain
-      - DNS_UPSTREAM_PLAIN_ADDRESSES=10.0.0.243:53
-#      - WIREGUARD_MTU=1280
+      - DNS_UPSTREAM_PLAIN_ADDRESSES=10.0.0.242:53,10.0.0.243:53
+      - DNS_UPSTREAM_IPV6=off
+      - FIREWALL_OUTBOUND_SUBNETS=10.0.0.242/32,10.0.0.243/32
+      - PMTUD_ICMP_ADDRESSES=10.0.0.242,10.0.0.243
+      - PMTUD_TCP_ADDRESSES=10.0.0.242:53,10.0.0.243:53
+      - OPENVPN_FLAGS=--tun-mtu 1280
       - OPENVPN_TUN_MTU=1280
-      - OPENVPN_MSSFIX=1280
+      - OPENVPN_MSSFIX=1240
       - VPN_SERVICE_PROVIDER=private internet access
       - OPENVPN_USER=${PIA_USER}
       - OPENVPN_PASSWORD=${PIA_PASS}
-      - SERVER_REGIONS=Netherlands
+      - SERVER_REGIONS=Switzerland,Netherlands,SE Stockholm,Romania
       - SERVER_SELECTION_VPN_PORT_FORWARDING_ONLY=yes
       - PORT_FORWARD_ONLY=true
       - VPN_PORT_FORWARDING=on
