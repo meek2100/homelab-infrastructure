@@ -6,10 +6,11 @@
 #               then kills the tunnel to force the Watchdog to rotate servers.
 # ==============================================================================
 
-# Space-separated list of URLs to monitor. 
-readonly TARGET_URLS="https://audiobookbay.lu/"
+# Space-separated list of mirror URLs to monitor
+readonly TARGET_URLS="https://audiobookbay.lu https://audiobookbay.se https://audiobookbay.fi https://audiobookbay.nl https://audiobookbay.is"
 readonly TUNNEL_IF="oet1"
 readonly USER_AGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"
+readonly RAW_CHECK_IP="9.9.9.9" # Quad9 Anycast (Swiss foundation)
 
 # Abort if the killswitch is actively engaged (Watchdog is currently in recovery mode)
 WAN_IF=$(nvram get wan_iface)
@@ -17,38 +18,44 @@ if iptables -C FORWARD -i br0 -o "$WAN_IF" -j REJECT >/dev/null 2>&1; then
     exit 0
 fi
 
-# 1. Verify basic internet first 
-if ! ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1; then
+# 1. Verify basic internet first via Quad9
+if ! ping -c 1 -W 2 "$RAW_CHECK_IP" >/dev/null 2>&1; then
     exit 0 
 fi
 
-# 2. Iterate through the target URLs
-for url in $TARGET_URLS; do
-    # Fetch HTTP code using a spoofed User-Agent to bypass WAF bot detection
-    HTTP_CODE=$(curl -s -L -A "$USER_AGENT" -o /dev/null -w "%{http_code}" --max-time 10 "$url")
+# 2. Iterate through all target URLs and tally success
+TOTAL_URLS=0
+FAILED_URLS=0
+BLOCKED_DETAILS=""
 
-    # Safeguard: Ensure HTTP_CODE is a 3-digit number before evaluating
-    # If curl crashes (e.g. DNS failure), HTTP_CODE will be blank or 000
-    if ! echo "$HTTP_CODE" | grep -qE "^[0-9]{3}$" || [ "$HTTP_CODE" = "000" ]; then
-        continue
-    fi
+for url in $TARGET_URLS; do
+    TOTAL_URLS=$((TOTAL_URLS + 1))
+
+    # Fetch HTTP response code (-k allows checking even if Cloudflare mirror SSL is temporarily unaligned)
+    HTTP_CODE=$(curl -k -s -L -A "$USER_AGENT" -o /dev/null -w "%{http_code}" --max-time 10 "$url" 2>/dev/null || echo "000")
 
     case "$HTTP_CODE" in
-        200|201|301|302|308)
-            # Healthy response, check the next URL in the list
-            continue
+        200|201|301|302|307|308)
+            # Healthy response! At least one mirror is working cleanly.
+            logger -t "PIA_URL_Monitor" "Mirror healthy: ${url} returned HTTP ${HTTP_CODE}."
+            exit 0
             ;;
         *)
-            # Blocked by firewall (e.g., 403, 503)
-            REGION=$(nvram get "${TUNNEL_IF}_label" | sed 's/PIA-//')
-            REMOTE_IP=$(nvram get "${TUNNEL_IF}_rem0")
-            
-            logger -t "PIA_URL_Monitor" "Access blocked! HTTP ${HTTP_CODE} on ${url} via ${REGION} (${REMOTE_IP}). Triggering rotation."
-            
-            stopservice "$TUNNEL_IF" >/dev/null 2>&1 || true
-            ip link set "$TUNNEL_IF" down >/dev/null 2>&1 || true
-            
-            exit 0
+            # Mirror failed or blocked (e.g. 403, 503, 000, 520)
+            FAILED_URLS=$((FAILED_URLS + 1))
+            BLOCKED_DETAILS="${BLOCKED_DETAILS} [${url}: HTTP ${HTTP_CODE}]"
             ;;
     esac
 done
+
+# 3. Only rotate if ALL targets failed
+if [ "$FAILED_URLS" -ge "$TOTAL_URLS" ] && [ "$TOTAL_URLS" -gt 0 ]; then
+    REGION=$(nvram get "${TUNNEL_IF}_label" | sed 's/PIA-//')
+    REMOTE_IP=$(nvram get "${TUNNEL_IF}_rem0")
+
+    logger -t "PIA_URL_Monitor" "ALL ${TOTAL_URLS} mirrors failed!${BLOCKED_DETAILS} via ${REGION} (${REMOTE_IP}). Triggering rotation."
+
+    stopservice "$TUNNEL_IF" >/dev/null 2>&1 || true
+    ip link set "$TUNNEL_IF" down >/dev/null 2>&1 || true
+    /opt/sbin/pia-rotate >/dev/null 2>&1 || true
+fi

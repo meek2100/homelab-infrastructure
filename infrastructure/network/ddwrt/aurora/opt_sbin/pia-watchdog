@@ -20,13 +20,13 @@ readonly LOCK_DIR="/tmp/pia_watchdog.lock"
 
 # IPs and Timers
 readonly VPN_CHECK_IP="10.0.0.242" # Internal PIA DNS to verify tunnel health
-readonly RAW_CHECK_IP="8.8.8.8"    # Public IP to verify ISP health
+readonly RAW_CHECK_IP="9.9.9.9"    # Quad9 Swiss Anycast IP to verify ISP health
 readonly HEALTH_CHECK_INTERVAL=60  # Seconds between healthy tunnel checks
 readonly BACKOFF_BASE=15           # Starting seconds for outage backoff
 readonly MAX_BACKOFF=3600          # Max backoff time (1 hour) during deep outages
 
 # PIA API Endpoints
-readonly PIA_SERVERLIST_URL="https://serverlist.piaservers.net/vpninfo/servers/v6"
+readonly PIA_SERVERLIST_URL="https://serverlist.piaservers.net/vpninfo/servers/v7"
 readonly PIA_TOKEN_URL="https://www.privateinternetaccess.com/api/client/v2/token"
 readonly PIA_CA_CERT_URL="https://raw.githubusercontent.com/pia-foss/manual-connections/master/ca.rsa.4096.crt"
 readonly PIA_REGION_IDS="swiss ro nl_amsterdam is sweden"
@@ -277,7 +277,7 @@ main() {
             log_msg "Checking raw ISP connectivity ($RAW_CHECK_IP)..."
             if ping -c 3 -W 2 "$RAW_CHECK_IP" >/dev/null 2>&1; then
                 log_msg "ISP is UP. Attempting PIA API rotation..."
-                echo "nameserver 1.1.1.1" > /etc/resolv.conf
+                printf "nameserver 9.9.9.9\nnameserver 149.112.112.112\n" > /etc/resolv.conf
 
                 if get_pia_config && test_and_restore_tunnel; then
                     log_msg "✅ VPN Recovered. Lifting killswitch."
