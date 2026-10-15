@@ -51,7 +51,17 @@ nvram get wan_ipaddr 2>/dev/null
 ip route show default
 
 echo "=== PIA WATCHDOG & DAEMONS ==="
-ps | grep -E "pia-watchdog|openvpn" | grep -v grep || echo "No PIA watchdog or openvpn processes found"
+ps | grep -E "pia" | grep -v grep || echo "No PIA watchdog or monitor processes found"
+ls -ld /tmp/pia* 2>/dev/null || echo "No /tmp/pia* files found"
+
+echo "=== WIREGUARD STATUS (oet1) ==="
+wg show oet1 2>/dev/null || ip link show oet1 2>/dev/null || echo "oet1 not found"
+
+echo "=== STARTUP CRASH LOG ==="
+tail -n 10 /tmp/pia-startup-crash.log 2>/dev/null || echo "No crash log"
+
+echo "=== RECENT PIA SYSLOG MESSAGES ==="
+tail -n 15 /var/log/messages 2>/dev/null || echo "No /var/log/messages available"
 
 echo "=== CRON JOBS ==="
 nvram get cron_jobs 2>/dev/null

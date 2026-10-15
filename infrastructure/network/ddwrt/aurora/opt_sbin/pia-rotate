@@ -1,13 +1,16 @@
 #!/bin/sh
+export PATH="/opt/bin:/opt/sbin:/bin:/sbin:/usr/bin:/usr/sbin"
 echo "--> Forcing instant PIA WireGuard rotation..."
 
-# 1. Kill the currently sleeping watchdog
-killall pia-watchdog 2>/dev/null || true
+# 1. Kill the currently running watchdog instances cleanly
+killall -9 pia-watchdog 2>/dev/null || true
+rm -rf /tmp/pia_watchdog.lock 2>/dev/null || true
+sleep 1
 
 # 2. Take down the tunnel (This instantly engages the hardware killswitch)
-ifconfig oet1 down 2>/dev/null || true
+ip link set oet1 down 2>/dev/null || ifconfig oet1 down 2>/dev/null || true
 
 # 3. Start a fresh watchdog (It will immediately see oet1 is down and rotate)
-/opt/sbin/pia-watchdog &
+/opt/sbin/pia-watchdog > /tmp/pia-startup-crash.log 2>&1 &
 
 echo "--> Rotation triggered! Check logs or run 'curl ifconfig.me' in 30 seconds."

@@ -1,4 +1,5 @@
 #!/bin/sh
+export PATH="/opt/bin:/opt/sbin:/bin:/sbin:/usr/bin:/usr/sbin"
 # ==============================================================================
 # Title: PIA VPN Speed Monitor (Privacy First)
 # Description: Checks VPN bandwidth via privacy-respecting European test endpoints:
@@ -6,6 +7,12 @@
 #              Fallback: Tele2 (Sweden)
 #              If speed drops below the threshold, it triggers pia-rotate.
 # ==============================================================================
+
+# Ensure curl is available
+if ! command -v curl >/dev/null 2>&1; then
+    logger -t "PIA_Speed" "ERROR: curl binary not found in PATH."
+    exit 0
+fi
 
 # Minimum acceptable speed in Kilobits per second (Kbps)
 # 1800 Kbps = 1.8 Mbps (225,000 Bytes/sec)

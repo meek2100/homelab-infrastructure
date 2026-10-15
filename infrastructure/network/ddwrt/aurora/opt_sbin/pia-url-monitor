@@ -1,10 +1,17 @@
 #!/bin/sh
+export PATH="/opt/bin:/opt/sbin:/bin:/sbin:/usr/bin:/usr/sbin"
 # ==============================================================================
 # Title:        PIA URL Accessibility Monitor (POSIX NATIVE)
 # Description:  Checks if a list of URLs are blocking the current VPN IP. 
 #               If blocked (e.g., 403, 503), it logs the error and the endpoint,
 #               then kills the tunnel to force the Watchdog to rotate servers.
 # ==============================================================================
+
+# Ensure curl is available
+if ! command -v curl >/dev/null 2>&1; then
+    logger -t "PIA_URL_Monitor" "ERROR: curl binary not found in PATH."
+    exit 0
+fi
 
 # Space-separated list of mirror URLs to monitor
 readonly TARGET_URLS="https://audiobookbay.lu https://audiobookbay.se https://audiobookbay.fi https://audiobookbay.nl https://audiobookbay.is"
