@@ -91,6 +91,7 @@ ensure_luna_access() {
 block_lan_internet() {
     local wan_if
     wan_if=$(nvram get wan_iface)
+    touch /tmp/pia_recovery.active 2>/dev/null || true
 
     # Block IPv4
     if ! iptables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; then
@@ -110,6 +111,7 @@ block_lan_internet() {
 unblock_lan_internet() {
     local wan_if
     wan_if=$(nvram get wan_iface)
+    rm -f /tmp/pia_recovery.active 2>/dev/null || true
 
     # Lift IPv4
     while iptables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; do

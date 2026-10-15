@@ -37,6 +37,11 @@ if [ -z "$SPEED" ] || [ "$SPEED" -eq 0 ]; then
     exit 0
 fi
 
+# Abort if the Watchdog is currently in recovery mode
+if [ -f /tmp/pia_recovery.active ]; then
+    exit 0
+fi
+
 # Convert result to Kbps
 CURRENT_KBPS=$((SPEED / 125))
 echo "  [*] Current Speed: $CURRENT_KBPS Kbps"
@@ -50,4 +55,5 @@ if [ "$SPEED" -lt "$MIN_BPS" ]; then
     /opt/sbin/pia-rotate
 else
     echo "  [*] Speed is healthy. No action required."
+    logger -t "PIA_Speed" "Speed healthy: $CURRENT_KBPS Kbps."
 fi

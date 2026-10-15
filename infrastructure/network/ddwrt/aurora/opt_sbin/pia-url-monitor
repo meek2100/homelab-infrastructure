@@ -12,9 +12,8 @@ readonly TUNNEL_IF="oet1"
 readonly USER_AGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0"
 readonly RAW_CHECK_IP="9.9.9.9" # Quad9 Anycast (Swiss foundation)
 
-# Abort if the killswitch is actively engaged (Watchdog is currently in recovery mode)
-WAN_IF=$(nvram get wan_iface)
-if iptables -C FORWARD -i br0 -o "$WAN_IF" -j REJECT >/dev/null 2>&1; then
+# Abort if the Watchdog is currently in recovery mode
+if [ -f /tmp/pia_recovery.active ]; then
     exit 0
 fi
 
