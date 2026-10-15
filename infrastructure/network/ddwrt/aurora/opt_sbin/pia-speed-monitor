@@ -1,41 +1,52 @@
 #!/bin/sh
 # ==============================================================================
-# Title: PIA VPN Speed Monitor (High Precision)
-# Description: Checks VPN bandwidth via Cloudflare API. If it drops below
-#              the threshold, it triggers pia-rotate to get a new server.
+# Title: PIA VPN Speed Monitor (Privacy First)
+# Description: Checks VPN bandwidth via privacy-respecting European test endpoints:
+#              Primary: SWITCH.ch (Swiss Academic Network - Zürich, Switzerland)
+#              Fallback: Tele2 (Sweden)
+#              If speed drops below the threshold, it triggers pia-rotate.
 # ==============================================================================
 
-# Set your minimum acceptable speed in Kilobits per second (Kbps)
-# (e.g., 1500 Kbps = 1.5 Mbps)
+# Minimum acceptable speed in Kilobits per second (Kbps)
+# 1800 Kbps = 1.8 Mbps (225,000 Bytes/sec)
 MIN_KBPS=1800
 
 # Convert Kbps to Bytes per second for curl (1 Kbps = 125 Bytes/sec)
 MIN_BPS=$((MIN_KBPS * 125))
 
+# Endpoints
+PRIMARY_URL="https://mirror.switch.ch/ftp/mirror/debian/dists/stable/main/Contents-amd64.gz"
+FALLBACK_URL="http://speedtest.tele2.net/10MB.zip"
+
 echo "--> Testing VPN download speed (Target: $MIN_KBPS Kbps)..."
 
-# Fetch a 25MB test payload from Cloudflare's infrastructure.
-SPEED_RAW=$(curl --max-time 30 -s -w "%{speed_download}" -o /dev/null "https://speed.cloudflare.com/__down?bytes=25000000")
-
-# Format the output (remove decimals) so the shell can evaluate it
+# 1. Attempt Primary test via SWITCH.ch
+SPEED_RAW=$(curl --max-time 20 -s -w "%{speed_download}" -o /dev/null "$PRIMARY_URL" 2>/dev/null || echo "0")
 SPEED=$(echo "$SPEED_RAW" | cut -d'.' -f1)
 
-# Safety check: If curl fails entirely, exit silently.
+# 2. If Primary fails or returns 0, try Fallback via Tele2 Sweden
 if [ -z "$SPEED" ] || [ "$SPEED" -eq 0 ]; then
-    echo "  [!] Speedtest failed completely. VPN might be offline. Deferring to Watchdog."
+    echo "  [!] Primary endpoint (SWITCH.ch) unreachable. Trying Tele2 Sweden fallback..."
+    SPEED_RAW=$(curl --max-time 20 -s -w "%{speed_download}" -o /dev/null "$FALLBACK_URL" 2>/dev/null || echo "0")
+    SPEED=$(echo "$SPEED_RAW" | cut -d'.' -f1)
+fi
+
+# Safety check: If both test endpoints fail completely, exit without rotating (defer to Watchdog)
+if [ -z "$SPEED" ] || [ "$SPEED" -eq 0 ]; then
+    echo "  [!] Speedtest failed completely on all endpoints. VPN might be offline. Deferring to Watchdog."
     exit 0
 fi
 
-# Convert the result back to Kbps for easy reading
+# Convert result to Kbps
 CURRENT_KBPS=$((SPEED / 125))
 echo "  [*] Current Speed: $CURRENT_KBPS Kbps"
 
-# Check if the current speed is below your target threshold
+# Check if speed is below threshold
 if [ "$SPEED" -lt "$MIN_BPS" ]; then
     echo "  [!] Speed is below the ${MIN_KBPS} Kbps threshold! Rotating server..."
-    logger -t "PIA_Speed" "Speed dropped to $CURRENT_KBPS Kbps. Triggering rotation."
+    logger -t "PIA_Speed" "Speed dropped to $CURRENT_KBPS Kbps (threshold: $MIN_KBPS Kbps). Triggering rotation."
 
-    # Fire the force-rotation script
+    # Fire the rotation script
     /opt/sbin/pia-rotate
 else
     echo "  [*] Speed is healthy. No action required."
