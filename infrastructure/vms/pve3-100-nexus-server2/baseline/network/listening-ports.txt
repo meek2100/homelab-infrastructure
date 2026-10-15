@@ -1,8 +1,8 @@
 Netid State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess                                
 udp   UNCONN 0      0            0.0.0.0:68         0.0.0.0:*    users:(("dhclient",pid=339,fd=7))     
 udp   UNCONN 0      0            0.0.0.0:123        0.0.0.0:*    users:(("docker-proxy",pid=1344,fd=8))
-udp   UNCONN 0      0                  *:55734            *:*    users:(("AdGuardHome",pid=1130,fd=22))
 udp   UNCONN 0      0                  *:56144            *:*    users:(("AdGuardHome",pid=1130,fd=20))
+udp   UNCONN 0      0                  *:33866            *:*    users:(("AdGuardHome",pid=1130,fd=22))
 udp   UNCONN 0      0                  *:53               *:*    users:(("AdGuardHome",pid=1130,fd=18))
 udp   UNCONN 0      0               [::]:123           [::]:*    users:(("docker-proxy",pid=1349,fd=8))
 tcp   LISTEN 0      4096         0.0.0.0:8088       0.0.0.0:*    users:(("docker-proxy",pid=1385,fd=8))

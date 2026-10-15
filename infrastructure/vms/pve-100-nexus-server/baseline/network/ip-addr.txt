@@ -8,7 +8,7 @@
     link/ether bc:24:11:97:eb:db brd ff:ff:ff:ff:ff:ff
     altname enp0s18
     inet 192.168.40.185/24 brd 192.168.40.255 scope global dynamic ens18
-       valid_lft 42476sec preferred_lft 42476sec
+       valid_lft 28175sec preferred_lft 28175sec
     inet6 fe80::be24:11ff:fe97:ebdb/64 scope link 
        valid_lft forever preferred_lft forever
 3: br-bf96ce7bc276: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
@@ -135,7 +135,7 @@
     link/ether de:51:90:69:d9:28 brd ff:ff:ff:ff:ff:ff link-netnsid 17
     inet6 fe80::dc51:90ff:fe69:d928/64 scope link 
        valid_lft forever preferred_lft forever
-51: veth9ab1340@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-532b13a1332f state UP group default 
-    link/ether c2:1b:90:1f:6d:c2 brd ff:ff:ff:ff:ff:ff link-netnsid 14
-    inet6 fe80::c01b:90ff:fe1f:6dc2/64 scope link 
+1009: veth2684d29@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-532b13a1332f state UP group default 
+    link/ether 8a:33:73:74:c2:c3 brd ff:ff:ff:ff:ff:ff link-netnsid 14
+    inet6 fe80::8833:73ff:fe74:c2c3/64 scope link 
        valid_lft forever preferred_lft forever

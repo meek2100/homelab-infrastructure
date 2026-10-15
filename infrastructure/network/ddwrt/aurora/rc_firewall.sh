@@ -13,4 +13,3 @@ iptables -t nat -I PREROUTING -i br0 -p tcp --dport 53 -j DNAT --to-destination 
 
 # Clamp TCP MSS on WireGuard tunnel (oet1) to prevent MTU packet drops
 iptables -t mangle -I POSTROUTING -o oet1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
-

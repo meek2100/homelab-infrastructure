@@ -1,10 +1,10 @@
 NAMES                         IMAGE                                                 STATUS                    PORTS
-qbittorrent                   lscr.io/linuxserver/qbittorrent:latest                Up 5 minutes (healthy)    
-autoheal                      willfarrell/autoheal:latest                           Up 50 minutes (healthy)   
-watchtower                    nickfedor/watchtower:latest                           Up 50 minutes (healthy)   8080/tcp
-qbittorrent-porthelper        scotte/qbittorrent-porthelper:latest                  Up 50 minutes (healthy)   
-helium                        lscr.io/linuxserver/helium:latest                     Up 50 minutes             
-audiobookbay-downloader-dev   ghcr.io/meek2100/audiobookbay-automated:crows_nest1   Up 50 minutes (healthy)   
-gluetun                       qmcgaw/gluetun                                        Up 50 minutes (healthy)   0.0.0.0:3000-3001->3000-3001/tcp, [::]:3000-3001->3000-3001/tcp, 1080/tcp, 0.0.0.0:5077-5079->5077-5079/tcp, [::]:5077-5079->5077-5079/tcp, 0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp, 8000/tcp, 1080/udp, 8388/tcp, 0.0.0.0:8112->8112/tcp, [::]:8112->8112/tcp, 8888/tcp, 8388/udp, 0.0.0.0:9091->9091/tcp, [::]:9091->9091/tcp
-vpn-restarter                 docker:cli                                            Up 50 minutes             
-portainer                     portainer/portainer-ee:lts                            Up 50 minutes             0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp, 0.0.0.0:9443->9443/tcp, [::]:9443->9443/tcp, 9000/tcp
+qbittorrent-porthelper        scotte/qbittorrent-porthelper:latest                  Up 18 minutes (healthy)   
+qbittorrent                   lscr.io/linuxserver/qbittorrent:latest                Up 18 minutes (healthy)   
+firefox                       jlesage/firefox-esr:latest                            Up 21 minutes             
+audiobookbay-downloader-dev   ghcr.io/meek2100/audiobookbay-automated:crows_nest1   Up 21 minutes (healthy)   
+gluetun                       qmcgaw/gluetun                                        Up 21 minutes (healthy)   0.0.0.0:3000-3001->3000-3001/tcp, [::]:3000-3001->3000-3001/tcp, 0.0.0.0:5077-5079->5077-5079/tcp, [::]:5077-5079->5077-5079/tcp, 0.0.0.0:5800->5800/tcp, [::]:5800->5800/tcp, 1080/tcp, 0.0.0.0:5900->5900/tcp, [::]:5900->5900/tcp, 0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp, 8000/tcp, 1080/udp, 8388/tcp, 0.0.0.0:8112->8112/tcp, [::]:8112->8112/tcp, 8888/tcp, 8388/udp, 0.0.0.0:9091->9091/tcp, [::]:9091->9091/tcp
+autoheal                      willfarrell/autoheal:latest                           Up 21 minutes (healthy)   
+vpn-restarter                 docker:cli                                            Up 21 minutes             
+watchtower                    nickfedor/watchtower:latest                           Up 21 minutes (healthy)   8080/tcp
+portainer                     portainer/portainer-ee:lts                            Up 21 minutes             0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp, 0.0.0.0:9443->9443/tcp, [::]:9443->9443/tcp, 9000/tcp

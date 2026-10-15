@@ -16,42 +16,32 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     command: |
       /bin/sh -c '
-      echo "Watching Gluetun for restarts..."
-      
-      # Wait for initial healthy state and lock MTU
+      echo "Ensuring initial MTU 1280 on Gluetun..."
       while [ "$$(docker inspect -f "{{.State.Health.Status}}" gluetun 2>/dev/null)" != "healthy" ]; do
         sleep 3
       done
-      echo "Locking initial MTU 1280 on tun0..."
-      docker exec gluetun ip link set dev tun0 mtu 1280 2>/dev/null || true
-      
+      docker exec gluetun ip link set dev tun0 mtu 1280
+      echo "Initial MTU locked at 1280."
+      echo "Watching Gluetun for restarts..."
       # Grab the exact timestamp Gluetun started
       LAST_START=$$(docker inspect -f "{{.State.StartedAt}}" gluetun 2>/dev/null)
-      
       while true; do
         sleep 10
         CURRENT_START=$$(docker inspect -f "{{.State.StartedAt}}" gluetun 2>/dev/null)
-        
         # If the start time changed, Gluetun was restarted
         if [ "$$CURRENT_START" != "" ] && [ "$$LAST_START" != "$$CURRENT_START" ]; then
-          echo "Gluetun restart detected! Waiting for tunnel to establish..."
-          
+          echo "Gluetun restart detected! Waiting for tunnel..."
           # Wait patiently until Gluetun connects and reports healthy
           while [ "$$(docker inspect -f "{{.State.Health.Status}}" gluetun 2>/dev/null)" != "healthy" ]; do
             sleep 5
           done
-          
           echo "Enforcing MTU 1280 on tun0..."
-          docker exec gluetun ip link set dev tun0 mtu 1280 2>/dev/null || true
-          
-          echo "Gluetun is healthy. Restarting dependent containers..."
-          
+          docker exec gluetun ip link set dev tun0 mtu 1280
+          echo "Gluetun is healthy and MTU locked. Restarting dependent containers..."
           # Find all containers with the dependency label and restart them
           for c in $$(docker ps -aq --filter label=vpn-dependent=true); do
-            echo "Restarting $$c..."
             docker restart $$c
           done
-          
           # Log the new start time and resume watching
           LAST_START=$$CURRENT_START
           echo "Recovery complete. Resuming watch..."
@@ -68,12 +58,18 @@ services:
     volumes:
       - ${BASE_PATH}/pia/pia-shared:/pia-shared
     environment:
+#      - DNS_UPSTREAM_RESOLVER_TYPE=doh
+#      - DNS_UPSTREAM_RESOLVERS=quad9
       - DNS_UPSTREAM_RESOLVER_TYPE=plain
       - DNS_UPSTREAM_PLAIN_ADDRESSES=10.0.0.242:53,10.0.0.243:53
-      - DNS_UPSTREAM_IPV6=off
       - FIREWALL_OUTBOUND_SUBNETS=10.0.0.242/32,10.0.0.243/32
       - PMTUD_ICMP_ADDRESSES=10.0.0.242,10.0.0.243
       - PMTUD_TCP_ADDRESSES=10.0.0.242:53,10.0.0.243:53
+      - HEALTH_TARGET_ADDRESSES=audiobookbay.lu,audiobookbay.fi,audiobookbay.nl,audiobookbay.is
+      - HEALTH_ICMP_TARGET_IPS=10.0.0.242,10.0.0.243
+      - PMTU_DISCOVERY=off
+      - DNS_UPSTREAM_IPV6=off
+#      - WIREGUARD_MTU=1280
       - OPENVPN_FLAGS=--tun-mtu 1280
       - OPENVPN_TUN_MTU=1280
       - OPENVPN_MSSFIX=1240
@@ -96,6 +92,8 @@ services:
       - 5077:5077 # audiobookbay-downloader (development alt) 
       - 5078:5078 # audiobookbay-downloader (development)   
       - 5079:5079 # audiobookbay-downloader (control-prod)
+      - 5800:5800 # Firefox HTTPS
+      - 5900:5900 # Firefox VNC
       - 8112:8112 # audiobookbay-downloader (control-prod)
       - 9091:9091 # audiobookbay-downloader (control-prod)
     restart: unless-stopped
@@ -172,23 +170,37 @@ services:
       retries: 3
       start_period: 30s
 
-  helium:
-    image: lscr.io/linuxserver/helium:latest
-    container_name: helium
-    mem_limit: 768m             # <-- Hard limit perfectly optimized for Proxmox ballooning
-    security_opt:
-      - seccomp:unconfined
+  firefox:
+    image: jlesage/firefox-esr:latest
+    container_name: firefox
+    mem_limit: 640m
+    shm_size: "192m"
     network_mode: "service:gluetun"
     environment:
-      - PUID=${PUID}
-      - PGID=${GUID}
+      - USER_ID=${PUID}
+      - GROUP_ID=${GUID}
       - TZ=${TZ}
-      - HELIUM_CLI=https://duckduckgo.com --disable-gpu --no-sandbox
+      - DISPLAY_WIDTH=1280
+      - DISPLAY_HEIGHT=720
+      - KEEP_APP_RUNNING=1
+      - CLEAN_TMP_DIR=1
+      # Disable background baseimage services:
+      - WEB_AUDIO=0
+      - WEB_FILE_MANAGER=0
+      - WEB_NOTIFICATION=0
+      # Automatically apply low-resource Firefox preferences on startup:
+      - FF_PREF_PROCESS_COUNT=dom.ipc.processCount=2
+      - FF_PREF_LOW_MEM_UNLOAD=browser.tabs.unloadOnLowMemory=true
+      - FF_PREF_TAB_UNLOAD_TIMEOUT=browser.tabs.min_inactive_duration_before_unload=300000
+      - FF_PREF_NO_AUTOPLAY=media.autoplay.default=5
+      - FF_PREF_NO_WEBRTC=media.peerconnection.enabled=false
+      - FF_PREF_MEM_CACHE=browser.cache.memory.capacity=32768
+      - FF_PREF_DISK_CACHE=browser.cache.disk.enable=false
+      - FF_PREF_NO_PREFETCH=network.prefetch-next=false
     volumes:
-      - ${BASE_PATH}/helium/config:/config
-      - ${NFS_MOUNT_POINT}/share/helium-downloads:/downloads:rw
+      - ${BASE_PATH}/firefox/config:/config:rw
+      - ${NFS_MOUNT_POINT}/share/browser-downloads:/config/downloads:rw
       - ${NFS_MOUNT_POINT}:/mnt/media:rw
-    shm_size: "384mb"            # <-- Required to prevent browser tab crashes
     restart: unless-stopped
     depends_on:
       gluetun:
@@ -196,6 +208,31 @@ services:
     labels:
       - autoheal=true
       - vpn-dependent=true
+
+#  helium:
+#    image: lscr.io/linuxserver/helium:latest
+#    container_name: helium
+#    mem_limit: 768m             # <-- Hard limit perfectly optimized for Proxmox ballooning
+#    security_opt:
+#      - seccomp:unconfined
+#    network_mode: "service:gluetun"
+#    environment:
+#      - PUID=${PUID}
+#      - PGID=${GUID}
+#      - TZ=${TZ}
+#      - HELIUM_CLI=https://duckduckgo.com --disable-gpu --no-sandbox
+#    volumes:
+#      - ${BASE_PATH}/helium/config:/config
+#      - ${NFS_MOUNT_POINT}/share/browser-downloads:/downloads:rw
+#      - ${NFS_MOUNT_POINT}:/mnt/media:rw
+#    shm_size: "384mb"            # <-- Required to prevent browser tab crashes
+#    restart: unless-stopped
+#    depends_on:
+#      gluetun:
+#        condition: service_healthy
+#    labels:
+#      - autoheal=true
+#      - vpn-dependent=true
 
 #  chromium:
 #    image: lscr.io/linuxserver/chromium:latest
@@ -210,7 +247,7 @@ services:
 #      - TZ=${TZ}
 #    volumes:
 #      - ${BASE_PATH}/chromium/config:/config
-#      - ${NFS_MOUNT_POINT}/share/chromium-downloads:/downloads:rw
+#      - ${NFS_MOUNT_POINT}/share/browser-downloads:/downloads:rw
 #      - ${NFS_MOUNT_POINT}:/mnt/media:rw
 #    shm_size: "1gb"
 #    restart: unless-stopped
@@ -236,7 +273,7 @@ services:
 #    volumes:
 #      - ${BASE_PATH}/firefox/config:/config
 #      #- ${BASE_PATH}/firefox/downloads:/downloads
-#      - ${NFS_MOUNT_POINT}/share/firefox-downloads:/downloads:rw
+#      - ${NFS_MOUNT_POINT}/share/browser-downloads:/downloads:rw
 #      - ${NFS_MOUNT_POINT}:/mnt/media:rw
 #    shm_size: "512mb"
 #    #ports:
@@ -274,7 +311,7 @@ services:
       - DL_PASSWORD=Down4life!
       - DL_CATEGORY=audiobooks
       - SAVE_PATH_BASE=/mnt/media/content/audiobooks
-      - ABB_HOSTNAME=audiobookbay.lu #Default
+      - ABB_HOSTNAME=audiobookbay.lu,audiobookbay.se,audiobookbay.fi,audiobookbay.nl,audiobookbay.is #Default
       - NAV_LINK_NAME=Open Audiobook Shelf #Optional
       - NAV_LINK_URL=https://audiobookshelf.secure.theurer.dev/ #Optional
       - SECRET_KEY=thisismykey2
@@ -400,4 +437,6 @@ services:
 
 networks:
   vpn-network:
+      enable_ipv6: false
   discovery-network:
+      enable_ipv6: false

@@ -1,10 +1,10 @@
 Filesystem                         Size  Used Avail Use% Mounted on
-tmpfs                              795M  2.2M  793M   1% /run
+tmpfs                              795M  2.2M  792M   1% /run
 /dev/mapper/ubuntu--vg-ubuntu--lv   48G   17G   29G  37% /
 tmpfs                              3.9G     0  3.9G   0% /dev/shm
 tmpfs                              5.0M     0  5.0M   0% /run/lock
 /dev/sda2                          2.0G  200M  1.6G  11% /boot
-192.168.40.248:/media              2.7T   92G  2.5T   4% /mnt/media
+192.168.40.248:/media              2.7T   93G  2.5T   4% /mnt/media
 overlay                             48G   17G   29G  37% /var/lib/docker/overlay2/e37879a483a40db0065c49801f26c60684e882cd885bac16f111f22d8bc51027/merged
 overlay                             48G   17G   29G  37% /var/lib/docker/overlay2/ab9b4d5f6534ea28d492bfb67babff1eae30963a8599f1425a90299cf06c9d74/merged
 overlay                             48G   17G   29G  37% /var/lib/docker/overlay2/49ffe53bd9ff3cdbee145957fc72c21a3204f48b8a397b1abef73904332b2fa8/merged

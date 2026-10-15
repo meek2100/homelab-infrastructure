@@ -4,8 +4,8 @@ tmpfs                                     593M  1.7M  591M   1% /run
 /dev/sda1                                  48G   35G   11G  77% /
 tmpfs                                     2.9G     0  2.9G   0% /dev/shm
 tmpfs                                     5.0M     0  5.0M   0% /run/lock
-192.168.40.248:/media                     2.7T   92G  2.5T   4% /mnt/media
-192.168.40.248:/media/wireshark-captures  2.7T   92G  2.5T   4% /mnt/captures
+192.168.40.248:/media                     2.7T   93G  2.5T   4% /mnt/media
+192.168.40.248:/media/wireshark-captures  2.7T   93G  2.5T   4% /mnt/captures
 overlay                                    48G   35G   11G  77% /var/lib/docker/overlay2/054bc67f62ea71b4e502dbf7b2548aad21e850ea97ad677dcf41fd2149e545c7/merged
 overlay                                    48G   35G   11G  77% /var/lib/docker/overlay2/781d22abe6aadb9d0e36c5a24235bb4af67fa5ce231f6a104a04dc93843d84bd/merged
 overlay                                    48G   35G   11G  77% /var/lib/docker/overlay2/1586ae6c5437189ffd160894b7eb658b9503126345c8c30bf3c235d4c9634b70/merged

@@ -1,6 +1,6 @@
 Filesystem            Size  Used Avail Use% Mounted on
 udev                   15G     0   15G   0% /dev
-tmpfs                 3.2G  2.6M  3.2G   1% /run
+tmpfs                 3.2G  4.0M  3.2G   1% /run
 /dev/mapper/pve-root   94G   19G   71G  21% /
 tmpfs                  16G   46M   16G   1% /dev/shm
 efivarfs              384K  359K   21K  95% /sys/firmware/efi/efivars
