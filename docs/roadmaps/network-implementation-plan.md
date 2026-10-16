@@ -1433,13 +1433,14 @@ graph TD
 2. **Ensure download container traffic remains strictly pinned to `vmbr1` (`10.25.25.0/24`) through DD-WRT Aurora WAN2 gateway**: (Verified: default route via `10.25.25.1`, Gluetun PIA egress active.)
 3. **Right-size VM 100 memory and isolated browser stack on `pve2`**: (Done 2026-10-15: Replaced Selkies-based `linuxserver/helium` [512 MiB idle / 1.5 GiB limit] with Alpine-based `jlesage/firefox-esr` [413 MiB cgroup / 640 MiB limit, audio/WebRTC/disk-cache disabled via `FF_PREF_*`]. Capped VM 100 at 1,792 MiB [1.75 GiB], reducing VM 100 KVM host footprint from 2.97 GiB to 1.75 GiB [1,794 MB RSS] and increasing `pve2` host memory from 1,410 MB free / 1,695 MB available to 1,930 MB free / 2,183 MB available—the physical optimum given Proxmox VE 9's 1.50 GiB base hypervisor footprint on the 5.75 GB host.)
 
-#### Stage 4: Node 1 (`pve`) Compute LXC, Dual-GPU & Power Optimization
-1. Install NVIDIA Linux drivers on bare-metal `pve` host OS; verify `nvidia-smi` and `vainfo` on host.
-2. Deploy Dell Precision 5520 power, screen-blanking (`consoleblank=60`, DPMS), and ACPI lid-script rules (Section 8.7).
-3. Deploy unprivileged compute container with sub-ID mapping and cgroup permissions for `/dev/dri` and `/dev/nvidia*`.
-4. Migrate Plex Media Server from VM 103 to the compute container.
-5. Remove PCIe passthrough device from VM 103 (`media-server`), verifying that host RAM ballooning re-enables across `pve` and screen console remains responsive upon keypress.
-6. Verify simultaneous hardware transcoding on Intel QuickSync and test CUDA vector compute.
+#### Stage 4: Node 1 (`pve`) Compute LXC, Dual-GPU & Power Optimization [COMPLETE - 2026-10-16]
+1. **NVIDIA Driver on Host**: Pinned kernel `6.8.12-4-pve` on `pve` (Proxmox VE 9.2 user-space intact). Driver `550.163.01` built and installed via DKMS; `nvidia-smi` active with Quadro M1200 persistence mode ON.
+2. **Laptop Power & Screen Blanking**: `acpid` and `/etc/acpi/lid-backlight.sh` active; kernel `consoleblank=60` and DPMS configured in GRUB.
+3. **Unprivileged Compute Container (CT 104 `compute-server`)**: Provisioned Debian 12 LXC (4 cores, 8GB RAM, IP `192.168.40.246/24`) with sub-ID mapping (`1000:1000`), cgroups for major 195, 226, 235, 506, and read-only host NVIDIA driver directory bind mount (`/usr/lib/x86_64-linux-gnu/nvidia/current`).
+4. **iGPU Release & QuickSync Activation**: Released `hostpci0: 0000:00:02` from VM 103 (`media-server`), allowing host `i915` to claim Intel HD Graphics P630 and expose `/dev/dri/renderD128`. `vainfo` verified inside CT 104 with `iHD` driver supporting HEVC Main10, H.264, VP8/VP9, and JPEG hardware encode/decode.
+5. **Storage & Media Services**: Bind mounted `nas-server` 2.7TB NFS media pool (`192.168.40.248:/media`) at `/mnt/media`. Stopped legacy Plex on VM 103 and migrated Plex container into CT 104 with direct Intel QuickSync VA-API hardware transcoding.
+6. **Local LLM Engine**: Deployed Ollama inside CT 104 with `qwen2.5:3b-instruct` (1.9 GB), achieving 34.43 prompt tokens/sec and 10.02 tokens/sec generation on Xeon E3-1505M v6 with Vulkan iGPU compute support (23.4 GiB addressable memory).
+
 
 #### Stage 5: Family Second Brain & New Stacks Deployment
 1. Deploy Ollama inside the compute container; pull `qwen2.5:3b-instruct` and verify GPU layer offloading into NVIDIA Quadro M1200.
