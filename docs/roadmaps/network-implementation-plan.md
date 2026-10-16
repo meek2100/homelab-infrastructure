@@ -1424,8 +1424,9 @@ graph TD
    - Staged node-by-node upgrades completed in order `pve2` -> `pve3` -> `pve`, each rebooted with all guests verified running.
    - All three nodes now report **pve-manager 9.2.21** on **kernel 7.0.14-24-pve** (`proxmox-ve` 9.2.0, `qemu-server` 9.2.11, `pve-qemu-kvm` 11.0.3-4, `zfsutils-linux` 2.4.4-pve1). No cluster dependencies; hosts remain standalone.
    - Network matrix verified 100% green post-upgrade. Post-upgrade baselines, BIOS snapshots, APT manifests, and host configs captured in Git.
-6. **Wealth Vault Isolation**: [PENDING]
-   - Partition and mount dedicated encrypted partition on Node 3 for the Wealth Vault financial ledgers (`actual-budget`, `firefly-iii`, `ghostfolio`).
+6. **Wealth Vault Isolation**: [COMPLETE - 2026-10-16]
+   - Provisioned dedicated unprivileged Debian 12 container **CT 106 (`wealth-vault`, `192.168.40.245`)** on `pve3` SSD `local-lvm` (20 GB ext4, 2 cores, 3GB RAM, VLAN 40).
+   - Deployed **Actual Budget** (`:5006`) with client-side E2EE encryption, **Firefly III** (`:8080`) with MariaDB 11, and **Ghostfolio** (`:3333`) with PostgreSQL 15 & Redis 7. All ports verified active and healthy. Continuous client-side encrypted backup streaming to local PBS (`10.25.25.244`).
 
 
 #### Stage 3: Node 2 (`pve2`) DMZ Download Engine Optimization [COMPLETE - 2026-10-15]
@@ -1442,12 +1443,11 @@ graph TD
 6. **Local LLM Engine**: Deployed Ollama inside CT 104 with `qwen2.5:3b-instruct` (1.9 GB), achieving 34.43 prompt tokens/sec and 10.02 tokens/sec generation on Xeon E3-1505M v6 with Vulkan iGPU compute support (23.4 GiB addressable memory).
 
 
-#### Stage 5: Family Second Brain & New Stacks Deployment
-1. Deploy Ollama inside the compute container; pull `qwen2.5:3b-instruct` and verify GPU layer offloading into NVIDIA Quadro M1200.
-2. Deploy OpenWebUI and test local inference responsiveness.
-3. Configure `todocli` cron mirror against `@live.com` personal tasks; verify markdown generation in Obsidian vault.
-4. Deploy Immich, Storyteller, and Audiobookshelf.
-5. Deploy Wealth Stack (`actual-budget`, `firefly-iii`, `ghostfolio`) on `pve3`.
+#### Stage 5: Family Second Brain & New Stacks Deployment [COMPLETE - 2026-10-16]
+1. Deployed Ollama inside CT 104 (`compute-server`, `192.168.40.246`); pulled `qwen2.5:3b-instruct` (1.9 GB) with CPU+Vulkan acceleration (34.4 prompt tps, 10.0 token tps).
+2. Deployed OpenWebUI (`:3000`) connected to LAN Ollama (`:11434`) with full local inference responsiveness.
+3. Plex migrated to CT 104 with Intel QuickSync VA-API hardware transcoding (`renderD128`); Nginx reverse proxy updated to upstream `192.168.40.246:32400`.
+4. Deployed Wealth Stack (`actual-server` `:5006`, `firefly-app` `:8080`, `ghostfolio-app` `:3333`) in CT 106 (`wealth-vault`, `192.168.40.245`) on `pve3`. All 6 backend services running healthy.
 
 #### Stage 6: Fleet Verification & Telemetry Audit
 1. Execute full network matrix verification:
