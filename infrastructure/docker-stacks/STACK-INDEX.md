@@ -4,7 +4,7 @@ This document provides a searchable, friendly service catalog mapping every Port
 
 ## Summary Metrics
 - **Total Stacks Cataloged**: 92
-- **Total Docker Services Defined**: 180
+- **Total Docker Services Defined**: 179
 - **Stacks with Encrypted Secrets (`secrets.enc.yaml`)**: 68
 - **Host Virtual Machines**: 6 (`discovery-server`, `luna-server`, `media-server`, `minecraft-server`, `nexus-server`, `nexus-server2`)
 
@@ -92,7 +92,7 @@ Total Stacks: **10**
 | **2** | `watchtower` | `nickfedor/watchtower` | `Internal / Host` | — None | [media-server/2](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/2) |
 | **24** | `storyteller` | `registry.gitlab.com/smoores/storyteller:latest` | `8001:8001` | 🔒 Yes | [media-server/24](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/24) |
 | **32** | `tunnel` | `cloudflare/cloudflared:latest` | `Internal / Host` | 🔒 Yes | [media-server/32](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/32) |
-| **72** | `plex`<br>`seerr`<br>`heimdall`<br>`calibre-web-automated`<br>`audiobookshelf` | `lscr.io/linuxserver/plex:latest`<br>`ghcr.io/seerr-team/seerr:latest`<br>`lscr.io/linuxserver/heimdall:latest`<br>`crocodilestick/calibre-web-automated:latest`<br>`ghcr.io/advplyr/audiobookshelf:latest` | `32400:32400/tcp, 8324:8324/tcp, 32469:32469/tcp, 1900:1900/udp, 32410:32410/udp, 32412:32412/udp, 32413:32413/udp, 32414:32414/udp`<br>`5055:5055`<br>`80:80, 443:443`<br>`8083:8083`<br>`13378:80` | 🔒 Yes | [media-server/72](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/72) |
+| **72** | `seerr`<br>`heimdall`<br>`calibre-web-automated`<br>`audiobookshelf` | `ghcr.io/seerr-team/seerr:latest`<br>`lscr.io/linuxserver/heimdall:latest`<br>`crocodilestick/calibre-web-automated:latest`<br>`ghcr.io/advplyr/audiobookshelf:latest` | `5055:5055`<br>`80:80, 443:443`<br>`8083:8083`<br>`13378:80` | 🔒 Yes | [media-server/72](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/72) |
 | **76** | `kavita` | `lscr.io/linuxserver/kavita:latest` | `5000:5000` | 🔒 Yes | [media-server/76](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/76) |
 | **78** | `audiobookshelf` | `ghcr.io/advplyr/audiobookshelf:latest` | `13378:80` | 🔒 Yes | [media-server/78](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/78) |
 | **79** | `filebrowser` | `hurlenko/filebrowser` | `8084:8080` | 🔒 Yes | [media-server/79](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/media-server/79) |
