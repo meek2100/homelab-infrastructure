@@ -3,9 +3,9 @@
 This document provides a searchable, friendly service catalog mapping every Portainer stack ID across all virtual machines to its application name, container images, exposed ports, host node, and SOPS secret encryption status.
 
 ## Summary Metrics
-- **Total Stacks Cataloged**: 93
-- **Total Docker Services Defined**: 190
-- **Stacks with Encrypted Secrets (`secrets.enc.yaml`)**: 69
+- **Total Stacks Cataloged**: 92
+- **Total Docker Services Defined**: 180
+- **Stacks with Encrypted Secrets (`secrets.enc.yaml`)**: 68
 - **Host Virtual Machines**: 6 (`discovery-server`, `luna-server`, `media-server`, `minecraft-server`, `nexus-server`, `nexus-server2`)
 
 ---
@@ -114,7 +114,7 @@ Total Stacks: **3**
 ---
 
 ## VM: `nexus-server` (Node: `pve`, VMID: `100`)
-Total Stacks: **13**
+Total Stacks: **12**
 
 | Stack ID | Primary Services | Container Images | Exposed Ports | Encrypted Secrets | Blueprint Path |
 | :--- | :--- | :--- | :--- | :---: | :--- |
@@ -130,7 +130,6 @@ Total Stacks: **13**
 | **71** | `prometheus`<br>`alertmanager`<br>`blackbox-exporter`<br>`pve-exporter`<br>`snmp-exporter`<br>`node-exporter`<br>`cadvisor`<br>`grafana`<br>`loki`<br>`promtail` | `prom/prometheus:v2.53.1`<br>`prom/alertmanager:v0.27.0`<br>`prom/blackbox-exporter:v0.25.0`<br>`prompve/prometheus-pve-exporter:latest`<br>`prom/snmp-exporter:v0.26.0`<br>`prom/node-exporter:v1.8.2`<br>`gcr.io/cadvisor/cadvisor:v0.49.1`<br>`grafana/grafana:11.1.0`<br>`grafana/loki:3.0.0`<br>`grafana/promtail:3.0.0` | `9090:9090`<br>`9093:9093`<br>`9115:9115`<br>`9221:9221`<br>`9116:9116`<br>`9100:9100`<br>`8088:8080`<br>`3030:3000`<br>`3100:3100`<br>`Internal / Host` | — None | [nexus-server/71](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/71) |
 | **72** | `prometheus`<br>`alertmanager`<br>`blackbox-exporter`<br>`pve-exporter`<br>`snmp-exporter`<br>`node-exporter`<br>`cadvisor`<br>`grafana`<br>`loki`<br>`promtail` | `prom/prometheus:v2.53.1`<br>`prom/alertmanager:v0.27.0`<br>`prom/blackbox-exporter:v0.25.0`<br>`prompve/prometheus-pve-exporter:latest`<br>`prom/snmp-exporter:v0.26.0`<br>`prom/node-exporter:v1.8.2`<br>`gcr.io/cadvisor/cadvisor:v0.49.1`<br>`grafana/grafana:11.1.0`<br>`grafana/loki:3.0.0`<br>`grafana/promtail:3.0.0` | `9090:9090`<br>`9093:9093`<br>`9115:9115`<br>`9221:9221`<br>`9116:9116`<br>`9100:9100`<br>`8088:8080`<br>`3030:3000`<br>`3100:3100`<br>`Internal / Host` | — None | [nexus-server/72](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/72) |
 | **73** | `chrony` | `cturra/ntp:latest` | `123:123/udp` | — None | [nexus-server/73](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/73) |
-| **71-monitoring** | `prometheus`<br>`alertmanager`<br>`blackbox-exporter`<br>`pve-exporter`<br>`snmp-exporter`<br>`node-exporter`<br>`cadvisor`<br>`grafana`<br>`loki`<br>`promtail` | `prom/prometheus:v2.53.1`<br>`prom/alertmanager:v0.27.0`<br>`prom/blackbox-exporter:v0.25.0`<br>`prompve/prometheus-pve-exporter:latest`<br>`prom/snmp-exporter:v0.26.0`<br>`prom/node-exporter:v1.8.2`<br>`gcr.io/cadvisor/cadvisor:v0.49.1`<br>`grafana/grafana:11.1.0`<br>`grafana/loki:3.0.0`<br>`grafana/promtail:3.0.0` | `9090:9090`<br>`9093:9093`<br>`127.0.0.1:9115:9115`<br>`127.0.0.1:9221:9221`<br>`127.0.0.1:9116:9116`<br>`Internal / Host`<br>`127.0.0.1:8088:8080`<br>`3030:3000`<br>`3100:3100`<br>`Internal / Host` | 🔒 Yes | [nexus-server/71-monitoring](file:///home/agentsvc/repos/homelab-infrastructure/infrastructure/docker-stacks/nexus-server/71-monitoring) |
 
 ---
 
