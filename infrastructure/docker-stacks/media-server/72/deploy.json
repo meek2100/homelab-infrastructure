@@ -1,6 +1,6 @@
 {
   "node": "pve",
   "vmid": 103,
-  "version": "v18",
-  "remote_path": "/var/lib/docker/volumes/portainer_data/_data/compose/72/v18/docker-compose.yml"
+  "version": "v19",
+  "remote_path": "/var/lib/docker/volumes/portainer_data/_data/compose/72/v19/docker-compose.yml"
 }
