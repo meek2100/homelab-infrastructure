@@ -11,11 +11,15 @@ if os.path.exists(_venv_lib):
             sys.path.insert(0, _sp)
 
 from fastmcp import FastMCP
-from typing import Literal, Optional
+from typing import Annotated, Literal, Optional
+from pydantic import Field
 import subprocess
 import json
 
 mcp = FastMCP("Homelab Infrastructure System")
+
+# Maximum characters returned by run_script to protect against context flooding (~7,500 tokens)
+MAX_OUTPUT_CHARS = 30000
 
 DEFAULT_NODE_IPS = {
     "pve": "192.168.1.250",
@@ -68,7 +72,19 @@ def run_ssh_cmd(host_ip: str, cmd: str, timeout: int = 60) -> tuple[int, str, st
     except Exception as e:
         return 1, "", str(e)
 
-def run_script(script_name: str, args: list[str] = None) -> str:
+def truncate_output(text: str, max_chars: int = MAX_OUTPUT_CHARS) -> str:
+    """Guardrail to truncate huge command outputs and prevent token exhaustion."""
+    if not text or len(text) <= max_chars:
+        return text
+    lines = text.splitlines()
+    if len(lines) <= 150:
+        return text[:max_chars] + f"\n\n[... truncated {len(text) - max_chars} characters ...]"
+    head = lines[:100]
+    tail = lines[-50:]
+    truncated_count = len(lines) - 150
+    return "\n".join(head) + f"\n\n[... {truncated_count} lines truncated to conserve tokens ...]\n\n" + "\n".join(tail)
+
+def run_script(script_name: str, args: list[str] = None, timeout: int = 180) -> str:
     if args is None:
         args = []
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -78,11 +94,14 @@ def run_script(script_name: str, args: list[str] = None) -> str:
         python_bin = sys.executable
     cmd = [python_bin, script_path] + args
     try:
-        res = subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True)
+        res = subprocess.run(cmd, cwd=repo_root, capture_output=True, text=True, timeout=timeout)
         if res.returncode == 0:
-            return res.stdout
+            return truncate_output(res.stdout)
         else:
-            return f"Error executing {script_name}:\n{res.stderr}\n{res.stdout}"
+            err_msg = f"Error executing {script_name}:\n{res.stderr}\n{res.stdout}"
+            return truncate_output(err_msg)
+    except subprocess.TimeoutExpired:
+        return f"Error: Execution of {script_name} timed out after {timeout} seconds."
     except Exception as e:
         return f"Exception executing {script_name}: {e}"
 
@@ -212,10 +231,10 @@ def manage_vms(
 
 @mcp.tool()
 def manage_vm_snapshots(
-    action: Literal["list", "create", "rollback", "delete", "vzdump"],
-    node: str,
-    vmid: str,
-    snapshot_name: str | None = None
+    action: Annotated[Literal["list", "create", "rollback", "delete", "vzdump"], Field(description="Snapshot action to perform")],
+    node: Annotated[str, Field(description="Target Proxmox node (pve, pve2, pve3)")],
+    vmid: Annotated[str, Field(description="Target VM or container ID")],
+    snapshot_name: Annotated[str | None, Field(description="Name of snapshot (required for create, rollback, delete)")] = None
 ) -> str:
     """Manage Proxmox QEMU VM live memory/disk snapshots and vzdump archives.
     Actions:
@@ -234,7 +253,38 @@ def manage_vm_snapshots(
     args = ["--action", action, "--node", node, "--vmid", str(vmid)]
     if snapshot_name:
         args.extend(["--name", snapshot_name])
-    return run_script("manage-vm-snapshots.py", args)
+    return run_script("manage-vm-snapshots.py", args, timeout=300)
+
+@mcp.tool()
+def manage_backup_mirror(
+    action: Annotated[Literal["status", "progress", "start_pbs", "stop_pbs", "deploy_pbs", "logs_pbs"], Field(description="Backup mirror action to execute")] = "status",
+    force: Annotated[bool, Field(description="Override vzdump concurrency mutex when starting PBS sync")] = False
+) -> str:
+    """Manage offsite encrypted Google Drive backup mirroring and migration across the fleet.
+    Orchestrates Proxmox Backup Server (PBS LXC 105) chunk syncing and monitors host vzdump transfers.
+    Actions:
+      - 'status'    : Check PBS datastore mirror state, daily timer, logs, and vzdump mutex lock.
+      - 'progress'  : Live transfer progress, speeds, and completion across PVE nodes and PBS LXC 105.
+      - 'start_pbs' : Trigger immediate encrypted sync of PBS datastore to Google Drive.
+      - 'stop_pbs'  : Halt running PBS datastore rclone sync process inside LXC 105.
+      - 'deploy_pbs': Deploy the robust backup script, systemd service, and nightly timer into LXC 105.
+      - 'logs_pbs'  : View latest execution logs from /var/log/rclone-pbs-sync.log."""
+    action = action.lower().strip()
+    if action == "progress":
+        return run_script("check-gdrive-migration-progress.py", timeout=120)
+    elif action == "status":
+        return run_script("sync-pbs-backup-to-gdrive.py", ["status"], timeout=60)
+    elif action == "start_pbs":
+        args = ["start"]
+        if force: args.append("--force")
+        return run_script("sync-pbs-backup-to-gdrive.py", args, timeout=120)
+    elif action == "stop_pbs":
+        return run_script("sync-pbs-backup-to-gdrive.py", ["stop"], timeout=60)
+    elif action == "deploy_pbs":
+        return run_script("sync-pbs-backup-to-gdrive.py", ["deploy"], timeout=180)
+    elif action == "logs_pbs":
+        return run_script("sync-pbs-backup-to-gdrive.py", ["logs"], timeout=60)
+    return f"Unknown action: '{action}'. Valid actions: status, progress, start_pbs, stop_pbs, deploy_pbs, logs_pbs."
 
 
 # ==============================================================================
@@ -545,12 +595,12 @@ def manage_wireshark(action: Literal["status", "sync_capture"] = "status") -> st
 
 @mcp.tool()
 def analyze_pcap_telemetry(
-    path: str = "",
-    focus: Literal["comprehensive", "summary", "l2_hygiene", "routing_matrix", "transport_health", "core_services", "security_anomalies"] = "comprehensive",
-    vlan: int | None = None,
-    max_files: int | None = None,
-    max_packets: int | None = None,
-    json_output: bool = False
+    path: Annotated[str, Field(description="Directory, file, or glob pattern of pcap/pcapng captures (defaults to NAS/tmpfs)")] = "",
+    focus: Annotated[Literal["comprehensive", "summary", "l2_hygiene", "routing_matrix", "transport_health", "core_services", "security_anomalies"], Field(description="Analysis perspective")] = "comprehensive",
+    vlan: Annotated[int | None, Field(description="Filter analysis to a specific 802.1Q VLAN ID (e.g. 10, 20, 30, 40, 150, 200)")] = None,
+    max_files: Annotated[int | None, Field(description="Maximum number of newest capture files to process")] = None,
+    max_packets: Annotated[int | None, Field(description="Early exit limit on total processed packets")] = None,
+    json_output: Annotated[bool, Field(description="Return structured machine-readable JSON metrics")] = False
 ) -> str:
     """High-throughput streaming diagnostic engine for PCAP/PCAPNG packet captures.
     Streams continuous ring buffers at >100,000 pkts/s using zero-copy binary unpacking.
@@ -562,17 +612,17 @@ def analyze_pcap_telemetry(
     if max_files is not None: args.extend(["--max-files", str(max_files)])
     if max_packets is not None: args.extend(["--max-packets", str(max_packets)])
     if json_output: args.append("--json")
-    return run_script("analyze-pcap-telemetry.py", args)
+    return run_script("analyze-pcap-telemetry.py", args, timeout=300)
 
 @mcp.tool()
 def query_pcap_flows(
-    path: str = "",
-    host: str | None = None,
-    port: int | None = None,
-    proto: Literal["tcp", "udp", "icmp", "arp"] | None = None,
-    vlan: int | None = None,
-    limit: int = 50,
-    max_files: int = 10
+    path: Annotated[str, Field(description="Directory, file, or glob pattern of captures (defaults to NAS/tmpfs)")] = "",
+    host: Annotated[str | None, Field(description="Host IP filter to match source or destination")] = None,
+    port: Annotated[int | None, Field(description="TCP/UDP port number to match")] = None,
+    proto: Annotated[Literal["tcp", "udp", "icmp", "arp"] | None, Field(description="Protocol filter")] = None,
+    vlan: Annotated[int | None, Field(description="VLAN ID filter")] = None,
+    limit: Annotated[int, Field(description="Maximum matching conversations to return")] = 50,
+    max_files: Annotated[int, Field(description="Number of newest capture files to scan")] = 10
 ) -> str:
     """Targeted flow query tool for matching packet conversations across PCAP/PCAPNG captures.
     Filter by host IP (e.g. '192.168.10.200'), port (e.g. 53), protocol ('tcp', 'udp', 'icmp', 'arp'), or VLAN ID."""
@@ -582,7 +632,7 @@ def query_pcap_flows(
     if port is not None: args.extend(["--query-port", str(port)])
     if proto: args.extend(["--query-proto", proto])
     if vlan is not None: args.extend(["--vlan", str(vlan)])
-    return run_script("analyze-pcap-telemetry.py", args)
+    return run_script("analyze-pcap-telemetry.py", args, timeout=300)
 
 
 # ==============================================================================

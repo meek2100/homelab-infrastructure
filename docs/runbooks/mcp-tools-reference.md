@@ -1,13 +1,13 @@
 # 🛠️ FastMCP Homelab Tools Architecture & Reference Guide
 
-This document provides the authoritative, extensive reference for the **20 consolidated FastMCP tools** implemented in [`mcp/homelab/server.py`](../../mcp/homelab/server.py).
+This document provides the authoritative, extensive reference for the **21 consolidated FastMCP tools** implemented in [`mcp/homelab/server.py`](../../mcp/homelab/server.py).
 
 ---
 
 ## 🎯 Architecture & Core Design Goals
 
 1. **Token Efficiency via Action-Oriented Tooling**:
-   - Rather than registering 65 fine-grained tools that flood the AI context window with schema bloat, tools are consolidated into **20 action-oriented interfaces**.
+   - Rather than registering 65 fine-grained tools that flood the AI context window with schema bloat, tools are consolidated into **21 action-oriented interfaces**.
    - Cuts schema token utilization by **over 65%** while retaining 100% of underlying infrastructure automation capabilities.
 2. **Deterministic Virtual Environment (`.venv`)**:
    - All script invocations route automatically through the project's pre-configured virtual environment (`.venv/bin/python3`).
@@ -21,30 +21,31 @@ This document provides the authoritative, extensive reference for the **20 conso
 
 ---
 
-## 📋 Master 20-Tool Catalog & Capability Matrix
+## 📋 Master 21-Tool Catalog & Capability Matrix
 
 | # | Tool Name | Functional Domain | Primary Actions | Underlying Script |
 | :-: | :--- | :--- | :--- | :--- |
 | **1** | `sync_fleet` | Fleet GitOps Drift | `diff_only`, `apply` | `sync-live-fleet.py` |
-| **2** | `manage_hosts` | Physical Hypervisors | `audit`, `backup`, `restore`, `restore_configs`, `register`, `bios_snapshot` | `extract_host_configs.sh`, `snapshot-fleet-bios.sh`, `restore-host-drifts.py` |
+| **2** | `manage_hosts` | Physical Hypervisors | `audit`, `baseline`, `backup`, `restore`, `restore_configs`, `register`, `bios_snapshot` | `extract-host-configs.py`, `snapshot-fleet-bios.py`, `restore-host-drifts.py`, `audit-pve-fleet.py` |
 | **3** | `manage_vms` | QEMU VMs & LXCs | `list`, `status`, `start`, `stop`, `restore`, `register` | Native SSH / QGA / `restore-vm-drifts.py` |
 | **4** | `manage_vm_snapshots` | VM Snapshots & PBS | `list`, `create`, `rollback`, `delete`, `vzdump` | `manage-vm-snapshots.py` |
-| **5** | `manage_stacks` | Portainer Stacks (91) | `index`, `backup`, `restore`, `start` | `generate-stack-index.py`, `restore-docker-stacks.py`, `start-docker-stacks.py` |
-| **6** | `manage_apt_packages` | Package Drift | `backup`, `restore` | `restore-apt-packages.py`, `sync-live-fleet.py` |
-| **7** | `manage_araknis_router` | Core L3 Router (520) | `status`, `backup`, `restore` | `manage-araknis-router.py` |
-| **8** | `manage_araknis_switch` | Core L2+ Switch (920) | `status`, `backup`, `poe_cycle` | `manage-araknis-switch.py` |
-| **9** | `manage_netgear_switch` | Office Switch (GS108Ev2) | `status`, `backup`, `restore`, `verify`, `set_vlan`, `delete_vlan`, `set_pvid`, `set_port`, `set_features` | `manage-netgear-switch.py` |
-| **10** | `manage_pakedge_switch` | Lab Switch (SX-8P) | `status`, `backup`, `poe_cycle`, `power_cycle`, `configure_vlans` | `manage-pakedge-switch.py` |
-| **11** | `manage_openwrt` | Office Bridge Router | `status`, `backup`, `restore`, `deploy_vxlan` | `get-openwrt-status.py`, `backup-openwrt-config.py`, `restore-openwrt-config.py`, `deploy-vxlan-hardening.py` |
-| **12** | `manage_ddwrt` | DD-WRT Routers (2) | `status`, `backup`, `restore` | `get-ddwrt-status.py`, `backup-ddwrt-config.py`, `restore-ddwrt-config.py` |
-| **13** | `verify_network_matrix`| Cross-VLAN Audit | `quick`, `comprehensive` | `verify-network-matrix.py` |
-| **14** | `manage_wireshark` | Headless SPAN Sniffer | `status`, `sync_capture` | `get-wireshark-status.py`, `sync-wireshark-capture-script.py` |
-| **15** | `analyze_pcap_telemetry`| Streaming PCAP Engine | `comprehensive`, `summary`, `l2_hygiene`, `routing_matrix`, `transport_health`, `core_services`, `security_anomalies` | `analyze-pcap-telemetry.py` |
-| **16** | `query_pcap_flows` | Forensic Packet Query | Filter by host, port, protocol, VLAN | `analyze-pcap-telemetry.py` |
-| **17** | `manage_external_services`| Cloud VPS Services | `status`, `ssl`, `email`, `security`, `whitelist` | `manage-external-services.py` |
-| **18** | `manage_external_hosts`| Cloud VPS Hosts | `audit`, `backup`, `deploy_promtail` | `manage-external-hosts.py`, `deploy-external-promtail.py` |
-| **19** | `sync_adguard_clients` | DNS Identity Alignment | Non-destructive dry-run, live sync | `sync-adguard-clients.py` |
-| **20** | `align_ovrc_devices` | OvrC Cloud Sync | `preview`, `csv`, `apply` | `align-ovrc-devices.py` |
+| **5** | `manage_backup_mirror` | GDrive Backup Mirrors | `status`, `progress`, `start_pbs`, `stop_pbs`, `deploy_pbs`, `logs_pbs` | `sync-pbs-backup-to-gdrive.py`, `check-gdrive-migration-progress.py` |
+| **6** | `manage_stacks` | Portainer Stacks (91) | `index`, `backup`, `restore`, `start` | `generate-stack-index.py`, `restore-docker-stacks.py`, `start-docker-stacks.py` |
+| **7** | `manage_apt_packages` | Package Drift | `backup`, `restore` | `restore-apt-packages.py`, `backup-apt-packages.py` |
+| **8** | `manage_araknis_router` | Core L3 Router (520) | `status`, `backup`, `restore`, `get_acls`, `apply_acls`, `get_subnets`, `apply_subnets` | `manage-araknis-router.py` |
+| **9** | `manage_araknis_switch` | Core L2+ Switch (920) | `status`, `backup`, `poe_cycle` | `manage-araknis-switch.py` |
+| **10** | `manage_netgear_switch` | Office Switch (GS108Ev2) | `status`, `backup`, `restore`, `verify`, `set_vlan`, `delete_vlan`, `set_pvid`, `set_port`, `set_features` | `manage-netgear-switch.py` |
+| **11** | `manage_pakedge_switch` | Lab Switch (SX-8P) | `status`, `backup`, `poe_cycle`, `power_cycle`, `configure_vlans` | `manage-pakedge-switch.py` |
+| **12** | `manage_openwrt` | Office Bridge Router | `status`, `backup`, `restore`, `deploy_vxlan` | `get-openwrt-status.py`, `backup-openwrt-config.py`, `restore-openwrt-config.py`, `deploy-vxlan-hardening.py` |
+| **13** | `manage_ddwrt` | DD-WRT Routers (2) | `status`, `backup`, `restore` | `get-ddwrt-status.py`, `backup-ddwrt-config.py`, `restore-ddwrt-config.py` |
+| **14** | `verify_network_matrix`| Cross-VLAN Audit | `quick`, `comprehensive` | `verify-network-matrix.py` |
+| **15** | `manage_wireshark` | Headless SPAN Sniffer | `status`, `sync_capture` | `get-wireshark-status.py`, `sync-wireshark-capture-script.py` |
+| **16** | `analyze_pcap_telemetry`| Streaming PCAP Engine | `comprehensive`, `summary`, `l2_hygiene`, `routing_matrix`, `transport_health`, `core_services`, `security_anomalies` | `analyze-pcap-telemetry.py` |
+| **17** | `query_pcap_flows` | Forensic Packet Query | Filter by host, port, protocol, VLAN | `analyze-pcap-telemetry.py` |
+| **18** | `manage_external_services`| Cloud VPS Services | `status`, `ssl`, `email`, `security`, `whitelist` | `manage-external-services.py` |
+| **19** | `manage_external_hosts`| Cloud VPS Hosts | `audit`, `backup`, `deploy_promtail` | `manage-external-hosts.py`, `deploy-external-promtail.py` |
+| **20** | `sync_adguard_clients` | DNS Identity Alignment | Non-destructive dry-run, live sync | `sync-adguard-clients.py` |
+| **21** | `align_ovrc_devices` | OvrC Cloud Sync | `preview`, `csv`, `apply`, `scan`, `status`, `topology`, `topology-apply` | `align-ovrc-devices.py` |
 
 ---
 
