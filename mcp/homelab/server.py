@@ -620,17 +620,19 @@ def query_pcap_flows(
     host: Annotated[str | None, Field(description="Host IP filter to match source or destination")] = None,
     port: Annotated[int | None, Field(description="TCP/UDP port number to match")] = None,
     proto: Annotated[Literal["tcp", "udp", "icmp", "arp"] | None, Field(description="Protocol filter")] = None,
+    flag: Annotated[Literal["rst", "syn", "fin"] | None, Field(description="TCP flag filter ('rst', 'syn', 'fin')")] = None,
     vlan: Annotated[int | None, Field(description="VLAN ID filter")] = None,
     limit: Annotated[int, Field(description="Maximum matching conversations to return")] = 50,
     max_files: Annotated[int, Field(description="Number of newest capture files to scan")] = 10
 ) -> str:
     """Targeted flow query tool for matching packet conversations across PCAP/PCAPNG captures.
-    Filter by host IP (e.g. '192.168.10.200'), port (e.g. 53), protocol ('tcp', 'udp', 'icmp', 'arp'), or VLAN ID."""
+    Filter by host IP (e.g. '192.168.10.200'), port (e.g. 53), protocol ('tcp', 'udp', 'icmp', 'arp'), TCP flag ('rst', 'syn', 'fin'), or VLAN ID."""
     args = ["--focus", "query_flows", "--limit", str(limit), "--max-files", str(max_files)]
     if path: args.extend(["--path", path])
     if host: args.extend(["--query-host", host])
     if port is not None: args.extend(["--query-port", str(port)])
     if proto: args.extend(["--query-proto", proto])
+    if flag: args.extend(["--query-flag", flag])
     if vlan is not None: args.extend(["--vlan", str(vlan)])
     return run_script("analyze-pcap-telemetry.py", args, timeout=300)
 

@@ -138,6 +138,7 @@ def run_diagnostic_engine(
     query_host: str = None,
     query_port: int = None,
     query_proto: str = None,
+    query_flag: str = None,
     query_limit: int = 50,
 ) -> dict:
     t0 = time.time()
@@ -184,20 +185,27 @@ def run_diagnostic_engine(
     tcp_syn_ack = 0
     tcp_rst = 0
     tcp_rst_srcs = Counter()
+    tcp_rst_flows = Counter()
+    tcp_rst_ports = Counter()
     tcp_fin = 0
     tcp_ports = Counter()
     udp_ports = Counter()
     icmp_types = Counter()
+    icmp_port_unreachable = Counter()
+    icmp_frag_needed = Counter()
+    icmp_ttl_expired = Counter()
     
     # Core Services
     dns_queries = Counter()
     dns_servers = Counter()
     dns_bypass_leakers = Counter()
+    dns_domain_clients = defaultdict(Counter)
     mdns_count = 0
     ssdp_count = 0
     dhcp_msgs = Counter()
     dhcp_servers = Counter()
     cleartext_proto = Counter()
+    cleartext_http_hosts = Counter()
     
     # Flow Matching Records
     matching_flows = []
@@ -337,7 +345,24 @@ def run_diagnostic_engine(
                                 flags = struct.unpack_from(">H", buf, l4_offset + 12)[0] & 0x01FF
                                 tcp_ports[dport] += 1
                                 
-                                if dport in (80, 8080) or sport in (80, 8080): cleartext_proto["HTTP"] += 1
+                                if dport in (80, 8080) or sport in (80, 8080):
+                                    cleartext_proto["HTTP"] += 1
+                                    tcp_hl = ((buf[l4_offset + 12] >> 4) & 0x0F) * 4
+                                    pay_off = l4_offset + tcp_hl
+                                    pay_len = caplen - (pay_off - pkt_offset)
+                                    if pay_len > 14:
+                                        pay_bytes = buf[pay_off:pay_off+min(256, pay_len)]
+                                        if any(pay_bytes.startswith(m) for m in (b"GET ", b"POST ", b"PUT ", b"HEAD ", b"OPTIONS ")):
+                                            try:
+                                                text = pay_bytes.decode("ascii", errors="ignore")
+                                                host_hdr = ""
+                                                for line in text.split("\r\n"):
+                                                    if line.lower().startswith("host:"):
+                                                        host_hdr = line.split(":", 1)[1].strip()
+                                                        break
+                                                cleartext_http_hosts[host_hdr or d_ip] += 1
+                                            except Exception:
+                                                pass
                                 elif dport == 23 or sport == 23: cleartext_proto["Telnet"] += 1
                                 elif dport == 21 or sport == 21: cleartext_proto["FTP"] += 1
                                 
@@ -347,6 +372,8 @@ def run_diagnostic_engine(
                                 if flags & 0x004:
                                     tcp_rst += 1
                                     tcp_rst_srcs[s_ip] += 1
+                                    tcp_rst_flows[(s_ip, sport, d_ip, dport)] += 1
+                                    tcp_rst_ports[dport] += 1
                                 if flags & 0x001: tcp_fin += 1
                                 
                             # UDP
@@ -365,7 +392,10 @@ def run_diagnostic_engine(
                                         qdc = struct.unpack_from(">H", buf, payload_off + 4)[0]
                                         if qdc > 0:
                                             qn, _ = parse_dns_qname(buf, payload_off + 12, payload_off + payload_len)
-                                            if qn: dns_queries[qn.lower()] += 1
+                                            if qn:
+                                                qnl = qn.lower()
+                                                dns_queries[qnl] += 1
+                                                dns_domain_clients[qnl][s_ip] += 1
                                 elif dport == 5353: mdns_count += 1
                                 elif dport == 1900: ssdp_count += 1
                                 elif dport in (67, 68) or sport in (67, 68):
@@ -391,24 +421,58 @@ def run_diagnostic_engine(
                             elif proto == 1 and l4_offset + 8 <= pkt_offset + caplen:
                                 it, ic = struct.unpack_from("BB", buf, l4_offset)
                                 icmp_types[(it, ic)] += 1
+                                encap_off = l4_offset + 8
+                                if encap_off + 20 <= pkt_offset + caplen:
+                                    orig_ihl = (buf[encap_off] & 0x0F) * 4
+                                    orig_proto = buf[encap_off + 9]
+                                    orig_sip = socket.inet_ntoa(buf[encap_off+12:encap_off+16])
+                                    orig_dip = socket.inet_ntoa(buf[encap_off+16:encap_off+20])
+                                    orig_sport, orig_dport = 0, 0
+                                    if encap_off + orig_ihl + 4 <= pkt_offset + caplen:
+                                        orig_sport, orig_dport = struct.unpack_from(">HH", buf, encap_off + orig_ihl)
+                                    if it == 3 and ic == 3:
+                                        proto_str = "UDP" if orig_proto == 17 else ("TCP" if orig_proto == 6 else str(orig_proto))
+                                        icmp_port_unreachable[(s_ip, orig_sip, orig_dip, orig_dport, proto_str)] += 1
+                                    elif it == 3 and ic == 4:
+                                        nh_mtu = struct.unpack_from(">H", buf, l4_offset + 6)[0]
+                                        icmp_frag_needed[(s_ip, orig_sip, orig_dip, nh_mtu)] += 1
+                                    elif it == 11 and ic == 0:
+                                        icmp_ttl_expired[(s_ip, orig_sip, orig_dip)] += 1
                                 
                             # Flow matching query
-                            if query_host or query_port or query_proto:
+                            if query_host or query_port or query_proto or query_flag:
                                 matched = True
                                 if query_host and query_host not in (s_ip, d_ip): matched = False
                                 if query_port and query_port not in (sport, dport): matched = False
                                 if query_proto:
                                     pname = {6: "tcp", 17: "udp", 1: "icmp"}.get(proto, str(proto))
                                     if query_proto.lower() != pname: matched = False
+                                if query_flag:
+                                    qf = query_flag.lower()
+                                    if proto == 6:
+                                        if qf == "rst" and not (flags & 0x004): matched = False
+                                        elif qf == "syn" and not (flags & 0x002): matched = False
+                                        elif qf == "fin" and not (flags & 0x001): matched = False
+                                    else:
+                                        matched = False
                                 if matched and len(matching_flows) < query_limit:
                                     proto_name = {6: "TCP", 17: "UDP", 1: "ICMP"}.get(proto, str(proto))
+                                    extra_info = []
+                                    if proto == 6:
+                                        flag_list = []
+                                        if flags & 0x002: flag_list.append("SYN")
+                                        if flags & 0x010: flag_list.append("ACK")
+                                        if flags & 0x004: flag_list.append("RST")
+                                        if flags & 0x001: flag_list.append("FIN")
+                                        extra_info.append(f"[{','.join(flag_list)}]")
+                                    extra_info.append(f"Len={origlen} TTL={ttl}")
                                     matching_flows.append({
                                         "time": datetime.datetime.fromtimestamp(ts, datetime.timezone.utc).strftime("%H:%M:%S.%f")[:-3],
                                         "vlan": vid,
                                         "proto": proto_name,
                                         "src": f"{s_ip}:{sport}" if sport else s_ip,
                                         "dst": f"{d_ip}:{dport}" if dport else d_ip,
-                                        "info": f"Len={origlen} TTL={ttl}"
+                                        "info": " ".join(extra_info)
                                     })
 
                     if max_packets and total_packets >= max_packets:
@@ -461,6 +525,7 @@ def run_diagnostic_engine(
             "tcp_fin": tcp_fin,
             "rst_to_syn_ratio": round(tcp_rst / max(1, tcp_syn), 3),
             "top_rst_sources": dict(tcp_rst_srcs.most_common(8)),
+            "top_rst_flows": [{"src": f"{s}:{sp}", "dst": f"{d}:{dp}", "count": c} for (s, sp, d, dp), c in tcp_rst_flows.most_common(8)],
             "top_tcp_ports": dict(tcp_ports.most_common(10)),
             "top_udp_ports": dict(udp_ports.most_common(10)),
             "low_ttl_packets": [{"src": s, "dst": d, "count": c} for (s, d), c in low_ttl.most_common(5)],
@@ -468,16 +533,32 @@ def run_diagnostic_engine(
                 {"type": t, "code": c, "name": {
                     (0,0): "Echo Reply", (8,0): "Echo Request",
                     (3,0): "Net Unreachable", (3,1): "Host Unreachable",
-                    (3,3): "Port Unreachable", (11,0): "TTL Expired"
+                    (3,3): "Port Unreachable", (3,4): "Frag Needed (MTU Bottleneck)",
+                    (11,0): "TTL Expired"
                 }.get((t,c), f"{t}/{c}"), "count": cnt}
                 for (t,c), cnt in icmp_types.most_common(6)
+            ],
+            "icmp_port_unreachable": [
+                {"gateway": gw, "client": sip, "target": dip, "port": dp, "proto": pr, "count": c}
+                for (gw, sip, dip, dp, pr), c in icmp_port_unreachable.most_common(8)
+            ],
+            "icmp_frag_needed": [
+                {"gateway": gw, "src": sip, "dst": dip, "next_hop_mtu": mtu, "count": c}
+                for (gw, sip, dip, mtu), c in icmp_frag_needed.most_common(8)
+            ],
+            "icmp_ttl_expired": [
+                {"router": gw, "src": sip, "dst": dip, "count": c}
+                for (gw, sip, dip), c in icmp_ttl_expired.most_common(5)
             ]
         },
         "core_services": {
             "dns": {
                 "servers_contacted": dict(dns_servers.most_common(8)),
                 "bypassing_adguard": [{"client": s, "resolver": d, "count": c} for (s, d), c in dns_bypass_leakers.most_common(8)],
-                "top_queries": dict(dns_queries.most_common(15)),
+                "top_queries": [
+                    {"query": q, "count": c, "top_clients": dict(dns_domain_clients[q].most_common(3))}
+                    for q, c in dns_queries.most_common(15)
+                ],
             },
             "dhcp": {
                 "messages": dict(dhcp_msgs.most_common()),
@@ -499,6 +580,7 @@ def run_diagnostic_engine(
         },
         "security_anomalies": {
             "cleartext_protocols": dict(cleartext_proto.most_common()),
+            "cleartext_http_hosts": dict(cleartext_http_hosts.most_common(8)),
         },
         "query_results": matching_flows,
     }
@@ -556,9 +638,25 @@ def format_markdown_report(data: dict, focus: str = "comprehensive") -> str:
         lines.append("### Top TCP RST Sources:")
         for ip, cnt in th["top_rst_sources"].items():
             lines.append(f"  - `{ip}` ({get_subnet_name(ip)}): `{cnt:,}` resets")
+        if th.get("top_rst_flows"):
+            lines.append("### Top TCP Reset Conversations:")
+            for rf in th["top_rst_flows"][:6]:
+                lines.append(f"  - `{rf['src']}` ➔ `{rf['dst']}`: **`{rf['count']:,}` resets**")
         lines.append("### ICMP Diagnostic Telemetry:")
         for ic in th["icmp"]:
             lines.append(f"  - **{ic['name']}**: `{ic['count']:,}` frames")
+        if th.get("icmp_frag_needed"):
+            lines.append("### ⚠️ Path MTU Bottlenecks (Fragmentation Needed):")
+            for fn in th["icmp_frag_needed"]:
+                lines.append(f"  - Gateway `{fn['gateway']}` reported Next-Hop MTU **`{fn['next_hop_mtu']}`** for `{fn['src']}` ➔ `{fn['dst']}` (`{fn['count']:,}` events)")
+        if th.get("icmp_port_unreachable"):
+            lines.append("### ⚠️ Port Unreachable Targets:")
+            for pu in th["icmp_port_unreachable"][:5]:
+                lines.append(f"  - Host `{pu['client']}` ➔ Target `{pu['target']}:{pu['port']}` ({pu['proto']}) rejected by `{pu['gateway']}` (`{pu['count']:,}` times)")
+        if th.get("icmp_ttl_expired"):
+            lines.append("### ⚠️ Routing Loops / TTL Expired:")
+            for te in th["icmp_ttl_expired"]:
+                lines.append(f"  - Router `{te['router']}` dropped packets for `{te['src']}` ➔ `{te['dst']}` (`{te['count']:,}` times)")
         lines.append("")
 
     if focus in ("core_services", "comprehensive"):
@@ -571,9 +669,14 @@ def format_markdown_report(data: dict, focus: str = "comprehensive") -> str:
             lines.append("### ⚠️ External DNS Leakers (Bypassing AdGuard Home):")
             for lk in dns["bypassing_adguard"]:
                 lines.append(f"  - Client `{lk['client']}` ➔ Resolver `{lk['resolver']}`: **`{lk['count']:,}` queries**")
-        lines.append("### Top Queried Domains:")
-        for qn, cnt in list(dns["top_queries"].items())[:8]:
+        lines.append("### Top Queried Domains & Origin Clients:")
+        for qentry in dns["top_queries"][:8]:
+            qn = qentry["query"]
+            cnt = qentry["count"]
+            clients_str = ", ".join(f"`{cip}` ({ccnt:,})" for cip, ccnt in qentry.get("top_clients", {}).items())
             lines.append(f"  - `{qn}`: `{cnt:,}` queries" + (" ⚠️ *(Runaway loop!)*" if cnt > 50000 else ""))
+            if clients_str:
+                lines.append(f"    - Origin Clients: {clients_str}")
         lines.append("")
 
     if focus in ("security_anomalies", "comprehensive"):
@@ -582,6 +685,10 @@ def format_markdown_report(data: dict, focus: str = "comprehensive") -> str:
         lines.append("### Insecure Cleartext Protocols:")
         for proto, cnt in sec["cleartext_protocols"].items():
             lines.append(f"  - **{proto}**: `{cnt:,}` frames")
+        if sec.get("cleartext_http_hosts"):
+            lines.append("### Cleartext HTTP Host Targets:")
+            for h, cnt in sec["cleartext_http_hosts"].items():
+                lines.append(f"  - `{h}`: `{cnt:,}` requests")
         lines.append("### Top Public WAN Egress Destinations:")
         for dst, cnt in list(data["routing_matrix"]["top_public_destinations"].items())[:6]:
             lines.append(f"  - `{dst}`: `{cnt:,}` packets")
@@ -610,6 +717,7 @@ def main():
     parser.add_argument("--query-host", default=None, help="Filter conversation records by host IP")
     parser.add_argument("--query-port", type=int, default=None, help="Filter conversation records by port")
     parser.add_argument("--query-proto", default=None, help="Filter conversation records by protocol (tcp, udp, icmp, arp)")
+    parser.add_argument("--query-flag", default=None, help="Filter TCP flows by flag (rst, syn, fin)")
     parser.add_argument("--limit", type=int, default=50, help="Max query matching records")
     parser.add_argument("--json", action="store_true", help="Output raw JSON data")
     args = parser.parse_args()
@@ -626,6 +734,7 @@ def main():
         query_host=args.query_host,
         query_port=args.query_port,
         query_proto=args.query_proto,
+        query_flag=args.query_flag,
         query_limit=args.limit,
     )
 
