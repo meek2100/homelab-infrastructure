@@ -384,18 +384,23 @@ def run_diagnostic_engine(
                                 payload_len = caplen - (payload_off - pkt_offset)
                                 
                                 if dport == 53 or sport == 53:
-                                    if dport == 53:
-                                        dns_servers[d_ip] += 1
-                                        if not (d_ip in ("192.168.40.185", "192.168.40.186") or (d_ip.startswith("192.168.") and d_ip.endswith(".1"))):
-                                            dns_bypass_leakers[(s_ip, d_ip)] += 1
                                     if payload_len > 12:
+                                        dns_flags = struct.unpack_from(">H", buf, payload_off + 2)[0]
+                                        is_query = (dns_flags & 0x8000) == 0
                                         qdc = struct.unpack_from(">H", buf, payload_off + 4)[0]
-                                        if qdc > 0:
-                                            qn, _ = parse_dns_qname(buf, payload_off + 12, payload_off + payload_len)
-                                            if qn:
-                                                qnl = qn.lower()
-                                                dns_queries[qnl] += 1
-                                                dns_domain_clients[qnl][s_ip] += 1
+                                        
+                                        if is_query and dport == 53:
+                                            dns_servers[d_ip] += 1
+                                            if not (d_ip in ("192.168.40.185", "192.168.40.186") or (d_ip.startswith("192.168.") and d_ip.endswith(".1"))):
+                                                dns_bypass_leakers[(s_ip, d_ip)] += 1
+                                            if qdc > 0:
+                                                qn, _ = parse_dns_qname(buf, payload_off + 12, payload_off + payload_len)
+                                                if qn:
+                                                    qnl = qn.lower()
+                                                    # Only count from actual LAN clients, not AdGuard forwarder
+                                                    if s_ip not in ("192.168.40.185", "192.168.40.186"):
+                                                        dns_queries[qnl] += 1
+                                                        dns_domain_clients[qnl][s_ip] += 1
                                 elif dport == 5353: mdns_count += 1
                                 elif dport == 1900: ssdp_count += 1
                                 elif dport in (67, 68) or sport in (67, 68):
