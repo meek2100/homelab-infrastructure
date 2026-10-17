@@ -428,6 +428,12 @@ Because NSDP is strictly Layer 2 UDP broadcast/unicast on VLAN 1 (`192.168.1.0/2
   * 🟢 `mail.theurer.dev:993`: External Mail IMAPS secure retrieval probe (`blackbox_tcp`)
   * 🟢 `192.168.40.185:53`: AdGuard Home Primary DNS probe (`blackbox_dns`)
   * 🟢 `192.168.40.186:53`: AdGuard Home Secondary DNS probe (`blackbox_dns`)
+  * 🟢 `http://192.168.40.246:11434/api/version`: Ollama local LLM engine on CT 104 (`blackbox_http`)
+  * 🟢 `http://192.168.40.246:3000`: OpenWebUI frontend on CT 104 (`blackbox_http`)
+  * 🟢 `http://192.168.40.246:32400/identity`: Plex Media Server hardware transcoding on CT 104 (`blackbox_http`)
+  * 🟢 `http://192.168.40.245:5006`: Actual Budget finance server on CT 106 (`blackbox_http`)
+  * 🟢 `http://192.168.40.245:8080`: Firefly III finance manager on CT 106 (`blackbox_http`)
+  * 🟢 `http://192.168.40.245:3333`: Ghostfolio wealth tracker on CT 106 (`blackbox_http`)
   * 🟢 `alertmanager:9093`: Alertmanager self-telemetry
   * 🟢 `blackbox-exporter:9115`: Blackbox Exporter self-telemetry
   * 🟢 `node-exporter:9100`: Local `nexus-server` host metrics
