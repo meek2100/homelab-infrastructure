@@ -24,6 +24,39 @@ Ask the AI to execute the following tools in this **exact order**:
 1. **`restore_apt_packages`**: The AI will first reinstall Docker, Nginx, and all other base software. *(This must run first so the software actually exists on disk!)*
 2. **`restore_vm`**: The AI will inject your SSL certs, `.db` databases, custom Nginx routes, and `chmod/chown` ownership metadata. *(Running this second ensures default software configs are successfully overwritten!)*
 3. **`restore_stacks`**: The AI will decrypt your SOPS secrets using `homelab-infrastructure.key`, write your `docker-compose.yml` files, and ignite all your Docker containers!
+
+### Phase 5: Edge Router Rapid Disaster Recovery (OpenWrt & DD-WRT)
+If an edge router suffers a corrupted flash, failed upgrade, or hardware replacement:
+
+1. **OpenWrt AX3200 (`192.168.1.226`) Rapid Rollback (< 60s)**:
+   - Decrypt the `/overlay` snapshot:
+     ```bash
+     sops --decrypt infrastructure/network/openwrt/dr_snapshots/openwrt-ax3200-overlay-upper.tar.enc.bin > /tmp/overlay.tar.gz
+     ```
+   - Stream directly into the router's `/overlay` partition and reboot:
+     ```bash
+     ssh root@192.168.1.226 "tar -xz -C /overlay -f -" < /tmp/overlay.tar.gz && ssh root@192.168.1.226 "reboot"
+     ```
+   - Alternatively, flash the standard sysupgrade archive:
+     ```bash
+     sops --decrypt infrastructure/network/openwrt/dr_snapshots/openwrt-sysupgrade-backup.tar.enc.bin | ssh root@192.168.1.226 "sysupgrade -r -"
+     ```
+
+2. **DD-WRT Aurora (`10.25.25.1`, WAN 2 / `pve2` Gateway)**:
+   - Restore binary NVRAM via DD-WRT CLI:
+     ```bash
+     sops --decrypt infrastructure/network/ddwrt/aurora/dr_snapshots/aurora-nvram-backup.enc.bin | ssh root@10.25.25.1 "cat > /tmp/nvram.bin && nvram restore /tmp/nvram.bin && nvram commit && reboot"
+     ```
+   - Restore the full `/opt` USB filesystem:
+     ```bash
+     sops --decrypt infrastructure/network/ddwrt/aurora/dr_snapshots/aurora-opt-complete.tar.enc.bin | ssh root@10.25.25.1 "tar -xz -C / -f -"
+     ```
+
+3. **DD-WRT Luna (`10.20.20.1`, Upstream Gateway)**:
+   - Restore binary NVRAM:
+     ```bash
+     sops --decrypt infrastructure/network/ddwrt/luna/dr_snapshots/luna-nvram-backup.enc.bin | ssh root@10.20.20.1 "cat > /tmp/nvram.bin && nvram restore /tmp/nvram.bin && nvram commit && reboot"
+     ```
  
 ---
  
