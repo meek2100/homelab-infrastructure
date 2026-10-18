@@ -12,6 +12,23 @@ touch /tmp/pia_recovery.active 2>/dev/null || true
 wan_if=$(nvram get wan_iface)
 if [ -n "$wan_if" ]; then
     iptables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null || iptables -I FORWARD -i br0 -o "$wan_if" -j REJECT
+
+    # Arm local router egress filter on physical WAN
+    iptables -N WAN_EGRESS_FILTER 2>/dev/null || true
+    iptables -F WAN_EGRESS_FILTER 2>/dev/null || true
+    iptables -A WAN_EGRESS_FILTER -p udp --dport 53 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -p tcp --dport 53 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -p tcp --dport 443 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -p tcp --dport 1337 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -p udp --dport 1337 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -p udp --dport 51820 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -p icmp -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -d 10.20.20.0/24 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -d 10.25.25.0/24 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -j REJECT
+    if ! iptables -C OUTPUT -o "$wan_if" -j WAN_EGRESS_FILTER 2>/dev/null; then
+        iptables -I OUTPUT -o "$wan_if" -j WAN_EGRESS_FILTER
+    fi
 fi
 # Re-ensure Luna transit subnet (10.20.20.0/24) stays at Rules 1 & 2 above the killswitch
 iptables -D FORWARD -d 10.20.20.0/24 -j ACCEPT 2>/dev/null || true
@@ -19,6 +36,7 @@ iptables -D FORWARD -s 10.20.20.0/24 -j ACCEPT 2>/dev/null || true
 iptables -I FORWARD 1 -d 10.20.20.0/24 -j ACCEPT
 iptables -I FORWARD 1 -s 10.20.20.0/24 -j ACCEPT
 iptables -t nat -C POSTROUTING -d 10.20.20.0/24 -j MASQUERADE 2>/dev/null || iptables -t nat -I POSTROUTING 1 -d 10.20.20.0/24 -j MASQUERADE
+
 
 
 # 3. Take down the tunnel (Forces watchdog into fresh rotation)

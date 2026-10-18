@@ -145,20 +145,15 @@ block_lan_internet() {
 }
 
 unblock_lan_internet() {
-    local wan_if
-    wan_if=$(nvram get wan_iface)
     rm -f /tmp/pia_recovery.active 2>/dev/null || true
 
-    # Remove local router egress filter on physical WAN once WireGuard is active
-    if [ -n "$wan_if" ]; then
-        iptables -D OUTPUT -o "$wan_if" -j WAN_EGRESS_FILTER 2>/dev/null || true
-    fi
-
-    # NOTE: The 'FORWARD -i br0 -o $wan_if -j REJECT' rule is NEVER deleted!
-    # Valid VPN traffic routes via oet1 (not $wan_if), so keeping this rule permanently
-    # ensures 100% fail-closed protection even during abrupt kernel interface teardown.
-    log_msg "Tunnel operational. Killswitch permanently active on physical WAN."
+    # NOTE: Both 'FORWARD -i br0 -o $wan_if -j REJECT' and 'OUTPUT -o $wan_if -j WAN_EGRESS_FILTER'
+    # are NEVER deleted! Valid VPN traffic routes via oet1 (not $wan_if), so keeping these
+    # rules permanently enforced guarantees 100% fail-closed protection for both LAN clients
+    # and local router processes, even if oet1 is torn down.
+    log_msg "Tunnel operational. Fail-closed filters permanently active on physical WAN."
 }
+
 
 
 disable_tunnel() {
