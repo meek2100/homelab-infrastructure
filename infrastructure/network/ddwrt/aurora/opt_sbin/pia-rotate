@@ -7,10 +7,18 @@ killall -9 pia-watchdog 2>/dev/null || true
 rm -rf /tmp/pia_watchdog.lock 2>/dev/null || true
 sleep 1
 
-# 2. Take down the tunnel (This instantly engages the hardware killswitch)
+# 2. Immediately enforce fail-closed killswitch BEFORE tearing down interface
+touch /tmp/pia_recovery.active 2>/dev/null || true
+wan_if=$(nvram get wan_iface)
+if [ -n "$wan_if" ]; then
+    iptables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null || iptables -I FORWARD -i br0 -o "$wan_if" -j REJECT
+fi
+
+# 3. Take down the tunnel (Forces watchdog into fresh rotation)
 ip link set oet1 down 2>/dev/null || ifconfig oet1 down 2>/dev/null || true
 
-# 3. Start a fresh watchdog (It will immediately see oet1 is down and rotate)
+# 4. Start a fresh watchdog daemon (It will immediately see oet1 is down and rotate)
 /opt/sbin/pia-watchdog > /tmp/pia-startup-crash.log 2>&1 &
 
-echo "--> Rotation triggered! Check logs or run 'curl ifconfig.me' in 30 seconds."
+echo "--> Rotation triggered with zero-leak fail-closed lock! WireGuard will recover in ~15-30s."
+

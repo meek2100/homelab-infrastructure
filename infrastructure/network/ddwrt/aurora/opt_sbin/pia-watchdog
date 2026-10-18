@@ -108,17 +108,37 @@ block_lan_internet() {
     wan_if=$(nvram get wan_iface)
     touch /tmp/pia_recovery.active 2>/dev/null || true
 
-    # Block IPv4
-    if ! iptables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; then
-        iptables -I FORWARD -i br0 -o "$wan_if" -j REJECT
-        ensure_luna_access
-        log_msg "Killswitch ENGAGED. LAN isolated from direct internet."
-    fi
+    # 1. Permanently isolate LAN from physical WAN (Fail-Closed Killswitch)
+    if [ -n "$wan_if" ]; then
+        if ! iptables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; then
+            iptables -I FORWARD -i br0 -o "$wan_if" -j REJECT
+            ensure_luna_access
+            log_msg "Killswitch ENGAGED. LAN isolated from physical WAN."
+        fi
 
-    # Block IPv6 if present
-    if command -v ip6tables >/dev/null 2>&1; then
-        if ! ip6tables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; then
-            ip6tables -I FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null || true
+        # Block IPv6 on physical WAN if present
+        if command -v ip6tables >/dev/null 2>&1; then
+            if ! ip6tables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; then
+                ip6tables -I FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null || true
+            fi
+        fi
+
+        # 2. Block arbitrary local router egress on physical WAN during rotation/recovery
+        # Only allow: DNS (53), HTTPS (443), PIA API (1337), WireGuard (1337/51820), ICMP, and Transit subnets
+        iptables -N WAN_EGRESS_FILTER 2>/dev/null || true
+        iptables -F WAN_EGRESS_FILTER 2>/dev/null || true
+        iptables -A WAN_EGRESS_FILTER -p udp --dport 53 -j ACCEPT
+        iptables -A WAN_EGRESS_FILTER -p tcp --dport 53 -j ACCEPT
+        iptables -A WAN_EGRESS_FILTER -p tcp --dport 443 -j ACCEPT
+        iptables -A WAN_EGRESS_FILTER -p tcp --dport 1337 -j ACCEPT
+        iptables -A WAN_EGRESS_FILTER -p udp --dport 1337 -j ACCEPT
+        iptables -A WAN_EGRESS_FILTER -p udp --dport 51820 -j ACCEPT
+        iptables -A WAN_EGRESS_FILTER -p icmp -j ACCEPT
+        iptables -A WAN_EGRESS_FILTER -d 10.20.20.0/24 -j ACCEPT
+        iptables -A WAN_EGRESS_FILTER -d 10.25.25.0/24 -j ACCEPT
+        iptables -A WAN_EGRESS_FILTER -j REJECT
+        if ! iptables -C OUTPUT -o "$wan_if" -j WAN_EGRESS_FILTER 2>/dev/null; then
+            iptables -I OUTPUT -o "$wan_if" -j WAN_EGRESS_FILTER
         fi
     fi
 }
@@ -128,19 +148,17 @@ unblock_lan_internet() {
     wan_if=$(nvram get wan_iface)
     rm -f /tmp/pia_recovery.active 2>/dev/null || true
 
-    # Lift IPv4
-    while iptables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; do
-        iptables -D FORWARD -i br0 -o "$wan_if" -j REJECT
-        log_msg "Killswitch LIFTED. LAN traffic flowing via VPN."
-    done
-
-    # Lift IPv6
-    if command -v ip6tables >/dev/null 2>&1; then
-        while ip6tables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; do
-            ip6tables -D FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null || true
-        done
+    # Remove local router egress filter on physical WAN once WireGuard is active
+    if [ -n "$wan_if" ]; then
+        iptables -D OUTPUT -o "$wan_if" -j WAN_EGRESS_FILTER 2>/dev/null || true
     fi
+
+    # NOTE: The 'FORWARD -i br0 -o $wan_if -j REJECT' rule is NEVER deleted!
+    # Valid VPN traffic routes via oet1 (not $wan_if), so keeping this rule permanently
+    # ensures 100% fail-closed protection even during abrupt kernel interface teardown.
+    log_msg "Tunnel operational. Killswitch permanently active on physical WAN."
 }
+
 
 disable_tunnel() {
     log_msg "Tearing down tunnel $TUNNEL_IF..."
@@ -288,6 +306,8 @@ test_and_restore_tunnel() {
     while [ "$i" -le 12 ]; do
         if ping -c 1 -W 2 -I "$TUNNEL_IF" "$test_dns" >/dev/null 2>&1; then
             log_msg "SUCCESS: Tunnel is up and passing traffic."
+            # Set internal zero-log PIA DNS to prevent DNS leaks
+            printf "nameserver %s\nnameserver 10.0.0.243\n" "$test_dns" > /etc/resolv.conf
             return 0
         fi
         sleep 5
@@ -306,7 +326,8 @@ main() {
     load_credentials
     log_msg "--- PIA Watchdog Daemon Started ---"
 
-    unblock_lan_internet # Ensure clean slate on boot
+    # Default to FAIL-CLOSED on startup: never expose LAN before health is verified
+    block_lan_internet
     ensure_luna_access
 
     while true; do
@@ -314,6 +335,7 @@ main() {
         if ping -c 3 -W 2 "$VPN_CHECK_IP" >/dev/null 2>&1; then
             # Ensure Luna router (10.20.20.1) rules remain top priority
             ensure_luna_access
+            unblock_lan_internet
             sleep $HEALTH_CHECK_INTERVAL
             continue
         fi
