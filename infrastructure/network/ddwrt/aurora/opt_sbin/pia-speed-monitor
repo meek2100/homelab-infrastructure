@@ -53,14 +53,40 @@ fi
 CURRENT_KBPS=$((SPEED / 125))
 echo "  [*] Current Speed: $CURRENT_KBPS Kbps"
 
+# Failure tracking file
+FAIL_FILE="/tmp/pia_speed_fails"
+
 # Check if speed is below threshold
 if [ "$SPEED" -lt "$MIN_BPS" ]; then
-    echo "  [!] Speed is below the ${MIN_KBPS} Kbps threshold! Rotating server..."
-    logger -t "PIA_Speed" "Speed dropped to $CURRENT_KBPS Kbps (threshold: $MIN_KBPS Kbps). Triggering rotation."
+    echo "  [!] Initial speed below threshold ($CURRENT_KBPS < $MIN_KBPS Kbps). Retrying in 25s to filter blips..."
+    sleep 25
+    
+    # Immediate retry
+    SPEED_RAW=$(curl --max-time 20 -s -w "%{speed_download}" -o /dev/null "$PRIMARY_URL" 2>/dev/null || echo "0")
+    SPEED=$(echo "$SPEED_RAW" | cut -d'.' -f1)
+    if [ -z "$SPEED" ] || [ "$SPEED" -eq 0 ]; then
+        SPEED_RAW=$(curl --max-time 20 -s -w "%{speed_download}" -o /dev/null "$FALLBACK_URL" 2>/dev/null || echo "0")
+        SPEED=$(echo "$SPEED_RAW" | cut -d'.' -f1)
+    fi
+    CURRENT_KBPS=$((SPEED / 125))
+    echo "  [*] Retest Speed: $CURRENT_KBPS Kbps"
+fi
 
-    # Fire the rotation script
-    /opt/sbin/pia-rotate
+if [ "$SPEED" -lt "$MIN_BPS" ]; then
+    FAILS=$(cat "$FAIL_FILE" 2>/dev/null || echo "0")
+    FAILS=$((FAILS + 1))
+    echo "$FAILS" > "$FAIL_FILE"
+    echo "  [!] Confirmed low speed ($CURRENT_KBPS Kbps). Failure streak: $FAILS / 2"
+    logger -t "PIA_Speed" "Speed low at $CURRENT_KBPS Kbps. Failure streak: $FAILS / 2."
+    
+    if [ "$FAILS" -ge 2 ]; then
+        echo "  [!] Consecutive failure threshold reached! Rotating server..."
+        logger -t "PIA_Speed" "Threshold reached (2 consecutive failed cycles). Triggering rotation."
+        rm -f "$FAIL_FILE"
+        /opt/sbin/pia-rotate
+    fi
 else
-    echo "  [*] Speed is healthy. No action required."
+    echo "  [*] Speed is healthy ($CURRENT_KBPS Kbps). Resetting failure counter."
     logger -t "PIA_Speed" "Speed healthy: $CURRENT_KBPS Kbps."
+    rm -f "$FAIL_FILE"
 fi

@@ -50,27 +50,37 @@ TARGETS = [
     {"name": "mainsail (3D Printer Klipper)", "ip": "192.168.30.90", "tcp": [22, 80, 7125], "category": "IoT Device"},
 ]
 
-def ping_host(ip, timeout=1):
+def ping_host(ip, count=3, timeout=1):
     try:
         start = time.time()
         res = subprocess.run(
-            ["ping", "-c", "1", "-W", str(timeout), ip],
+            ["ping", "-c", str(count), "-W", str(timeout), ip],
             capture_output=True, text=True, check=False
         )
-        latency = (time.time() - start) * 1000
-        return res.returncode == 0, latency
+        if res.returncode == 0:
+            for line in res.stdout.splitlines():
+                if "min/avg/max" in line or "rtt" in line:
+                    parts = line.split("=")[-1].strip().split("/")
+                    if len(parts) >= 2:
+                        return True, float(parts[1])
+            latency = (time.time() - start) / count * 1000
+            return True, latency
+        return False, 0.0
     except Exception:
         return False, 0.0
 
 def test_tcp_port(ip, port, timeout=1.5):
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(timeout)
-        s.connect((ip, port))
-        s.close()
-        return True
-    except Exception:
-        return False
+    for attempt in range(2):
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(timeout)
+            s.connect((ip, port))
+            s.close()
+            return True
+        except Exception:
+            if attempt == 0:
+                time.sleep(0.2)
+    return False
 
 def verify_network_matrix(profile="all"):
     results = []

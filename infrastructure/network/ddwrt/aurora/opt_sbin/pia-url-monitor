@@ -54,14 +54,46 @@ for url in $TARGET_URLS; do
     esac
 done
 
-# 3. Only rotate if ALL targets failed
+# 3. Handle failure: Immediate retry to filter blips, then consecutive run tracking
+FAIL_FILE="/tmp/pia_url_fails"
+
 if [ "$FAILED_URLS" -ge "$TOTAL_URLS" ] && [ "$TOTAL_URLS" -gt 0 ]; then
+    echo "  [!] Initial mirror sweep failed ($FAILED_URLS/$TOTAL_URLS). Retrying all mirrors in 25s..."
+    sleep 25
+    FAILED_URLS=0
+    TOTAL_URLS=0
+    for url in $TARGET_URLS; do
+        TOTAL_URLS=$((TOTAL_URLS + 1))
+        HTTP_CODE=$(curl -k -s -L -A "$USER_AGENT" -o /dev/null -w "%{http_code}" --max-time 10 "$url" 2>/dev/null || echo "000")
+        case "$HTTP_CODE" in
+            200|201|301|302|307|308)
+                logger -t "PIA_URL_Monitor" "Mirror healthy on retry: ${url} returned HTTP ${HTTP_CODE}."
+                rm -f "$FAIL_FILE"
+                exit 0
+                ;;
+            *)
+                FAILED_URLS=$((FAILED_URLS + 1))
+                ;;
+        esac
+    done
+fi
+
+if [ "$FAILED_URLS" -ge "$TOTAL_URLS" ] && [ "$TOTAL_URLS" -gt 0 ]; then
+    FAILS=$(cat "$FAIL_FILE" 2>/dev/null || echo "0")
+    FAILS=$((FAILS + 1))
+    echo "$FAILS" > "$FAIL_FILE"
     REGION=$(nvram get "${TUNNEL_IF}_label" | sed 's/PIA-//')
     REMOTE_IP=$(nvram get "${TUNNEL_IF}_rem0")
 
-    logger -t "PIA_URL_Monitor" "ALL ${TOTAL_URLS} mirrors failed!${BLOCKED_DETAILS} via ${REGION} (${REMOTE_IP}). Triggering rotation."
+    logger -t "PIA_URL_Monitor" "ALL ${TOTAL_URLS} mirrors failed!${BLOCKED_DETAILS} via ${REGION} (${REMOTE_IP}). Failure streak: $FAILS / 2."
 
-    stopservice "$TUNNEL_IF" >/dev/null 2>&1 || true
-    ip link set "$TUNNEL_IF" down >/dev/null 2>&1 || true
-    /opt/sbin/pia-rotate >/dev/null 2>&1 || true
+    if [ "$FAILS" -ge 2 ]; then
+        logger -t "PIA_URL_Monitor" "Confirmed outage across 2 consecutive cycles. Rotating tunnel..."
+        rm -f "$FAIL_FILE"
+        stopservice "$TUNNEL_IF" >/dev/null 2>&1 || true
+        ip link set "$TUNNEL_IF" down >/dev/null 2>&1 || true
+        /opt/sbin/pia-rotate >/dev/null 2>&1 || true
+    fi
+else
+    rm -f "$FAIL_FILE"
 fi

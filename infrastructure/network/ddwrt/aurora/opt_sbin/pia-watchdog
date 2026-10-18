@@ -25,11 +25,26 @@ readonly HEALTH_CHECK_INTERVAL=60  # Seconds between healthy tunnel checks
 readonly BACKOFF_BASE=15           # Starting seconds for outage backoff
 readonly MAX_BACKOFF=3600          # Max backoff time (1 hour) during deep outages
 
-# PIA API Endpoints
-readonly PIA_SERVERLIST_URL="https://serverlist.piaservers.net/vpninfo/servers/v7"
+# PIA API Endpoints (Spanning both v7 and v6 for maximum server diversity)
+readonly PIA_SERVERLIST_V7_URL="https://serverlist.piaservers.net/vpninfo/servers/v7"
+readonly PIA_SERVERLIST_V6_URL="https://serverlist.piaservers.net/vpninfo/servers/v6"
 readonly PIA_TOKEN_URL="https://www.privateinternetaccess.com/api/client/v2/token"
 readonly PIA_CA_CERT_URL="https://raw.githubusercontent.com/pia-foss/manual-connections/master/ca.rsa.4096.crt"
-readonly PIA_REGION_IDS="swiss ro nl_amsterdam is sweden"
+# 10 High-Speed, Privacy-Centric European Physical Regions
+readonly PIA_REGION_IDS="swiss is no sweden fi denmark nl_amsterdam ro austria belgium"
+
+# --- POSIX / BusyBox Random Generator ---
+get_random_num() {
+    local max="$1"
+    local rnd=""
+    if [ -c /dev/urandom ]; then
+        rnd=$(hexdump -n 2 -e '/2 "%u"' /dev/urandom 2>/dev/null || od -An -N2 -i /dev/urandom 2>/dev/null | tr -d ' ' || echo "")
+    fi
+    if [ -z "$rnd" ]; then
+        rnd=$(date +%s 2>/dev/null | cut -c6-10 || echo "1")
+    fi
+    echo $(( rnd % max ))
+}
 
 # --- Global Variables ---
 PIA_USER=""
@@ -140,37 +155,73 @@ disable_tunnel() {
 # --- PIA Provisioning Functions ---
 
 get_pia_config() {
-    local tmp_server_list="/tmp/pia_server_list.$$.tmp"
+    local tmp_v7="/tmp/pia_server_list_v7.$$.tmp"
+    local tmp_v6="/tmp/pia_server_list_v6.$$.tmp"
+    local tmp_merged="/tmp/pia_server_list_merged.$$.tmp"
 
     log_msg "Generating new WireGuard key pair..."
     local privkey pubkey
     privkey=$(wg genkey)
     pubkey=$(echo "$privkey" | wg pubkey)
 
-    curl --max-time 30 -s -o "$tmp_server_list" "$PIA_SERVERLIST_URL"
+    # Fetch both v7 and v6 server lists to maximize server choices
+    curl --max-time 20 -s -o "$tmp_v7" "$PIA_SERVERLIST_V7_URL" 2>/dev/null || true
+    curl --max-time 20 -s -o "$tmp_v6" "$PIA_SERVERLIST_V6_URL" 2>/dev/null || true
+
+    local line_v7 line_v6
+    line_v7=$(head -n 1 "$tmp_v7" 2>/dev/null || echo "{}")
+    line_v6=$(head -n 1 "$tmp_v6" 2>/dev/null || echo "{}")
+
+    # Merge unique regions from v7 and v6 using jq
+    echo "$line_v7" "$line_v6" | jq -s -c '{regions: (([.[0].regions // [], .[1].regions // []] | add) | unique_by(.id))}' > "$tmp_merged" 2>/dev/null || cp "$tmp_v7" "$tmp_merged" 2>/dev/null || true
+
     local token
     token=$(curl --max-time 30 -s -d "username=$PIA_USER&password=$PIA_PASS" "$PIA_TOKEN_URL" | jq -r '.token')
 
     if [ -z "$token" ] || [ "$token" = "null" ]; then
         log_msg "API ERROR: Failed to get auth token from PIA."
-        rm -f "$tmp_server_list"
+        rm -f "$tmp_v7" "$tmp_v6" "$tmp_merged" 2>/dev/null || true
         return 1
     fi
 
-    # Shuffle regions securely using standard POSIX tools
-    local shuffled_regions
-    shuffled_regions=$(echo "$PIA_REGION_IDS" | tr ' ' '\n' | awk -v seed="$RANDOM" 'BEGIN{srand(seed)} {print rand()"\t"$0}' | sort -n | cut -f2)
+    # Determine last connected region to enforce strict Round-Robin progression
+    local last_region
+    last_region=$(cat /tmp/pia_last_region 2>/dev/null || nvram get "${TUNNEL_IF}_last_region" 2>/dev/null || echo "")
 
-    for region_id in $shuffled_regions; do
+    local ordered_regions=""
+    local seen=0
+    for r in $PIA_REGION_IDS; do
+        if [ "$seen" -eq 1 ]; then
+            ordered_regions="$ordered_regions $r"
+        elif [ "$r" = "$last_region" ]; then
+            seen=1
+        fi
+    done
+    for r in $PIA_REGION_IDS; do
+        if [ "$r" = "$last_region" ]; then
+            break
+        fi
+        ordered_regions="$ordered_regions $r"
+    done
+    ordered_regions=$(echo "$ordered_regions" | sed 's/^ *//')
+    if [ -z "$ordered_regions" ]; then
+        ordered_regions="$PIA_REGION_IDS"
+    fi
+
+    log_msg "Round-robin region search order: $ordered_regions (Last: ${last_region:-none})"
+
+    for region_id in $ordered_regions; do
         local region_json wg_servers_json server_count random_index wg_ip wg_cn region_name
-        region_json=$(head -n 1 "$tmp_server_list" | jq --arg REGION_ID "$region_id" '.regions[] | select(.id == $REGION_ID and .offline == false and (.servers.wg | length) > 0)')
+        region_json=$(head -n 1 "$tmp_merged" | jq --arg REGION_ID "$region_id" '.regions[] | select(.id == $REGION_ID and .offline == false and (.servers.wg | length) > 0)')
 
         if [ -z "$region_json" ]; then continue; fi
 
         region_name=$(echo "$region_json" | jq -r '.name')
         wg_servers_json=$(echo "$region_json" | jq '.servers.wg')
         server_count=$(echo "$wg_servers_json" | jq 'length')
-        random_index=$(( RANDOM % server_count ))
+        
+        # Pick a truly random server index within this region via /dev/urandom
+        random_index=$(get_random_num "$server_count")
         wg_ip=$(echo "$wg_servers_json" | jq -r ".[$random_index].ip")
         wg_cn=$(echo "$wg_servers_json" | jq -r ".[$random_index].cn")
 
@@ -210,14 +261,16 @@ get_pia_config() {
         nvram set "${TUNNEL_IF}_killswitch=1"
         nvram set "${TUNNEL_IF}_en=1"
         nvram set "${TUNNEL_IF}_failgrp=1"
+        nvram set "${TUNNEL_IF}_last_region=$region_id"
         nvram commit
 
-        rm -f "$tmp_server_list"
+        echo "$region_id" > /tmp/pia_last_region 2>/dev/null || true
+        rm -f "$tmp_v7" "$tmp_v6" "$tmp_merged" 2>/dev/null || true
         return 0
     done
 
     log_msg "API ERROR: Could not find working region."
-    rm -f "$tmp_server_list"
+    rm -f "$tmp_v7" "$tmp_v6" "$tmp_merged" 2>/dev/null || true
     return 1
 }
 
