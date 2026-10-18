@@ -92,14 +92,15 @@ load_credentials() {
 # --- Killswitch & Routing Functions ---
 
 ensure_luna_access() {
-    if ! iptables -L FORWARD 1 -n 2>/dev/null | grep -q "10.20.20.1"; then
-        iptables -D FORWARD -d 10.20.20.1 -j ACCEPT 2>/dev/null || true
-        iptables -D FORWARD -s 10.20.20.1 -j ACCEPT 2>/dev/null || true
-        iptables -I FORWARD 1 -d 10.20.20.1 -j ACCEPT
-        iptables -I FORWARD 1 -s 10.20.20.1 -j ACCEPT
-    fi
-    if ! iptables -t nat -C POSTROUTING -d 10.20.20.1 -j MASQUERADE 2>/dev/null; then
-        iptables -t nat -I POSTROUTING 1 -d 10.20.20.1 -j MASQUERADE
+    # Ensure Luna transit subnet (10.20.20.0/24) is always priority Rules 1 & 2 in FORWARD
+    iptables -D FORWARD -d 10.20.20.0/24 -j ACCEPT 2>/dev/null || true
+    iptables -D FORWARD -s 10.20.20.0/24 -j ACCEPT 2>/dev/null || true
+    iptables -I FORWARD 1 -d 10.20.20.0/24 -j ACCEPT
+    iptables -I FORWARD 1 -s 10.20.20.0/24 -j ACCEPT
+
+    # Ensure NAT masquerade for Luna transit subnet is active
+    if ! iptables -t nat -C POSTROUTING -d 10.20.20.0/24 -j MASQUERADE 2>/dev/null; then
+        iptables -t nat -I POSTROUTING 1 -d 10.20.20.0/24 -j MASQUERADE
     fi
 }
 

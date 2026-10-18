@@ -13,6 +13,13 @@ wan_if=$(nvram get wan_iface)
 if [ -n "$wan_if" ]; then
     iptables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null || iptables -I FORWARD -i br0 -o "$wan_if" -j REJECT
 fi
+# Re-ensure Luna transit subnet (10.20.20.0/24) stays at Rules 1 & 2 above the killswitch
+iptables -D FORWARD -d 10.20.20.0/24 -j ACCEPT 2>/dev/null || true
+iptables -D FORWARD -s 10.20.20.0/24 -j ACCEPT 2>/dev/null || true
+iptables -I FORWARD 1 -d 10.20.20.0/24 -j ACCEPT
+iptables -I FORWARD 1 -s 10.20.20.0/24 -j ACCEPT
+iptables -t nat -C POSTROUTING -d 10.20.20.0/24 -j MASQUERADE 2>/dev/null || iptables -t nat -I POSTROUTING 1 -d 10.20.20.0/24 -j MASQUERADE
+
 
 # 3. Take down the tunnel (Forces watchdog into fresh rotation)
 ip link set oet1 down 2>/dev/null || ifconfig oet1 down 2>/dev/null || true
