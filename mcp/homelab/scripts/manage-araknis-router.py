@@ -119,6 +119,9 @@ def create_session(host, user, password):
 
     token = base64.b64encode(f"{user}:{password}".encode()).decode()
     s = requests.Session()
+    s.verify = False
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     s.headers.update({
         "Authorization": f"Basic {token}",
         "Content-Type": "application/json",
@@ -126,9 +129,9 @@ def create_session(host, user, password):
         "Accept": "*/*",
     })
 
-    url = f"http://{host}{BASE_PATH}/authorize"
+    url = f"https://{host}{BASE_PATH}/authorize"
     resp = s.get(url, allow_redirects=False, timeout=10)
-    if resp.status_code not in (200, 302):
+    if resp.status_code not in (200, 302, 307):
         raise RuntimeError(
             f"Authentication failed: GET {url} returned {resp.status_code}. "
             f"Check credentials in {SECRET_FILE}."
@@ -137,14 +140,14 @@ def create_session(host, user, password):
 
 
 def api_get(s, host, path, timeout=10):
-    url = f"http://{host}{BASE_PATH}{path}"
+    url = f"https://{host}{BASE_PATH}{path}"
     resp = s.get(url, timeout=timeout)
     resp.raise_for_status()
     return resp.json()
 
 
 def api_put(s, host, path, data, timeout=15):
-    url = f"http://{host}{BASE_PATH}{path}"
+    url = f"https://{host}{BASE_PATH}{path}"
     resp = s.put(url, json=data, timeout=timeout)
     resp.raise_for_status()
     try:
