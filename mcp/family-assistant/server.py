@@ -291,5 +291,23 @@ def sync_knowledge_rag(
     return run_script("sync-vault-to-openwebui.py", args)
 
 
+# ==============================================================================
+# 7. OBSIDIAN QUICK ADD OUTBOX PROCESSOR
+# ==============================================================================
+
+@mcp.tool()
+def process_quick_add_outbox(
+    dry_run: Annotated[bool, Field(
+        description="Dry-run without dispatching items.",
+        default=False
+    )] = False
+) -> str:
+    """Process pending items in Obsidian '_Sync/Quick Add.md' and dispatch them to Microsoft To Do, Google Calendar, or Paprika."""
+    args = []
+    if dry_run:
+        args.append("--dry-run")
+    return run_script("process-quick-add-outbox.py", args)
+
+
 if __name__ == "__main__":
     mcp.run()
