@@ -129,7 +129,7 @@ def sync_fleet(apply: bool = False, diff_only: bool = True) -> str:
         args.append("--apply")
     if diff_only:
         args.append("--diff-only")
-    return run_script("sync-live-fleet.py", args)
+    return run_script("sync-live-fleet.py", args, timeout=300)
 
 @mcp.tool()
 def manage_hosts(

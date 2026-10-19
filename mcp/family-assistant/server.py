@@ -121,19 +121,43 @@ def manage_todo(
 
 @mcp.tool()
 def manage_recipes(
-    action: Annotated[Literal["sync", "list_categories"], Field(
-        description="Action to perform: 'sync' pull Paprika recipes and meal plans to vault, 'list_categories' show categories."
+    action: Annotated[Literal["sync", "import"], Field(
+        description="Action to perform: 'sync' pull Paprika recipes and meal plans to vault, 'import' parse and upload recipe from URL or text."
     )],
+    url: Annotated[Optional[str], Field(
+        description="URL of recipe to scrape and import (for action='import').",
+        default=None
+    )] = None,
+    text: Annotated[Optional[str], Field(
+        description="Raw recipe text to parse via local LLM (for action='import').",
+        default=None
+    )] = None,
+    category: Annotated[Optional[str], Field(
+        description="Optional Paprika category name (e.g. 'Oven Baked Dinner', 'Cookies', 'Crockpot Dinners').",
+        default=None
+    )] = None,
     force: Annotated[bool, Field(
         description="When syncing, force re-download all recipes regardless of hash cache.",
         default=False
     )] = False,
     dry_run: Annotated[bool, Field(
-        description="Dry-run without writing files to vault.",
+        description="Dry-run without writing files to vault or uploading.",
         default=False
     )] = False
 ) -> str:
-    """Synchronize Paprika Recipe Manager recipes, meal calendar, and active groceries to Obsidian."""
+    """Synchronize Paprika Recipe Manager recipes, meal calendar, and active groceries to Obsidian, or import new recipes."""
+    if action == "import":
+        if not url and not text:
+            return "Error: Either 'url' or 'text' must be provided for action='import'."
+        args = []
+        if url:
+            args.extend(["--url", url])
+        if text:
+            args.extend(["--text", text])
+        if category:
+            args.extend(["--category", category])
+        return run_script("import-paprika-recipe.py", args, timeout=120)
+
     args = []
     if dry_run:
         args.append("--dry-run")
