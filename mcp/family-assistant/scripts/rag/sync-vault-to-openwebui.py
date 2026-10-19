@@ -83,9 +83,10 @@ def api_request(base_url, endpoint, api_key, method="GET", data=None, files=None
 
 def get_or_create_knowledge_base(base_url, api_key, name, description):
     # List existing knowledge bases
-    kb_list = api_request(base_url, "/api/v1/knowledge/", api_key, method="GET")
+    res = api_request(base_url, "/api/v1/knowledge/", api_key, method="GET")
+    kb_list = res.get("items", []) if isinstance(res, dict) else (res if isinstance(res, list) else [])
     for kb in kb_list:
-        if kb.get("name") == name:
+        if isinstance(kb, dict) and kb.get("name") == name:
             return kb.get("id")
 
     # Create new
