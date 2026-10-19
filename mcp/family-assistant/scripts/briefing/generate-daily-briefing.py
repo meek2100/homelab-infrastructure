@@ -29,31 +29,77 @@ DEFAULT_MODEL = "qwen2.5:3b-instruct"
 def collect_vault_context(vault_dir):
     context_chunks = []
 
-    # 1. Mirrored To Do lists
-    sync_files = glob.glob(os.path.join(vault_dir, "_Sync", "*.md"))
+    # 1. Family Calendar (Prioritized at the top)
+    cal_file = os.path.join(vault_dir, "_Sync", "calendar-family.md")
+    if os.path.exists(cal_file):
+        try:
+            with open(cal_file, "r", encoding="utf-8") as f:
+                cal_content = f.read().strip()
+                if cal_content:
+                    context_chunks.append(f"### SCHEDULE: Google Family Calendar\n{cal_content}")
+        except Exception as e:
+            print(f"Warning reading {cal_file}: {e}")
+
+    # 2. Meal Planning
+    meal_file = os.path.join(vault_dir, "_Sync", "paprika-meals.md")
+    if os.path.exists(meal_file):
+        try:
+            with open(meal_file, "r", encoding="utf-8") as f:
+                content = f.read().strip()
+                if content:
+                    context_chunks.append(f"### MEAL PLAN: Paprika Scheduled Meals\n{content}")
+        except Exception as e:
+            print(f"Warning reading {meal_file}: {e}")
+
+    # 3. Groceries
+    groc_chunks = []
+    for gf in ["todo-groceries.md", "paprika-groceries.md"]:
+        path = os.path.join(vault_dir, "_Sync", gf)
+        if os.path.exists(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    content = f.read().strip()
+                    if content:
+                        groc_chunks.append(f"--- From {gf} ---\n{content}")
+            except Exception as e:
+                print(f"Warning reading {path}: {e}")
+    if groc_chunks:
+        context_chunks.append(f"### GROCERY LISTS\n" + "\n".join(groc_chunks))
+
+    # 4. Mirrored To Do lists (Extract open tasks)
+    sync_files = sorted(glob.glob(os.path.join(vault_dir, "_Sync", "*.md")))
+    skip_sync = ["README.md", "todo-all.md", "calendar-family.md", "paprika-meals.md", "todo-groceries.md", "paprika-groceries.md", "todo-parenting-scripts.md"]
+    todo_tasks = []
     for sf in sync_files:
-        if os.path.basename(sf) in ["README.md", "todo-all.md"]:
+        base = os.path.basename(sf)
+        if base in skip_sync:
             continue
         try:
             with open(sf, "r", encoding="utf-8") as f:
-                content = f.read().strip()
-                if content:
-                    context_chunks.append(f"### {os.path.basename(sf)}\n{content}")
+                lines = [l.strip() for l in f if l.strip().startswith("- [ ] ")]
+                if lines:
+                    list_name = base.replace("todo-", "").replace(".md", "").replace("-", " ").title()
+                    todo_tasks.append(f"**{list_name}**:\n" + "\n".join(lines))
         except Exception as e:
             print(f"Warning reading {sf}: {e}")
+    if todo_tasks:
+        context_chunks.append("### OPEN TO DO TASKS (Microsoft To Do)\n" + "\n\n".join(todo_tasks))
 
-    # 2. Maintenance files
+    # 5. Maintenance files
     maint_files = glob.glob(os.path.join(vault_dir, "Maintenance", "*.md"))
+    maint_tasks = []
     for mf in maint_files:
         try:
             with open(mf, "r", encoding="utf-8") as f:
                 content = f.read().strip()
                 if content:
-                    context_chunks.append(f"### Maintenance: {os.path.basename(mf)}\n{content}")
+                    maint_tasks.append(f"### Maintenance: {os.path.basename(mf)}\n{content}")
         except Exception as e:
             print(f"Warning reading {mf}: {e}")
+    if maint_tasks:
+        context_chunks.extend(maint_tasks)
 
-    # 3. Dedicated Task files
+    # 6. Dedicated Task files
     task_files = glob.glob(os.path.join(vault_dir, "Tasks", "*.md"))
     for tf in task_files:
         if os.path.basename(tf) == "README.md":
@@ -62,7 +108,7 @@ def collect_vault_context(vault_dir):
             with open(tf, "r", encoding="utf-8") as f:
                 content = f.read().strip()
                 if content:
-                    context_chunks.append(f"### Task: {os.path.basename(tf)}\n{content}")
+                    context_chunks.append(f"### Dedicated Task: {os.path.basename(tf)}\n{content}")
         except Exception as e:
             print(f"Warning reading {tf}: {e}")
 
@@ -82,7 +128,7 @@ def generate_briefing(vault_dir, model=DEFAULT_MODEL, dry_run=False):
     prompt = f"""You are the family household intelligence assistant running locally on the homelab GPU.
 Today is {weekday}, {today}.
 
-Below is the raw static markdown extracted from the family Second Brain vault (_Sync/ and Maintenance/):
+Below is the raw static markdown extracted from the family Second Brain vault:
 
 ---
 {raw_context}
@@ -96,11 +142,14 @@ Format strictly with these sections in clean Markdown:
 ## 🎯 Top 3 Priorities for Today
 (Highlight the top 3 most urgent tasks or deadlines)
 
+## 📅 Today's Schedule & Appointments
+(IMPORTANT: Read the SCHEDULE section above carefully. List all appointments and events scheduled for today ({weekday}, {today}) and tomorrow with their exact times. If no events are scheduled, write "No events scheduled for today.")
+
 ## 🛒 Groceries & Shopping
-(List any grocery items needed from _Sync/todo-groceries.md and _Sync/paprika-groceries.md)
+(List any grocery items needed from the GROCERY LISTS section)
 
 ## 🍽️ Dinner & Meal Planning
-(Check _Sync/paprika-meals.md for any scheduled meals for today. If scheduled, highlight tonight's dinner and prep time. If none scheduled, state "No dinner scheduled in Paprika.")
+(Check the MEAL PLAN section for any scheduled meals for today. If scheduled, highlight tonight's dinner and prep time. If none scheduled, state "No dinner scheduled in Paprika.")
 
 ## 🛠️ Household & Maintenance Check
 (Check due dates from Maintenance/ or upcoming seasonal maintenance)

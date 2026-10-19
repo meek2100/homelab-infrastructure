@@ -188,5 +188,90 @@ def generate_morning_briefing(
     return run_script("generate-daily-briefing.py", args, timeout=240)
 
 
+# ==============================================================================
+# 4. GOOGLE FAMILY CALENDAR
+# ==============================================================================
+
+@mcp.tool()
+def manage_calendar(
+    action: Annotated[Literal["sync", "list", "add"], Field(
+        description="Action to perform: 'sync' mirror family calendar to vault, 'list' view upcoming events, 'add' schedule new event."
+    )],
+    days: Annotated[int, Field(
+        description="Days ahead to fetch or search (for 'sync' and 'list').",
+        default=14
+    )] = 14,
+    search: Annotated[Optional[str], Field(
+        description="Search keyword for events (for action='list').",
+        default=None
+    )] = None,
+    summary: Annotated[Optional[str], Field(
+        description="Event title/summary (for action='add').",
+        default=None
+    )] = None,
+    start_time: Annotated[Optional[str], Field(
+        description="Start time in YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS format (for action='add').",
+        default=None
+    )] = None,
+    end_time: Annotated[Optional[str], Field(
+        description="Optional end time in ISO format (for action='add').",
+        default=None
+    )] = None,
+    location: Annotated[Optional[str], Field(
+        description="Optional event location.",
+        default=None
+    )] = None,
+    dry_run: Annotated[bool, Field(
+        description="When syncing, dry-run without writing files.",
+        default=False
+    )] = False
+) -> str:
+    """Manage Google Family Calendar events, sync schedule to Obsidian vault, or query appointments."""
+    if action == "sync":
+        args = ["--days", str(days)]
+        if dry_run:
+            args.append("--dry-run")
+        return run_script("sync-google-calendar-to-vault.py", args)
+
+    if action == "list":
+        args = ["list", "--days", str(days)]
+        if search:
+            args.extend(["--search", search])
+        return run_script("manage-calendar-cli.py", args)
+
+    if action == "add":
+        if not summary or not start_time:
+            return "Error: 'summary' and 'start_time' are required for action='add'."
+        args = ["add", summary, "--start", start_time]
+        if end_time:
+            args.extend(["--end", end_time])
+        if location:
+            args.extend(["--location", location])
+        return run_script("manage-calendar-cli.py", args)
+
+    return f"Unsupported action: {action}"
+
+
+# ==============================================================================
+# 5. ZERO-TRUST CREDENTIALS BACKUP & RESTORATION
+# ==============================================================================
+
+@mcp.tool()
+def manage_family_secrets(
+    action: Annotated[Literal["backup", "restore", "status"], Field(
+        description="Action to perform: 'backup' encrypt credentials with master age key to Git repo, 'restore' decrypt credentials on a new machine, 'status' verify sync and checksums."
+    )],
+    force: Annotated[bool, Field(
+        description="When restoring, force overwrite existing local files.",
+        default=False
+    )] = False
+) -> str:
+    """Manage zero-trust SOPS encrypted backup and disaster recovery for Family Assistant tokens and credentials."""
+    args = [action]
+    if action == "restore" and force:
+        args.append("--force")
+    return run_script("manage-family-secrets.py", args)
+
+
 if __name__ == "__main__":
     mcp.run()
