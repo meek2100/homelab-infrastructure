@@ -97,7 +97,10 @@ Format strictly with these sections in clean Markdown:
 (Highlight the top 3 most urgent tasks or deadlines)
 
 ## 🛒 Groceries & Shopping
-(List any grocery items needed from _Sync/todo-groceries.md)
+(List any grocery items needed from _Sync/todo-groceries.md and _Sync/paprika-groceries.md)
+
+## 🍽️ Dinner & Meal Planning
+(Check _Sync/paprika-meals.md for any scheduled meals for today. If scheduled, highlight tonight's dinner and prep time. If none scheduled, state "No dinner scheduled in Paprika.")
 
 ## 🛠️ Household & Maintenance Check
 (Check due dates from Maintenance/ or upcoming seasonal maintenance)
