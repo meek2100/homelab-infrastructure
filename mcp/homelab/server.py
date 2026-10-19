@@ -84,11 +84,22 @@ def truncate_output(text: str, max_chars: int = MAX_OUTPUT_CHARS) -> str:
     truncated_count = len(lines) - 150
     return "\n".join(head) + f"\n\n[... {truncated_count} lines truncated to conserve tokens ...]\n\n" + "\n".join(tail)
 
+def resolve_script_path(script_name: str) -> str:
+    """Dynamically resolve script path across organized domain subdirectories."""
+    scripts_dir = os.path.join(os.path.dirname(__file__), "scripts")
+    direct = os.path.join(scripts_dir, script_name)
+    if os.path.exists(direct):
+        return direct
+    for root, _, files in os.walk(scripts_dir):
+        if script_name in files:
+            return os.path.join(root, script_name)
+    return direct
+
 def run_script(script_name: str, args: list[str] = None, timeout: int = 180) -> str:
     if args is None:
         args = []
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    script_path = os.path.join(os.path.dirname(__file__), "scripts", script_name)
+    script_path = resolve_script_path(script_name)
     python_bin = os.path.join(repo_root, ".venv", "bin", "python3")
     if not os.path.exists(python_bin):
         python_bin = sys.executable
