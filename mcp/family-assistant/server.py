@@ -273,5 +273,23 @@ def manage_family_secrets(
     return run_script("manage-family-secrets.py", args)
 
 
+# ==============================================================================
+# 6. OPEN WEBUI KNOWLEDGE (RAG) SYNCHRONIZATION
+# ==============================================================================
+
+@mcp.tool()
+def sync_knowledge_rag(
+    dry_run: Annotated[bool, Field(
+        description="Dry-run without uploading files to Open WebUI.",
+        default=False
+    )] = False
+) -> str:
+    """Synchronize private Obsidian recipes and maintenance records to Open WebUI Knowledge collections for semantic RAG querying."""
+    args = []
+    if dry_run:
+        args.append("--dry-run")
+    return run_script("sync-vault-to-openwebui.py", args)
+
+
 if __name__ == "__main__":
     mcp.run()
