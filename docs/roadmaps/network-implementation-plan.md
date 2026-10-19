@@ -1158,7 +1158,7 @@ To eliminate the shared failure domain identified in Part 7 learnings, protect d
 * **Model Selection (4 GB VRAM Budget)**:
   * Deployed on Ollama via NVIDIA Quadro M1200: **`qwen2.5:3b-instruct`** or **`llama3.2:3b`** (requiring ~2.4 GB VRAM).
   * Task profile: Rendering daily briefing summaries, checking due dates, and organizing recurrent household maintenance (`recurs: annual` furnace filters, car service, smoke detector batteries).
-  * Delivery: Rendered into `Daily/YYYY-MM-DD.md` in Obsidian and pushed via local **ntfy** push notifications.
+  * Delivery: Rendered into `Daily/YYYY-MM-DD.md` in Obsidian and pushed via existing **Pushover** mobile alerts (reusing the homelab's Alertmanager/Grafana alerting setup, eliminating unused dependencies like Home Assistant or ntfy).
 
 #### 8.5.2 Visual Media & Family Photo Hub (Immich)
 * Deployed in Zone 1 compute pool.
