@@ -32,11 +32,13 @@ VM_NAME_MAPPINGS = {
     ("pve", 100): "nexus-server",
     ("pve", 102): "luna-server",
     ("pve", 103): "media-server",
+    ("pve", 104): "compute-server",
     ("pve", 107): "vxlan-server",
     ("pve", 109): "minecraft-server",
     ("pve2", 100): "discovery-server",
     ("pve3", 100): "nexus-server2",
     ("pve3", 101): "nas-server",
+    ("pve3", 105): "pbs-server",
 }
 
 SOPS_BINARY = shutil.which("sops") or os.path.expanduser("~/.local/bin/sops")
