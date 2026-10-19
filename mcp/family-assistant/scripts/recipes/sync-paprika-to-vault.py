@@ -227,6 +227,18 @@ def sync_paprika(vault_dir, dry_run=False, force=False):
         filename = f"{slug}.md"
         filepath = os.path.join(recipes_dir, filename)
 
+        # Skip recipes that are in Paprika's Trash
+        if detail.get("in_trash"):
+            if not dry_run and os.path.exists(filepath):
+                try:
+                    os.remove(filepath)
+                    print(f"  - Removed trashed recipe: {filename}")
+                except Exception as e:
+                    print(f"  Warning removing {filepath}: {e}")
+            cached_hashes[uid] = server_hash
+            skipped_count += 1
+            continue
+
         md_content = render_recipe_markdown(detail, category_map)
 
         if not dry_run:
