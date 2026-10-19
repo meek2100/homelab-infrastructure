@@ -12,7 +12,9 @@ import glob
 import json
 import argparse
 import datetime
+import re
 import urllib.request
+import urllib.parse
 import urllib.error
 
 DEFAULT_VAULT_DIR = os.environ.get(
@@ -203,10 +205,57 @@ status: generated
         print(f"✅ Daily briefing generated and saved to {out_file}!")
 
     # Pushover mobile alert delivery
-    send_pushover_briefing(f"☀️ Morning Briefing: {weekday}, {today}", briefing_text, dry_run=dry_run)
+    vault_name = os.path.basename(os.path.abspath(vault_dir))
+    send_pushover_briefing(f"☀️ Morning Briefing: {weekday}, {today}", briefing_text, today=today, vault_name=vault_name, dry_run=dry_run)
 
 
-def send_pushover_briefing(title, text, dry_run=False):
+def format_briefing_for_pushover(text: str, today: str, vault_name: str = "Personal") -> tuple[str, str, str]:
+    """Convert Markdown briefing to clean Pushover-compatible HTML with Obsidian deep links."""
+    lines = text.splitlines()
+    cleaned_lines = []
+    for line in lines:
+        s = line.strip()
+        if s.startswith("# ☀️") or s.startswith("# Morning Briefing"):
+            continue
+        cleaned_lines.append(line)
+    body = "\n".join(cleaned_lines).strip()
+
+    # Convert headers to bold
+    body = re.sub(r'^##+\s*(.+)$', r'<b>\1</b>', body, flags=re.MULTILINE)
+    # Convert bold
+    body = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', body)
+    # Convert italic
+    body = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'<i>\1</i>', body)
+    # Convert bullets
+    body = re.sub(r'^\s*[-*]\s+', '• ', body, flags=re.MULTILINE)
+    # Clean redundant newlines
+    body = re.sub(r'\n{3,}', '\n\n', body)
+
+    # Encode Obsidian deep link: obsidian://open?vault=<vault>&file=Daily%2F<today>
+    quoted_file = urllib.parse.quote(f"Daily/{today}")
+    obsidian_uri = f"obsidian://open?vault={urllib.parse.quote(vault_name)}&file={quoted_file}"
+    url_title = "Open in Obsidian"
+    footer = f'\n\n<a href="{obsidian_uri}">📱 <b>Open Full Note in Obsidian</b></a>'
+
+    # Pushover max length is 1024 characters including HTML tags
+    max_body_len = 1000 - len(footer)
+    if len(body) > max_body_len:
+        cut = body.rfind("\n", 0, max_body_len)
+        if cut == -1 or cut < max_body_len // 2:
+            cut = max_body_len
+        body = body[:cut].rstrip()
+        # Close unclosed bold/italic tags if truncated mid-element
+        if body.count("<b>") > body.count("</b>"):
+            body += "</b>"
+        if body.count("<i>") > body.count("</i>"):
+            body += "</i>"
+        body += "\n... [truncated]"
+
+    body += footer
+    return body, obsidian_uri, url_title
+
+
+def send_pushover_briefing(title, text, today=None, vault_name="Personal", dry_run=False):
     pushover_config_path = os.path.expanduser("~/.config/homelab-todo/pushover.json")
     user_key = os.environ.get("PUSHOVER_USER_KEY")
     api_token = os.environ.get("PUSHOVER_API_TOKEN")
@@ -224,22 +273,21 @@ def send_pushover_briefing(title, text, dry_run=False):
         print("ℹ️ Pushover credentials not configured; skipping mobile push (configure ~/.config/homelab-todo/pushover.json or env vars to enable).")
         return
 
-    # Pushover messages are max 1024 chars
-    if len(text) > 1000:
-        push_msg = text[:950] + "\n\n... [Full briefing saved in Obsidian Daily note]"
-    else:
-        push_msg = text
+    today_str = today or datetime.date.today().strftime("%Y-%m-%d")
+    html_msg, obsidian_uri, url_title = format_briefing_for_pushover(text, today_str, vault_name)
 
     if dry_run:
-        print(f"\n--- [DRY-RUN Pushover Push] Title: {title} ---\n{push_msg}")
+        print(f"\n--- [DRY-RUN Pushover Push] Title: {title} ---\n{html_msg}\nURL: {obsidian_uri} ({url_title})")
         return
 
-    import urllib.parse
     data = urllib.parse.urlencode({
         "token": api_token,
         "user": user_key,
         "title": title,
-        "message": push_msg,
+        "message": html_msg,
+        "html": 1,
+        "url": obsidian_uri,
+        "url_title": url_title,
         "priority": 0
     }).encode("utf-8")
 
@@ -247,7 +295,7 @@ def send_pushover_briefing(title, text, dry_run=False):
     try:
         with urllib.request.urlopen(req, timeout=15) as res:
             if res.status == 200:
-                print("📲 Pushover mobile briefing sent successfully!")
+                print("📲 Pushover mobile briefing sent successfully (HTML formatted with Obsidian deep link)!")
             else:
                 print(f"⚠️ Pushover returned HTTP status {res.status}")
     except Exception as e:
