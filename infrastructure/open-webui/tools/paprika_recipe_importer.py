@@ -177,27 +177,57 @@ Schema:
         ings = "\n".join(data.get("ingredients", [])) if isinstance(data.get("ingredients"), list) else str(data.get("ingredients", ""))
         dirs = "\n".join(data.get("directions", [])) if isinstance(data.get("directions"), list) else str(data.get("directions", ""))
 
+        import gzip
+        import hashlib
+
+        hash_val = hashlib.sha256(uid.encode("utf-8")).hexdigest().upper()
         payload = {
             "uid": uid,
             "name": data.get("name", "Imported Recipe"),
             "description": data.get("description", ""),
+            "notes": "",
+            "nutritional_info": "",
             "ingredients": ings,
             "directions": dirs,
             "prep_time": data.get("prep_time", ""),
+            "prep_minutes": None,
             "cook_time": data.get("cook_time", ""),
+            "cook_minutes": None,
+            "total_time": data.get("total_time", ""),
+            "total_minutes": None,
             "servings": str(data.get("servings", "")),
+            "servings_min": None,
+            "servings_max": None,
+            "difficulty": "",
             "source": "Open WebUI Assistant",
             "source_url": source_url,
+            "image_url": None,
+            "photo": None,
+            "photo_hash": None,
+            "photo_large": None,
+            "photo_url": None,
+            "scale": None,
+            "hash": hash_val,
             "created": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "categories": cat_uids,
-            "in_trash": 0,
-            "rating": 0
+            "in_trash": False,
+            "is_pinned": False,
+            "on_favorites": False,
+            "on_grocery_list": False,
+            "rating": 0,
+            "cookbook_uid": None,
+            "metadata_version": None,
+            "nutrition": None
         }
 
         upload_url = f"https://www.paprikaapp.com/api/v1/sync/recipe/{uid}/"
-        res = session.post(upload_url, data={"data": json.dumps(payload)}, timeout=15)
+        json_bytes = json.dumps(payload).encode("utf-8")
+        gzipped_data = gzip.compress(json_bytes)
+        files = {"data": ("data", gzipped_data, "application/octet-stream")}
+
+        res = session.post(upload_url, files=files, timeout=15)
         if res.status_code == 200:
             cat_str = f" under '{category}'" if category else ""
             return f"✅ Successfully imported '{payload['name']}'{cat_str} into Paprika! It is now available in your mobile and desktop Paprika apps."
         else:
-            return f"Failed to upload to Paprika: HTTP {res.status_code}"
+            return f"Failed to upload to Paprika: HTTP {res.status_code} - {res.text}"

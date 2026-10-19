@@ -219,29 +219,55 @@ def upload_recipe_to_paprika(session, recipe_dict, category_name=None, source_ur
     dir_list = recipe_dict.get("directions", [])
     directions_str = "\n".join(dir_list) if isinstance(dir_list, list) else str(dir_list)
 
+    import gzip
+    import hashlib
+
+    hash_val = hashlib.sha256(uid.encode("utf-8")).hexdigest().upper()
     payload = {
         "uid": uid,
         "name": recipe_dict.get("name", "Imported Recipe"),
         "description": recipe_dict.get("description", ""),
+        "notes": "",
+        "nutritional_info": "",
         "ingredients": ingredients_str,
         "directions": directions_str,
         "prep_time": recipe_dict.get("prep_time", ""),
+        "prep_minutes": None,
         "cook_time": recipe_dict.get("cook_time", ""),
+        "cook_minutes": None,
         "total_time": recipe_dict.get("total_time", ""),
+        "total_minutes": None,
         "servings": str(recipe_dict.get("servings", "")),
+        "servings_min": None,
+        "servings_max": None,
+        "difficulty": "",
         "source": "Homelab Assistant",
         "source_url": source_url,
-        "photo_url": recipe_dict.get("photo_url", ""),
+        "image_url": None,
+        "photo": None,
+        "photo_hash": None,
+        "photo_large": None,
+        "photo_url": None,
+        "scale": None,
+        "hash": hash_val,
         "created": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "categories": categories,
-        "in_trash": 0,
-        "is_pinned": 0,
-        "on_favorites": 0,
-        "rating": 0
+        "in_trash": False,
+        "is_pinned": False,
+        "on_favorites": False,
+        "on_grocery_list": False,
+        "rating": 0,
+        "cookbook_uid": None,
+        "metadata_version": None,
+        "nutrition": None
     }
 
     url = f"{BASE_URL}/recipe/{uid}/"
-    res = session.post(url, data={"data": json.dumps(payload)}, timeout=15)
+    json_bytes = json.dumps(payload).encode("utf-8")
+    gzipped_data = gzip.compress(json_bytes)
+    files = {"data": ("data", gzipped_data, "application/octet-stream")}
+
+    res = session.post(url, files=files, timeout=15)
     if res.status_code == 200:
         print(f"✅ Successfully uploaded '{payload['name']}' to Paprika Cloud Sync!")
         return uid, payload
