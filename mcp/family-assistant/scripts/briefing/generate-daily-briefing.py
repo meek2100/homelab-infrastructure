@@ -205,11 +205,30 @@ status: generated
         print(f"✅ Daily briefing generated and saved to {out_file}!")
 
     # Pushover mobile alert delivery
-    vault_name = os.path.basename(os.path.abspath(vault_dir))
-    send_pushover_briefing(f"☀️ Morning Briefing: {weekday}, {today}", briefing_text, today=today, vault_name=vault_name, dry_run=dry_run)
+    # Note: The true Obsidian root vault is 'Vault' containing Personal/ and Work/
+    vault_root_name = os.environ.get("OBSIDIAN_VAULT_NAME")
+    if not vault_root_name:
+        # Check if parent directory is 'Vault'
+        parent = os.path.basename(os.path.dirname(os.path.abspath(vault_dir)))
+        vault_root_name = parent if parent.lower() == "vault" else os.path.basename(os.path.abspath(vault_dir))
+
+    # Calculate file path relative to root vault
+    if vault_root_name.lower() == "vault" and os.path.basename(os.path.abspath(vault_dir)).lower() != "vault":
+        rel_note_path = f"{os.path.basename(os.path.abspath(vault_dir))}/Daily/{today}"
+    else:
+        rel_note_path = f"Daily/{today}"
+
+    send_pushover_briefing(
+        f"☀️ Morning Briefing: {weekday}, {today}",
+        briefing_text,
+        today=today,
+        vault_name=vault_root_name,
+        rel_path=rel_note_path,
+        dry_run=dry_run
+    )
 
 
-def format_briefing_for_pushover(text: str, today: str, vault_name: str = "Personal") -> tuple[str, str, str]:
+def format_briefing_for_pushover(text: str, today: str, vault_name: str = "Vault", rel_path: str = None) -> tuple[str, str, str]:
     """Convert Markdown briefing to clean Pushover-compatible HTML with Obsidian deep links."""
     lines = text.splitlines()
     cleaned_lines = []
@@ -231,9 +250,11 @@ def format_briefing_for_pushover(text: str, today: str, vault_name: str = "Perso
     # Clean redundant newlines
     body = re.sub(r'\n{3,}', '\n\n', body)
 
-    # Encode Obsidian deep link: obsidian://open?vault=<vault>&file=Daily%2F<today>
-    quoted_file = urllib.parse.quote(f"Daily/{today}")
-    obsidian_uri = f"obsidian://open?vault={urllib.parse.quote(vault_name)}&file={quoted_file}"
+    # Encode Obsidian deep link: obsidian://open?vault=<vault>&file=<rel_path>
+    # Note: safe='' ensures forward slashes are strictly encoded as %2F per Obsidian spec
+    note_target = rel_path or f"Personal/Daily/{today}"
+    quoted_file = urllib.parse.quote(note_target, safe="")
+    obsidian_uri = f"obsidian://open?vault={urllib.parse.quote(vault_name, safe='')}&file={quoted_file}"
     url_title = "Open in Obsidian"
     footer = f'\n\n<a href="{obsidian_uri}">📱 <b>Open Full Note in Obsidian</b></a>'
 
@@ -255,7 +276,7 @@ def format_briefing_for_pushover(text: str, today: str, vault_name: str = "Perso
     return body, obsidian_uri, url_title
 
 
-def send_pushover_briefing(title, text, today=None, vault_name="Personal", dry_run=False):
+def send_pushover_briefing(title, text, today=None, vault_name="Vault", rel_path=None, dry_run=False):
     pushover_config_path = os.path.expanduser("~/.config/homelab-todo/pushover.json")
     user_key = os.environ.get("PUSHOVER_USER_KEY")
     api_token = os.environ.get("PUSHOVER_API_TOKEN")
@@ -274,7 +295,7 @@ def send_pushover_briefing(title, text, today=None, vault_name="Personal", dry_r
         return
 
     today_str = today or datetime.date.today().strftime("%Y-%m-%d")
-    html_msg, obsidian_uri, url_title = format_briefing_for_pushover(text, today_str, vault_name)
+    html_msg, obsidian_uri, url_title = format_briefing_for_pushover(text, today_str, vault_name, rel_path=rel_path)
 
     if dry_run:
         print(f"\n--- [DRY-RUN Pushover Push] Title: {title} ---\n{html_msg}\nURL: {obsidian_uri} ({url_title})")
