@@ -15,7 +15,7 @@ import re
 import shutil
 import glob
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 INFRA_DIR = os.path.join(REPO_ROOT, "infrastructure")
 HOSTS_DIR = os.path.join(INFRA_DIR, "hosts")
 VMS_DIR = os.path.join(INFRA_DIR, "vms")
@@ -607,7 +607,7 @@ def apply_sync(staging_dir, diffs):
     print(f"  🧹 Sanitized staging directory: All plaintext .env files purged.")
 
     # 4. Regenerate stack index
-    index_script = os.path.join(os.path.dirname(__file__), "generate-stack-index.py")
+    index_script = os.path.join(os.path.dirname(__file__), "..", "stacks", "generate-stack-index.py")
     if os.path.exists(index_script):
         subprocess.run([sys.executable, index_script])
 

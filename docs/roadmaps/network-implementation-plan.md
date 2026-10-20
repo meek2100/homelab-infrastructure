@@ -24,7 +24,7 @@ This implementation plan provides the complete, authoritative, verified roadmap 
 | **Part 6** | Comprehensive Architectural Learnings & Production Gotchas | 📚 26 Critical Learnings Documented & Fleet-Hardened |
 | **Part 7** | 2026-09-29 / 10-08 Forensic Capture-Driven Network Remediation | 🟢 100% Complete & Hardened — Core loops, open resolvers, AdGuard rewrites, storm control, Bogon ACL, DNS enforcement ACLs, Option 119 & Option 42 dual-NTP, and NAS off-host backup verified |
 | **Part 7.5**| DHCP Reorganization, IP Tiering & Sonos Inter-VLAN | 🟢 Complete 2026-10-10 — All 7 VLAN dynamic ranges set to `.20–.99`; 106 authoritative static reservations deployed in router NVRAM; 104 AdGuard clients & 32 OvrC devices synced via FastMCP |
-| **Part 8** | Compute Platform Review & Resource Optimization | 🔄 In Progress — Phase 8.0/8.1: pve3 hardware upgrade & BIOS optimization complete (1TB CMR WD10SPCX + Benfei UAS, auto-recovery fstab UUID, unattended UEFI boot, nas-pool configured); Google Drive vzdump migration active on pve3 (pve/pve2 100% complete); standalone PBS mirror orchestrator deployed with concurrency mutex |
+| **Part 8** | Compute Platform Review & Resource Optimization | 🟢 100% Complete — Phase 8.0–8.6: pve3 storage consolidation (2.75TB mergerfs pool_nas), PVE 9.2 upgrade on Linux Kernel 7.0 across all 3 nodes, CT 104 compute-server with Quadro M1200 + Intel QuickSync VA-API, CT 106 wealth-vault, full fleet telemetry & network matrix verified (25/25 online PASS), GitOps synchronization complete |
 | **Part 9** | Edge Router Firmware Upgrade & Modernization (OpenWrt & DD-WRT) | ⏸️ Final Phase — Research, changelog audit & safety runbook for upgrading OpenWrt AX3200 & DD-WRT routers |
 
 
@@ -1455,17 +1455,11 @@ graph TD
 3. Plex migrated to CT 104 with Intel QuickSync VA-API hardware transcoding (`renderD128`); Nginx reverse proxy updated to upstream `192.168.40.246:32400`.
 4. Deployed Wealth Stack (`actual-server` `:5006`, `firefly-app` `:8080`, `ghostfolio-app` `:3333`) in CT 106 (`wealth-vault`, `192.168.40.245`) on `pve3`. All 6 backend services running healthy.
 
-#### Stage 6: Fleet Verification & Telemetry Audit
-1. Execute full network matrix verification:
-   ```bash
-   .venv/bin/python3 mcp/homelab/scripts/verify-network-matrix.py --profile comprehensive
-   ```
-   *(Must achieve 23/23 PASS).*
-2. Confirm Prometheus & Blackbox synthetic probes report 100% UP across all reorganized targets.
-3. Rebuild stack catalog:
-   ```bash
-   .venv/bin/python3 mcp/homelab/scripts/generate-stack-index.py
-   ```
+#### Stage 6: Fleet Verification & Telemetry Audit [COMPLETE - 2026-10-20]
+1. **Network Matrix & Socket Audit**: Executed comprehensive network verification (`verify-network-matrix.py --profile comprehensive`). 25/25 online targets returned 🟢 PASS (Pakedge SX-8P on-demand testbench switch offline as expected).
+2. **Prometheus & Blackbox Probes**: Synthetic probes reporting 100% UP across all reorganized hypervisors, containers, and services.
+3. **Master Stack Index**: Rebuilt `infrastructure/docker-stacks/STACK-INDEX.md` cataloging 92 active stacks and 179 Docker services.
+4. **GitOps & Full Zero-Trust Backup**: Synchronized live fleet drift (`sync_fleet(apply=True)`), updated Proxmox host configs for all 3 nodes (`manage_hosts(action='backup')`), captured complete fleet APT inventories across 14 targets, and completed zero-trust encrypted backups of Araknis 520 Core Router, Araknis 920 Switch, Netgear GS108Ev2 Switch, OpenWrt Belkin AX3200, and DD-WRT routers (Aurora & Luna).
 
 ---
 

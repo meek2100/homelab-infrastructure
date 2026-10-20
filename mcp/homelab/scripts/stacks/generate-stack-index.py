@@ -10,7 +10,7 @@ import json
 import re
 import yaml
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 STACKS_DIR = os.path.join(REPO_ROOT, "infrastructure", "docker-stacks")
 OUTPUT_INDEX = os.path.join(STACKS_DIR, "STACK-INDEX.md")
 

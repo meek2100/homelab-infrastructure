@@ -14,7 +14,7 @@ import argparse
 import base64
 import shutil
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 INFRA_DIR = os.path.join(REPO_ROOT, "infrastructure")
 HOSTS_DIR = os.path.join(INFRA_DIR, "hosts")
 STACKS_DIR = os.path.join(INFRA_DIR, "docker-stacks")

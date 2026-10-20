@@ -34,7 +34,7 @@ try:
 except ImportError:
     yaml = None
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 CONFIG_TARGET_FILE = os.path.join(REPO_ROOT, "infrastructure", "network", "configs", "pakedge-sx8p-running.cfg")
 SECRET_FILE = os.path.join(REPO_ROOT, "infrastructure", "secrets", "pakedge-switch.enc.yaml")
 

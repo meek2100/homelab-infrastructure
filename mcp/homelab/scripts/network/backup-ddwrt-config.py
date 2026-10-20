@@ -12,7 +12,7 @@ import os
 import shutil
 import subprocess
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 DDWRT_TARGET_DIR = os.path.join(REPO_ROOT, "infrastructure", "network", "ddwrt")
 
 SOPS_BINARY = shutil.which("sops") or os.path.expanduser("~/.local/bin/sops")
@@ -27,7 +27,8 @@ ROUTER_PROFILES = {
     "luna": {
         "ip": "10.20.20.1",
         "user": "root",
-        "role": "Upstream DD-WRT Gateway (Transit 10.20.20.0/24)"
+        "role": "Upstream DD-WRT Gateway (Transit 10.20.20.0/24)",
+        "proxy_jump": "root@10.25.25.1"
     }
 }
 
@@ -67,7 +68,7 @@ def get_ssh_key():
             return candidate
     return None
 
-def run_ssh(ip, cmd, user="root", timeout=30):
+def run_ssh(ip, cmd, user="root", timeout=30, proxy_jump=None):
     key = get_ssh_key()
     ssh_args = [
         "ssh",
@@ -75,6 +76,8 @@ def run_ssh(ip, cmd, user="root", timeout=30):
         "-o", "BatchMode=yes",
         "-o", "ConnectTimeout=8",
     ]
+    if proxy_jump:
+        ssh_args.extend(["-o", f"ProxyJump={proxy_jump}"])
     if key and os.path.exists(key):
         ssh_args.extend(["-i", key])
     ssh_args.extend([f"{user}@{ip}", cmd])
@@ -108,10 +111,11 @@ def encrypt_file_sops(source_file, dest_enc_file):
 def backup_ddwrt_router(name: str, ip: str, user: str):
     router_dir = os.path.join(DDWRT_TARGET_DIR, name)
     os.makedirs(router_dir, exist_ok=True)
+    proxy_jump = ROUTER_PROFILES.get(name, {}).get("proxy_jump")
     print(f"📡 Connecting to DD-WRT router '{name}' at {ip} as {user}...")
 
     # Query system info
-    code, out, err = run_ssh(ip, "uname -a; nvram get os_version 2>/dev/null", user=user)
+    code, out, err = run_ssh(ip, "uname -a; nvram get os_version 2>/dev/null", user=user, proxy_jump=proxy_jump)
     if code != 0:
         print(f"❌ Failed to reach {name} ({ip}): {err.strip()}")
         return f"Error connecting to {name} at {ip}: {err.strip()}"
@@ -119,7 +123,7 @@ def backup_ddwrt_router(name: str, ip: str, user: str):
     print(f"✓ Connected to {name} ({ip}). Archiving NVRAM and scripts...")
 
     # Backup NVRAM variables
-    code_nv, out_nv, _ = run_ssh(ip, "nvram show 2>/dev/null", user=user)
+    code_nv, out_nv, _ = run_ssh(ip, "nvram show 2>/dev/null", user=user, proxy_jump=proxy_jump)
     if code_nv == 0 and out_nv:
         raw_nvram_path = os.path.join(router_dir, "nvram.raw.tmp")
         enc_nvram_path = os.path.join(router_dir, "nvram.enc.yaml")
@@ -144,25 +148,25 @@ def backup_ddwrt_router(name: str, ip: str, user: str):
 
     # Backup startup and firewall scripts
     for script_type in ["rc_startup", "rc_firewall", "rc_shutdown"]:
-        code_s, out_s, _ = run_ssh(ip, f"nvram get {script_type} 2>/dev/null", user=user)
+        code_s, out_s, _ = run_ssh(ip, f"nvram get {script_type} 2>/dev/null", user=user, proxy_jump=proxy_jump)
         if code_s == 0 and out_s.strip():
             with open(os.path.join(router_dir, f"{script_type}.sh"), "w", encoding="utf-8") as sf:
                 sf.write(out_s)
 
     # Backup DD-WRT Cron Jobs
-    code_cj, out_cj, _ = run_ssh(ip, "nvram get cron_jobs 2>/dev/null", user=user)
+    code_cj, out_cj, _ = run_ssh(ip, "nvram get cron_jobs 2>/dev/null", user=user, proxy_jump=proxy_jump)
     if code_cj == 0 and out_cj.strip():
         with open(os.path.join(router_dir, "cron_jobs.txt"), "w", encoding="utf-8") as cjf:
             cjf.write(out_cj.strip() + "\n")
 
     # Backup /usr/bin/is-mounted.sh
-    code_ism, out_ism, _ = run_ssh(ip, "[ -f /usr/bin/is-mounted.sh ] && cat /usr/bin/is-mounted.sh || echo '__NO_ISM__'", user=user)
+    code_ism, out_ism, _ = run_ssh(ip, "[ -f /usr/bin/is-mounted.sh ] && cat /usr/bin/is-mounted.sh || echo '__NO_ISM__'", user=user, proxy_jump=proxy_jump)
     if code_ism == 0 and "__NO_ISM__" not in out_ism:
         with open(os.path.join(router_dir, "is-mounted.sh"), "w", encoding="utf-8") as ismf:
             ismf.write(out_ism)
 
     # Backup custom scripts in /opt/sbin/ (e.g. pia-watchdog, pia-rotate, pia-speed-monitor, pia-url-monitor)
-    code_sbin, out_sbin, _ = run_ssh(ip, "ls -1 /opt/sbin/ 2>/dev/null", user=user)
+    code_sbin, out_sbin, _ = run_ssh(ip, "ls -1 /opt/sbin/ 2>/dev/null", user=user, proxy_jump=proxy_jump)
     if code_sbin == 0 and out_sbin.strip():
         opt_sbin_dir = os.path.join(router_dir, "opt_sbin")
         os.makedirs(opt_sbin_dir, exist_ok=True)
@@ -170,13 +174,13 @@ def backup_ddwrt_router(name: str, ip: str, user: str):
             s_file = s_file.strip()
             if not s_file or s_file in [".", "..", "ifconfig", "route"]:
                 continue
-            code_f, out_f, _ = run_ssh(ip, f"cat '/opt/sbin/{s_file}'", user=user)
+            code_f, out_f, _ = run_ssh(ip, f"cat '/opt/sbin/{s_file}'", user=user, proxy_jump=proxy_jump)
             if code_f == 0:
                 with open(os.path.join(opt_sbin_dir, s_file), "w", encoding="utf-8") as sf:
                     sf.write(out_f)
 
     # Backup /opt/etc/pia-update/ directory
-    code_pu, out_pu, _ = run_ssh(ip, "ls -1 /opt/etc/pia-update/ 2>/dev/null", user=user)
+    code_pu, out_pu, _ = run_ssh(ip, "ls -1 /opt/etc/pia-update/ 2>/dev/null", user=user, proxy_jump=proxy_jump)
     if code_pu == 0 and out_pu.strip():
         pia_dir = os.path.join(router_dir, "opt_etc_pia_update")
         os.makedirs(pia_dir, exist_ok=True)
@@ -184,7 +188,7 @@ def backup_ddwrt_router(name: str, ip: str, user: str):
             p_file = p_file.strip()
             if not p_file or p_file in [".", ".."]:
                 continue
-            code_pf, out_pf, _ = run_ssh(ip, f"cat '/opt/etc/pia-update/{p_file}'", user=user)
+            code_pf, out_pf, _ = run_ssh(ip, f"cat '/opt/etc/pia-update/{p_file}'", user=user, proxy_jump=proxy_jump)
             if code_pf == 0:
                 target_pfile = os.path.join(pia_dir, p_file)
                 # Check if credentials or sensitive tokens, encrypt with SOPS
@@ -202,7 +206,7 @@ def backup_ddwrt_router(name: str, ip: str, user: str):
                         pf.write(out_pf)
 
     # Check for /jffs/ files
-    code_j, out_j, _ = run_ssh(ip, "[ -d /jffs ] && ls -la /jffs/ 2>/dev/null || echo '__NO_JFFS__'", user=user)
+    code_j, out_j, _ = run_ssh(ip, "[ -d /jffs ] && ls -la /jffs/ 2>/dev/null || echo '__NO_JFFS__'", user=user, proxy_jump=proxy_jump)
     if code_j == 0 and "__NO_JFFS__" not in out_j:
         with open(os.path.join(router_dir, "jffs_listing.txt"), "w", encoding="utf-8") as jf:
             jf.write(out_j)

@@ -31,7 +31,7 @@ try:
 except ImportError:
     yaml = None
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 DEFAULT_RESERVATIONS = os.path.join(REPO_ROOT, "infrastructure", "network", "configs", "dhcp-reservations-reorganized.json")
 DEFAULT_OVRC_CSV = os.path.join(REPO_ROOT, "infrastructure", "network", "configs", "ovrc-device-list-latest.csv")
 OUTPUT_ALIGNED_CSV = os.path.join(REPO_ROOT, "infrastructure", "network", "configs", "ovrc-device-list-aligned.csv")

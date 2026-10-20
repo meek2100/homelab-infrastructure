@@ -33,14 +33,71 @@ try:
 except ImportError:
     requests = None
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 CONFIG_BACKUP_FILE = os.path.join(REPO_ROOT, "infrastructure", "network", "configs", "araknis-520-backup.cfg")
 SECRET_FILE = os.path.join(REPO_ROOT, "infrastructure", "secrets", "araknis-switch.enc.yaml")
 
-DEFAULT_ROUTER_IP = "192.168.10.1"
+DEFAULT_ROUTER_IP = "192.168.1.1"
 DEFAULT_USER = "meek2100"
 BASE_PATH = "/api/cgi-bin/v1"
 
+_tunnel_proc = None
+
+def get_ssh_key():
+    for candidate in [
+        os.path.expanduser("~/.ssh/proxmox_ed25519"),
+        "/home/agentsvc/.ssh/proxmox_ed25519",
+        "/home/dtheurer/.ssh/proxmox_ed25519",
+        os.path.expanduser("~/.ssh/id_ed25519"),
+        "/home/dtheurer/.ssh/id_ed25519"
+    ]:
+        if os.path.exists(candidate):
+            return candidate
+    return None
+
+def cleanup_tunnel():
+    global _tunnel_proc
+    if _tunnel_proc:
+        try:
+            _tunnel_proc.terminate()
+            _tunnel_proc.wait(timeout=2)
+        except Exception:
+            pass
+        _tunnel_proc = None
+
+def get_reachable_host(target_host=None):
+    global _tunnel_proc
+    target = target_host or DEFAULT_ROUTER_IP
+    # Check if target is directly reachable on port 443
+    try:
+        import socket
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(1.0)
+            if sock.connect_ex((target, 443)) == 0:
+                return target
+    except Exception:
+        pass
+
+    # If direct connection timed out/failed (e.g. from WSL2 NAT due to router management ACL),
+    # establish an ephemeral tunnel through Proxmox pve on VLAN 1
+    pve_ip = "192.168.1.250"
+    local_port = 18443
+    key = get_ssh_key()
+    cmd = [
+        "ssh", "-o", "StrictHostKeyChecking=accept-new",
+        "-N", "-L", f"{local_port}:192.168.1.1:443"
+    ]
+    if key:
+        cmd.extend(["-i", key])
+    cmd.append(f"root@{pve_ip}")
+    try:
+        import atexit, time
+        _tunnel_proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(1.0)
+        atexit.register(cleanup_tunnel)
+        return f"127.0.0.1:{local_port}"
+    except Exception:
+        return target
 
 def get_age_key_path():
     for candidate in [
@@ -52,15 +109,14 @@ def get_age_key_path():
             return candidate
     return None
 
-
 def load_credentials():
     """Load router credentials from SOPS-encrypted file or environment."""
     user = os.environ.get("ARAKNIS_USER", DEFAULT_USER)
     password = os.environ.get("ARAKNIS_PASSWORD")
-    host = os.environ.get("ARAKNIS_HOST", DEFAULT_ROUTER_IP)
+    host = os.environ.get("ARAKNIS_HOST")
 
     if password:
-        return host, user, password
+        return host or get_reachable_host(DEFAULT_ROUTER_IP), user, password
 
     if os.path.exists(SECRET_FILE):
         sops_bin = shutil.which("sops") or os.path.expanduser("~/.local/bin/sops")
@@ -85,8 +141,8 @@ def load_credentials():
         data = yaml.safe_load(result.stdout)
         password = data.get("password")
         user = data.get("username", user)
-        # Secret file has switch_ip; router IP auto-detected across VLANs
-        host = os.environ.get("ARAKNIS_HOST") or probe_router_host()
+        # Secret file has switch_ip; router IP auto-detected across VLANs or tunnel
+        host = os.environ.get("ARAKNIS_HOST") or get_reachable_host(DEFAULT_ROUTER_IP)
 
     if not password:
         raise RuntimeError(
@@ -95,21 +151,6 @@ def load_credentials():
         )
 
     return host, user, password
-
-
-def probe_router_host(candidates=None):
-    """Probe candidate router interface IPs to find the reachable gateway."""
-    import socket
-    candidates = candidates or ["192.168.10.1", "192.168.1.1", "192.168.40.1"]
-    for ip in candidates:
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-                sock.settimeout(0.5)
-                if sock.connect_ex((ip, 80)) == 0:
-                    return ip
-        except Exception:
-            pass
-    return DEFAULT_ROUTER_IP
 
 
 def create_session(host, user, password):
@@ -210,11 +251,10 @@ def cmd_backup(s, host):
     """Export the router configuration and save to the repository.
     The router returns HTTP 201 with a base64-encoded OpenSSL-encrypted config blob.
     """
-    url = f"http://{host}{BASE_PATH}/command/export-config"
-    resp = s.get(url, timeout=30)
+    url = f"https://{host}{BASE_PATH}/command/export-config"
+    resp = s.post(url, json={}, timeout=30)
     if resp.status_code not in (200, 201):
-        # Try POST variant
-        resp = s.post(url, json={}, timeout=30)
+        resp = s.get(url, timeout=30)
 
     if resp.status_code not in (200, 201):
         return {"status": "error", "message": f"export-config returned {resp.status_code}", "body": resp.text[:500]}
@@ -291,7 +331,7 @@ def cmd_apply_subnets(s, host, payload_file):
 
 def cmd_set_upnp(s, host, enable=True):
     """Enable or disable UPnP discovery helper on router firewall."""
-    url = f"http://{host}/api/cgi-bin/v2/config/firewall"
+    url = f"https://{host}/api/cgi-bin/v2/config/firewall"
     resp = s.put(url, json={"enableUPnP": enable}, timeout=15)
     resp.raise_for_status()
     try:
@@ -310,7 +350,7 @@ def cmd_restore(s, host, backup_file=None):
         config_data = f.read()
 
     for endpoint in ["/command/restore-config", "/command/upload-config"]:
-        url = f"http://{host}{BASE_PATH}{endpoint}"
+        url = f"https://{host}{BASE_PATH}{endpoint}"
         resp = s.post(url, data=config_data,
                       headers={"Content-Type": "application/octet-stream"}, timeout=60)
         if resp.status_code in (200, 302):
@@ -322,7 +362,7 @@ def cmd_restore(s, host, backup_file=None):
 
 def cmd_get_vlans(s, host):
     """Retrieve 802.1Q port and inter-zone routing configuration (v2 API)."""
-    url = f"http://{host}/api/cgi-bin/v2/config/vlans"
+    url = f"https://{host}/api/cgi-bin/v2/config/vlans"
     resp = s.get(url, timeout=10)
     resp.raise_for_status()
     return {"status": "success", "vlans": resp.json()}
@@ -332,7 +372,7 @@ def cmd_apply_vlans(s, host, payload_file):
     """Apply 802.1Q port and inter-zone routing configuration from JSON file (v2 API)."""
     with open(payload_file, "r") as f:
         payload = json.load(f)
-    url = f"http://{host}/api/cgi-bin/v2/config/vlans"
+    url = f"https://{host}/api/cgi-bin/v2/config/vlans"
     resp = s.put(url, json=payload, timeout=20)
     resp.raise_for_status()
     try:

@@ -51,7 +51,7 @@ try:
 except ImportError:
     requests = None
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 CONFIG_BACKUP_FILE = os.path.join(REPO_ROOT, "infrastructure", "network", "configs", "netgear-gs108e-backup.json")
 CONFIG_BACKUP_CFG = os.path.join(REPO_ROOT, "infrastructure", "network", "configs", "netgear-gs108e-backup.cfg")
 PROSAFE_GOLDEN_CFG = os.path.join(REPO_ROOT, ".agents", "netgear", "prosafe-backup", "GS108Ev2.cfg")

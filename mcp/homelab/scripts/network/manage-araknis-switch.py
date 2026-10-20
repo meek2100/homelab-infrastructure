@@ -23,7 +23,7 @@ try:
 except ImportError:
     yaml = None
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 CONFIG_TARGET_FILE = os.path.join(REPO_ROOT, "infrastructure", "network", "configs", "araknis-920-running.cfg")
 SECRET_FILE = os.path.join(REPO_ROOT, "infrastructure", "secrets", "araknis-switch.enc.yaml")
 

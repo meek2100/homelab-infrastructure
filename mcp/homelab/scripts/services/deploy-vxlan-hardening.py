@@ -13,7 +13,7 @@ import subprocess
 import sys
 import time
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 OPENWRT_IP = "192.168.1.226"
 PVE_IP = "192.168.1.250"
 VMID = 107

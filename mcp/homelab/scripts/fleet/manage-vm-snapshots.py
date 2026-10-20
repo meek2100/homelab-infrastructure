@@ -10,7 +10,7 @@ import json
 import subprocess
 import argparse
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 
 DEFAULT_NODE_IPS = {
     "pve": "192.168.1.250",

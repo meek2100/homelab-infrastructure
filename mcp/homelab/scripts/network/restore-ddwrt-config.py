@@ -12,7 +12,7 @@ import os
 import shutil
 import subprocess
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 DDWRT_BASE_DIR = os.path.join(REPO_ROOT, "infrastructure", "network", "ddwrt")
 SOPS_BINARY = shutil.which("sops") or os.path.expanduser("~/.local/bin/sops")
 

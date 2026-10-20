@@ -11,7 +11,7 @@ import os
 import shutil
 import subprocess
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 OPENWRT_DEFAULT_IP = "192.168.1.226"
 OPENWRT_TARGET_DIR = os.path.join(REPO_ROOT, "infrastructure", "network", "openwrt")
 

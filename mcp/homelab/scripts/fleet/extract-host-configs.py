@@ -13,7 +13,7 @@ import os
 import subprocess
 import sys
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 
 def get_ssh_key():
     for candidate in [
@@ -109,6 +109,16 @@ def extract_node(node: str, ip: str):
     # 6. Custom Scripts
     scripts_dir = os.path.join(target_dir, "custom-scripts")
     run_ssh_pipeline(ip, "tar -czf - /usr/local/bin /usr/local/sbin /root/scripts 2>/dev/null", scripts_dir, strip_components=3)
+    if os.path.exists(scripts_dir):
+        for f in os.listdir(scripts_dir):
+            fp = os.path.join(scripts_dir, f)
+            if os.path.isfile(fp):
+                try:
+                    with open(fp, "rb") as bf:
+                        if bf.read(4) == b"\x7fELF":
+                            os.remove(fp)
+                except Exception:
+                    pass
 
     # 7. Unowned User Configurations
     custom_dir = os.path.join(target_dir, "custom-configs")

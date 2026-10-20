@@ -10,7 +10,7 @@ import json
 import os
 import subprocess
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 PVE_HOST_IP = "192.168.1.250"
 LUNA_VMID = 102
 TARGET_STACK_DIR = os.path.join(REPO_ROOT, "infrastructure", "docker-stacks", "luna-server", "48")
