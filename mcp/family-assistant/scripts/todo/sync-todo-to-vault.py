@@ -106,6 +106,30 @@ def authenticate_interactive(client_id=None):
 
 
 def get_access_token():
+    import urllib.parse
+    client_id = get_client_id()
+    if os.path.exists(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                c = json.load(f)
+            rts = c.get("RefreshToken", {})
+            if rts:
+                refresh_token = list(rts.values())[0].get("secret")
+                token_url = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token"
+                data = urllib.parse.urlencode({
+                    "client_id": client_id,
+                    "grant_type": "refresh_token",
+                    "refresh_token": refresh_token,
+                    "scope": "Tasks.ReadWrite offline_access"
+                }).encode("utf-8")
+                req = urllib.request.Request(token_url, data=data)
+                with urllib.request.urlopen(req, timeout=15) as res:
+                    res_data = json.loads(res.read().decode("utf-8"))
+                    return res_data["access_token"]
+        except Exception as e:
+            print(f"⚠️ Direct refresh token attempt failed: {e}")
+
+    # Fallback to MSAL silent token
     cache = load_token_cache()
     app = get_msal_app(cache)
     accounts = app.get_accounts()

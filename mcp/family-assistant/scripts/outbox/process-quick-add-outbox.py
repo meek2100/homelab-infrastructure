@@ -21,8 +21,18 @@ import re
 import datetime
 import argparse
 import subprocess
+import json
+import urllib.request
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+def find_repo_root():
+    cur = os.path.dirname(os.path.abspath(__file__))
+    while cur and cur != "/":
+        if os.path.exists(os.path.join(cur, ".git")):
+            return cur
+        cur = os.path.dirname(cur)
+    return "/home/agentsvc/repos/homelab-infrastructure"
+
+REPO_ROOT = find_repo_root()
 DEFAULT_VAULT_DIR = os.environ.get(
     "OBSIDIAN_VAULT_PATH",
     "/mnt/c/Users/dtheurer/Obsidian/Vault/Personal"
@@ -31,14 +41,13 @@ OUTBOX_REL_PATH = os.path.join("_Sync", "Quick Add.md")
 
 INITIAL_TEMPLATE = """# ⚡ Quick Add Outbox
 
-Type items below as checkboxes (`- [ ] `). The background sync daemon will process them and dispatch to Microsoft To Do, Google Calendar, or Paprika!
+Type items below in plain text! You do NOT need checkboxes or special tags.
+The background AI sync daemon classifies and routes everything automatically:
 
-### Routing Syntax:
-- **Groceries**: `- [ ] [groc] Milk, Eggs, Bread` (or `- [ ] [grocery] ...`)
-- **Tasks**: `- [ ] [todo] Replace furnace filter` (or `- [ ] [task] ...`)
-- **Calendar**: `- [ ] [cal] 2026-10-26 15:30 Doctor appointment`
-- **Recipe**: `- [ ] [recipe] https://pinchofyum.com/recipe-url`
-- *(Items without tags default to Microsoft To Do Tasks)*
+- **Groceries**: `Cinnamon rolls` or `Milk, eggs, butter` (goes to Microsoft To Do Groceries)
+- **Tasks**: `Call accountant about taxes` or `Fix sprinkler` (goes to Microsoft To Do Tasks)
+- **Calendar**: `Dentist on Thursday at 2:30pm` (goes to Google Family Calendar)
+- **Recipes**: `https://pinchofyum.com/...` (imported to Paprika)
 
 ---
 
@@ -57,63 +66,115 @@ def ensure_outbox_file(vault_dir):
 
 
 def run_helper(script_rel_path, args):
-    python_bin = os.path.join(REPO_ROOT, ".venv", "bin", "python3")
+    python_bin = sys.executable
     script_path = os.path.join(REPO_ROOT, "mcp", "family-assistant", "scripts", script_rel_path)
     cmd = [python_bin, script_path] + args
     res = subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True, timeout=60)
     return res.returncode, res.stdout, res.stderr
 
 
-def process_item(raw_text):
+def classify_item(raw_text):
     text = raw_text.strip()
-    tag_match = re.match(r"^\[([a-zA-Z]+)\]\s*(.*)$", text)
-    tag = tag_match.group(1).lower() if tag_match else None
-    content = tag_match.group(2).strip() if tag_match else text
 
-    # 1. Recipe URL or Import
-    if tag in ["recipe", "food"] or content.startswith("http://") or content.startswith("https://"):
-        url = content
-        print(f"🍳 Dispatching Recipe to Paprika: {url}")
-        code, out, err = run_helper("recipes/import-paprika-recipe.py", [url])
+    # 1. URL is always a recipe
+    if text.startswith("http://") or text.startswith("https://"):
+        return "RECIPE", text
+
+    # 2. Check for manual tags if someone chose to use them
+    tag_match = re.match(r"^\[([a-zA-Z]+)\]\s*(.*)$", text)
+    if tag_match:
+        tag = tag_match.group(1).lower()
+        content = tag_match.group(2).strip()
+        if tag in ["groc", "grocery", "groceries"]:
+            return "GROCERIES", content
+        elif tag in ["cal", "calendar", "event"]:
+            return "CALENDAR", content
+        elif tag in ["recipe", "food"]:
+            return "RECIPE", content
+        elif tag in ["todo", "task", "chore", "work"]:
+            return "TASKS", content
+
+    # 3. Intelligent Classification via Local Ollama (llama3.2:3b on CT 104)
+    endpoint = os.environ.get("OLLAMA_API_URL", "http://192.168.40.246:11434") + "/api/generate"
+    prompt = f"""You are an inbox assistant. Classify this note into exactly one destination: GROCERIES, TASKS, CALENDAR, or RECIPE.
+Note: "{text}"
+Rules:
+- Food, ingredients, groceries, or household supplies (e.g. "Cinnamon rolls", "Paper towels", "Milk, butter, eggs") -> GROCERIES
+- Action items, chores, errands, repairs (e.g. "Call accountant", "Fix sprinkler", "Clean garage") -> TASKS
+- Events with dates or times (e.g. "Dentist on Thursday at 2:30pm", "Flight at 10am") -> CALENDAR
+- Cooking recipe links or instructions -> RECIPE
+Respond ONLY with a JSON object: {{"destination": "GROCERIES"|"TASKS"|"CALENDAR"|"RECIPE", "title": "{text}"}}"""
+
+    try:
+        req = urllib.request.Request(
+            endpoint,
+            data=json.dumps({
+                "model": "llama3.2:3b",
+                "prompt": prompt,
+                "format": "json",
+                "stream": False,
+                "options": {"temperature": 0.0, "num_predict": 40}
+            }).encode("utf-8"),
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=5) as res:
+            res_str = json.loads(res.read().decode("utf-8")).get("response", "{}")
+            data = json.loads(res_str)
+            dest = data.get("destination", "").upper()
+            title = data.get("title", text)
+            if dest in ["GROCERIES", "TASKS", "CALENDAR", "RECIPE"]:
+                return dest, title
+    except Exception:
+        pass
+
+    # 4. Fast heuristic fallback
+    first_word = text.split()[0].lower() if text.split() else ""
+    if first_word in ["call", "fix", "repair", "email", "clean", "schedule", "order", "install", "meet"]:
+        return "TASKS", text
+    return "GROCERIES", text
+
+
+def process_item(raw_text):
+    dest, title = classify_item(raw_text)
+
+    # 1. Recipe
+    if dest == "RECIPE":
+        print(f"🍳 Dispatching Recipe to Paprika: {title}")
+        code, out, err = run_helper("recipes/import-paprika-recipe.py", [title])
         if code == 0:
             return True, "Imported to Paprika"
         return False, f"Failed: {err.strip() or out.strip()}"
 
-    # 2. Calendar Event
-    if tag in ["cal", "calendar", "event"]:
-        # Match date & time if provided: YYYY-MM-DD HH:MM Title
-        cal_match = re.match(r"^(\d{4}-\d{2}-\d{2})(?:\s+(\d{1,2}:\d{2}))?\s+(.*)$", content)
+    # 2. Calendar
+    if dest == "CALENDAR":
+        cal_match = re.match(r"^(\d{4}-\d{2}-\d{2})(?:\s+(\d{1,2}:\d{2}))?\s+(.*)$", title)
         if cal_match:
             date_str = cal_match.group(1)
             time_str = cal_match.group(2) or "09:00"
             summary = cal_match.group(3).strip()
             start_iso = f"{date_str}T{time_str}:00"
-            print(f"📅 Dispatching Calendar Event: '{summary}' on {start_iso}")
             code, out, err = run_helper("calendar/manage-calendar-cli.py", ["add", summary, "--start", start_iso])
             if code == 0:
                 return True, f"Scheduled in Google Calendar ({start_iso})"
             return False, f"Failed: {err.strip() or out.strip()}"
         else:
-            return False, "Invalid calendar format. Use: [cal] YYYY-MM-DD HH:MM Event Title"
+            code, out, err = run_helper("calendar/manage-calendar-cli.py", ["add", title])
+            if code == 0:
+                return True, "Scheduled in Google Calendar"
+            return False, f"Failed: {err.strip() or out.strip()}"
 
     # 3. Groceries
-    if tag in ["groc", "grocery", "groceries"]:
-        # Handle comma-separated list
-        items = [i.strip() for i in content.split(",") if i.strip()]
+    if dest == "GROCERIES":
+        items = [i.strip() for i in title.split(",") if i.strip()]
         for item in items:
             print(f"🛒 Adding Grocery item: {item}")
             run_helper("todo/manage-todo-cli.py", ["add", item, "--list", "Groceries"])
-        return True, f"Added {len(items)} items to Groceries"
+        return True, f"Added {len(items)} item(s) to Groceries"
 
-    # 4. Default: Microsoft To Do Tasks
+    # 4. Tasks
     list_name = "Tasks"
-    if tag in ["chore", "family"]:
-        list_name = "Family"
-    elif tag in ["work", "project"]:
-        list_name = "Home projects"
-
-    print(f"📋 Adding To Do item to '{list_name}': {content}")
-    code, out, err = run_helper("todo/manage-todo-cli.py", ["add", content, "--list", list_name])
+    print(f"📋 Adding To Do item to '{list_name}': {title}")
+    code, out, err = run_helper("todo/manage-todo-cli.py", ["add", title, "--list", list_name])
     if code == 0:
         return True, f"Added to Microsoft To Do ({list_name})"
     return False, f"Failed: {err.strip() or out.strip()}"
@@ -129,32 +190,57 @@ def process_outbox(vault_dir, dry_run=False):
     processed_count = 0
     now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     new_lines = []
+    in_pending_section = False
 
     for line in lines:
         stripped = line.strip()
-        # Look for open checkboxes: - [ ] item
-        if stripped.startswith("- [ ] "):
-            item_text = stripped[6:].strip()
-            # Skip if already marked with error or processed comment
-            if "<!-- done" in item_text:
-                new_lines.append(line)
-                continue
-
-            if dry_run:
-                print(f"  [DRY-RUN] Would process: {item_text}")
-                new_lines.append(line)
-                continue
-
-            success, note = process_item(item_text)
-            if success:
-                new_lines.append(f"- [x] {item_text} *(✓ {note} at {now_str})*\n")
-                processed_count += 1
-                modified = True
-            else:
-                new_lines.append(f"- [ ] {item_text} *(⚠️ {note})*\n")
-                modified = True
-        else:
+        
+        # Look for the start of the pending outbox section
+        if "Pending Outbox" in stripped:
+            in_pending_section = True
             new_lines.append(line)
+            continue
+
+        # If not yet in the pending outbox section, preserve existing headers/instructions
+        if not in_pending_section:
+            new_lines.append(line)
+            continue
+
+        # Skip empty lines, headers, comments, and divider lines
+        if not stripped or stripped.startswith("#") or stripped == "---" or stripped.startswith("<!--"):
+            new_lines.append(line)
+            continue
+
+        # Skip already completed items
+        if stripped.startswith("- [x] ") or "*(✓ " in stripped:
+            new_lines.append(line)
+            continue
+
+        # Clean off common prefixes: '- [ ] ', '- ', '* ', or accept plain text
+        item_text = stripped
+        if item_text.startswith("- [ ] "):
+            item_text = item_text[6:].strip()
+        elif item_text.startswith("- ") or item_text.startswith("* "):
+            item_text = item_text[2:].strip()
+
+        if not item_text:
+            new_lines.append(line)
+            continue
+
+        if dry_run:
+            dest, title = classify_item(item_text)
+            print(f"  [DRY-RUN] '{item_text}' -> Classified as {dest} ('{title}')")
+            new_lines.append(line)
+            continue
+
+        success, note = process_item(item_text)
+        if success:
+            new_lines.append(f"- [x] {item_text} *(✓ {note} at {now_str})*\n")
+            processed_count += 1
+            modified = True
+        else:
+            new_lines.append(f"- [ ] {item_text} *(⚠️ {note})*\n")
+            modified = True
 
     if modified and not dry_run:
         with open(outbox_path, "w", encoding="utf-8") as f:

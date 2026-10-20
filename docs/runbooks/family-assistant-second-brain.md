@@ -112,11 +112,14 @@ Test or trigger processing of items added from mobile:
 .venv/bin/python3 mcp/family-assistant/scripts/outbox/process-quick-add-outbox.py
 ```
 
-**Supported Outbox Tag Syntax**:
-* Groceries: `- [ ] [groc] Milk, Sourdough bread, Eggs`
-* Tasks: `- [ ] [todo] Replace furnace filter`
-* Calendar: `- [ ] [cal] 2026-10-25 14:00 Dentist appointment`
-* Recipe: `- [ ] [recipe] https://pinchofyum.com/recipe-url`
+**Plain-Text Zero-Effort Capture (No Checkboxes or Tags Needed)**:
+Type anything directly under `## 📥 Pending Outbox` in plain text. The local AI (`llama3.2:3b` on CT 104) automatically classifies and routes each item:
+
+* **Groceries**: `Cinnamon rolls` or `Milk, eggs, butter` -> added to Microsoft To Do Groceries.
+* **Tasks**: `Call accountant about taxes` or `Fix leaking sprinkler` -> added to Microsoft To Do Tasks.
+* **Calendar**: `Dentist on Thursday at 2:30pm` -> scheduled in Google Family Calendar.
+* **Recipe**: `https://pinchofyum.com/recipe-url` -> imported directly to Paprika Recipe Manager.
+* *(Legacy tags like `[groc]`, `[todo]`, `[cal]`, `[recipe]` and checkboxes `- [ ]` remain fully supported if preferred).*
 
 ### 4. Sync Open WebUI Tools & Filter
 Synchronize local Python tools and the global filter function to Open WebUI:
