@@ -21,6 +21,7 @@ docs/
 │   ├── proxmox-backup-server.md                 # PBS deployment (LXC 105), 10.25.25.0/24 SAN transport, CBT incremental backups
 │   ├── recovery-walkthrough.md                  # Bare-metal host and VM restoration sequencing via homelab MCP tools
 │   ├── security-backup-guide.md                 # SOPS + age encryption standards, key management, and secrets hygiene
+│   ├── family-assistant-second-brain.md         # Family Second Brain, Open WebUI, mobile capture, and Pushover briefing ops
 │   ├── gitops-drills-and-secret-rotation.md     # GitOps disaster recovery drills, state diff verification, and SOPS key rotation
 │   └── vivint-panel-mdns-acl.md                 # Vivint Smart Home panel cross-VLAN mDNS reflection & firewall rules
 │
@@ -52,6 +53,7 @@ Step-by-step operational and disaster-recovery execution guides:
 * [proxmox-backup-server.md](runbooks/proxmox-backup-server.md): Proxmox Backup Server (LXC 105 on `pve3`) architecture, fast `10.25.25.244` SAN transport, CBT incremental backups, and verification drills.
 * [recovery-walkthrough.md](runbooks/recovery-walkthrough.md): End-to-end bare-metal recovery sequence detailing the 4 phases: Host bootstrapping, host config restoration, VM bootstrapping, and Docker stack ignition via FastMCP tools.
 * [security-backup-guide.md](runbooks/security-backup-guide.md): Standard operating procedures for encrypting secrets with SOPS + age, managing master keys, and ensuring zero unencrypted credentials enter Git.
+* [family-assistant-second-brain.md](runbooks/family-assistant-second-brain.md): Operational guide for the private Family Second Brain, Open WebUI household copilot, autonomous cron pipelines, and mobile Pushover briefings with Obsidian deep links.
 * [gitops-drills-and-secret-rotation.md](runbooks/gitops-drills-and-secret-rotation.md): Verification drills, staging dry-runs, and procedure for rotating SOPS encryption keys across all 50 encrypted stack files.
 * [vivint-panel-mdns-acl.md](runbooks/vivint-panel-mdns-acl.md): Step-by-step firewall and mDNS gateway rules for isolating Vivint Smart Home panels into VLAN 150 while enabling local app control.
 

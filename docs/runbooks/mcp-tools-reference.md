@@ -1,13 +1,13 @@
 # 🛠️ FastMCP Homelab Tools Architecture & Reference Guide
 
-This document provides the authoritative, extensive reference for the **21 consolidated FastMCP tools** implemented in [`mcp/homelab/server.py`](../../mcp/homelab/server.py).
+This document provides the authoritative, extensive reference for the **24 consolidated FastMCP tools** implemented in [`mcp/homelab/server.py`](../../mcp/homelab/server.py).
 
 ---
 
 ## 🎯 Architecture & Core Design Goals
 
 1. **Token Efficiency via Action-Oriented Tooling**:
-   - Rather than registering 65 fine-grained tools that flood the AI context window with schema bloat, tools are consolidated into **21 action-oriented interfaces**.
+   - Rather than registering 70+ fine-grained tools that flood the AI context window with schema bloat, tools are consolidated into **24 action-oriented interfaces**.
    - Cuts schema token utilization by **over 65%** while retaining 100% of underlying infrastructure automation capabilities.
 2. **Deterministic Virtual Environment (`.venv`)**:
    - All script invocations route automatically through the project's pre-configured virtual environment (`.venv/bin/python3`).
@@ -21,7 +21,7 @@ This document provides the authoritative, extensive reference for the **21 conso
 
 ---
 
-## 📋 Master 21-Tool Catalog & Capability Matrix
+## 📋 Master 24-Tool Catalog & Capability Matrix
 
 | # | Tool Name | Functional Domain | Primary Actions | Underlying Script |
 | :-: | :--- | :--- | :--- | :--- |
@@ -46,6 +46,9 @@ This document provides the authoritative, extensive reference for the **21 conso
 | **19** | `manage_external_hosts`| Cloud VPS Hosts | `audit`, `backup`, `deploy_promtail` | `manage-external-hosts.py`, `deploy-external-promtail.py` |
 | **20** | `sync_adguard_clients` | DNS Identity Alignment | Non-destructive dry-run, live sync | `sync-adguard-clients.py` |
 | **21** | `align_ovrc_devices` | OvrC Cloud Sync | `preview`, `csv`, `apply`, `scan`, `status`, `topology`, `topology-apply` | `align-ovrc-devices.py` |
+| **22** | `manage_ollama` | Local LLM Engine (CT 104) | `list`, `vram`, `pull`, `delete`, `benchmark` | `manage-ollama.py` |
+| **23** | `manage_openwebui` | Open WebUI Orchestration | `list_tools`, `sync_tools`, `deploy_model`, `inspect_valves`, `list_chats`, `chat_history` | `manage-openwebui.py` |
+| **24** | `eval_family_assistant` | AI Regression Suite | Benchmark tool calling, intent detection & context | `eval-family-assistant.py` |
 
 ---
 
