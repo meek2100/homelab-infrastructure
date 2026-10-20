@@ -747,6 +747,68 @@ def align_ovrc_devices(
     return run_script("align-ovrc-devices.py", args)
 
 
+@mcp.tool()
+def manage_ollama(
+    action: Annotated[Literal["list", "vram", "pull", "delete", "benchmark"], Field(description="Action to perform")],
+    model: Annotated[Optional[str], Field(description="Target model name (e.g. llama3.2:3b, hermes3:3b, qwen2.5:1.5b-instruct)")] = None,
+    tokens: Annotated[int, Field(description="Token count limit for benchmarks")] = 40
+) -> str:
+    """Manage local LLM models, VRAM profiling, pulls, and token generation benchmarks on Ollama (CT 104).
+    Actions:
+      - 'list'     : List all downloaded models, sizes, and timestamps on CT 104.
+      - 'vram'     : Inspect active models in VRAM, GPU memory offload percentage, and context lengths.
+      - 'pull'     : Download or update a model from the Ollama library or Hugging Face.
+      - 'delete'   : Delete an unused model to free disk or VRAM.
+      - 'benchmark': Run automated latency and tokens/sec benchmarks for prompt eval and token generation."""
+    args = [action]
+    if model: args.extend(["--model", model])
+    if tokens: args.extend(["--tokens", str(tokens)])
+    return run_script("manage-ollama.py", args)
+
+
+@mcp.tool()
+def manage_openwebui(
+    action: Annotated[Literal["list_tools", "sync_tools", "deploy_model", "inspect_valves", "list_chats", "chat_history"], Field(description="Action to perform")],
+    tool_id: Annotated[Optional[str], Field(description="Tool ID for valve inspection (e.g. microsoft_to_do_groceries_manager)")] = None,
+    model_id: Annotated[str, Field(description="Model preset ID to configure")] = "family-assistant",
+    base_model: Annotated[str, Field(description="Underlying Ollama base model (e.g. llama3.2:3b)")] = "llama3.2:3b",
+    system_prompt: Annotated[Optional[str], Field(description="Custom system prompt")] = None,
+    chat_id: Annotated[Optional[str], Field(description="Chat ID to inspect transcripts and function calls")] = None
+) -> str:
+    """Manage Open WebUI tools, model deployments, valves, and chat transcripts on CT 104.
+    Actions:
+      - 'list_tools'    : List all registered tools in Open WebUI and their exposed function specs.
+      - 'sync_tools'    : Synchronize local tool files in infrastructure/open-webui/tools/ to Open WebUI and populate valves.
+      - 'deploy_model'  : Configure model presets (base model, system prompt, attached tools, native function calling).
+      - 'inspect_valves': Verify live environment variables/credentials stored in a tool's valves.
+      - 'list_chats'    : List recent chat sessions and timestamps.
+      - 'chat_history'  : View full conversation transcript and raw tool calls/outputs for debugging."""
+    args = [action]
+    if tool_id: args.extend(["--tool-id", tool_id])
+    if model_id: args.extend(["--model-id", model_id])
+    if base_model: args.extend(["--base-model", base_model])
+    if system_prompt: args.extend(["--system-prompt", system_prompt])
+    if chat_id: args.extend(["--chat-id", chat_id])
+    return run_script("manage-openwebui.py", args)
+
+
+@mcp.tool()
+def eval_family_assistant(
+    model: Annotated[str, Field(description="Model name to evaluate (e.g. llama3.2:3b, hermes3:3b, qwen2.5:3b-instruct)")] = "llama3.2:3b",
+    verbose: Annotated[bool, Field(description="Enable verbose response logging")] = False
+) -> str:
+    """Run an automated regression evaluation suite against Open WebUI to benchmark tool calling accuracy and hallucination rates.
+    Tests core household capabilities:
+      1. Groceries/Shopping intent -> verifies get_groceries/get_todo_items is called.
+      2. Calendar/Schedule intent -> verifies get_upcoming_events/search_calendar_events is called with valid dates.
+      3. Recipes intent -> verifies search_recipes/get_recipe_details is called.
+      4. Home Maintenance intent -> verifies get_maintenance_due is called."""
+    args = ["--model", model]
+    if verbose: args.append("--verbose")
+    return run_script("eval-family-assistant.py", args)
+
+
+
 # ==============================================================================
 # BACKWARDS-COMPATIBLE HELPER EXPORTS
 # ==============================================================================

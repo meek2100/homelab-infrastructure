@@ -18,18 +18,22 @@ from pydantic import BaseModel, Field
 class Tools:
     class Valves(BaseModel):
         CALENDAR_ID: str = Field(
-            default="primary",
-            description="Google Calendar ID (from ~/.config/homelab-todo/google_calendar.json)"
+            default="family17480042687465380396@group.calendar.google.com",
+            description="Google Calendar ID"
+        )
+        TOKEN_JSON: str = Field(
+            default="",
+            description="OAuth Token JSON contents (from ~/.config/homelab-todo/google_token.json)"
         )
         TOKEN_PATH: str = Field(
             default="~/.config/homelab-todo/google_token.json",
-            description="Path to authorized Google token file"
+            description="Fallback path to authorized Google token file if running locally"
         )
 
     def __init__(self):
         self.valves = self.Valves()
         cfg_file = os.path.expanduser("~/.config/homelab-todo/google_calendar.json")
-        if os.path.exists(cfg_file):
+        if os.path.exists(cfg_file) and not self.valves.CALENDAR_ID:
             try:
                 with open(cfg_file) as f:
                     self.valves.CALENDAR_ID = json.load(f).get("calendar_id", self.valves.CALENDAR_ID)
@@ -41,20 +45,105 @@ class Tools:
         from google.auth.transport.requests import Request
         from googleapiclient.discovery import build
 
-        token_path = os.path.expanduser(self.valves.TOKEN_PATH)
-        if not os.path.exists(token_path):
-            raise ValueError(f"Google token file not found at {token_path}. Run sync-google-calendar-to-vault.py --auth first.")
+        creds = None
+        if self.valves.TOKEN_JSON:
+            try:
+                info = json.loads(self.valves.TOKEN_JSON)
+                creds = Credentials.from_authorized_user_info(info, [
+                    "https://www.googleapis.com/auth/calendar.events",
+                    "https://www.googleapis.com/auth/calendar.readonly"
+                ])
+            except Exception as e:
+                raise ValueError(f"Failed to parse TOKEN_JSON in valves: {e}")
+        else:
+            token_path = os.path.expanduser(self.valves.TOKEN_PATH)
+            if not os.path.exists(token_path):
+                raise ValueError(f"Google token file not found at {token_path}. Run sync-google-calendar-to-vault.py --auth first.")
+            creds = Credentials.from_authorized_user_file(token_path, [
+                "https://www.googleapis.com/auth/calendar.events",
+                "https://www.googleapis.com/auth/calendar.readonly"
+            ])
 
-        creds = Credentials.from_authorized_user_file(token_path, [
-            "https://www.googleapis.com/auth/calendar.events",
-            "https://www.googleapis.com/auth/calendar.readonly"
-        ])
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
-            with open(token_path, "w", encoding="utf-8") as f:
-                f.write(creds.to_json())
 
         return build("calendar", "v3", credentials=creds)
+
+    def search_calendar_events(
+        self,
+        days: Optional[int] = None,
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+        count: Optional[int] = None,
+        query: Optional[str] = None,
+        search_query: Optional[str] = None
+    ) -> str:
+        """
+        Search or list calendar events.
+        :param days: Number of days to look ahead.
+        :param start: Optional start date/time.
+        :param end: Optional end date/time.
+        :param count: Optional count limit.
+        :param query: Optional keyword search query.
+        :param search_query: Optional keyword search query.
+        :return: Formatted scheduled events.
+        """
+        try:
+            service = self._get_service()
+            now = datetime.datetime.now(datetime.timezone.utc)
+            start_iso = None
+            end_iso = None
+
+            if start:
+                try:
+                    s_clean = start.replace("Z", "+00:00")
+                    dt_start = datetime.datetime.fromisoformat(s_clean)
+                    if dt_start.year >= 2026:
+                        start_iso = dt_start.isoformat()
+                except Exception:
+                    pass
+
+            if end:
+                try:
+                    e_clean = end.replace("Z", "+00:00")
+                    dt_end = datetime.datetime.fromisoformat(e_clean)
+                    if dt_end.year >= 2026:
+                        end_iso = dt_end.isoformat()
+                except Exception:
+                    pass
+
+            if not start_iso:
+                start_iso = now.isoformat()
+            if not end_iso:
+                d = count or days or 7
+                end_iso = (now + datetime.timedelta(days=d)).isoformat()
+
+            q_term = query or search_query
+            events_result = service.events().list(
+                calendarId=self.valves.CALENDAR_ID,
+                timeMin=start_iso,
+                timeMax=end_iso,
+                singleEvents=True,
+                orderBy="startTime",
+                q=q_term
+            ).execute()
+
+            items = events_result.get("items", [])
+            if not items:
+                search_msg = f" matching '{q_term}'" if q_term else ""
+                return f"No events scheduled{search_msg} between {start_iso[:10]} and {end_iso[:10]}."
+
+            lines = [f"📅 Scheduled Family Events ({len(items)} found):"]
+            for ev in items:
+                summary = ev.get("summary", "Untitled")
+                ev_start = ev.get("start", {})
+                start_str = ev_start.get("dateTime", ev_start.get("date"))
+                loc = f" at {ev.get('location')}" if ev.get('location') else ""
+                lines.append(f"• {start_str}: {summary}{loc}")
+
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error querying calendar: {str(e)}"
 
     def get_upcoming_events(
         self,

@@ -161,6 +161,72 @@ class Tools:
         except Exception as e:
             return f"Failed to complete task: {str(e)}"
 
+    def get_grocery_list(self) -> str:
+        """
+        View current open items on the family grocery list.
+        :return: Formatted list of open grocery items.
+        """
+        return self.get_todo_items(list_name="Home - Groceries")
+
+    def get_groceries(self) -> str:
+        """
+        View current items on the grocery list.
+        :return: Formatted list of open grocery items.
+        """
+        return self.get_todo_items(list_name="Home - Groceries")
+
+    def search_todo_items(
+        self,
+        query: Optional[str] = None,
+        list_name: Optional[str] = "Home - Groceries"
+    ) -> str:
+        """
+        Search or view items on a task or grocery list.
+        :param query: Optional search term.
+        :param list_name: Target list name (defaults to 'Home - Groceries').
+        :return: Formatted list of items.
+        """
+        return self.get_todo_items(list_name=list_name or "Home - Groceries")
+
+    def get_todo_items(
+        self,
+        list_name: str = "Home - Groceries",
+        show_completed: bool = False
+    ) -> str:
+        """
+        View current items on a task or grocery list in Microsoft To Do.
+        :param list_name: Target list name or keyword (e.g. "Home - Groceries", "Groceries", "Tasks", "Family"). Defaults to "Home - Groceries".
+        :param show_completed: Whether to include already completed items (default False).
+        :return: Formatted list of open tasks/groceries.
+        """
+        try:
+            token = self._get_access_token()
+            lists = self._get_lists(token)
+            target = self._match_list(lists, list_name)
+
+            if not target:
+                return f"Error: Could not find list matching '{list_name}'. Available: {', '.join(l['displayName'] for l in lists)}"
+
+            filter_clause = "" if show_completed else "?$filter=" + urllib.parse.quote("status ne 'completed'")
+            req = urllib.request.Request(
+                f"https://graph.microsoft.com/v1.0/me/todo/lists/{target['id']}/tasks{filter_clause}",
+                headers={"Authorization": f"Bearer {token}"}
+            )
+            with urllib.request.urlopen(req, timeout=15) as res:
+                tasks = json.loads(res.read().decode("utf-8")).get("value", [])
+
+            if not tasks:
+                return f"No open items found on '{target['displayName']}'."
+
+            lines = [f"📋 Items on '{target['displayName']}':"]
+            for t in tasks:
+                due = f" (Due: {t['dueDateTime']['dateTime'][:10]})" if t.get("dueDateTime") else ""
+                lines.append(f"• {t.get('title')}{due}")
+
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Failed to get tasks: {str(e)}"
+
     def list_todo_lists(self) -> str:
         """
         Get all available Microsoft To Do list names.
