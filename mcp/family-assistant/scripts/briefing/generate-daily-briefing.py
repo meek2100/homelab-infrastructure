@@ -25,7 +25,7 @@ OLLAMA_ENDPOINT = os.environ.get(
     "OLLAMA_API_URL",
     "http://192.168.40.246:11434"
 )
-DEFAULT_MODEL = "qwen2.5:3b-instruct"
+DEFAULT_MODEL = "llama3.2:3b"
 
 
 def collect_vault_context(vault_dir):

@@ -101,7 +101,7 @@ def get_or_create_knowledge_base(base_url, api_key, name, description):
 def get_knowledge_files(base_url, api_key, kb_id):
     try:
         kb_info = api_request(base_url, f"/api/v1/knowledge/{kb_id}", api_key, method="GET")
-        files = kb_info.get("files", [])
+        files = kb_info.get("files") or []
         return {f.get("meta", {}).get("name") or f.get("filename"): f.get("id") for f in files}
     except Exception:
         return {}

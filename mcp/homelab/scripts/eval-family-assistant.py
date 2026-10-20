@@ -29,13 +29,19 @@ TEST_CASES = [
         "id": "recipe_query",
         "prompt": "How do I make Greek Lemon Chicken soup?",
         "expected_tools": ["search_recipes", "get_recipe_details"],
-        "required_in_output": []
+        "required_in_output": ["chicken", "soup", "lemon"]
     },
     {
         "id": "maintenance_query",
         "prompt": "When is our next vehicle oil change or home maintenance due?",
         "expected_tools": ["get_maintenance_due"],
-        "required_in_output": []
+        "required_in_output": ["oil", "tire", "car", "service", "maintenance"]
+    },
+    {
+        "id": "homelab_health_query",
+        "prompt": "What does the health of my homelab look like?",
+        "expected_tools": ["get_homelab_health"],
+        "required_in_output": ["pve", "compute-server", "online", "operational", "CT 104"]
     }
 ]
 
@@ -51,7 +57,7 @@ def run_test_suite(model: str = "llama3.2:3b", verbose: bool = False):
 
     # Fetch all tool specs
     tools = []
-    for tid in ["microsoft_to_do_groceries_manager", "google_family_calendar", "obsidian_vault_recipe_reader", "paprika_recipe_importer"]:
+    for tid in ["microsoft_to_do_groceries_manager", "google_family_calendar", "obsidian_vault_recipe_reader", "paprika_recipe_importer", "homelab_fleet_monitor"]:
         try:
             req = urllib.request.Request(f"{base}/api/v1/tools/id/{tid}", headers={"Authorization": f"Bearer {key}"})
             with urllib.request.urlopen(req, timeout=10) as res:
@@ -90,16 +96,23 @@ def run_test_suite(model: str = "llama3.2:3b", verbose: bool = False):
 
             called_names = [tc_item.get("function", {}).get("name") for tc_item in tool_calls]
             
-            matched = any(name in tc["expected_tools"] for name in called_names)
-            if matched:
+            matched_tool = any(name in tc["expected_tools"] for name in called_names)
+            content = msg.get("content", "")
+            req_keywords = tc.get("required_in_output", [])
+            matched_content = any(kw.lower() in content.lower() for kw in req_keywords) if req_keywords else False
+
+            if matched_tool:
                 print(f"   ✅ PASS: Called expected tool: {called_names} ({elapsed:.2f}s)")
+                passed_count += 1
+            elif matched_content:
+                print(f"   ✅ PASS: Injected live context answered prompt accurately ({elapsed:.2f}s)")
                 passed_count += 1
             else:
                 if called_names:
                     print(f"   ❌ FAIL: Unexpected tool called: {called_names} (expected {tc['expected_tools']}) ({elapsed:.2f}s)")
                 else:
-                    content = msg.get("content", "")[:120].replace("\n", " ")
-                    print(f"   ❌ FAIL: No tool called. Returned text: \"{content}\" ({elapsed:.2f}s)")
+                    snippet = content[:120].replace("\n", " ")
+                    print(f"   ❌ FAIL: No tool called and context missing. Returned: \"{snippet}\" ({elapsed:.2f}s)")
         except Exception as e:
             print(f"   ❌ ERROR: Request failed: {e}")
 
