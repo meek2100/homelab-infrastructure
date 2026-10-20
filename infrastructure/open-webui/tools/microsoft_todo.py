@@ -216,12 +216,12 @@ class Tools:
                 tasks = json.loads(res.read().decode("utf-8")).get("value", [])
 
             if not tasks:
-                return f"No open items found on '{target['displayName']}'."
+                return f"No open items found on {target['displayName']}."
 
-            lines = [f"📋 Items on '{target['displayName']}':"]
+            lines = [f"Items on {target['displayName']}:"]
             for t in tasks:
                 due = f" (Due: {t['dueDateTime']['dateTime'][:10]})" if t.get("dueDateTime") else ""
-                lines.append(f"• {t.get('title')}{due}")
+                lines.append(f"- {t.get('title')}{due}")
 
             return "\n".join(lines)
         except Exception as e:
