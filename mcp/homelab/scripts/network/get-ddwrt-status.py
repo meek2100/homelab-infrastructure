@@ -54,19 +54,19 @@ echo "=== PIA WATCHDOG & DAEMONS ==="
 ps | grep -E "pia" | grep -v grep || echo "No PIA watchdog or monitor processes found"
 
 echo "=== EXTERNAL IP (via VPN) ==="
-curl -m 10 -s https://icanhazip.com 2>/dev/null || echo "Curl error"
+curl -m 5 -s https://icanhazip.com 2>/dev/null || echo "VPN egress check failed"
 
 echo "=== WIREGUARD STATUS (oet1) ==="
 wg show oet1 2>/dev/null || ip link show oet1 2>/dev/null || echo "oet1 not found"
 
-echo "=== IPTABLES FORWARD (Top 6) ==="
-iptables -L FORWARD -n -v --line-numbers 2>/dev/null | head -n 8
+echo "=== IPTABLES FORWARD (Top 10) ==="
+iptables -L FORWARD -n -v --line-numbers 2>/dev/null | head -n 12
 
 echo "=== IPTABLES OUTPUT WAN FILTER ==="
 iptables -L WAN_EGRESS_FILTER -n -v --line-numbers 2>/dev/null || echo "No WAN_EGRESS_FILTER"
 
 echo "=== RECENT WATCHDOG LOG ==="
-tail -n 12 /tmp/pia-startup-crash.log 2>/dev/null || echo "No crash log"
+tail -n 6 /tmp/pia-startup-crash.log 2>/dev/null || echo "No crash log"
 """
     code, out, err = run_ssh(ip, query_cmd, user=user)
     header = f"=== DD-WRT ROUTER: {name.upper() if name else ip} ({ip}) ==="

@@ -102,6 +102,10 @@ sync_system_clock() {
 # --- Killswitch & Routing Functions ---
 
 ensure_luna_access() {
+    local wan_if
+    wan_if=$(nvram get wan_iface)
+    [ -z "$wan_if" ] && wan_if="vlan2"
+
     # Clean up legacy broad transit rules
     iptables -D FORWARD -d 10.20.20.0/24 -j ACCEPT 2>/dev/null || true
     iptables -D FORWARD -s 10.20.20.0/24 -j ACCEPT 2>/dev/null || true
@@ -110,15 +114,31 @@ ensure_luna_access() {
     iptables -t nat -D POSTROUTING -d 10.20.20.0/24 -j MASQUERADE 2>/dev/null || true
     iptables -t nat -D POSTROUTING -d 10.20.20.1 -j MASQUERADE 2>/dev/null || true
 
-    # Restrict forwarding to Luna strictly to SSH (port 22)
+    iptables -D FORWARD -s 10.20.20.1 -m state --state ESTABLISHED,RELATED -j ACCEPT 2>/dev/null || true
+    for src_net in 192.168.1.0/24 192.168.10.0/24 10.25.25.0/24; do
+        for port in 22 80 443; do
+            iptables -D FORWARD -i br0 -s "$src_net" -d 10.20.20.1 -p tcp --dport "$port" -j ACCEPT 2>/dev/null || true
+            iptables -D FORWARD -p tcp -d 10.20.20.1 --dport "$port" -j ACCEPT 2>/dev/null || true
+        done
+    done
     iptables -D FORWARD -p tcp -s 10.20.20.1 --sport 22 -m state --state ESTABLISHED -j ACCEPT 2>/dev/null || true
-    iptables -D FORWARD -p tcp -d 10.20.20.1 --dport 22 -j ACCEPT 2>/dev/null || true
-    iptables -I FORWARD 1 -p tcp -s 10.20.20.1 --sport 22 -m state --state ESTABLISHED -j ACCEPT
-    iptables -I FORWARD 1 -p tcp -d 10.20.20.1 --dport 22 -j ACCEPT
 
-    if ! iptables -t nat -C POSTROUTING -p tcp -d 10.20.20.1 --dport 22 -j MASQUERADE 2>/dev/null; then
-        iptables -t nat -I POSTROUTING 1 -p tcp -d 10.20.20.1 --dport 22 -j MASQUERADE
-    fi
+    # Insert top priority established/related return traffic from Luna
+    iptables -I FORWARD 1 -s 10.20.20.1 -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+    # Insert management access rules (SSH 22, HTTP 80, HTTPS 443)
+    for src_net in 192.168.1.0/24 192.168.10.0/24 10.25.25.0/24; do
+        for port in 22 80 443; do
+            iptables -I FORWARD 2 -i br0 -s "$src_net" -d 10.20.20.1 -p tcp --dport "$port" -j ACCEPT
+        done
+    done
+
+    # Ensure NAT masquerade for Luna management ports
+    for port in 22 80 443; do
+        if ! iptables -t nat -C POSTROUTING -o "$wan_if" -d 10.20.20.1 -p tcp --dport "$port" -j MASQUERADE 2>/dev/null; then
+            iptables -t nat -I POSTROUTING 1 -o "$wan_if" -d 10.20.20.1 -p tcp --dport "$port" -j MASQUERADE
+        fi
+    done
 }
 
 lockdown_wan_egress() {
@@ -128,7 +148,9 @@ lockdown_wan_egress() {
 
     iptables -N WAN_EGRESS_FILTER 2>/dev/null || true
     iptables -F WAN_EGRESS_FILTER 2>/dev/null || true
-    iptables -A WAN_EGRESS_FILTER -p tcp -d 10.20.20.1 --dport 22 -j ACCEPT
+    for port in 22 80 443; do
+        iptables -A WAN_EGRESS_FILTER -d 10.20.20.1 -p tcp --dport "$port" -j ACCEPT
+    done
     iptables -A WAN_EGRESS_FILTER -p udp --dport 123 -j ACCEPT
     iptables -A WAN_EGRESS_FILTER -p udp --dport 1337 -j ACCEPT
     iptables -A WAN_EGRESS_FILTER -p udp --dport 51820 -j ACCEPT
@@ -146,7 +168,9 @@ arm_rotation_egress() {
 
     iptables -N WAN_EGRESS_FILTER 2>/dev/null || true
     iptables -F WAN_EGRESS_FILTER 2>/dev/null || true
-    iptables -A WAN_EGRESS_FILTER -p tcp -d 10.20.20.1 --dport 22 -j ACCEPT
+    for port in 22 80 443; do
+        iptables -A WAN_EGRESS_FILTER -d 10.20.20.1 -p tcp --dport "$port" -j ACCEPT
+    done
     iptables -A WAN_EGRESS_FILTER -p udp --dport 123 -j ACCEPT
     iptables -A WAN_EGRESS_FILTER -p udp --dport 53 -j ACCEPT
     iptables -A WAN_EGRESS_FILTER -p tcp --dport 53 -j ACCEPT
@@ -216,7 +240,8 @@ get_pia_config() {
     sync_system_clock
 
     log_msg "Generating new WireGuard key pair..."
-    local privkey pubkey
+    local privkey
+    local pubkey
     privkey=$(wg genkey)
     pubkey=$(echo "$privkey" | wg pubkey)
 
@@ -224,7 +249,8 @@ get_pia_config() {
     curl --connect-timeout 10 --max-time 20 -sk -o "$tmp_v7" "$PIA_SERVERLIST_V7_URL" 2>/dev/null || true
     curl --connect-timeout 10 --max-time 20 -sk -o "$tmp_v6" "$PIA_SERVERLIST_V6_URL" 2>/dev/null || true
 
-    local line_v7 line_v6
+    local line_v7
+    local line_v6
     line_v7=$(head -n 1 "$tmp_v7" 2>/dev/null || echo "{}")
     line_v6=$(head -n 1 "$tmp_v6" 2>/dev/null || echo "{}")
 
@@ -267,7 +293,13 @@ get_pia_config() {
     log_msg "Round-robin region search order: $ordered_regions (Last: ${last_region:-none})"
 
     for region_id in $ordered_regions; do
-        local region_json wg_servers_json server_count random_index wg_ip wg_cn region_name
+        local region_json
+        local wg_servers_json
+        local server_count
+        local random_index
+        local wg_ip
+        local wg_cn
+        local region_name
         region_json=$(head -n 1 "$tmp_merged" | jq --arg REGION_ID "$region_id" '.regions[] | select(.id == $REGION_ID and .offline == false and (.servers.wg | length) > 0)')
 
         if [ -z "$region_json" ]; then continue; fi
@@ -285,7 +317,15 @@ get_pia_config() {
             curl --connect-timeout 10 --max-time 30 -sk -o "$CERT_FILE" "$PIA_CA_CERT_URL" 2>/dev/null || true
         fi
 
-        local pubkey_encoded token_encoded add_key_url conn_json status peer_ip server_key dns1 dns2
+        local pubkey_encoded
+        local token_encoded
+        local add_key_url
+        local conn_json
+        local status
+        local peer_ip
+        local server_key
+        local dns1
+        local dns2
         pubkey_encoded=$(echo "$pubkey" | sed 's/+/%2B/g; s/\//%2F/g; s/=/%3D/g')
         token_encoded=$(echo "$token" | sed 's/+/%2B/g; s/\//%2F/g; s/=/%3D/g')
         add_key_url="https://$wg_cn:1337/addKey?pt=${token_encoded}&pubkey=${pubkey_encoded}"

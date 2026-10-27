@@ -1,21 +1,31 @@
 wan_if=$(nvram get wan_iface)
 [ -z "$wan_if" ] && wan_if="vlan2"
 
-# 1. Killswitch: Disallow LAN forwarding to physical WAN
+# 1. Killswitch: Disallow general LAN forwarding to physical WAN
 iptables -I FORWARD -i br0 -o "$wan_if" -j REJECT
 if command -v ip6tables >/dev/null 2>&1; then
     ip6tables -I FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null || true
 fi
 
-# 2. Allow LAN strictly SSH access to Luna router (10.20.20.1:22) only
-iptables -I FORWARD 1 -p tcp -s 10.20.20.1 --sport 22 -m state --state ESTABLISHED -j ACCEPT
-iptables -I FORWARD 1 -p tcp -d 10.20.20.1 --dport 22 -j ACCEPT
-iptables -t nat -I POSTROUTING 1 -p tcp -d 10.20.20.1 --dport 22 -j MASQUERADE
+# 2. Allow LAN management access (SSH, HTTP, HTTPS) to Luna router (10.20.20.1)
+# Accessible from 192.168.1.0/24 (VLAN 1), 192.168.10.0/24 (VLAN 10), and local LAN (10.25.25.0/24)
+iptables -I FORWARD 1 -s 10.20.20.1 -m state --state ESTABLISHED,RELATED -j ACCEPT
+for src_net in 192.168.1.0/24 192.168.10.0/24 10.25.25.0/24; do
+    for port in 22 80 443; do
+        iptables -I FORWARD 2 -i br0 -s "$src_net" -d 10.20.20.1 -p tcp --dport "$port" -j ACCEPT
+    done
+done
 
-# 3. Restrict local router egress on physical WAN (no leaks without VPN)
+for port in 22 80 443; do
+    iptables -t nat -I POSTROUTING 1 -o "$wan_if" -d 10.20.20.1 -p tcp --dport "$port" -j MASQUERADE
+done
+
+# 3. Restrict local router egress on physical WAN (bare minimum when VPN is down)
 iptables -N WAN_EGRESS_FILTER 2>/dev/null || true
 iptables -F WAN_EGRESS_FILTER 2>/dev/null || true
-iptables -A WAN_EGRESS_FILTER -p tcp -d 10.20.20.1 --dport 22 -j ACCEPT
+for port in 22 80 443; do
+    iptables -A WAN_EGRESS_FILTER -d 10.20.20.1 -p tcp --dport "$port" -j ACCEPT
+done
 iptables -A WAN_EGRESS_FILTER -p udp --dport 123 -j ACCEPT
 iptables -A WAN_EGRESS_FILTER -p udp --dport 1337 -j ACCEPT
 iptables -A WAN_EGRESS_FILTER -p udp --dport 51820 -j ACCEPT

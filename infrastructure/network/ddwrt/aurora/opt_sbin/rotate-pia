@@ -14,7 +14,8 @@ wan_if=$(nvram get wan_iface)
 
 iptables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null || iptables -I FORWARD -i br0 -o "$wan_if" -j REJECT
 
-# Restrict Luna transit strictly to SSH (port 22) only - remove legacy broad 10.20.20.0/24
+# Restrict Luna transit strictly to management (SSH 22, HTTP 80, HTTPS 443)
+# Accessible from 192.168.1.0/24 (VLAN 1), 192.168.10.0/24 (VLAN 10), and local LAN (10.25.25.0/24)
 iptables -D FORWARD -d 10.20.20.0/24 -j ACCEPT 2>/dev/null || true
 iptables -D FORWARD -s 10.20.20.0/24 -j ACCEPT 2>/dev/null || true
 iptables -D FORWARD -d 10.20.20.1 -j ACCEPT 2>/dev/null || true
@@ -22,19 +23,34 @@ iptables -D FORWARD -s 10.20.20.1 -j ACCEPT 2>/dev/null || true
 iptables -t nat -D POSTROUTING -d 10.20.20.0/24 -j MASQUERADE 2>/dev/null || true
 iptables -t nat -D POSTROUTING -d 10.20.20.1 -j MASQUERADE 2>/dev/null || true
 
+iptables -D FORWARD -s 10.20.20.1 -m state --state ESTABLISHED,RELATED -j ACCEPT 2>/dev/null || true
+for src_net in 192.168.1.0/24 192.168.10.0/24 10.25.25.0/24; do
+    for port in 22 80 443; do
+        iptables -D FORWARD -i br0 -s "$src_net" -d 10.20.20.1 -p tcp --dport "$port" -j ACCEPT 2>/dev/null || true
+        iptables -D FORWARD -p tcp -d 10.20.20.1 --dport "$port" -j ACCEPT 2>/dev/null || true
+    done
+done
 iptables -D FORWARD -p tcp -s 10.20.20.1 --sport 22 -m state --state ESTABLISHED -j ACCEPT 2>/dev/null || true
-iptables -D FORWARD -p tcp -d 10.20.20.1 --dport 22 -j ACCEPT 2>/dev/null || true
-iptables -I FORWARD 1 -p tcp -s 10.20.20.1 --sport 22 -m state --state ESTABLISHED -j ACCEPT
-iptables -I FORWARD 1 -p tcp -d 10.20.20.1 --dport 22 -j ACCEPT
 
-if ! iptables -t nat -C POSTROUTING -p tcp -d 10.20.20.1 --dport 22 -j MASQUERADE 2>/dev/null; then
-    iptables -t nat -I POSTROUTING 1 -p tcp -d 10.20.20.1 --dport 22 -j MASQUERADE
-fi
+iptables -I FORWARD 1 -s 10.20.20.1 -m state --state ESTABLISHED,RELATED -j ACCEPT
+for src_net in 192.168.1.0/24 192.168.10.0/24 10.25.25.0/24; do
+    for port in 22 80 443; do
+        iptables -I FORWARD 2 -i br0 -s "$src_net" -d 10.20.20.1 -p tcp --dport "$port" -j ACCEPT
+    done
+done
 
-# Arm temporary rotation egress filter on physical WAN (includes NTP port 123)
+for port in 22 80 443; do
+    if ! iptables -t nat -C POSTROUTING -o "$wan_if" -d 10.20.20.1 -p tcp --dport "$port" -j MASQUERADE 2>/dev/null; then
+        iptables -t nat -I POSTROUTING 1 -o "$wan_if" -d 10.20.20.1 -p tcp --dport "$port" -j MASQUERADE
+    fi
+done
+
+# Arm temporary rotation egress filter on physical WAN (bare minimum: Luna mgmt, NTP, PIA endpoints)
 iptables -N WAN_EGRESS_FILTER 2>/dev/null || true
 iptables -F WAN_EGRESS_FILTER 2>/dev/null || true
-iptables -A WAN_EGRESS_FILTER -p tcp -d 10.20.20.1 --dport 22 -j ACCEPT
+for port in 22 80 443; do
+    iptables -A WAN_EGRESS_FILTER -d 10.20.20.1 -p tcp --dport "$port" -j ACCEPT
+done
 iptables -A WAN_EGRESS_FILTER -p udp --dport 123 -j ACCEPT
 iptables -A WAN_EGRESS_FILTER -p udp --dport 53 -j ACCEPT
 iptables -A WAN_EGRESS_FILTER -p tcp --dport 53 -j ACCEPT
