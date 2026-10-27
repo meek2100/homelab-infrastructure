@@ -19,7 +19,7 @@ def get_ssh_key():
             return candidate
     return None
 
-def run_ssh(ip, cmd, user="root", timeout=15):
+def run_ssh(ip, cmd, user="root", timeout=45):
     key = get_ssh_key()
     ssh_args = [
         "ssh", "-o", "StrictHostKeyChecking=accept-new",
@@ -43,7 +43,7 @@ def get_single_ddwrt_status(ip: str, name: str = "", user="root"):
 echo "=== SYSTEM INFO ==="
 echo "Model: $(nvram get DD_BOARD 2>/dev/null)"
 echo "Firmware: DD-WRT $(nvram get dist_type 2>/dev/null) build $(nvram get os_version 2>/dev/null)"
-uname -a
+echo "Date: $(date 2>/dev/null)"
 uptime
 
 echo "=== WAN & DEFAULT ROUTE ==="
@@ -52,22 +52,21 @@ ip route show default
 
 echo "=== PIA WATCHDOG & DAEMONS ==="
 ps | grep -E "pia" | grep -v grep || echo "No PIA watchdog or monitor processes found"
-ls -ld /tmp/pia* 2>/dev/null || echo "No /tmp/pia* files found"
+
+echo "=== EXTERNAL IP (via VPN) ==="
+curl -m 10 -s https://icanhazip.com 2>/dev/null || echo "Curl error"
 
 echo "=== WIREGUARD STATUS (oet1) ==="
 wg show oet1 2>/dev/null || ip link show oet1 2>/dev/null || echo "oet1 not found"
 
-echo "=== STARTUP CRASH LOG ==="
-tail -n 10 /tmp/pia-startup-crash.log 2>/dev/null || echo "No crash log"
+echo "=== IPTABLES FORWARD (Top 6) ==="
+iptables -L FORWARD -n -v --line-numbers 2>/dev/null | head -n 8
 
-echo "=== RECENT PIA SYSLOG MESSAGES ==="
-tail -n 15 /var/log/messages 2>/dev/null || echo "No /var/log/messages available"
+echo "=== IPTABLES OUTPUT WAN FILTER ==="
+iptables -L WAN_EGRESS_FILTER -n -v --line-numbers 2>/dev/null || echo "No WAN_EGRESS_FILTER"
 
-echo "=== CRON JOBS ==="
-nvram get cron_jobs 2>/dev/null
-
-echo "=== OPT STORAGE & DISK ==="
-df -h /opt 2>/dev/null
+echo "=== RECENT WATCHDOG LOG ==="
+tail -n 12 /tmp/pia-startup-crash.log 2>/dev/null || echo "No crash log"
 """
     code, out, err = run_ssh(ip, query_cmd, user=user)
     header = f"=== DD-WRT ROUTER: {name.upper() if name else ip} ({ip}) ==="

@@ -63,13 +63,23 @@ def decrypt_sops(enc_file_path):
     return res.stdout
 
 def push_file_to_ddwrt(ip, target_remote_path, content, mode=None, user="root"):
-    b64_content = base64.b64encode(content.encode("utf-8")).decode("utf-8")
+    key = get_ssh_key()
+    ssh_args = [
+        "ssh", "-o", "StrictHostKeyChecking=accept-new",
+        "-o", "BatchMode=yes", "-o", "ConnectTimeout=8",
+    ]
+    if key: ssh_args.extend(["-i", key])
     parent_dir = os.path.dirname(target_remote_path)
-    remote_script = f"mkdir -p '{parent_dir}' && echo '{b64_content}' | base64 -d > '{target_remote_path}'"
+    remote_cmd = f"mkdir -p '{parent_dir}' && cat > '{target_remote_path}'"
     if mode:
-        remote_script += f" && chmod {mode} '{target_remote_path}'"
-    code, _, err = run_ssh(ip, remote_script, user=user)
-    return code == 0, err
+        remote_cmd += f" && chmod {mode} '{target_remote_path}'"
+    ssh_args.extend([f"{user}@{ip}", remote_cmd])
+    try:
+        data = content.encode("utf-8") if isinstance(content, str) else content
+        res = subprocess.run(ssh_args, input=data, capture_output=True, timeout=30, check=False)
+        return res.returncode == 0, res.stderr.decode("utf-8", errors="replace")
+    except Exception as e:
+        return False, str(e)
 
 def restore_ddwrt(router="aurora", ip="10.25.25.1", user="root", dry_run=False):
     router_dir = os.path.join(DDWRT_BASE_DIR, router)
@@ -128,35 +138,55 @@ def restore_ddwrt(router="aurora", ip="10.25.25.1", user="root", dry_run=False):
     opt_sbin_dir = os.path.join(router_dir, "opt_sbin")
     if os.path.exists(opt_sbin_dir):
         for sname in os.listdir(opt_sbin_dir):
+            if ".bak" in sname or ".tmp" in sname:
+                continue
             spath = os.path.join(opt_sbin_dir, sname)
             with open(spath, "r", encoding="utf-8") as sf:
                 content = sf.read()
             remote_target = f"/opt/sbin/{sname}"
             if not dry_run:
-                s, _ = push_file_to_ddwrt(ip, remote_target, content, mode="755", user=user)
-                if s: restored.append(remote_target)
+                s, err = push_file_to_ddwrt(ip, remote_target, content, mode="755", user=user)
+                if s:
+                    restored.append(remote_target)
+                else:
+                    print(f"  ❌ Failed to push {remote_target}: {err.strip()}")
             else:
                 restored.append(f"[DRY-RUN] {remote_target}")
+        if not dry_run:
+            run_ssh(ip, "ln -sf /opt/sbin/pia-rotate /opt/sbin/rotate-pia; ln -sf /opt/sbin/pia-rotate /usr/sbin/rotate-pia 2>/dev/null || true", user=user)
+            restored.append("/opt/sbin/rotate-pia -> /opt/sbin/pia-rotate")
 
     # 5. Restore /opt/etc/pia-update/ (including decrypted credentials)
     opt_pia_dir = os.path.join(router_dir, "opt_etc_pia_update")
     if os.path.exists(opt_pia_dir):
         for pname in os.listdir(opt_pia_dir):
+            if ".bak" in pname or ".tmp" in pname:
+                continue
             ppath = os.path.join(opt_pia_dir, pname)
             if pname.endswith(".enc.yaml"):
                 real_name = pname.replace(".enc.yaml", "")
                 print(f"  🔓 Decrypting credentials {pname} via SOPS...")
                 dec = decrypt_sops(ppath)
-                data = json.loads(dec)
-                content = data.get("content", "")
+                try:
+                    import yaml
+                    data = yaml.safe_load(dec)
+                except Exception:
+                    data = json.loads(dec)
+                if isinstance(data, dict):
+                    content = data.get("content", dec)
+                else:
+                    content = dec
             else:
                 real_name = pname
                 with open(ppath, "r", encoding="utf-8") as pf:
                     content = pf.read()
             remote_target = f"/opt/etc/pia-update/{real_name}"
             if not dry_run:
-                s, _ = push_file_to_ddwrt(ip, remote_target, content, mode="600" if "cred" in real_name else "644", user=user)
-                if s: restored.append(remote_target)
+                s, err = push_file_to_ddwrt(ip, remote_target, content, mode="600" if "cred" in real_name else "644", user=user)
+                if s:
+                    restored.append(remote_target)
+                else:
+                    print(f"  ❌ Failed to push {remote_target}: {err.strip()}")
             else:
                 restored.append(f"[DRY-RUN] {remote_target}")
 

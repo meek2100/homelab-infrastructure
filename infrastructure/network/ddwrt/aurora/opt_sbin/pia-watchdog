@@ -89,68 +89,108 @@ load_credentials() {
     . "$CRED_FILE"
 }
 
+sync_system_clock() {
+    local yr
+    yr=$(date +%Y 2>/dev/null || echo "1970")
+    if [ "$yr" -lt 2024 ] || [ "$yr" -gt 2028 ]; then
+        log_msg "System clock invalid (Year $yr). Synchronizing via NTP..."
+        ntpclient -s -h pool.ntp.org -c 1 2>/dev/null || ntpclient -s -h 9.9.9.9 -c 1 2>/dev/null || true
+        log_msg "System clock updated to $(date)"
+    fi
+}
+
 # --- Killswitch & Routing Functions ---
 
 ensure_luna_access() {
-    # Ensure Luna transit subnet (10.20.20.0/24) is always priority Rules 1 & 2 in FORWARD
+    # Clean up legacy broad transit rules
     iptables -D FORWARD -d 10.20.20.0/24 -j ACCEPT 2>/dev/null || true
     iptables -D FORWARD -s 10.20.20.0/24 -j ACCEPT 2>/dev/null || true
-    iptables -I FORWARD 1 -d 10.20.20.0/24 -j ACCEPT
-    iptables -I FORWARD 1 -s 10.20.20.0/24 -j ACCEPT
+    iptables -D FORWARD -d 10.20.20.1 -j ACCEPT 2>/dev/null || true
+    iptables -D FORWARD -s 10.20.20.1 -j ACCEPT 2>/dev/null || true
+    iptables -t nat -D POSTROUTING -d 10.20.20.0/24 -j MASQUERADE 2>/dev/null || true
+    iptables -t nat -D POSTROUTING -d 10.20.20.1 -j MASQUERADE 2>/dev/null || true
 
-    # Ensure NAT masquerade for Luna transit subnet is active
-    if ! iptables -t nat -C POSTROUTING -d 10.20.20.0/24 -j MASQUERADE 2>/dev/null; then
-        iptables -t nat -I POSTROUTING 1 -d 10.20.20.0/24 -j MASQUERADE
+    # Restrict forwarding to Luna strictly to SSH (port 22)
+    iptables -D FORWARD -p tcp -s 10.20.20.1 --sport 22 -m state --state ESTABLISHED -j ACCEPT 2>/dev/null || true
+    iptables -D FORWARD -p tcp -d 10.20.20.1 --dport 22 -j ACCEPT 2>/dev/null || true
+    iptables -I FORWARD 1 -p tcp -s 10.20.20.1 --sport 22 -m state --state ESTABLISHED -j ACCEPT
+    iptables -I FORWARD 1 -p tcp -d 10.20.20.1 --dport 22 -j ACCEPT
+
+    if ! iptables -t nat -C POSTROUTING -p tcp -d 10.20.20.1 --dport 22 -j MASQUERADE 2>/dev/null; then
+        iptables -t nat -I POSTROUTING 1 -p tcp -d 10.20.20.1 --dport 22 -j MASQUERADE
+    fi
+}
+
+lockdown_wan_egress() {
+    local wan_if
+    wan_if=$(nvram get wan_iface)
+    [ -z "$wan_if" ] && wan_if="vlan2"
+
+    iptables -N WAN_EGRESS_FILTER 2>/dev/null || true
+    iptables -F WAN_EGRESS_FILTER 2>/dev/null || true
+    iptables -A WAN_EGRESS_FILTER -p tcp -d 10.20.20.1 --dport 22 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -p udp --dport 123 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -p udp --dport 1337 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -p udp --dport 51820 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -d 10.25.25.0/24 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -j REJECT
+    if ! iptables -C OUTPUT -o "$wan_if" -j WAN_EGRESS_FILTER 2>/dev/null; then
+        iptables -I OUTPUT -o "$wan_if" -j WAN_EGRESS_FILTER
+    fi
+}
+
+arm_rotation_egress() {
+    local wan_if
+    wan_if=$(nvram get wan_iface)
+    [ -z "$wan_if" ] && wan_if="vlan2"
+
+    iptables -N WAN_EGRESS_FILTER 2>/dev/null || true
+    iptables -F WAN_EGRESS_FILTER 2>/dev/null || true
+    iptables -A WAN_EGRESS_FILTER -p tcp -d 10.20.20.1 --dport 22 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -p udp --dport 123 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -p udp --dport 53 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -p tcp --dport 53 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -p tcp --dport 443 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -p tcp --dport 1337 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -p udp --dport 1337 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -p udp --dport 51820 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -p icmp -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -d 10.25.25.0/24 -j ACCEPT
+    iptables -A WAN_EGRESS_FILTER -j REJECT
+    if ! iptables -C OUTPUT -o "$wan_if" -j WAN_EGRESS_FILTER 2>/dev/null; then
+        iptables -I OUTPUT -o "$wan_if" -j WAN_EGRESS_FILTER
     fi
 }
 
 block_lan_internet() {
     local wan_if
     wan_if=$(nvram get wan_iface)
+    [ -z "$wan_if" ] && wan_if="vlan2"
     touch /tmp/pia_recovery.active 2>/dev/null || true
 
     # 1. Permanently isolate LAN from physical WAN (Fail-Closed Killswitch)
-    if [ -n "$wan_if" ]; then
-        if ! iptables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; then
-            iptables -I FORWARD -i br0 -o "$wan_if" -j REJECT
-            ensure_luna_access
-            log_msg "Killswitch ENGAGED. LAN isolated from physical WAN."
-        fi
+    if ! iptables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; then
+        iptables -I FORWARD -i br0 -o "$wan_if" -j REJECT
+        ensure_luna_access
+        log_msg "Killswitch ENGAGED. LAN isolated from physical WAN."
+    fi
 
-        # Block IPv6 on physical WAN if present
-        if command -v ip6tables >/dev/null 2>&1; then
-            if ! ip6tables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; then
-                ip6tables -I FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null || true
-            fi
-        fi
-
-        # 2. Block arbitrary local router egress on physical WAN during rotation/recovery
-        # Only allow: DNS (53), HTTPS (443), PIA API (1337), WireGuard (1337/51820), ICMP, and Transit subnets
-        iptables -N WAN_EGRESS_FILTER 2>/dev/null || true
-        iptables -F WAN_EGRESS_FILTER 2>/dev/null || true
-        iptables -A WAN_EGRESS_FILTER -p udp --dport 53 -j ACCEPT
-        iptables -A WAN_EGRESS_FILTER -p tcp --dport 53 -j ACCEPT
-        iptables -A WAN_EGRESS_FILTER -p tcp --dport 443 -j ACCEPT
-        iptables -A WAN_EGRESS_FILTER -p tcp --dport 1337 -j ACCEPT
-        iptables -A WAN_EGRESS_FILTER -p udp --dport 1337 -j ACCEPT
-        iptables -A WAN_EGRESS_FILTER -p udp --dport 51820 -j ACCEPT
-        iptables -A WAN_EGRESS_FILTER -p icmp -j ACCEPT
-        iptables -A WAN_EGRESS_FILTER -d 10.20.20.0/24 -j ACCEPT
-        iptables -A WAN_EGRESS_FILTER -d 10.25.25.0/24 -j ACCEPT
-        iptables -A WAN_EGRESS_FILTER -j REJECT
-        if ! iptables -C OUTPUT -o "$wan_if" -j WAN_EGRESS_FILTER 2>/dev/null; then
-            iptables -I OUTPUT -o "$wan_if" -j WAN_EGRESS_FILTER
+    # Block IPv6 on physical WAN if present
+    if command -v ip6tables >/dev/null 2>&1; then
+        if ! ip6tables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; then
+            ip6tables -I FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null || true
         fi
     fi
+
+    # 2. Strict lockdown on physical WAN egress
+    lockdown_wan_egress
 }
 
 unblock_lan_internet() {
     rm -f /tmp/pia_recovery.active 2>/dev/null || true
-
-    # NOTE: Both 'FORWARD -i br0 -o $wan_if -j REJECT' and 'OUTPUT -o $wan_if -j WAN_EGRESS_FILTER'
-    # are NEVER deleted! Valid VPN traffic routes via oet1 (not $wan_if), so keeping these
-    # rules permanently enforced guarantees 100% fail-closed protection for both LAN clients
-    # and local router processes, even if oet1 is torn down.
+    # Maintain strict lockdown on physical WAN - all normal internet traffic must flow via oet1
+    lockdown_wan_egress
+    ensure_luna_access
     log_msg "Tunnel operational. Fail-closed filters permanently active on physical WAN."
 }
 
@@ -173,14 +213,16 @@ get_pia_config() {
     local tmp_v6="/tmp/pia_server_list_v6.$$.tmp"
     local tmp_merged="/tmp/pia_server_list_merged.$$.tmp"
 
+    sync_system_clock
+
     log_msg "Generating new WireGuard key pair..."
     local privkey pubkey
     privkey=$(wg genkey)
     pubkey=$(echo "$privkey" | wg pubkey)
 
     # Fetch both v7 and v6 server lists to maximize server choices
-    curl --max-time 20 -s -o "$tmp_v7" "$PIA_SERVERLIST_V7_URL" 2>/dev/null || true
-    curl --max-time 20 -s -o "$tmp_v6" "$PIA_SERVERLIST_V6_URL" 2>/dev/null || true
+    curl --connect-timeout 10 --max-time 20 -sk -o "$tmp_v7" "$PIA_SERVERLIST_V7_URL" 2>/dev/null || true
+    curl --connect-timeout 10 --max-time 20 -sk -o "$tmp_v6" "$PIA_SERVERLIST_V6_URL" 2>/dev/null || true
 
     local line_v7 line_v6
     line_v7=$(head -n 1 "$tmp_v7" 2>/dev/null || echo "{}")
@@ -190,7 +232,7 @@ get_pia_config() {
     echo "$line_v7" "$line_v6" | jq -s -c '{regions: (([.[0].regions // [], .[1].regions // []] | add) | unique_by(.id))}' > "$tmp_merged" 2>/dev/null || cp "$tmp_v7" "$tmp_merged" 2>/dev/null || true
 
     local token
-    token=$(curl --max-time 30 -s -d "username=$PIA_USER&password=$PIA_PASS" "$PIA_TOKEN_URL" | jq -r '.token')
+    token=$(curl --connect-timeout 10 --max-time 30 -sk -d "username=$PIA_USER&password=$PIA_PASS" "$PIA_TOKEN_URL" 2>/dev/null | jq -r '.token // empty')
 
     if [ -z "$token" ] || [ "$token" = "null" ]; then
         log_msg "API ERROR: Failed to get auth token from PIA."
@@ -239,8 +281,8 @@ get_pia_config() {
         wg_ip=$(echo "$wg_servers_json" | jq -r ".[$random_index].ip")
         wg_cn=$(echo "$wg_servers_json" | jq -r ".[$random_index].cn")
 
-        if [ ! -f "$CERT_FILE" ]; then
-            curl --max-time 30 -s -o "$CERT_FILE" "$PIA_CA_CERT_URL"
+        if [ ! -f "$CERT_FILE" ] || [ ! -s "$CERT_FILE" ]; then
+            curl --connect-timeout 10 --max-time 30 -sk -o "$CERT_FILE" "$PIA_CA_CERT_URL" 2>/dev/null || true
         fi
 
         local pubkey_encoded token_encoded add_key_url conn_json status peer_ip server_key dns1 dns2
@@ -248,8 +290,11 @@ get_pia_config() {
         token_encoded=$(echo "$token" | sed 's/+/%2B/g; s/\//%2F/g; s/=/%3D/g')
         add_key_url="https://$wg_cn:1337/addKey?pt=${token_encoded}&pubkey=${pubkey_encoded}"
 
-        conn_json=$(curl --max-time 30 -s -G --cacert "$CERT_FILE" --connect-to "$wg_cn:1337:$wg_ip:1337" "$add_key_url")
-        status=$(echo "$conn_json" | jq -r '.status')
+        conn_json=$(curl --connect-timeout 10 --max-time 30 -s -G --cacert "$CERT_FILE" --connect-to "$wg_cn:1337:$wg_ip:1337" "$add_key_url" 2>/dev/null || true)
+        if [ -z "$conn_json" ] || [ "$(echo "$conn_json" | jq -r '.status // empty')" != "OK" ]; then
+            conn_json=$(curl --connect-timeout 10 --max-time 30 -sk -G --connect-to "$wg_cn:1337:$wg_ip:1337" "$add_key_url" 2>/dev/null || true)
+        fi
+        status=$(echo "$conn_json" | jq -r '.status // empty')
 
         if [ "$status" != "OK" ]; then continue; fi
 
@@ -329,7 +374,7 @@ main() {
     while true; do
         # 1. Normal State: Check VPN Health
         if ping -c 3 -W 2 "$VPN_CHECK_IP" >/dev/null 2>&1; then
-            # Ensure Luna router (10.20.20.1) rules remain top priority
+            # Ensure Luna router (10.20.20.1) SSH-only rules remain top priority
             ensure_luna_access
             unblock_lan_internet
             sleep $HEALTH_CHECK_INTERVAL
@@ -347,6 +392,8 @@ main() {
 
         # 3. Recovery Loop
         while true; do
+            arm_rotation_egress
+            sync_system_clock
             log_msg "Checking raw ISP connectivity ($RAW_CHECK_IP)..."
             if ping -c 3 -W 2 "$RAW_CHECK_IP" >/dev/null 2>&1; then
                 log_msg "ISP is UP. Attempting PIA API rotation..."
@@ -363,6 +410,9 @@ main() {
             else
                 log_msg "ISP is DOWN. Waiting out outage. Backing off for ${backoff}s."
             fi
+
+            # Lock down physical WAN during backoff sleep to prevent leaks
+            lockdown_wan_egress
 
             # Exponential backoff scaling
             sleep "$backoff"

@@ -554,7 +554,7 @@ def manage_openwrt(
 
 @mcp.tool()
 def manage_ddwrt(
-    action: Literal["status", "backup", "restore"] = "status",
+    action: Literal["status", "backup", "restore", "rotate"] = "status",
     router: Literal["all", "aurora", "luna"] = "all",
     config_file: str | None = None
 ) -> str:
@@ -562,7 +562,8 @@ def manage_ddwrt(
     Actions:
       - 'status': Check router uptime, WAN IP, WireGuard tunnel, and firewall rules.
       - 'backup': Export NVRAM variables and rc_firewall startup scripts encrypted via SOPS.
-      - 'restore': Restore NVRAM configurations from Git backup."""
+      - 'restore': Restore NVRAM configurations from Git backup.
+      - 'rotate': Trigger instant PIA WireGuard VPN rotation on Aurora router."""
     action = action.lower().strip()
     if action == "status":
         return run_script("get-ddwrt-status.py", ["--router", router])
@@ -572,7 +573,9 @@ def manage_ddwrt(
         args = ["--router", router]
         if config_file: args.extend(["--file", config_file])
         return run_script("restore-ddwrt-config.py", args)
-    return f"Unknown action: '{action}'. Valid actions: status, backup, restore."
+    elif action == "rotate":
+        return run_script("rotate-ddwrt-vpn.py")
+    return f"Unknown action: '{action}'. Valid actions: status, backup, restore, rotate."
 
 
 # ==============================================================================

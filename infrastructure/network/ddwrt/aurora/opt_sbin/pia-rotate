@@ -7,43 +7,67 @@ killall -9 pia-watchdog 2>/dev/null || true
 rm -rf /tmp/pia_watchdog.lock 2>/dev/null || true
 sleep 1
 
-# 2. Immediately enforce fail-closed killswitch BEFORE tearing down interface
+# 2. Immediately enforce fail-closed killswitch on physical WAN
 touch /tmp/pia_recovery.active 2>/dev/null || true
 wan_if=$(nvram get wan_iface)
-if [ -n "$wan_if" ]; then
-    iptables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null || iptables -I FORWARD -i br0 -o "$wan_if" -j REJECT
+[ -z "$wan_if" ] && wan_if="vlan2"
 
-    # Arm local router egress filter on physical WAN
-    iptables -N WAN_EGRESS_FILTER 2>/dev/null || true
-    iptables -F WAN_EGRESS_FILTER 2>/dev/null || true
-    iptables -A WAN_EGRESS_FILTER -p udp --dport 53 -j ACCEPT
-    iptables -A WAN_EGRESS_FILTER -p tcp --dport 53 -j ACCEPT
-    iptables -A WAN_EGRESS_FILTER -p tcp --dport 443 -j ACCEPT
-    iptables -A WAN_EGRESS_FILTER -p tcp --dport 1337 -j ACCEPT
-    iptables -A WAN_EGRESS_FILTER -p udp --dport 1337 -j ACCEPT
-    iptables -A WAN_EGRESS_FILTER -p udp --dport 51820 -j ACCEPT
-    iptables -A WAN_EGRESS_FILTER -p icmp -j ACCEPT
-    iptables -A WAN_EGRESS_FILTER -d 10.20.20.0/24 -j ACCEPT
-    iptables -A WAN_EGRESS_FILTER -d 10.25.25.0/24 -j ACCEPT
-    iptables -A WAN_EGRESS_FILTER -j REJECT
-    if ! iptables -C OUTPUT -o "$wan_if" -j WAN_EGRESS_FILTER 2>/dev/null; then
-        iptables -I OUTPUT -o "$wan_if" -j WAN_EGRESS_FILTER
-    fi
-fi
-# Re-ensure Luna transit subnet (10.20.20.0/24) stays at Rules 1 & 2 above the killswitch
+iptables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null || iptables -I FORWARD -i br0 -o "$wan_if" -j REJECT
+
+# Restrict Luna transit strictly to SSH (port 22) only - remove legacy broad 10.20.20.0/24
 iptables -D FORWARD -d 10.20.20.0/24 -j ACCEPT 2>/dev/null || true
 iptables -D FORWARD -s 10.20.20.0/24 -j ACCEPT 2>/dev/null || true
-iptables -I FORWARD 1 -d 10.20.20.0/24 -j ACCEPT
-iptables -I FORWARD 1 -s 10.20.20.0/24 -j ACCEPT
-iptables -t nat -C POSTROUTING -d 10.20.20.0/24 -j MASQUERADE 2>/dev/null || iptables -t nat -I POSTROUTING 1 -d 10.20.20.0/24 -j MASQUERADE
+iptables -D FORWARD -d 10.20.20.1 -j ACCEPT 2>/dev/null || true
+iptables -D FORWARD -s 10.20.20.1 -j ACCEPT 2>/dev/null || true
+iptables -t nat -D POSTROUTING -d 10.20.20.0/24 -j MASQUERADE 2>/dev/null || true
+iptables -t nat -D POSTROUTING -d 10.20.20.1 -j MASQUERADE 2>/dev/null || true
 
+iptables -D FORWARD -p tcp -s 10.20.20.1 --sport 22 -m state --state ESTABLISHED -j ACCEPT 2>/dev/null || true
+iptables -D FORWARD -p tcp -d 10.20.20.1 --dport 22 -j ACCEPT 2>/dev/null || true
+iptables -I FORWARD 1 -p tcp -s 10.20.20.1 --sport 22 -m state --state ESTABLISHED -j ACCEPT
+iptables -I FORWARD 1 -p tcp -d 10.20.20.1 --dport 22 -j ACCEPT
 
+if ! iptables -t nat -C POSTROUTING -p tcp -d 10.20.20.1 --dport 22 -j MASQUERADE 2>/dev/null; then
+    iptables -t nat -I POSTROUTING 1 -p tcp -d 10.20.20.1 --dport 22 -j MASQUERADE
+fi
+
+# Arm temporary rotation egress filter on physical WAN (includes NTP port 123)
+iptables -N WAN_EGRESS_FILTER 2>/dev/null || true
+iptables -F WAN_EGRESS_FILTER 2>/dev/null || true
+iptables -A WAN_EGRESS_FILTER -p tcp -d 10.20.20.1 --dport 22 -j ACCEPT
+iptables -A WAN_EGRESS_FILTER -p udp --dport 123 -j ACCEPT
+iptables -A WAN_EGRESS_FILTER -p udp --dport 53 -j ACCEPT
+iptables -A WAN_EGRESS_FILTER -p tcp --dport 53 -j ACCEPT
+iptables -A WAN_EGRESS_FILTER -p tcp --dport 443 -j ACCEPT
+iptables -A WAN_EGRESS_FILTER -p tcp --dport 1337 -j ACCEPT
+iptables -A WAN_EGRESS_FILTER -p udp --dport 1337 -j ACCEPT
+iptables -A WAN_EGRESS_FILTER -p udp --dport 51820 -j ACCEPT
+iptables -A WAN_EGRESS_FILTER -p icmp -j ACCEPT
+iptables -A WAN_EGRESS_FILTER -d 10.25.25.0/24 -j ACCEPT
+iptables -A WAN_EGRESS_FILTER -j REJECT
+if ! iptables -C OUTPUT -o "$wan_if" -j WAN_EGRESS_FILTER 2>/dev/null; then
+    iptables -I OUTPUT -o "$wan_if" -j WAN_EGRESS_FILTER
+fi
 
 # 3. Take down the tunnel (Forces watchdog into fresh rotation)
 ip link set oet1 down 2>/dev/null || ifconfig oet1 down 2>/dev/null || true
 
-# 4. Start a fresh watchdog daemon (It will immediately see oet1 is down and rotate)
+# 4. Start fresh watchdog daemon
+rm -f /tmp/pia-startup-crash.log
 /opt/sbin/pia-watchdog > /tmp/pia-startup-crash.log 2>&1 &
 
-echo "--> Rotation triggered with zero-leak fail-closed lock! WireGuard will recover in ~15-30s."
+echo "--> Rotation initiated. Waiting for WireGuard handshake..."
+i=1
+while [ "$i" -le 15 ]; do
+    sleep 2
+    if ip link show oet1 >/dev/null 2>&1 && ping -c 1 -W 2 -I oet1 10.0.0.242 >/dev/null 2>&1; then
+        label=$(nvram get oet1_label 2>/dev/null || echo "PIA")
+        peer=$(nvram get oet1_rem0 2>/dev/null || echo "")
+        echo "--> SUCCESS: WireGuard tunnel (oet1) is UP and connected to $label ($peer)!"
+        exit 0
+    fi
+    i=$((i + 1))
+done
+
+echo "--> NOTE: WireGuard tunnel recovery in progress. Check '/tmp/pia-startup-crash.log' for details."
 
