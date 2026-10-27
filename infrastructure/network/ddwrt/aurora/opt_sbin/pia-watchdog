@@ -191,6 +191,7 @@ block_lan_internet() {
     wan_if=$(nvram get wan_iface)
     [ -z "$wan_if" ] && wan_if="vlan2"
     touch /tmp/pia_recovery.active 2>/dev/null || true
+    rm -f /tmp/pia_tunnel.healthy 2>/dev/null || true
 
     # 1. Permanently isolate LAN from physical WAN (Fail-Closed Killswitch)
     if ! iptables -C FORWARD -i br0 -o "$wan_if" -j REJECT 2>/dev/null; then
@@ -215,7 +216,10 @@ unblock_lan_internet() {
     # Maintain strict lockdown on physical WAN - all normal internet traffic must flow via oet1
     lockdown_wan_egress
     ensure_luna_access
-    log_msg "Tunnel operational. Fail-closed filters permanently active on physical WAN."
+    if [ ! -f /tmp/pia_tunnel.healthy ]; then
+        touch /tmp/pia_tunnel.healthy 2>/dev/null || true
+        log_msg "Tunnel operational. Fail-closed filters active on physical WAN."
+    fi
 }
 
 
