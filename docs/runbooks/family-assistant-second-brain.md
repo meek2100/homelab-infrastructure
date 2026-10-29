@@ -85,7 +85,7 @@ The active crontab on the system runs the following autonomous pipelines:
 Run the automated 5-point evaluation suite against Open WebUI:
 
 ```bash
-.venv/bin/python3 mcp/homelab/scripts/eval-family-assistant.py --model family-assistant
+.venv/bin/python3 mcp/homelab/scripts/ai/eval-family-assistant.py --model family-assistant
 ```
 
 Expected result: 5/5 Passed (100.0%) across Groceries, Calendar, Recipes, Maintenance, and Homelab Fleet Health.
@@ -126,10 +126,10 @@ Synchronize local Python tools and the global filter function to Open WebUI:
 
 ```bash
 # Sync tools and valves
-.venv/bin/python3 mcp/homelab/scripts/manage-openwebui.py sync_tools
+.venv/bin/python3 mcp/homelab/scripts/ai/manage-openwebui.py sync_tools
 
 # Inspect tool valves
-.venv/bin/python3 mcp/homelab/scripts/manage-openwebui.py inspect_valves --tool-id microsoft_to_do_groceries_manager
+.venv/bin/python3 mcp/homelab/scripts/ai/manage-openwebui.py inspect_valves --tool-id microsoft_to_do_groceries_manager
 ```
 
 ### 5. Secrets Backup & Restore (SOPS + age)

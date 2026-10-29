@@ -42,7 +42,7 @@ def list_tools():
         print(f"  • {t['id']:<35} | Specs: {', '.join(specs)}")
 
 def sync_tools():
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
     tools_dir = os.path.join(repo_root, "infrastructure", "open-webui", "tools")
     if not os.path.exists(tools_dir):
         print(f"Error: Directory {tools_dir} does not exist", file=sys.stderr)
