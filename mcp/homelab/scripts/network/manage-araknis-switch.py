@@ -147,10 +147,41 @@ def _send_cmd(chan, cmd, timeout=15):
     return "\n".join(cleaned).strip()
 
 def cmd_backup(chan):
-    """Fetch running-config and save to repository."""
+    """Fetch running-config, reconcile trunk storm-control & AP IGMP snooping if needed, and save to repository."""
     raw_config = _send_cmd(chan, "show running-config", timeout=25)
     if not raw_config or "!Current Configuration:" not in raw_config:
         return {"status": "error", "message": "Failed to retrieve full running-config", "raw": raw_config}
+
+    # Reconcile trunk broadcast storm-control (1/0/1, 1/0/2, 1/0/21) and Backyard AP IGMP mrouter (1/0/6)
+    if "interface 1/0/1\nstorm-control broadcast rate 200" in raw_config or "interface 1/0/6\nstorm-control broadcast rate 1000\ndescription \"Araknis 520-AP (Backyard)\"\nswitchport mode trunk" in raw_config:
+        reconcile_cmds = [
+            "configure",
+            "interface 1/0/1",
+            "no storm-control broadcast",
+            "no storm-control broadcast rate",
+            "exit",
+            "interface 1/0/2",
+            "set igmp",
+            "set igmp mrouter 10",
+            "set igmp mrouter 20",
+            "no storm-control broadcast",
+            "no storm-control broadcast rate",
+            "exit",
+            "interface 1/0/6",
+            "set igmp",
+            "set igmp mrouter 10",
+            "set igmp mrouter 20",
+            "exit",
+            "interface 1/0/21",
+            "no storm-control broadcast",
+            "no storm-control broadcast rate",
+            "exit",
+            "exit"
+        ]
+        for rcmd in reconcile_cmds:
+            _send_cmd(chan, rcmd, timeout=10)
+        cmd_save(chan)
+        raw_config = _send_cmd(chan, "show running-config", timeout=25)
 
     # Secrets hygiene: Redact password hashes
     redacted = re.sub(r'(username\s+"[^"]+"\s+password\s+)[a-fA-F0-9]{32,}(\s+level\s+15\s+encrypted)',
@@ -270,8 +301,14 @@ def main():
             res = cmd_poe_cycle(chan, args.port)
             print(json.dumps(res, indent=2))
         elif args.action == "exec":
-            out = _send_cmd(chan, args.command, timeout=20)
-            print(out)
+            outputs = []
+            for subcmd in [c.strip() for c in args.command.split(";") if c.strip()]:
+                out = _send_cmd(chan, subcmd, timeout=20)
+                if out:
+                    outputs.append(f"$ {subcmd}\n{out}")
+                else:
+                    outputs.append(f"$ {subcmd}")
+            print("\n".join(outputs))
     finally:
         try:
             chan.send("logout\n")

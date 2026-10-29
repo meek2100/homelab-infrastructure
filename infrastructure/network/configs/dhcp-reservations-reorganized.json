@@ -291,13 +291,13 @@
     {
       "enable": true,
       "macAddress": "90:DD:5D:E3:8A:43",
-      "staticIPAddress": "192.168.20.96",
+      "staticIPAddress": "192.168.20.220",
       "name": "Apple TV WiFi"
     },
     {
       "enable": true,
       "macAddress": "90:DD:5D:E1:E5:FE",
-      "staticIPAddress": "192.168.20.97",
+      "staticIPAddress": "192.168.20.221",
       "name": "Apple TV Wired"
     },
     {
@@ -628,13 +628,13 @@
       "enable": true,
       "macAddress": "00:0F:FF:0C:41:CA",
       "staticIPAddress": "192.168.175.201",
-      "name": "Triad SA1 Streaming Amp"
+      "name": "Triad SA1 Test (VLAN 175)"
     },
     {
       "enable": true,
       "macAddress": "00:0F:FF:0C:33:AE",
       "staticIPAddress": "192.168.200.205",
-      "name": "Control4 Core-5 Controller"
+      "name": "Control4 Core-5 Test (VLAN 200)"
     }
   ]
 }

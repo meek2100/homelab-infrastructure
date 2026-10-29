@@ -6,6 +6,14 @@ source /etc/network/interfaces.d/*
 # The loopback network interface
 auto lo
 iface lo inet loopback
+    post-up ip addr add 8.8.8.8/32 dev lo || true
+    post-up ip addr add 8.8.4.4/32 dev lo || true
+    post-up ip addr add 1.1.1.1/32 dev lo || true
+    post-up ip addr add 1.0.0.1/32 dev lo || true
+    pre-down ip addr del 8.8.8.8/32 dev lo || true
+    pre-down ip addr del 8.8.4.4/32 dev lo || true
+    pre-down ip addr del 1.1.1.1/32 dev lo || true
+    pre-down ip addr del 1.0.0.1/32 dev lo || true
 
 # The primary network interface
 allow-hotplug ens18

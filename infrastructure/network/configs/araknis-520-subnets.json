@@ -118,8 +118,8 @@
       "ipRangeHigh": "192.168.150.99",
       "leaseTime": 720,
       "dnsServerMode": "Static",
-      "dns1": "1.1.1.1",
-      "dns2": "1.0.0.1",
+      "dns1": "192.168.40.185",
+      "dns2": "192.168.40.186",
       "dhcpOptions": [
         {
           "name": "Local NTP Server"
@@ -156,8 +156,8 @@
       "ipRangeHigh": "192.168.200.99",
       "leaseTime": 720,
       "dnsServerMode": "Static",
-      "dns1": "1.1.1.1",
-      "dns2": "1.0.0.1",
+      "dns1": "192.168.40.185",
+      "dns2": "192.168.40.186",
       "dhcpOptions": [
         {
           "name": "Local NTP Server"

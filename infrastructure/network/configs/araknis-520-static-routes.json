@@ -1,0 +1,52 @@
+{
+  "staticRoute": [
+    {
+      "destination": "192.168.2.0",
+      "subnetMask": "255.255.255.0",
+      "gateway": "192.168.1.225",
+      "interface": "LAN"
+    },
+    {
+      "destination": "100.64.0.0",
+      "subnetMask": "255.192.0.0",
+      "gateway": "192.168.40.185",
+      "interface": "LAN"
+    },
+    {
+      "destination": "10.8.0.0",
+      "subnetMask": "255.255.255.0",
+      "gateway": "192.168.40.185",
+      "interface": "LAN"
+    },
+    {
+      "destination": "10.20.20.0",
+      "subnetMask": "255.255.255.0",
+      "gateway": "10.25.25.1",
+      "interface": "WAN2"
+    },
+    {
+      "destination": "8.8.8.8",
+      "subnetMask": "255.255.255.255",
+      "gateway": "192.168.40.185",
+      "interface": "LAN"
+    },
+    {
+      "destination": "8.8.4.4",
+      "subnetMask": "255.255.255.255",
+      "gateway": "192.168.40.185",
+      "interface": "LAN"
+    },
+    {
+      "destination": "1.1.1.1",
+      "subnetMask": "255.255.255.255",
+      "gateway": "192.168.40.185",
+      "interface": "LAN"
+    },
+    {
+      "destination": "1.0.0.1",
+      "subnetMask": "255.255.255.255",
+      "gateway": "192.168.40.185",
+      "interface": "LAN"
+    }
+  ]
+}

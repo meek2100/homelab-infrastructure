@@ -658,12 +658,12 @@
   },
   {
     "name": "Apple TV Wired",
-    "staticIP": "192.168.20.97",
+    "staticIP": "192.168.20.221",
     "mac": "90:DD:5D:E1:E5:FE",
     "vlan": "VLAN 20 (Guest/AV)",
     "room": "Office",
     "tags": "device_audio",
-    "notes": "Apple TV Wired, but not getting an IP since switching netgear port to vlan20?"
+    "notes": "Apple TV Wired on VLAN 20 (.221 media tier)"
   },
   {
     "name": "Laird Connectivity Module",
@@ -892,12 +892,12 @@
   },
   {
     "name": "Apple TV WiFi",
-    "staticIP": "192.168.20.96",
+    "staticIP": "192.168.20.220",
     "mac": "90:DD:5D:E3:8A:43",
     "vlan": "VLAN 20 (Guest/AV)",
     "room": "Office",
-    "tags": "?",
-    "notes": "New, needs DHCP reservation"
+    "tags": "device_audio",
+    "notes": "Apple TV WiFi on VLAN 20 (.220 media tier)"
   },
   {
     "name": "Kimber's iPhone",

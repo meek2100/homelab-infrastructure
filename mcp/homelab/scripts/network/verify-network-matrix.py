@@ -32,6 +32,10 @@ TARGETS = [
     # Core DNS & Admin Services (VLAN 40 / VLAN 1)
     {"name": "AdGuard Home Primary (nexus)", "ip": "192.168.40.185", "tcp": [53, 80, 443], "category": "Core Admin Service"},
     {"name": "AdGuard Home Secondary (nexus2)", "ip": "192.168.40.186", "tcp": [53], "category": "Core Admin Service"},
+    {"name": "Intercepted DNS (8.8.8.8 -> AdGuard)", "ip": "8.8.8.8", "tcp": [53, 443], "category": "DNS Interception"},
+    {"name": "Intercepted DNS (8.8.4.4 -> AdGuard)", "ip": "8.8.4.4", "tcp": [53, 443], "category": "DNS Interception"},
+    {"name": "Intercepted DNS (1.1.1.1 -> AdGuard)", "ip": "1.1.1.1", "tcp": [53, 443], "category": "DNS Interception"},
+    {"name": "Intercepted DNS (1.0.0.1 -> AdGuard)", "ip": "1.0.0.1", "tcp": [53, 443], "category": "DNS Interception"},
     {"name": "PBS Backup Server (pve3 LXC 105)", "ip": "192.168.1.244", "tcp": [8007], "category": "Core Admin Service"},
     {"name": "luna-server (Smart Home VM 102)", "ip": "192.168.40.249", "tcp": [22, 8123, 8581], "category": "Smart Home Admin"},
     {"name": "media-server (VM 103)", "ip": "192.168.40.247", "tcp": [22, 5055, 13378], "category": "Media Admin"},
@@ -82,9 +86,28 @@ def test_tcp_port(ip, port, timeout=1.5):
                 time.sleep(0.2)
     return False
 
+def test_udp_dns(ip, domain="stats.grafana.org", timeout=1.5):
+    """Send a minimal DNS A query over UDP 53 and return (ok, rtt_ms)."""
+    import struct
+    query = b"\x12\x34\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00"
+    for label in domain.split("."):
+        query += struct.pack("B", len(label)) + label.encode("ascii")
+    query += b"\x00\x00\x01\x00\x01"
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(timeout)
+        t0 = time.time()
+        s.sendto(query, (ip, 53))
+        data, _ = s.recvfrom(512)
+        rtt = (time.time() - t0) * 1000
+        s.close()
+        return len(data) >= 12 and data[:2] == b"\x12\x34", rtt
+    except Exception:
+        return False, 0.0
+
 def verify_network_matrix(profile="all"):
     results = []
-    header = "| Target Device | IP Address | Category | ICMP Ping | TCP Ports Tested | Status |\n| :--- | :--- | :--- | :---: | :--- | :---: |"
+    header = "| Target Device | IP Address | Category | ICMP Ping | TCP/UDP Ports Tested | Status |\n| :--- | :--- | :--- | :---: | :--- | :---: |"
     results.append(header)
 
     for item in TARGETS:
@@ -96,6 +119,10 @@ def verify_network_matrix(profile="all"):
             open_port = test_tcp_port(item["ip"], port)
             icon = "🟢" if open_port else "🔴"
             tcp_status.append(f"{icon} :{port}")
+        if 53 in item.get("tcp", []):
+            dns_ok, dns_rtt = test_udp_dns(item["ip"])
+            dns_icon = "🟢" if dns_ok else "🔴"
+            tcp_status.append(f"{dns_icon} UDP:53 ({dns_rtt:.1f}ms)")
 
         tcp_str = ", ".join(tcp_status) if tcp_status else "—"
         overall = "🟢 PASS" if (is_alive or any("🟢" in s for s in tcp_status)) else "🔴 FAIL"

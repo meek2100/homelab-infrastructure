@@ -208,6 +208,7 @@ def cmd_status(s, host):
         "lan_subnets":       "/config/lan/subnets",
         "dhcp_reservations": "/config/lan/dhcp-reservation",
         "firewall":          "/config/firewall",
+        "static_routes":     "/config/static-route",
     }
 
     results = {}
@@ -218,6 +219,13 @@ def cmd_status(s, host):
         except Exception as e:
             errors.append(f"{key}: {e}")
             results[key] = {"error": str(e)}
+    try:
+        v_resp = s.get(f"https://{host}/api/cgi-bin/v2/config/vlans", timeout=10)
+        v_resp.raise_for_status()
+        results["vlans_v2"] = v_resp.json()
+    except Exception as e:
+        errors.append(f"vlans_v2: {e}")
+        results["vlans_v2"] = {"error": str(e)}
 
     lines = [f"=== Araknis 520 Router Status ({host}) ===\n"]
 
@@ -235,8 +243,9 @@ def cmd_status(s, host):
         ]
 
     for section, key in [("System Stats", "system_stats"), ("WAN Status", "wan_status"),
-                          ("LAN Subnets", "lan_subnets"), ("DHCP Reservations", "dhcp_reservations"),
-                          ("Firewall", "firewall")]:
+                          ("Firewall", "firewall"), ("Static Routes", "static_routes"),
+                          ("VLANs v2", "vlans_v2"), ("LAN Subnets", "lan_subnets"),
+                          ("DHCP Reservations", "dhcp_reservations")]:
         data = results.get(key, {})
         if data and "error" not in data:
             lines += [f"[{section}]", json.dumps(data, indent=2), ""]
@@ -321,12 +330,39 @@ def cmd_get_dhcp_options(s, host):
     return api_get(s, host, "/config/lan/dhcp-options")
 
 
+def api_put_with_retry(s, host, path, data, timeout=20, v2=False):
+    import time
+    url = f"https://{host}/api/cgi-bin/v2{path}" if v2 else f"https://{host}{BASE_PATH}{path}"
+    for attempt in range(8):
+        resp = s.put(url, json=data, timeout=timeout)
+        resp.raise_for_status()
+        try:
+            j = resp.json()
+            if j.get("resultMessage", {}).get("code") == 100 and attempt < 7:
+                time.sleep(3.5)
+                continue
+            return j
+        except Exception:
+            return {"status_code": resp.status_code, "text": resp.text}
+    return j
+
+
 def cmd_apply_subnets(s, host, payload_file):
-    """Apply LAN subnet configurations from a JSON file."""
+    """Apply LAN subnet configurations, DHCP reservations, VLANs, or static routes from a JSON file based on payload keys."""
     with open(payload_file, "r") as f:
         payload = json.load(f)
-    resp = api_put(s, host, "/config/lan/subnets", payload)
-    return {"status": "success", "response": resp}
+    if "dhcpReservations" in payload:
+        resp = api_put_with_retry(s, host, "/config/lan/dhcp-reservation", payload, timeout=30)
+        return {"status": "success", "endpoint": "/config/lan/dhcp-reservation", "response": resp}
+    elif "vlanConfigV2" in payload:
+        resp = api_put_with_retry(s, host, "/config/vlans", payload, timeout=30, v2=True)
+        return {"status": "success", "endpoint": "/v2/config/vlans", "response": resp}
+    elif "staticRoute" in payload:
+        resp = api_put_with_retry(s, host, "/config/static-route", payload, timeout=30)
+        return {"status": "success", "endpoint": "/config/static-route", "response": resp}
+    else:
+        resp = api_put_with_retry(s, host, "/config/lan/subnets", payload, timeout=30)
+        return {"status": "success", "endpoint": "/config/lan/subnets", "response": resp}
 
 
 def cmd_set_upnp(s, host, enable=True):
@@ -381,11 +417,25 @@ def cmd_apply_vlans(s, host, payload_file):
         return {"status": "success", "status_code": resp.status_code, "text": resp.text}
 
 
+def cmd_get_static_routes(s, host):
+    """Retrieve static routes configuration (v1 API)."""
+    data = api_get(s, host, "/config/static-route")
+    return {"status": "success", "static_routes": data}
+
+
+def cmd_apply_static_routes(s, host, payload_file):
+    """Apply static routes configuration from JSON file (v1 API)."""
+    with open(payload_file, "r") as f:
+        payload = json.load(f)
+    resp = api_put(s, host, "/config/static-route", payload, timeout=20)
+    return {"status": "success", "response": resp}
+
+
 def main():
     parser = argparse.ArgumentParser(description="Araknis 520 Router REST API Management Tool")
-    parser.add_argument("action", choices=["backup", "status", "dhcp-table", "get-acls", "apply-acls", "apply-dhcp", "get-subnets", "apply-subnets", "get-dhcp-options", "get-vlans", "apply-vlans", "enable-upnp", "restore"])
+    parser.add_argument("action", choices=["backup", "status", "dhcp-table", "get-acls", "apply-acls", "apply-dhcp", "get-subnets", "apply-subnets", "get-dhcp-options", "get-vlans", "apply-vlans", "get-static-routes", "apply-static-routes", "enable-upnp", "restore"])
     parser.add_argument("--backup-file", help="Path to backup file (for restore)")
-    parser.add_argument("--payload-file", help="Path to JSON file containing payload (for apply-acls, apply-dhcp, apply-subnets, apply-vlans)")
+    parser.add_argument("--payload-file", help="Path to JSON file containing payload (for apply-acls, apply-dhcp, apply-subnets, apply-vlans, apply-static-routes)")
     parser.add_argument("--json", action="store_true", help="Output raw JSON")
     args = parser.parse_args()
 
@@ -424,6 +474,12 @@ def main():
             if not args.payload_file:
                 raise ValueError("--payload-file required for apply-vlans")
             result = cmd_apply_vlans(s, host, args.payload_file)
+        elif args.action == "get-static-routes":
+            result = cmd_get_static_routes(s, host)
+        elif args.action == "apply-static-routes":
+            if not args.payload_file:
+                raise ValueError("--payload-file required for apply-static-routes")
+            result = cmd_apply_static_routes(s, host, args.payload_file)
         elif args.action == "enable-upnp":
             result = cmd_set_upnp(s, host, enable=True)
         elif args.action == "restore":

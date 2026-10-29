@@ -358,7 +358,14 @@ def manage_apt_packages(
 
 @mcp.tool()
 def manage_araknis_router(
-    action: Literal["status", "backup", "restore", "get_acls", "apply_acls", "get_subnets", "apply_subnets", "get_dhcp_options"] = "status",
+    action: Literal[
+        "status", "backup", "restore",
+        "get_acls", "apply_acls",
+        "get_subnets", "apply_subnets",
+        "get_dhcp_options", "dhcp_table", "apply_dhcp",
+        "get_vlans", "apply_vlans",
+        "get_static_routes", "apply_static_routes"
+    ] = "status",
     config_file: str | None = None,
     payload_file: str | None = None,
     confirm: bool = False
@@ -372,7 +379,13 @@ def manage_araknis_router(
       - 'apply_acls': Apply ACL rules from JSON payload_file (confirm=True required).
       - 'get_subnets': Fetch live LAN subnets and assigned DHCP options in JSON.
       - 'apply_subnets': Apply updated subnet and DHCP option assignments from JSON payload_file (confirm=True required).
-      - 'get_dhcp_options': Fetch global DHCP options definitions in JSON."""
+      - 'get_dhcp_options': Fetch global DHCP options definitions in JSON.
+      - 'dhcp_table': Fetch DHCP reservations and active leases.
+      - 'apply_dhcp': Apply DHCP reservations from JSON payload_file (confirm=True required).
+      - 'get_vlans': Fetch 802.1Q VLAN ports and inter-zone routing configuration (v2 API).
+      - 'apply_vlans': Apply 802.1Q VLAN ports and inter-zone routing from JSON payload_file (confirm=True required).
+      - 'get_static_routes': Fetch static routes configuration in JSON.
+      - 'apply_static_routes': Apply static routes from JSON payload_file (confirm=True required)."""
     action = action.lower().strip()
     if action == "status":
         return run_script("manage-araknis-router.py", ["status"])
@@ -396,34 +409,67 @@ def manage_araknis_router(
         return run_script("manage-araknis-router.py", ["apply-subnets", "--payload-file", payload_file])
     elif action == "get_dhcp_options":
         return run_script("manage-araknis-router.py", ["get-dhcp-options", "--json"])
+    elif action == "dhcp_table":
+        return run_script("manage-araknis-router.py", ["dhcp-table", "--json"])
+    elif action == "apply_dhcp":
+        if not payload_file:
+            return "Error: 'payload_file' required for apply_dhcp."
+        if not confirm:
+            return "Error: 'confirm=True' required to apply live router DHCP reservations."
+        return run_script("manage-araknis-router.py", ["apply-dhcp", "--payload-file", payload_file])
+    elif action == "get_vlans":
+        return run_script("manage-araknis-router.py", ["get-vlans", "--json"])
+    elif action == "apply_vlans":
+        if not payload_file:
+            return "Error: 'payload_file' required for apply_vlans."
+        if not confirm:
+            return "Error: 'confirm=True' required to apply live router VLANs."
+        return run_script("manage-araknis-router.py", ["apply-vlans", "--payload-file", payload_file])
+    elif action == "get_static_routes":
+        return run_script("manage-araknis-router.py", ["get-static-routes", "--json"])
+    elif action == "apply_static_routes":
+        if not payload_file:
+            return "Error: 'payload_file' required for apply_static_routes."
+        if not confirm:
+            return "Error: 'confirm=True' required to apply live router static routes."
+        return run_script("manage-araknis-router.py", ["apply-static-routes", "--payload-file", payload_file])
     elif action == "restore":
         args = ["restore"]
         if config_file: args.extend(["--file", config_file])
         if confirm: args.append("--confirm")
         return run_script("manage-araknis-router.py", args)
-    return f"Unknown action: '{action}'. Valid actions: status, backup, restore, get_acls, apply_acls, get_subnets, apply_subnets, get_dhcp_options."
+    return f"Unknown action: '{action}'."
 
 
 @mcp.tool()
 def manage_araknis_switch(
-    action: Literal["status", "backup", "poe_cycle"] = "status",
+    action: Literal["status", "backup", "save", "poe_cycle", "exec"] = "status",
     port: str | None = None,
-    wait_sec: int = 5
+    wait_sec: int = 5,
+    command: str | None = None
 ) -> str:
     """Manage Araknis 920 Multi-Gig Core Managed Switch (192.168.1.215) via SSH/Telnet CLI.
     Actions:
       - 'status': Audit 24-port link status, speeds, PoE power draw, and IGMP snooping.
       - 'backup': Export running configuration to infrastructure/network/configs/araknis-920-running.cfg.
-      - 'poe_cycle': Power cycle an attached PoE device (e.g. port='1/0/7', wait_sec=5)."""
+      - 'save': Save running-config to startup-config (write memory).
+      - 'poe_cycle': Power cycle an attached PoE device (e.g. port='1/0/7', wait_sec=5).
+      - 'exec': Execute FASTPATH CLI command(s) (semicolon-separated for multi-line config commands)."""
     action = action.lower().strip()
     if action == "status":
         return run_script("manage-araknis-switch.py", ["status"])
     elif action == "backup":
         return run_script("manage-araknis-switch.py", ["backup"])
+    elif action == "save":
+        return run_script("manage-araknis-switch.py", ["save"])
     elif action == "poe_cycle":
         if not port: return "Error: 'port' required for poe_cycle (e.g. '1/0/7')."
-        return run_script("manage-araknis-switch.py", ["poe-cycle", "--port", port, "--wait", str(wait_sec)])
-    return f"Unknown action: '{action}'. Valid actions: status, backup, poe_cycle."
+        return run_script("manage-araknis-switch.py", ["poe-cycle", port])
+    elif action == "exec":
+        if not command:
+            return "Error: 'command' required for exec."
+        return run_script("manage-araknis-switch.py", ["exec", command])
+    return f"Unknown action: '{action}'."
 
 @mcp.tool()
 def manage_netgear_switch(

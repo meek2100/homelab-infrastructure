@@ -263,6 +263,49 @@ def sync_clients(reservations_path=DEFAULT_RESERVATIONS_PATH, host=DEFAULT_HOST,
     output_lines.append("\n" + "=" * 50)
     action_str = "Previewed" if dry_run else "Synchronized"
     output_lines.append(f"{action_str}: {added_count} to add, {updated_count} to update, {unchanged_count} already current.")
+
+    # 2. Reconcile DNS rewrites (stats.grafana.org -> 0.0.0.0 instead of NXDOMAIN) and bootstrap_dns
+    for ag_host in [host, "http://192.168.40.186:8081"]:
+        rw_status, rw_list = api_request(f"{ag_host}/control/rewrite/list", headers=auth_headers)
+        if rw_status == 200 and isinstance(rw_list, list):
+            for rw in rw_list:
+                if rw.get("domain") in ("stats.grafana.org", "stats.grafana.org.internal") and rw.get("answer") == "NXDOMAIN":
+                    if dry_run:
+                        output_lines.append(f"[DRY-RUN REWRITE] {ag_host}: {rw['domain']} NXDOMAIN -> 0.0.0.0")
+                    else:
+                        upd_payload = {
+                            "target": {"domain": rw["domain"], "answer": rw["answer"]},
+                            "update": {"domain": rw["domain"], "answer": "0.0.0.0"}
+                        }
+                        u_st, u_re = api_request(f"{ag_host}/control/rewrite/update", method="PUT", data=upd_payload, headers=auth_headers)
+                        output_lines.append(f"[REWRITE UPDATED] {ag_host}: {rw['domain']} NXDOMAIN -> 0.0.0.0 (HTTP {u_st})")
+
+        # Clean NXDOMAIN user rules for stats.grafana.org if present
+        flt_status, flt_data = api_request(f"{ag_host}/control/filtering/status", headers=auth_headers)
+        if flt_status == 200 and isinstance(flt_data, dict):
+            user_rules = flt_data.get("user_rules", [])
+            cleaned_rules = [r for r in user_rules if "stats.grafana.org" not in r]
+            if cleaned_rules != user_rules:
+                if dry_run:
+                    output_lines.append(f"[DRY-RUN FILTER] {ag_host}: remove stats.grafana.org NXDOMAIN user_rules")
+                else:
+                    f_st, _ = api_request(f"{ag_host}/control/filtering/set_rules", method="POST", data={"rules": cleaned_rules}, headers=auth_headers)
+                    output_lines.append(f"[FILTER UPDATED] {ag_host}: removed stats.grafana.org NXDOMAIN user_rules (HTTP {f_st})")
+
+        # Ensure bootstrap_dns does not include 1.1.1.1 (so local 1.1.1.1 interception never loops)
+        dns_status, dns_info = api_request(f"{ag_host}/control/dns_info", headers=auth_headers)
+        if dns_status == 200 and isinstance(dns_info, dict):
+            boot = dns_info.get("bootstrap_dns", [])
+            if "1.1.1.1" in boot or "8.8.8.8" in boot:
+                new_boot = [b for b in boot if b not in ("1.1.1.1", "1.0.0.1", "8.8.8.8", "8.8.4.4")]
+                if not new_boot:
+                    new_boot = ["9.9.9.10", "149.112.112.10", "94.140.14.140"]
+                if dry_run:
+                    output_lines.append(f"[DRY-RUN BOOTSTRAP] {ag_host}: {boot} -> {new_boot}")
+                else:
+                    b_st, _ = api_request(f"{ag_host}/control/dns_config", method="POST", data={"bootstrap_dns": new_boot}, headers=auth_headers)
+                    output_lines.append(f"[BOOTSTRAP UPDATED] {ag_host}: {boot} -> {new_boot} (HTTP {b_st})")
+
     output_lines.append("Replication: adguardhome-sync will automatically mirror changes to Secondary AdGuard Home.")
     output_lines.append("=" * 50)
 

@@ -14,9 +14,9 @@ This document provides the authoritative network segmentation specification for 
 | **30** | `Isolated - IOT` | `192.168.30.0/24` | `192.168.30.1` | Untrusted | `192.168.40.185`, `192.168.40.186` | Smart plugs, smart bulbs, Wi-Fi sensors, Tuya/ESPHome/Shelly devices (no return LAN access) |
 | **40** | `Servers - Admin` | `192.168.40.0/24` | `192.168.40.1` | Protected Server | `192.168.40.185`, `192.168.40.186` | Core identity & server infrastructure: Primary DNS/NPM (`.185`), Secondary DNS (`.186`), Home Automation (`.249`), NAS Admin (`.248`) |
 | **100** | `Wireshark - Debug` | Dynamic / Sniff | - | Inspection | `192.168.40.185`, `192.168.40.186` | Dedicated network traffic inspection, SPAN mirror destination, and packet capture analysis |
-| **150** | `CA-1 Test` | `192.168.150.0/24` | `192.168.150.1` | Isolated Lab | `1.1.1.1`, `1.0.0.1` | Control4 CA-1 Automation Controller lab network (OvrC location `CA1 Test`; tunneled via `vxlan150` on VM 107; trunked to Pakedge SX-8P on SW920 Port 1/0/7) |
+| **150** | `CA-1 Test` | `192.168.150.0/24` | `192.168.150.1` | Isolated Lab | `192.168.40.185`, `192.168.40.186` | Control4 CA-1 Automation Controller lab network (OvrC location `CA1 Test`; tunneled via `vxlan150` on VM 107; trunked to Pakedge SX-8P on SW920 Port 1/0/7) |
 | **175** | `Ryff Standalone Test`| `192.168.175.0/24` | `192.168.175.1` | Isolated Lab | `192.168.40.185`, `192.168.40.186` | Triad SA1 Streaming Amp / Ryff audio test network (OvrC location `Ryff Standalone Test`; SW920 Port 1/0/5 access VLAN 175) |
-| **200** | `Core-5 Test` | `192.168.200.0/24` | `192.168.200.1` | Isolated Lab | `1.1.1.1`, `1.0.0.1` | Control4 CORE 5 Flagship Automation Controller testing and multi-room AVoIP (OvrC location `Core5 Test`; SW920 Port 1/0/8 access VLAN 200) |
+| **200** | `Core-5 Test` | `192.168.200.0/24` | `192.168.200.1` | Isolated Lab | `192.168.40.185`, `192.168.40.186` | Control4 CORE 5 Flagship Automation Controller testing and multi-room AVoIP (OvrC location `Core5 Test`; SW920 Port 1/0/8 access VLAN 200) |
 | **WAN2** | `Storage & WAN2` | `10.25.25.0/24` | `10.25.25.1` | Dedicated Transit | Local / Unbound | Dedicated WAN2 internet egress for `discovery-server` (`.246`) and L2 line-rate storage to `nas-server` (`.248`) |
 
 ---
@@ -68,17 +68,17 @@ This document provides the authoritative network segmentation specification for 
 
 The router evaluates **39 granular rules** (see full rule list in [`network-implementation-plan.md`](../roadmaps/network-implementation-plan.md#1-araknis-520-router-access-control-lists-acl-hierarchy)):
 
-1. **DNS & Security (Rules 1, 3–7)**: Permits UDP/TCP 53, HTTPS DoH (443), and DoQ (853) to/from AdGuard Primary (`192.168.40.185`) and Secondary (`192.168.40.186`).
+1. **DNS & Security (Rules 1, 3–7)**: Permits UDP/TCP 53, HTTPS DoH (443), and DoQ (853) across LAN (`Any -> Any` for Rule 1 so hardcoded `8.8.8.8`/`8.8.4.4`/`1.1.1.1`/`1.0.0.1` queries routed to `nexus-server` `192.168.40.185` are answered locally by AdGuard Home) and to/from AdGuard Primary (`192.168.40.185`) and Secondary (`192.168.40.186`).
 2. **Inter-VLAN NTP Redundancy (Rule 2)**: Permits UDP 123 across all VLANs to both Primary (`192.168.40.185`) and Secondary (`192.168.40.186`) Chrony NTP servers.
 3. **Automation & Smart Home (Rules 8–11)**: Permits IoT & Media to Control4 CA-10 (`192.168.10.200`), and IoT to Home Assistant / Homebridge (`192.168.40.249`).
 4. **Mainsail 3D Printing Least-Privilege (Rules 12–14, 16–19)**: Permits strictly scoped inbound traffic to Mainsail (`192.168.30.90`) from Trusted LAN (`192.168.10.0/24`), Management (`192.168.1.0/24`), and Servers (`192.168.40.0/24`) for HTTP (port 80), Moonraker (port 7125), and SSH (port 22). Outbound initiation from Mainsail to Trusted LAN and Management is dropped; stateful return packets flow via conntrack.
 5. **Media & Entertainment (Rules 15, 20)**: Permits Media (VLAN 20) to Plex (`192.168.40.247:32400`) and Home Assistant (`192.168.40.249:8123`).
-6. **Sonos Bidirectional Inter-VLAN (Rules 21–22)**: Permits All Traffic between tightened Sonos block (`192.168.20.201–192.168.20.205`) and Trusted LAN (`192.168.10.0/24`), enabling SSDP/mDNS discovery, TCP 1400 control, and reverse UPnP event callbacks without dropouts.
-7. **Testbench mDNS Isolation (Rules 23–26)**: Explicitly drops mDNS (UDP 5353) to/from VLAN 150 (CA-1 Test) and VLAN 200 (Core-5 Test) to prevent Bonjour repeater hostname leaks.
+6. **Media & Control4 Remotes Bidirectional Inter-VLAN (Rules 21–22)**: Permits All Traffic between the reserved Media & Control4 Remote tier (`192.168.20.120–192.168.20.240`: Control4 T4/Halo/Neeo `.20.120–.123`, Sonos `.20.201–.203`, Google Home/Nest `.20.210–.217`, Apple TV `.20.220–.221`, Google TV/Chromecast/Samsung TV `.20.230–.237`) and Trusted LAN (`192.168.10.0/24`), while untrusted guest DHCP devices (`192.168.20.20–192.168.20.119`) remain isolated by Rule 32.
+7. **Testbench mDNS & Inter-Zone Isolation (Rules 23–26 & v2 VLAN Zones)**: Explicitly drops mDNS (UDP 5353) to/from VLAN 150 (CA-1 Test) and VLAN 200 (Core-5 Test), and blocks VLAN 175 (`Ryff Standalone Test`) and VLAN 200 (`Core-5 Test`) from initiating inter-zone traffic into VLAN 10 (`interZoneTo: []` for Zone 10).
 8. **Strict Isolation & Segmentation (Rules 27–33)**: Explicitly denies all other cross-VLAN initiation:
    - IoT (VLAN 30) BLOCKED to Management, Trusted LAN, Guest/Media, and Servers (Rules 27–30).
    - Guest/Media (VLAN 20) BLOCKED to Management, Trusted LAN, and Servers (Rules 31–33).
-9. **DNS Hardening (Rules 34–36)**: Blocks outbound DNS-over-TLS (TCP 853) on VLAN 20 (Rule 34) and VLAN 30 (Rule 36), and outbound DNS (UDP 53) on VLAN 20 (Rule 35).
+9. **DNS Hardening & Local Interception (Rules 34–36, 39)**: Blocks outbound DNS-over-TLS (TCP 853) on VLAN 20 (Rule 34) and VLAN 30 (Rule 36), and blocks outbound WAN DNS (UDP 53) on VLAN 20 (Rule 35) and globally (Rule 39), while static routes (`8.8.8.8/32`, `8.8.4.4/32`, `1.1.1.1/32`, `1.0.0.1/32` -> `192.168.40.185`) transparently route hardcoded Google/Cloudflare DNS queries to AdGuard Home without timeouts.
 10. **WAN Ingress Keepalive Suppression (Rules 37–38)**: Drops inbound WAN1 cloud sweeps destined for idle testbench controllers (`192.168.150.200` CA-1 and `192.168.200.200` Core-5), silencing 5.25M router ARP broadcast floods.
 11. **Global WAN DNS Enforcement (Rule 39)**: Drops all outbound UDP 53 to WAN1 (`Deny | In: LAN -> Out: WAN1 | Svc: DNS | Src: Any -> Dst: Any`), completely sealing external DNS bypasses and forcing all network clients across all VLANs through AdGuard Home (`192.168.40.185` / `192.168.40.186`).
 
@@ -121,6 +121,10 @@ To prevent asymmetric routing blackholes and allow WireGuard and Tailscale to fu
 | :--- | :--- | :--- | :--- | :---: | :--- |
 | **`Tailscale-Subnet`** | `100.64.0.0` | `255.192.0.0` (`/10`) | `192.168.40.185` | `VLAN 40` | Direct return path for un-NATted Tailscale clients, enabling real client IP logging in AdGuard Home. |
 | **`WireGuard-Subnet`** | `10.8.0.0` | `255.255.255.0` (`/24`) | `192.168.40.185` | `VLAN 40` | Guaranteed return path for WireGuard administrative backdoor traffic without relying on host MASQUERADE. |
+| **`Google-DNS-1`** | `8.8.8.8` | `255.255.255.255` (`/32`) | `192.168.40.185` | `VLAN 40` | Transparently routes hardcoded Google DNS (`8.8.8.8`) queries from Google Home/Cast/TV devices to AdGuard Home on `nexus-server` (`lo` alias). |
+| **`Google-DNS-2`** | `8.8.4.4` | `255.255.255.255` (`/32`) | `192.168.40.185` | `VLAN 40` | Transparently routes hardcoded Google DNS (`8.8.4.4`) queries from Google Home/Cast/TV devices to AdGuard Home on `nexus-server` (`lo` alias). |
+| **`Cloudflare-DNS-1`** | `1.1.1.1` | `255.255.255.255` (`/32`) | `192.168.40.185` | `VLAN 40` | Transparently routes hardcoded Cloudflare DNS (`1.1.1.1`) queries to AdGuard Home on `nexus-server` (`lo` alias). |
+| **`Cloudflare-DNS-2`** | `1.0.0.1` | `255.255.255.255` (`/32`) | `192.168.40.185` | `VLAN 40` | Transparently routes hardcoded Cloudflare DNS (`1.0.0.1`) queries to AdGuard Home on `nexus-server` (`lo` alias). |
 
 ---
 
