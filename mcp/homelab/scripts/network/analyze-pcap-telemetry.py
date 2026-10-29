@@ -126,7 +126,7 @@ def resolve_target_files(input_path: str, max_files: int = None) -> list[str]:
     elif os.path.isfile(norm):
         files.append(norm)
 
-    files.sort()
+    files.sort(key=lambda p: os.path.getmtime(p))
     if max_files and len(files) > max_files:
         files = files[-max_files:]
     return files
