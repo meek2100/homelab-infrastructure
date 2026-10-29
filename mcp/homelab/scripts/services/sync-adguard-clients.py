@@ -292,19 +292,32 @@ def sync_clients(reservations_path=DEFAULT_RESERVATIONS_PATH, host=DEFAULT_HOST,
                     f_st, _ = api_request(f"{ag_host}/control/filtering/set_rules", method="POST", data={"rules": cleaned_rules}, headers=auth_headers)
                     output_lines.append(f"[FILTER UPDATED] {ag_host}: removed stats.grafana.org NXDOMAIN user_rules (HTTP {f_st})")
 
-        # Ensure bootstrap_dns does not include 1.1.1.1 (so local 1.1.1.1 interception never loops)
+        # Ensure bootstrap_dns uses encrypted DoQ/DoH IP literals (not plain UDP 53 which ACL Rule 39 blocks)
         dns_status, dns_info = api_request(f"{ag_host}/control/dns_info", headers=auth_headers)
         if dns_status == 200 and isinstance(dns_info, dict):
             boot = dns_info.get("bootstrap_dns", [])
-            if "1.1.1.1" in boot or "8.8.8.8" in boot:
-                new_boot = [b for b in boot if b not in ("1.1.1.1", "1.0.0.1", "8.8.8.8", "8.8.4.4")]
-                if not new_boot:
-                    new_boot = ["9.9.9.10", "149.112.112.10", "94.140.14.140"]
+            target_boot = [
+                "quic://9.9.9.10:853",
+                "quic://149.112.112.10:853",
+                "quic://76.76.2.11:853",
+                "quic://94.140.14.140:853"
+            ]
+            if boot != target_boot:
                 if dry_run:
-                    output_lines.append(f"[DRY-RUN BOOTSTRAP] {ag_host}: {boot} -> {new_boot}")
+                    output_lines.append(f"[DRY-RUN BOOTSTRAP] {ag_host}: {boot} -> {target_boot}")
                 else:
-                    b_st, _ = api_request(f"{ag_host}/control/dns_config", method="POST", data={"bootstrap_dns": new_boot}, headers=auth_headers)
-                    output_lines.append(f"[BOOTSTRAP UPDATED] {ag_host}: {boot} -> {new_boot} (HTTP {b_st})")
+                    b_st, _ = api_request(f"{ag_host}/control/dns_config", method="POST", data={"bootstrap_dns": target_boot}, headers=auth_headers)
+                    output_lines.append(f"[BOOTSTRAP UPDATED] {ag_host}: {boot} -> {target_boot} (HTTP {b_st})")
+
+            # Remove expired Surfshark DoQ IP (quic://194.169.169.169:853) from fallback_dns if present
+            fallbacks = dns_info.get("fallback_dns", [])
+            if any("194.169.169.169" in fb and not fb.strip().startswith("#") for fb in fallbacks):
+                new_fallbacks = [f"#{fb}" if "194.169.169.169" in fb and not fb.strip().startswith("#") else fb for fb in fallbacks]
+                if dry_run:
+                    output_lines.append(f"[DRY-RUN FALLBACK] {ag_host}: comment out expired quic://194.169.169.169:853")
+                else:
+                    fb_st, _ = api_request(f"{ag_host}/control/dns_config", method="POST", data={"fallback_dns": new_fallbacks}, headers=auth_headers)
+                    output_lines.append(f"[FALLBACK UPDATED] {ag_host}: commented out expired quic://194.169.169.169:853 (HTTP {fb_st})")
 
     output_lines.append("Replication: adguardhome-sync will automatically mirror changes to Secondary AdGuard Home.")
     output_lines.append("=" * 50)
