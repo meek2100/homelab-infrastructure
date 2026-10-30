@@ -472,6 +472,40 @@ def manage_araknis_switch(
     return f"Unknown action: '{action}'."
 
 @mcp.tool()
+def manage_araknis_ap(
+    action: Literal["status", "backup", "get", "apply", "restore"] = "status",
+    target: str = "all",
+    endpoint: str | None = None,
+    payload_file: str | None = None,
+    method: Literal["POST", "PATCH"] = "POST",
+    config_file: str | None = None,
+    confirm: bool = False
+) -> str:
+    """Manage Araknis AN-830-AP-I Wi-Fi 7 access points (ap1=192.168.1.231, ap2=.236, ap3=.237 wifi-bridge only) via native REST API.
+    Actions:
+      - 'status': Device info, radio status and VLAN table (target: ap1|ap2|ap3|all|IP).
+      - 'backup': Native encrypted config export plus redacted REST snapshot to infrastructure/network/configs/araknis-830-<ip>.*
+      - 'get': Read a /api/gui/<endpoint> (e.g. 'wireless/vlans', 'wireless/ssidsConfig'); secrets redacted.
+      - 'apply': Write JSON payload_file to endpoint (POST/PATCH) then /sys/apply; auto pre-apply backup; one AP only; confirm=True required.
+      - 'restore': Upload a native .config export via config_file; one AP only; confirm=True required."""
+    action = action.lower().strip()
+    if action in ("status", "backup"):
+        return run_script("manage-araknis-ap.py", [action, "--target", target])
+    if action == "get":
+        if not endpoint: return "Error: 'endpoint' required for get."
+        return run_script("manage-araknis-ap.py", ["get", "--target", target, "--endpoint", endpoint])
+    if action == "apply":
+        if not endpoint or not payload_file: return "Error: 'endpoint' and 'payload_file' required for apply."
+        if not confirm: return "Error: 'confirm=True' required to apply live AP changes."
+        return run_script("manage-araknis-ap.py", ["apply", "--target", target, "--endpoint", endpoint,
+                          "--payload-file", payload_file, "--method", method, "--confirm"])
+    if action == "restore":
+        if not config_file: return "Error: 'config_file' required for restore."
+        if not confirm: return "Error: 'confirm=True' required to restore AP config."
+        return run_script("manage-araknis-ap.py", ["restore", "--target", target, "--file", config_file, "--confirm"])
+    return f"Unknown action: '{action}'."
+
+@mcp.tool()
 def manage_netgear_switch(
     action: Literal["status", "backup", "verify", "restore", "set_vlan", "delete_vlan", "set_pvid", "set_port", "set_features"] = "status",
     ip: str = "192.168.1.220",
@@ -870,6 +904,9 @@ def backup_araknis_router():
 
 def backup_araknis_switch():
     return manage_araknis_switch(action="backup")
+
+def backup_araknis_ap(target: str = "all"):
+    return manage_araknis_ap(action="backup", target=target)
 
 def backup_netgear_switch():
     return manage_netgear_switch(action="backup")
