@@ -363,7 +363,7 @@ get_pia_config() {
         nvram set "${TUNNEL_IF}_aip0=0.0.0.0/0"
         nvram set "${TUNNEL_IF}_killswitch=1"
         nvram set "${TUNNEL_IF}_en=1"
-        nvram set "${TUNNEL_IF}_failgrp=1"
+        nvram set "${TUNNEL_IF}_failgrp=0"
         nvram set "${TUNNEL_IF}_last_region=$region_id"
         nvram commit
 

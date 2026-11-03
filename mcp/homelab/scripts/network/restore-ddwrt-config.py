@@ -104,10 +104,15 @@ def restore_ddwrt(router="aurora", ip="10.25.25.1", user="root", dry_run=False):
             with open(spath, "r", encoding="utf-8") as sf:
                 content = sf.read().strip()
             if not dry_run:
-                b64 = base64.b64encode(content.encode("utf-8")).decode("utf-8")
-                set_cmd = f"nvram set {script_type}=\"$(echo '{b64}' | base64 -d)\""
-                c, _, _ = run_ssh(ip, set_cmd, user=user)
-                if c == 0: restored.append(f"NVRAM: {script_type}")
+                # Pipe content via stdin to avoid needing base64 binary on DD-WRT BusyBox
+                tmp_remote = f"/tmp/{script_type}.restore.tmp"
+                pushed, err = push_file_to_ddwrt(ip, tmp_remote, content, mode="600", user=user)
+                if pushed:
+                    set_cmd = f"nvram set {script_type}=\"$(cat '{tmp_remote}')\" && rm -f '{tmp_remote}'"
+                    c, _, _ = run_ssh(ip, set_cmd, user=user)
+                    if c == 0: restored.append(f"NVRAM: {script_type}")
+                else:
+                    print(f"  ❌ Failed to stage {script_type}: {err}")
             else:
                 restored.append(f"[DRY-RUN] NVRAM: {script_type}")
 
@@ -117,9 +122,14 @@ def restore_ddwrt(router="aurora", ip="10.25.25.1", user="root", dry_run=False):
         with open(cj_path, "r", encoding="utf-8") as cf:
             cj_content = cf.read().strip()
         if not dry_run:
-            b64_cj = base64.b64encode(cj_content.encode("utf-8")).decode("utf-8")
-            c, _, _ = run_ssh(ip, f"nvram set cron_jobs=\"$(echo '{b64_cj}' | base64 -d)\"", user=user)
-            if c == 0: restored.append("NVRAM: cron_jobs")
+            tmp_remote = "/tmp/cron_jobs.restore.tmp"
+            pushed, err = push_file_to_ddwrt(ip, tmp_remote, cj_content, mode="600", user=user)
+            if pushed:
+                set_cmd = f"nvram set cron_jobs=\"$(cat '{tmp_remote}')\" && rm -f '{tmp_remote}' && stopservice cron && startservice cron"
+                c, _, _ = run_ssh(ip, set_cmd, user=user)
+                if c == 0: restored.append("NVRAM: cron_jobs")
+            else:
+                print(f"  ❌ Failed to stage cron_jobs: {err}")
         else:
             restored.append("[DRY-RUN] NVRAM: cron_jobs")
 
