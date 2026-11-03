@@ -1,0 +1,538 @@
+{
+ "sys/device-info": {
+  "sysMpInfo": {
+   "serial_no": "ST2605002404884203",
+   "base_mac_address": "14:3F:C3:E8:B9:20",
+   "fw_ver": "v2.0.06.03",
+   "fw_build_date": "07-16-2026 18:23 +08:00",
+   "uptime": "4d 18h 5m 24s",
+   "systemTime": "2026-11-03T08:31:30Z",
+   "country_code": 840,
+   "model_name": "AN-830-AP-I",
+   "activePartition": "1",
+   "sku": 0,
+   "skuSupportList": [
+    "0:FCC",
+    "2:INT"
+   ]
+  },
+  "deviceId": "14:3F:C3:E8:B9:20",
+  "errCode": 0,
+  "message": "OK"
+ },
+ "wireless/vlans": {
+  "vlans": [],
+  "deviceId": "14:3F:C3:E8:B9:20",
+  "errCode": 0,
+  "message": "OK"
+ },
+ "wireless/ssidsConfig": {
+  "ssidsMap": [
+   "2G_1:5G_1:6G_1"
+  ],
+  "ssids2G": {
+   "enlist": "0",
+   "wlanlist": "1",
+   "ssids": [
+    {
+     "MAC": "---",
+     "IDX": 0,
+     "EN": false,
+     "SSID": "Insomniac",
+     "SEC": "WPA3-SAE",
+     "ENC": "AES",
+     "PASS": "<redacted>",
+     "GK": 3600,
+     "BC": true,
+     "FR": false,
+     "PMF": 2,
+     "MLO": false,
+     "VLAN": false,
+     "VID": 0,
+     "CI": false,
+     "BS": false,
+     "WIFI6": true,
+     "OFDM": false,
+     "DTIM": 1,
+     "PS": false,
+     "MCBC": 20,
+     "MFWD": true,
+     "TX": 0,
+     "RX": 0
+    }
+   ]
+  },
+  "ssids5G": {
+   "enlist": "0",
+   "wlanlist": "1",
+   "ssids": [
+    {
+     "MAC": "---",
+     "IDX": 50,
+     "EN": false,
+     "SSID": "Insomniac",
+     "SEC": "WPA3-SAE",
+     "ENC": "AES",
+     "PASS": "<redacted>",
+     "GK": 3600,
+     "BC": true,
+     "FR": false,
+     "PMF": 2,
+     "MLO": false,
+     "VLAN": false,
+     "VID": 0,
+     "CI": false,
+     "BS": false,
+     "WIFI6": true,
+     "OFDM": false,
+     "DTIM": 1,
+     "PS": false,
+     "MCBC": 20,
+     "MFWD": true,
+     "TX": 0,
+     "RX": 0
+    }
+   ]
+  },
+  "ssids6G": {
+   "enlist": "0",
+   "wlanlist": "1",
+   "ssids": [
+    {
+     "MAC": "---",
+     "IDX": 70,
+     "EN": false,
+     "SSID": "Insomniac",
+     "SEC": "WPA3-SAE",
+     "ENC": "AES",
+     "PASS": "<redacted>",
+     "GK": 3600,
+     "BC": true,
+     "FR": false,
+     "PMF": 2,
+     "MLO": false,
+     "VLAN": false,
+     "VID": 0,
+     "CI": false,
+     "BS": false,
+     "WIFI6": true,
+     "OFDM": false,
+     "DTIM": 1,
+     "PS": false,
+     "MCBC": 20,
+     "MFWD": true,
+     "TX": 0,
+     "RX": 0
+    }
+   ]
+  },
+  "deviceId": "14:3F:C3:E8:B9:20",
+  "errCode": 0,
+  "message": "OK"
+ },
+ "wireless/networks": {
+  "Networks": [
+   {
+    "enabled": false,
+    "mac": "---",
+    "ssid": "Insomniac",
+    "interface": "ALL",
+    "networkIndex": [
+     0,
+     50,
+     70
+    ],
+    "clients": 0,
+    "rx": 0,
+    "tx": 0
+   },
+   {
+    "enabled": false,
+    "mac": "---",
+    "ssid": "Insomniac",
+    "interface": "ALL",
+    "networkIndex": [
+     70,
+     0,
+     50
+    ],
+    "clients": 0,
+    "rx": 0,
+    "tx": 0
+   },
+   {
+    "enabled": false,
+    "mac": "---",
+    "ssid": "Insomniac",
+    "interface": "ALL",
+    "networkIndex": [
+     50,
+     0,
+     70
+    ],
+    "clients": 0,
+    "rx": 0,
+    "tx": 0
+   }
+  ],
+  "SSIDMappingList": [
+   "2G_1:5G_1:6G_1"
+  ],
+  "guestNetworks": [
+   {
+    "enabled": false,
+    "mac": "---",
+    "ssid": "Araknis-2.4_GuestNetwork",
+    "interface": "2.4GHZ",
+    "networkIndex": 39,
+    "clients": 0,
+    "rx": 0,
+    "tx": 0
+   },
+   {
+    "enabled": false,
+    "mac": "---",
+    "ssid": "Araknis-6.0_GuestNetwork",
+    "interface": "6GHZ",
+    "networkIndex": 79,
+    "clients": 0,
+    "rx": 0,
+    "tx": 0
+   },
+   {
+    "enabled": false,
+    "mac": "---",
+    "ssid": "Araknis-5.0_GuestNetwork",
+    "interface": "5GHZ",
+    "networkIndex": 89,
+    "clients": 0,
+    "rx": 0,
+    "tx": 0
+   }
+  ],
+  "deviceId": "14:3F:C3:E8:B9:20",
+  "errCode": 0,
+  "message": "OK"
+ },
+ "wireless/settings": {
+  "deviceId": "14:3F:C3:E8:B9:20",
+  "errCode": 6,
+  "paraMsgs": [
+   {
+    "object": "API",
+    "objectValue": "not found"
+   }
+  ]
+ },
+ "wireless/bridge": {
+  "wifiBridgeConfig": {
+   "wifiBridgeRadio0": {
+    "wbRadio": false,
+    "ssidNum": 1,
+    "wifiBridgeAP": {
+     "enable": false,
+     "radio": "2.4GHZ",
+     "ssid": "InsomniacBridge",
+     "security": "WPA3-SAE",
+     "key": "<redacted>",
+     "localBssid": "36:3F:C3:E8:B9:22",
+     "remoteBssid": "36:3F:C3:E8:B9:95"
+    },
+    "wifiBridgeSTA": {
+     "enable": false,
+     "radio": "",
+     "ssid": "InsomniacBridge",
+     "security": "WPA3-SAE",
+     "key": "<redacted>",
+     "localBssid": "36:3F:C3:E8:B9:22",
+     "remoteBssid": "36:3F:C3:E8:B9:95"
+    }
+   },
+   "wifiBridgeRadio1": {
+    "wbRadio": true,
+    "ssidNum": 1,
+    "wifiBridgeAP": {
+     "enable": false,
+     "radio": "5GHZ",
+     "ssid": "Insomniac_Bridge",
+     "security": "WPA3-SAE",
+     "key": "<redacted>",
+     "localBssid": "36:3F:C3:E8:B9:23",
+     "remoteBssid": "36:3F:C3:E8:B9:96"
+    },
+    "wifiBridgeSTA": {
+     "enable": true,
+     "radio": "",
+     "ssid": "Insomniac_Bridge",
+     "security": "WPA3-SAE",
+     "key": "<redacted>",
+     "localBssid": "36:3F:C3:E8:B9:23",
+     "remoteBssid": "36:3F:C3:E8:B9:96"
+    }
+   }
+  },
+  "wifiBridgeStatus": {
+   "role": "Wireless Bridge"
+  },
+  "deviceId": "14:3F:C3:E8:B9:20",
+  "errCode": 0,
+  "message": "OK"
+ },
+ "wireless/stations": {
+  "client_list": [],
+  "deviceId": "14:3F:C3:E8:B9:20",
+  "errCode": 0,
+  "message": "OK"
+ },
+ "wireless/radiostatus": {
+  "radio0": {
+   "interface": "2.4GHZ",
+   "enabled": false,
+   "tx": 0,
+   "rx": 0,
+   "networks": 0,
+   "clients": 0,
+   "guestNetwork": false
+  },
+  "wifiBridge0": {
+   "interface": "2.4GHZ",
+   "enable": false,
+   "uplinkType": "None"
+  },
+  "radio1": {
+   "interface": "6GHZ",
+   "enabled": false,
+   "tx": 0,
+   "rx": 0,
+   "networks": 0,
+   "clients": 0,
+   "guestNetwork": false
+  },
+  "wifiBridge1": {
+   "interface": "6GHZ",
+   "enable": "-",
+   "uplinkType": "-"
+  },
+  "radio2": {
+   "interface": "5GHZ",
+   "enabled": true,
+   "tx": 94184910983,
+   "rx": 128010795184,
+   "networks": 0,
+   "clients": 0,
+   "guestNetwork": false
+  },
+  "wifiBridge2": {
+   "interface": "5GHZ",
+   "enable": true,
+   "uplinkType": "WiFi"
+  },
+  "deviceId": "14:3F:C3:E8:B9:20",
+  "errCode": 0,
+  "message": "OK"
+ },
+ "wireless/radioconfig?interface=2.4GHZ": {
+  "radioconfig": {
+   "interface": "2.4GHZ",
+   "enabled": false,
+   "wirelessMode": "802.11BE",
+   "channel": 0,
+   "channelFrequency": "2.412",
+   "ext_channel": "upper",
+   "channelActual": 1,
+   "channelWidth": "HT20",
+   "channelutilization": "0%",
+   "transmitPower": 23,
+   "cts_rts_threshold": 2346,
+   "qam256": false,
+   "client_limit_enabled": false,
+   "client_limit": 127
+  },
+  "hwModeList": [
+   "802.11BGN",
+   "802.11BG",
+   "802.11B",
+   "802.11G",
+   "802.11N",
+   "802.11AX",
+   "802.11BE"
+  ],
+  "htModeList": [
+   "HT20",
+   "HT20_40",
+   "HT40"
+  ],
+  "channelFrequencyList": [
+   "Ch1, 5, 0, 5, 5, 0",
+   "Ch2, 5, 0, 5, 5, 0",
+   "Ch3, 5, 0, 5, 5, 0",
+   "Ch4, 5, 0, 5, 5, 0",
+   "Ch5, 7, 0, 7, 7, 0",
+   "Ch6, 7, 0, 7, 7, 0",
+   "Ch7, 7, 0, 7, 7, 0",
+   "Ch8, 3, 0, 3, 3, 0",
+   "Ch9, 3, 0, 3, 3, 0",
+   "Ch10, 3, 0, 3, 3, 0",
+   "Ch11, 3, 0, 3, 3, 0"
+  ],
+  "deviceId": "14:3F:C3:E8:B9:20",
+  "errCode": 0,
+  "message": "OK"
+ },
+ "wireless/radioconfig?interface=5GHZ": {
+  "radioconfig": {
+   "interface": "5GHZ",
+   "enabled": true,
+   "wirelessMode": "802.11BE",
+   "channel": 0,
+   "channelFrequency": "5.180",
+   "ext_channel": "lower",
+   "channelActual": 36,
+   "channelWidth": "HT80",
+   "channelutilization": "100%",
+   "transmitPower": 27,
+   "cts_rts_threshold": 2346,
+   "dfs": false,
+   "client_limit_enabled": false,
+   "client_limit": 127
+  },
+  "hwModeList": [
+   "802.11ACN",
+   "802.11AN",
+   "802.11A",
+   "802.11N",
+   "802.11AX",
+   "802.11BE"
+  ],
+  "htModeList": [
+   "HT20",
+   "HT40",
+   "HT80",
+   "HT160"
+  ],
+  "channelFrequencyList": [
+   "Ch36, 5, 29, 29, 29, 0",
+   "Ch40, 3, 27, 27, 27, 0",
+   "Ch44, 5, 29, 29, 29, 0",
+   "Ch48, 3, 27, 27, 27, 0",
+   "Ch52, 5, 29, 29, 29, 1",
+   "Ch56, 3, 27, 27, 27, 1",
+   "Ch60, 5, 29, 29, 29, 1",
+   "Ch64, 3, 27, 27, 27, 1",
+   "Ch100, 5, 29, 29, 61, 1",
+   "Ch104, 3, 27, 27, 59, 1",
+   "Ch108, 5, 29, 29, 61, 1",
+   "Ch112, 3, 27, 27, 59, 1",
+   "Ch116, 5, 29, 29, 61, 1",
+   "Ch120, 3, 27, 27, 59, 1",
+   "Ch124, 5, 29, 29, 61, 1",
+   "Ch128, 3, 27, 27, 59, 1",
+   "Ch132, 5, 13, 13, 45, 1",
+   "Ch136, 3, 11, 11, 43, 1",
+   "Ch140, 5, 13, 13, 45, 1",
+   "Ch144, 3, 11, 11, 43, 1",
+   "Ch149, 5, 13, 13, 13, 0",
+   "Ch153, 3, 11, 11, 11, 0",
+   "Ch157, 5, 13, 13, 13, 0",
+   "Ch161, 3, 11, 11, 11, 0",
+   "Ch165, 1, 1, 1, 1, 0"
+  ],
+  "deviceId": "14:3F:C3:E8:B9:20",
+  "errCode": 0,
+  "message": "OK"
+ },
+ "wireless/radioconfig?interface=6GHZ": {
+  "radioconfig": {
+   "interface": "6GHZ",
+   "enabled": false,
+   "wirelessMode": "802.11BE",
+   "channel": 0,
+   "channelFrequency": "5.955",
+   "ext_channel": "upper",
+   "channelActual": 1,
+   "channelWidth": "HT160",
+   "channelutilization": "0%",
+   "transmitPower": 25,
+   "cts_rts_threshold": 2346,
+   "psc": true,
+   "force_wifi6G_disabled": false,
+   "client_limit_enabled": false,
+   "client_limit": 127
+  },
+  "hwModeList": [
+   "802.11AX",
+   "802.11BE"
+  ],
+  "htModeList": [
+   "HT20",
+   "HT40",
+   "HT80",
+   "HT160",
+   "HT320"
+  ],
+  "channelFrequencyList": [
+   "Ch1, 0, 0, 29, 61, 0",
+   "Ch5, 0, 0, 27, 59, 1",
+   "Ch9, 0, 0, 29, 61, 0",
+   "Ch13, 0, 0, 27, 59, 0",
+   "Ch17, 0, 0, 29, 61, 0",
+   "Ch21, 0, 0, 27, 59, 1",
+   "Ch25, 0, 0, 29, 61, 0",
+   "Ch29, 0, 0, 27, 59, 0",
+   "Ch33, 0, 0, 29, 61, 0",
+   "Ch37, 0, 0, 27, 59, 1",
+   "Ch41, 0, 0, 29, 61, 0",
+   "Ch45, 0, 0, 27, 59, 0",
+   "Ch49, 0, 0, 29, 61, 0",
+   "Ch53, 0, 0, 27, 59, 1",
+   "Ch57, 0, 0, 29, 61, 0",
+   "Ch61, 0, 0, 27, 59, 0",
+   "Ch65, 0, 0, 29, 61, 0",
+   "Ch69, 0, 0, 27, 59, 1",
+   "Ch73, 0, 0, 29, 61, 0",
+   "Ch77, 0, 0, 27, 59, 0",
+   "Ch81, 0, 0, 29, 61, 0",
+   "Ch85, 0, 0, 27, 59, 1",
+   "Ch89, 0, 0, 29, 61, 0",
+   "Ch93, 0, 0, 27, 59, 0",
+   "Ch97, 0, 0, 29, 61, 0",
+   "Ch101, 0, 0, 27, 59, 1",
+   "Ch105, 0, 0, 29, 61, 0",
+   "Ch109, 0, 0, 27, 59, 0",
+   "Ch113, 0, 0, 29, 61, 0",
+   "Ch117, 0, 0, 27, 59, 1",
+   "Ch121, 0, 0, 29, 61, 0",
+   "Ch125, 0, 0, 27, 59, 0",
+   "Ch129, 0, 0, 29, 61, 0",
+   "Ch133, 0, 0, 27, 59, 1",
+   "Ch137, 0, 0, 29, 61, 0",
+   "Ch141, 0, 0, 27, 59, 0",
+   "Ch145, 0, 0, 29, 61, 0",
+   "Ch149, 0, 0, 27, 59, 1",
+   "Ch153, 0, 0, 29, 61, 0",
+   "Ch157, 0, 0, 27, 59, 0",
+   "Ch161, 0, 0, 29, 61, 0",
+   "Ch165, 0, 0, 27, 59, 1",
+   "Ch169, 0, 0, 29, 61, 0",
+   "Ch173, 0, 0, 27, 59, 0",
+   "Ch177, 0, 0, 29, 61, 0",
+   "Ch181, 0, 0, 27, 59, 1",
+   "Ch185, 0, 0, 29, 61, 0",
+   "Ch189, 0, 0, 27, 59, 0",
+   "Ch193, 0, 0, 29, 61, 0",
+   "Ch197, 0, 0, 27, 59, 1",
+   "Ch201, 0, 0, 29, 61, 0",
+   "Ch205, 0, 0, 27, 59, 0",
+   "Ch209, 0, 0, 29, 61, 0",
+   "Ch213, 0, 0, 27, 59, 1",
+   "Ch217, 0, 0, 29, 61, 0",
+   "Ch221, 0, 0, 27, 59, 0",
+   "Ch225, 0, 0, 5, 5, 0",
+   "Ch229, 0, 0, 3, 3, 1",
+   "Ch233, 0, 0, 1, 1, 0"
+  ],
+  "deviceId": "14:3F:C3:E8:B9:20",
+  "errCode": 0,
+  "message": "OK"
+ }
+}
