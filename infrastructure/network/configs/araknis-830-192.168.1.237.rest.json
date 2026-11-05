@@ -5,8 +5,8 @@
    "base_mac_address": "14:3F:C3:E8:B9:20",
    "fw_ver": "v2.0.06.03",
    "fw_build_date": "07-16-2026 18:23 +08:00",
-   "uptime": "4d 18h 5m 24s",
-   "systemTime": "2026-11-03T08:31:30Z",
+   "uptime": "6d 21h 26m 43s",
+   "systemTime": "2026-11-05T11:52:50Z",
    "country_code": 840,
    "model_name": "AN-830-AP-I",
    "activePartition": "1",
@@ -316,8 +316,8 @@
   "radio2": {
    "interface": "5GHZ",
    "enabled": true,
-   "tx": 94184910983,
-   "rx": 128010795184,
+   "tx": 104435285808,
+   "rx": 158800809807,
    "networks": 0,
    "clients": 0,
    "guestNetwork": false

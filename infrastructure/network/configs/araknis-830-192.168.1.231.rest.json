@@ -5,8 +5,8 @@
    "base_mac_address": "14:3F:C3:E8:B9:93",
    "fw_ver": "v2.0.06.03",
    "fw_build_date": "07-16-2026 18:23 +08:00",
-   "uptime": "4d 18h 9m 37s",
-   "systemTime": "2026-11-03T08:31:18Z",
+   "uptime": "2d 2h 44m 43s",
+   "systemTime": "2026-11-05T11:52:38Z",
    "country_code": 840,
    "model_name": "AN-830-AP-I",
    "activePartition": "1",
@@ -132,15 +132,15 @@
      "VLAN": true,
      "VID": 20,
      "CI": false,
-     "BS": true,
+     "BS": false,
      "WIFI6": true,
      "OFDM": false,
      "DTIM": 1,
      "PS": false,
-     "MCBC": 20,
+     "MCBC": 32,
      "MFWD": true,
-     "TX": 1611151393,
-     "RX": 251860368
+     "TX": 1101421349,
+     "RX": 235797841
     },
     {
      "MAC": "1a:3f:c3:e8:b9:95",
@@ -165,8 +165,8 @@
      "PS": false,
      "MCBC": 20,
      "MFWD": true,
-     "TX": 679276645,
-     "RX": 192450809
+     "TX": 327538183,
+     "RX": 330456645
     },
     {
      "MAC": "---",
@@ -262,7 +262,7 @@
      "PASS": "<redacted>",
      "GK": 3600,
      "BC": true,
-     "FR": true,
+     "FR": false,
      "PMF": 2,
      "MLO": false,
      "VLAN": true,
@@ -273,10 +273,10 @@
      "OFDM": false,
      "DTIM": 1,
      "PS": false,
-     "MCBC": 20,
+     "MCBC": 32,
      "MFWD": true,
-     "TX": 14376520936,
-     "RX": 2077472757
+     "TX": 8785974718,
+     "RX": 561338372
     },
     {
      "MAC": "1a:3f:c3:e8:b9:96",
@@ -294,15 +294,15 @@
      "VLAN": true,
      "VID": 20,
      "CI": false,
-     "BS": true,
+     "BS": false,
      "WIFI6": true,
      "OFDM": false,
      "DTIM": 1,
      "PS": false,
-     "MCBC": 20,
+     "MCBC": 32,
      "MFWD": true,
-     "TX": 3804587366,
-     "RX": 1464725249
+     "TX": 1202242432,
+     "RX": 608506475
     },
     {
      "MAC": "1e:3f:c3:e8:b9:96",
@@ -327,8 +327,8 @@
      "PS": false,
      "MCBC": 20,
      "MFWD": false,
-     "TX": 1497585614,
-     "RX": 2968666
+     "TX": 0,
+     "RX": 0
     }
    ]
   },
@@ -372,7 +372,7 @@
      "PASS": "<redacted>",
      "GK": 3600,
      "BC": true,
-     "FR": true,
+     "FR": false,
      "PMF": 2,
      "MLO": false,
      "VLAN": true,
@@ -383,10 +383,10 @@
      "OFDM": false,
      "DTIM": 1,
      "PS": false,
-     "MCBC": 20,
+     "MCBC": 32,
      "MFWD": true,
-     "TX": 1695910305,
-     "RX": 129244583
+     "TX": 586890305,
+     "RX": 8506732
     },
     {
      "MAC": "a2:b9:97:e8:b9:98",
@@ -445,9 +445,9 @@
      1,
      52
     ],
-    "clients": 1,
-    "rx": 251860368,
-    "tx": 1611151532
+    "clients": 6,
+    "rx": 235812721,
+    "tx": 1101457841
    },
    {
     "enabled": true,
@@ -457,9 +457,9 @@
     "networkIndex": [
      2
     ],
-    "clients": 8,
-    "rx": 192450863,
-    "tx": 679277114
+    "clients": 7,
+    "rx": 330456645,
+    "tx": 327539567
    },
    {
     "enabled": false,
@@ -508,9 +508,9 @@
      71,
      51
     ],
-    "clients": 0,
-    "rx": 129244583,
-    "tx": 1695910305
+    "clients": 1,
+    "rx": 8506732,
+    "tx": 586890305
    },
    {
     "enabled": true,
@@ -548,9 +548,9 @@
      51,
      71
     ],
-    "clients": 2,
-    "rx": 2077472757,
-    "tx": 14376520936
+    "clients": 3,
+    "rx": 561338810,
+    "tx": 8785976135
    },
    {
     "enabled": true,
@@ -561,9 +561,9 @@
      52,
      1
     ],
-    "clients": 8,
-    "rx": 1464725249,
-    "tx": 3804587366
+    "clients": 7,
+    "rx": 608510455,
+    "tx": 1202248109
    },
    {
     "enabled": true,
@@ -574,9 +574,9 @@
      53,
      72
     ],
-    "clients": 1,
-    "rx": 2968666,
-    "tx": 1497585614
+    "clients": 0,
+    "rx": 0,
+    "tx": 0
    }
   ],
   "SSIDMappingList": [
@@ -691,56 +691,56 @@
  "wireless/stations": {
   "client_list": [
    {
-    "cmac": "20:1F:3B:34:8F:1A",
+    "cmac": "1C:F2:9A:35:AF:30",
     "networkIndex": 1,
     "mac": "14:3F:C3:E8:B9:95",
     "ssid": "Insomniac_Guest",
     "interface": "2.4GHZ",
     "name": "Unknown_HostName",
-    "cip": "192.168.20.232",
-    "rx": 37251950,
-    "tx": 24063788,
-    "signal": -59,
+    "cip": "192.168.20.216",
+    "rx": 43730548,
+    "tx": 77274120,
+    "signal": -56,
+    "os": "010306"
+   },
+   {
+    "cmac": "BC:DF:58:65:5A:32",
+    "networkIndex": 1,
+    "mac": "14:3F:C3:E8:B9:95",
+    "ssid": "Insomniac_Guest",
+    "interface": "2.4GHZ",
+    "name": "Unknown_HostName",
+    "cip": "192.168.20.231",
+    "rx": 15692601,
+    "tx": 2635724,
+    "signal": -58,
     "os": "0103060f1a1c333a3b2b726c"
    },
    {
-    "cmac": "04:78:63:3E:F9:25",
-    "networkIndex": 2,
-    "mac": "1A:3F:C3:E8:B9:95",
-    "ssid": "Insomniac_IOT",
+    "cmac": "34:15:13:D2:BD:1E",
+    "networkIndex": 1,
+    "mac": "14:3F:C3:E8:B9:95",
+    "ssid": "Insomniac_Guest",
     "interface": "2.4GHZ",
-    "name": "mxchip",
-    "cip": "192.168.30.193",
-    "rx": 3969532,
-    "tx": 2797062,
+    "name": "TR3-CONTROL4-341513d2bd1e",
+    "cip": "192.168.20.122",
+    "rx": 1481366,
+    "tx": 1423967,
+    "signal": -62,
+    "os": "010306"
+   },
+   {
+    "cmac": "24:62:AB:BD:94:8C",
+    "networkIndex": 1,
+    "mac": "14:3F:C3:E8:B9:95",
+    "ssid": "Insomniac_Guest",
+    "interface": "2.4GHZ",
+    "name": "RestPlusBD948E",
+    "cip": "192.168.20.125",
+    "rx": 659768,
+    "tx": 371788,
     "signal": -53,
     "os": "01031c06"
-   },
-   {
-    "cmac": "D8:28:C9:61:57:A5",
-    "networkIndex": 2,
-    "mac": "1A:3F:C3:E8:B9:95",
-    "ssid": "Insomniac_IOT",
-    "interface": "2.4GHZ",
-    "name": "&",
-    "cip": "192.168.30.177",
-    "rx": 4280375,
-    "tx": 2922590,
-    "signal": -56,
-    "os": "Unknown_OS"
-   },
-   {
-    "cmac": "70:74:14:C0:2C:6A",
-    "networkIndex": 2,
-    "mac": "1A:3F:C3:E8:B9:95",
-    "ssid": "Insomniac_IOT",
-    "interface": "2.4GHZ",
-    "name": "Rachio-C02C6A",
-    "cip": "192.168.30.190",
-    "rx": 32961816,
-    "tx": 2314046,
-    "signal": -64,
-    "os": "010306"
    },
    {
     "cmac": "3C:E4:B0:85:D4:F6",
@@ -750,10 +750,36 @@
     "interface": "2.4GHZ",
     "name": "flo-3ce4b085d4f6",
     "cip": "192.168.30.191",
-    "rx": 14744765,
-    "tx": 5782227,
-    "signal": -54,
+    "rx": 6911104,
+    "tx": 2552479,
+    "signal": -48,
     "os": "01030c0f0621792a"
+   },
+   {
+    "cmac": "70:74:14:C0:2C:6A",
+    "networkIndex": 2,
+    "mac": "1A:3F:C3:E8:B9:95",
+    "ssid": "Insomniac_IOT",
+    "interface": "2.4GHZ",
+    "name": "Rachio-C02C6A",
+    "cip": "192.168.30.190",
+    "rx": 15479400,
+    "tx": 1167559,
+    "signal": -61,
+    "os": "010306"
+   },
+   {
+    "cmac": "FC:3C:D7:0F:E0:84",
+    "networkIndex": 2,
+    "mac": "1A:3F:C3:E8:B9:95",
+    "ssid": "Insomniac_IOT",
+    "interface": "2.4GHZ",
+    "name": "wlan0",
+    "cip": "192.168.30.180",
+    "rx": 8932965,
+    "tx": 1257235,
+    "signal": -56,
+    "os": "01031c06"
    },
    {
     "cmac": "D8:28:C9:75:63:F6",
@@ -763,23 +789,23 @@
     "interface": "2.4GHZ",
     "name": "&",
     "cip": "192.168.30.176",
-    "rx": 2004776,
-    "tx": 1337402,
-    "signal": -61,
+    "rx": 2313567,
+    "tx": 1626223,
+    "signal": -63,
     "os": "Unknown_OS"
    },
    {
-    "cmac": "FC:3C:D7:10:A4:93",
+    "cmac": "D8:28:C9:61:57:A5",
     "networkIndex": 2,
     "mac": "1A:3F:C3:E8:B9:95",
     "ssid": "Insomniac_IOT",
     "interface": "2.4GHZ",
-    "name": "wlan0",
-    "cip": "192.168.30.181",
-    "rx": 6725573,
-    "tx": 686945,
-    "signal": -73,
-    "os": "01031c06"
+    "name": "&",
+    "cip": "192.168.30.177",
+    "rx": 1743407,
+    "tx": 1223577,
+    "signal": -55,
+    "os": "Unknown_OS"
    },
    {
     "cmac": "2C:D2:6B:86:D7:61",
@@ -789,23 +815,49 @@
     "interface": "2.4GHZ",
     "name": "MyQ-CDE",
     "cip": "192.168.30.192",
-    "rx": 337124,
-    "tx": 306909,
-    "signal": -64,
+    "rx": 1303566,
+    "tx": 1208445,
+    "signal": -61,
     "os": "01031c06"
    },
    {
-    "cmac": "C0:EE:40:70:BC:9D",
+    "cmac": "E4:5F:01:78:DF:81",
     "networkIndex": 2,
     "mac": "1A:3F:C3:E8:B9:95",
     "ssid": "Insomniac_IOT",
     "interface": "2.4GHZ",
-    "name": "WeatherFlow",
-    "cip": "192.168.30.163",
-    "rx": 8940,
-    "tx": 2326,
-    "signal": -24,
-    "os": "01031c062a"
+    "name": "Unknown_HostName",
+    "cip": "",
+    "rx": 19796,
+    "tx": 2365,
+    "signal": -59,
+    "os": ""
+   },
+   {
+    "cmac": "14:98:77:3E:4E:8D",
+    "networkIndex": 51,
+    "mac": "14:3F:C3:E8:B9:96",
+    "ssid": "Insomniac",
+    "interface": "5GHZ",
+    "name": "Darins-Mini-5",
+    "cip": "192.168.10.21",
+    "rx": 34319987,
+    "tx": 17562221,
+    "signal": -63,
+    "os": "017903060f6c7277a2fc5f2c2e"
+   },
+   {
+    "cmac": "88:66:5A:67:E8:12",
+    "networkIndex": 51,
+    "mac": "14:3F:C3:E8:B9:96",
+    "ssid": "Insomniac",
+    "interface": "5GHZ",
+    "name": "KimbersiPadPro",
+    "cip": "192.168.10.25",
+    "rx": 2854819,
+    "tx": 1460455,
+    "signal": -65,
+    "os": "017903060f6c7277a2fc"
    },
    {
     "cmac": "B0:D5:FB:9C:4D:22",
@@ -815,88 +867,23 @@
     "interface": "5GHZ",
     "name": "Pixel-10-Pro",
     "cip": "192.168.10.110",
-    "rx": 1174061,
-    "tx": 1769267,
-    "signal": -65,
+    "rx": 8768033,
+    "tx": 162413574,
+    "signal": -64,
     "os": "0103060f1a1c333a3b2b726c"
    },
    {
-    "cmac": "F0:C3:71:4A:8A:27",
-    "networkIndex": 51,
-    "mac": "14:3F:C3:E8:B9:96",
-    "ssid": "Insomniac",
-    "interface": "5GHZ",
-    "name": "Darins-iPhone",
-    "cip": "192.168.10.114",
-    "rx": 480335,
-    "tx": 155773,
-    "signal": -68,
-    "os": "017903060f6c7277a2fc"
-   },
-   {
-    "cmac": "1C:F2:9A:35:AF:30",
+    "cmac": "C4:38:75:C6:54:A4",
     "networkIndex": 52,
     "mac": "1A:3F:C3:E8:B9:96",
     "ssid": "Insomniac_Guest",
     "interface": "5GHZ",
-    "name": "Unknown_HostName",
-    "cip": "192.168.20.216",
-    "rx": 70927069,
-    "tx": 160792967,
-    "signal": -59,
-    "os": "010306"
-   },
-   {
-    "cmac": "BC:DF:58:65:5A:32",
-    "networkIndex": 52,
-    "mac": "1A:3F:C3:E8:B9:96",
-    "ssid": "Insomniac_Guest",
-    "interface": "5GHZ",
-    "name": "Unknown_HostName",
-    "cip": "192.168.20.231",
-    "rx": 36982391,
-    "tx": 14597177,
-    "signal": -57,
-    "os": "0103060f1a1c333a3b2b726c"
-   },
-   {
-    "cmac": "58:D5:0A:A1:79:0A",
-    "networkIndex": 52,
-    "mac": "1A:3F:C3:E8:B9:96",
-    "ssid": "Insomniac_Guest",
-    "interface": "5GHZ",
-    "name": "ts-t4-tabletop10-030371713520003F",
-    "cip": "192.168.20.123",
-    "rx": 2907484,
-    "tx": 2282717,
-    "signal": -57,
-    "os": "0103060f1a1c333a3b2b"
-   },
-   {
-    "cmac": "50:26:EF:26:C9:AD",
-    "networkIndex": 52,
-    "mac": "1A:3F:C3:E8:B9:96",
-    "ssid": "Insomniac_Guest",
-    "interface": "5GHZ",
-    "name": "halo-touch-26c9ad",
-    "cip": "192.168.20.120",
-    "rx": 1382147,
-    "tx": 1283267,
-    "signal": -76,
-    "os": "0103060c0f212a7879"
-   },
-   {
-    "cmac": "48:D6:D5:73:61:91",
-    "networkIndex": 52,
-    "mac": "1A:3F:C3:E8:B9:96",
-    "ssid": "Insomniac_Guest",
-    "interface": "5GHZ",
-    "name": "Google-Home",
-    "cip": "192.168.20.214",
-    "rx": 2083047,
-    "tx": 7312004,
-    "signal": -72,
-    "os": "012103060f1c333a3b"
+    "name": "SonosZP",
+    "cip": "192.168.20.203",
+    "rx": 211646811,
+    "tx": 13555649,
+    "signal": -69,
+    "os": "0103060c0f1c"
    },
    {
     "cmac": "F4:F5:D8:D9:B2:6A",
@@ -906,8 +893,8 @@
     "interface": "5GHZ",
     "name": "Google-Home",
     "cip": "192.168.20.210",
-    "rx": 1811006,
-    "tx": 4247044,
+    "rx": 3297810,
+    "tx": 3553314,
     "signal": -70,
     "os": "012103060f1c333a3b"
    },
@@ -919,10 +906,36 @@
     "interface": "5GHZ",
     "name": "Google-Home",
     "cip": "192.168.20.211",
-    "rx": 1217954,
-    "tx": 2151318,
+    "rx": 3262246,
+    "tx": 3276613,
     "signal": -71,
     "os": "012103060f1c333a3b"
+   },
+   {
+    "cmac": "48:D6:D5:73:61:91",
+    "networkIndex": 52,
+    "mac": "1A:3F:C3:E8:B9:96",
+    "ssid": "Insomniac_Guest",
+    "interface": "5GHZ",
+    "name": "Google-Home",
+    "cip": "192.168.20.214",
+    "rx": 2826095,
+    "tx": 8599329,
+    "signal": -70,
+    "os": "012103060f1c333a3b"
+   },
+   {
+    "cmac": "58:D5:0A:A1:79:0A",
+    "networkIndex": 52,
+    "mac": "1A:3F:C3:E8:B9:96",
+    "ssid": "Insomniac_Guest",
+    "interface": "5GHZ",
+    "name": "ts-t4-tabletop10-030371713520003F",
+    "cip": "192.168.20.123",
+    "rx": 620513,
+    "tx": 683624,
+    "signal": -61,
+    "os": "0103060f1a1c333a3b2b"
    },
    {
     "cmac": "F4:F5:D8:A6:88:D0",
@@ -932,23 +945,23 @@
     "interface": "5GHZ",
     "name": "Google-Home",
     "cip": "192.168.20.212",
-    "rx": 625014,
-    "tx": 1733800,
-    "signal": -68,
+    "rx": 2791758,
+    "tx": 5382235,
+    "signal": -72,
     "os": "012103060f1c333a3b"
    },
    {
-    "cmac": "E8:9F:80:50:58:32",
-    "networkIndex": 53,
-    "mac": "1E:3F:C3:E8:B9:96",
-    "ssid": "Insomniac_MGMT",
+    "cmac": "7C:D9:5C:7D:BE:0A",
+    "networkIndex": 52,
+    "mac": "1A:3F:C3:E8:B9:96",
+    "ssid": "Insomniac_Guest",
     "interface": "5GHZ",
     "name": "Unknown_HostName",
-    "cip": "",
-    "rx": 2962112,
-    "tx": 2479942,
-    "signal": -56,
-    "os": ""
+    "cip": "192.168.20.217",
+    "rx": 4302255,
+    "tx": 18866598,
+    "signal": -68,
+    "os": "010306"
    }
   ],
   "deviceId": "14:3F:C3:E8:B9:93",
@@ -959,10 +972,10 @@
   "radio0": {
    "interface": "2.4GHZ",
    "enabled": true,
-   "tx": 2290429411,
-   "rx": 444311683,
+   "tx": 1429207151,
+   "rx": 566285417,
    "networks": 2,
-   "clients": 9,
+   "clients": 13,
    "guestNetwork": false
   },
   "wifiBridge0": {
@@ -973,10 +986,10 @@
   "radio1": {
    "interface": "6GHZ",
    "enabled": true,
-   "tx": 1695910305,
-   "rx": 129244583,
+   "tx": 586891665,
+   "rx": 8506732,
    "networks": 2,
-   "clients": 0,
+   "clients": 1,
    "guestNetwork": false
   },
   "wifiBridge1": {
@@ -987,10 +1000,10 @@
   "radio2": {
    "interface": "5GHZ",
    "enabled": true,
-   "tx": 148302747927,
-   "rx": 97593670326,
+   "tx": 37941499398,
+   "rx": 10501982963,
    "networks": 3,
-   "clients": 11,
+   "clients": 10,
    "guestNetwork": false
   },
   "wifiBridge2": {
@@ -1008,11 +1021,11 @@
    "enabled": true,
    "wirelessMode": "802.11BE",
    "channel": 0,
-   "channelFrequency": "2.462",
+   "channelFrequency": "2.412",
    "ext_channel": "upper",
-   "channelActual": 11,
+   "channelActual": 1,
    "channelWidth": "HT20",
-   "channelutilization": "13%",
+   "channelutilization": "57%",
    "transmitPower": 23,
    "cts_rts_threshold": 2346,
    "qam256": false,
@@ -1060,7 +1073,7 @@
    "ext_channel": "lower",
    "channelActual": 36,
    "channelWidth": "HT80",
-   "channelutilization": "6%",
+   "channelutilization": "14%",
    "transmitPower": 27,
    "cts_rts_threshold": 2346,
    "dfs": false,
@@ -1122,7 +1135,7 @@
    "ext_channel": "upper",
    "channelActual": 37,
    "channelWidth": "HT160",
-   "channelutilization": "1%",
+   "channelutilization": "2%",
    "transmitPower": 25,
    "cts_rts_threshold": 2346,
    "psc": true,
